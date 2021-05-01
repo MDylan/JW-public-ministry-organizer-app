@@ -5,4 +5,9 @@ return [
     'registered' => 'Regisztrált',
     'addNew' => 'Új felhasználó hozzáadása',
     'emailExists' => 'Ezzel az email címmel már van regisztráció',
+    'login' => 'Belépés',
+    'password' => 'Jelszó',
+    'rememberMe' => 'Emlékezzen rám',
+    'lostPassword' => 'Elfelejtett jelszó',
+    'register' => 'Regisztráció',
 ];
