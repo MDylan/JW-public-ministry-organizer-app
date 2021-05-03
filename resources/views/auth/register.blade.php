@@ -7,19 +7,28 @@
     <div class="register-box">
     <div class="card card-outline card-primary">
         <div class="card-header text-center">
-        <a href="../../index2.html" class="h1"><b>Admin</b>LTE</a>
+            <a href="/" class="h1">{{__('app.title')}}</a>
         </div>
         <div class="card-body">
-        <p class="login-box-msg">Register a new membership</p>
+        <p class="login-box-msg">{{__('user.registerMessage')}}</p>
 
-        <form action="../../index.html" method="post">
+        <form action="{{route('register')}}" method="post">
+            {{@csrf}}
             <div class="input-group mb-3">
-            <input type="text" class="form-control" placeholder="Full name">
-            <div class="input-group-append">
-                <div class="input-group-text">
-                <span class="fas fa-user"></span>
+                <input type="text" class="form-control" placeholder="Full name">
+                <div class="input-group-append">
+                    <div class="input-group-text">
+                    <span class="fas fa-user"></span>
+                    </div>
                 </div>
             </div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Full name">
+                <div class="input-group-append">
+                    <div class="input-group-text">
+                    <span class="fas fa-user"></span>
+                    </div>
+                </div>
             </div>
             <div class="input-group mb-3">
             <input type="email" class="form-control" placeholder="Email">
@@ -56,24 +65,13 @@
             </div>
             <!-- /.col -->
             <div class="col-4">
-                <button type="submit" class="btn btn-primary btn-block">Register</button>
+                <button type="submit" class="btn btn-primary btn-block">{{__('user.register')}}</button>
             </div>
             <!-- /.col -->
             </div>
         </form>
 
-        <div class="social-auth-links text-center">
-            <a href="#" class="btn btn-block btn-primary">
-            <i class="fab fa-facebook mr-2"></i>
-            Sign up using Facebook
-            </a>
-            <a href="#" class="btn btn-block btn-danger">
-            <i class="fab fa-google-plus mr-2"></i>
-            Sign up using Google+
-            </a>
-        </div>
-
-        <a href="login.html" class="text-center">I already have a membership</a>
+        <a href="{{route('login')}}" class="text-center">{{__('user.login')}}</a>
         </div>
         <!-- /.form-box -->
     </div><!-- /.card -->
