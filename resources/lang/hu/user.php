@@ -11,8 +11,14 @@ return [
     'lostPassword' => 'Elfelejtett jelszó',
     'register' => 'Regisztráció',
     'registerMessage' => 'Új fiók létrehozása',
-    'firstName' => 'Keresztnév',
-    'lastName' => 'Vezetéknév',
-    'nameShowFirst' => 'last', //last esetén a vezetéknév van elől, egyéb esetben a keresztnév
+    'nameFields' => [
+        //itt a mezők sorrendje felel a megjelenítésért is!
+        'last_name' => 'Vezetéknév',
+        'first_name' => 'Keresztnév',
+    ],
+    'password' => 'Jelszó',
+    'passwordConfirmation' => 'Jelszó megerősítése',
+    'agreeTerms' => 'Elfogadom a használat <a href="/terms" target="_blank">feltételeit</a>',
+    'loginWithUser' => 'Már van fiókom, belépek',
 
 ];

@@ -12,6 +12,7 @@
         "laravel/fortify": "^1.7",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
+        "laravelcollective/html": "^6.2",
         "livewire/livewire": "^2.4"
     },
     "require-dev": {

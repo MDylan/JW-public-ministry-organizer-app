@@ -1,0 +1,9 @@
+.login-box, .register-box {
+    width: 460px;
+}
+.navbar-nav>.user-menu>.dropdown-menu>li.user-header {
+    height: 60px;
+}
+.navbar-nav>.user-menu>.dropdown-menu>li.user-header p {
+    margin-top: 0px;
+}

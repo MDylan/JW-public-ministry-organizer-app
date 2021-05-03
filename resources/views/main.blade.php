@@ -14,9 +14,19 @@
           <a class="nav-link" href="/">{{__('app.menu-home')}}</a>
         </li>
         @if (Route::has('login'))
+            @auth
+            <li class="nav-item">
+              <a class="nav-link" href="{{ route('logout') }}" onclick="event.preventDefault(); 
+              document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
+              <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                @csrf
+              </form>
+            </li>  
+            @else            
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('login') }}">{{__('user.login')}}</a>
             </li>
+            @endif
         @endif
 
       </ul>

@@ -95,7 +95,7 @@ return [
     |
     */
 
-    'fallback_locale' => 'hu',
+    'fallback_locale' => 'en',
 
     /*
     |--------------------------------------------------------------------------
@@ -164,6 +164,7 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
+       // Collective\Html\HtmlServiceProvider::class,
 
         /*
          * Package Service Providers...

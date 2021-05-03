@@ -11,5 +11,6 @@ return [
     'delete' => 'Törlés',
     'cancel' => 'Mégsem',
     'add' => 'Hozzáadás',
-    'save' => 'Mentés'
+    'save' => 'Mentés',
+    'logout' => 'Kilépés'
 ];
