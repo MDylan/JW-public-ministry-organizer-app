@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -21,6 +23,17 @@ if(Auth::guest()) {
 
     Route::get('/', function () {
         return view('main');
+    });
+    Route::get('/tesztmail', function () {
+        $to_name = 'Dávid';
+        $to_email = 'molnar.david@gmail.com';
+        $data = array('name'=>'Dávid', 'body' => 'Ez egy próba levél');
+        $res = Mail::send('auth.email.registered', $data, function($message) use ($to_name, $to_email) {
+            $message->to($to_email, $to_name)->subject('Laravel próba levél');
+            $message->from('info@koz.teruletek.hu','Próba tárgy');
+        });
+        echo "Levél elküldve!";
+        dd($res);
     });
 
 } else {
