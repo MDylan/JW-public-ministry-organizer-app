@@ -8,6 +8,7 @@
             </div><!-- /.col -->
             <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
+                <li class="breadcrumb-item"><a href="{{route('home.home')}}">{{ __('app.menu-home') }}</a></li>
                 <li class="breadcrumb-item"><a href="#">{{ __('app.menu-admin') }}</a></li>
                 <li class="breadcrumb-item active">{{ __('app.menu-users') }}</li>
             </ol>

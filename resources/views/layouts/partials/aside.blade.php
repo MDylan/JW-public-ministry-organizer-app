@@ -26,23 +26,25 @@
               </a>
           </li> --}}
           @can('is-admin')
-        <li class="nav-item menu-open">
-          <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
-            <i class="nav-icon fas fa-tachometer-alt"></i>
-            <p>
-              {{ __('app.menu-admin') }}
-              <i class="right fas fa-angle-left"></i>
-            </p>
-          </a>
-          <ul class="nav nav-treeview">
-            <li class="nav-item">
-              <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
-                <i class="fas fa-users nav-icon"></i>
-                <p>{{ __('app.menu-users') }}</p>
+            @if (auth()->user()->email_verified_at)
+            <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
+              <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-tachometer-alt"></i>
+                <p>
+                  {{ __('app.menu-admin') }}
+                  <i class="right fas fa-angle-left"></i>
+                </p>
               </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
+                    <i class="fas fa-users nav-icon"></i>
+                    <p>{{ __('app.menu-users') }}</p>
+                  </a>
+                </li>
+              </ul>
             </li>
-          </ul>
-        </li>
+          @endif
         @endcan
       </ul>
     </nav>

@@ -17,4 +17,8 @@ class DashboardController extends Controller
     {
         return view('home.home');
     }
+
+    public function verify() {
+        return view('home.verify-email');
+    }
 }

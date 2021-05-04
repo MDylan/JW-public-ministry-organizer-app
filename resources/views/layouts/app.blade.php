@@ -26,6 +26,15 @@
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
+    @if (!auth()->user()->email_verified_at)
+      
+    
+    <div class="callout callout-danger m-2">
+      <h5>{{__('Verify Email Address')}}</h5>
+
+      <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
+    </div>
+    @endif
     {{ $slot }}
   </div>
   <!-- /.content-wrapper -->

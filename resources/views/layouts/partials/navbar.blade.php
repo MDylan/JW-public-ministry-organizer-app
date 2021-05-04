@@ -5,10 +5,7 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="index3.html" class="nav-link">Home</a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">Contact</a>
+        <a href="{{route('home.home')}}" class="nav-link">{{__('app.menu-home')}}</a>
       </li>
     </ul>
 
@@ -16,6 +13,7 @@
     <ul class="navbar-nav ml-auto">
       <li class="nav-item dropdown user-menu">
         <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+          <i class="far fa-user"></i>
           <span class="d-none d-md-inline">
             @foreach (trans('user.nameFields') as $field => $translate) 
               {{ auth()->user()->$field }}
@@ -34,7 +32,7 @@
           </li>
           <!-- Menu Footer-->
           <li class="user-footer">
-            <a href="#" class="btn btn-default btn-flat">Profile</a>
+            <a href="{{ route('profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
             <a href="{{ route('logout') }}" class="btn btn-default btn-flat float-right"onclick="event.preventDefault(); 
             document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">

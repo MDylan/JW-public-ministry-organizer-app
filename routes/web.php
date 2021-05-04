@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
@@ -48,28 +49,44 @@ Route::get('/tesztmail', function () {
     echo "Levél elküldve!";
     dd($res);
 });
-//emailcím megerősítéséről üzenet megy
-Route::get('/email/verify', function () {
-    return view('auth.email.verify-email');
-})->middleware('auth')->name('verification.notice');
-//email megerősítése
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $result = $request->fulfill();
-    if($result == true) {
-        //módosítom a usert aktiváltra
-        $userID = $request->route('id');
-        User::where('role', '=', 'registered')
-            ->where('id', $userID)
-            ->update(['role' => 'activated']);
-    }
-    return redirect('/home');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+
+//Felhasználási feltételek, bárki láthatja
+Route::get('/terms', function () {
+    return 'terms page';
+})->name('terms');
 
 /**
  * Belépett felhasználók linkjei
  */
 
+//emailcím megerősítéséről üzenet megy
+// Route::get('/email/verify', function () {
+//     return view('auth.email.verify-email');
+// })->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
+
+//email megerősítése
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $result = $request->fulfill();
+    return redirect('/home');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
 //Kezdőoldal
 Route::get('/home', DashboardController::class)->name('home.home')->middleware('auth');
+Route::get('/contact', function () {
+    return 'contact page';
+})->name('contact')->middleware('auth');
+
+/**
+ * Csak megerősített felhasználók láthatják
+ */
+Route::get('/profile', function () {
+    // Only verified users may access this route...
+})->name('profile')->middleware('auth');
+
+/**
+ * Adminisztrátorok
+ */
 // Admin / Felhasználók
 Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
