@@ -32,7 +32,7 @@
           </li>
           <!-- Menu Footer-->
           <li class="user-footer">
-            <a href="{{ route('profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
+            <a href="{{ route('user.profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
             <a href="{{ route('logout') }}" class="btn btn-default btn-flat float-right"onclick="event.preventDefault(); 
             document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">

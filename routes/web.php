@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -81,6 +82,10 @@ Route::get('/contact', function () {
 /**
  * Csak megerősített felhasználók láthatják
  */
+Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(function() {
+    Route::get('profile', Profile::class)->name('profile');
+});
+
 Route::get('/profile', function () {
     // Only verified users may access this route...
 })->name('profile')->middleware('auth');

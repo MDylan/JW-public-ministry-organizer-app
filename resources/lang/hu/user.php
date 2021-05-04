@@ -20,5 +20,9 @@ return [
     'passwordConfirmation' => 'Jelszó megerősítése',
     'agreeTerms' => 'Elfogadom a használat <a href="/terms" target="_blank">feltételeit</a>',
     'loginWithUser' => 'Már van fiókom, belépek',
+    'updateProfile' => 'Adataim szerkesztése',
+    'userData' => 'Elérhetőségeim',
+    'updatePassword' => 'Jelszó módosítás',
+    'phone' => 'Telefonszám'
 
 ];
