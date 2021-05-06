@@ -2,17 +2,18 @@
 
 namespace App\Http\Livewire\Admin\Users;
 
+use App\Http\Livewire\AppComponent;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
-use Livewire\Component;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Auth\Events\Registered;
 
-class ListUsers extends Component
+
+class ListUsers extends AppComponent
 {
+
     public $state = [];
     public $showEditModal = false;
     public $user;
@@ -102,7 +103,7 @@ class ListUsers extends Component
     public function render()
     {
 
-        $users = User::latest()->paginate();
+        $users = User::latest()->paginate(20);
 
         return view('livewire.admin.users.list-users', [
             'users' => $users

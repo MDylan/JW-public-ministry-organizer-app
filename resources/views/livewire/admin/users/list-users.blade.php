@@ -61,6 +61,9 @@
                             </tbody>                      
                         </table>
                     </div>
+                    <div class="card-footer d-flex justify-content-end">
+                        {{$users->links()}}
+                    </div>
                 </div>            
             </div>
             <!-- /.col-md-12 -->
