@@ -29,7 +29,7 @@
                         {{ __('user.addNew') }}</button>
                 </div>
                 
-                <div class="card">
+                <div class="card card-primary card-outline">
                     <div class="card-body">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -49,10 +49,10 @@
                                         <td>{{ __('roles.'.$user->role) }}</td>
                                         <td>{{ $user->created_at }}</td>
                                         <td>
-                                            <a href="" title="{{ __('app.edit') }}">
+                                            <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                                 <i class="fa fa-edit mr-2"></i>
                                             </a>
-                                            <a href="" title="{{ __('app.delete') }}">
+                                            <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmUserRemoval({{$user->id}})">
                                                 <i class="fa fa-trash text-danger"></i>
                                             </a>
                                         </td>
@@ -73,10 +73,18 @@
     <!-- Modal -->
     <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog">
-            <form autocomplete="off" wire:submit.prevent="createUser">
+            <form autocomplete="off" wire:submit.prevent="{{ $showEditModal ? 'updateUser' : 'createUser' }}">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">{{ __('user.addNew') }}</h5>
+                        <h5 class="modal-title" id="ModalLabel">
+                            <span>
+                                @if($showEditModal)
+                                {{ __('user.editUser') }}
+                                @else
+                                {{ __('user.addNew') }}
+                                @endif
+                            </span>
+                        </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -97,9 +105,9 @@
                             </div>
                             @endforeach
                         </div>
-                        <div class="row">
+                        <div class="row mb-3">
                             <div class="col">
-                                <div class="input-group mb-3">
+                                <div class="input-group">
                                     <input type="email" wire:model.defer="state.email" name="email" class="form-control @error('email') is-invalid @enderror" id="InputEmail" placeholder="{{ __('user.email') }}">
                                     <div class="input-group-append">
                                         <div class="input-group-text">
@@ -114,8 +122,8 @@
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="input-group mb-3">
-                                    <input type="text" wire:model.defer="state.phone" name="phone" class="form-control @error('phone') is-invalid @enderror" id="InputPhone" placeholder="{{ __('user.phone') }}">
+                                <div class="input-group">
+                                    <input type="text" wire:model.defer="state.phone" name="phone" class="form-control @error('phone') is-invalid @enderror" id="InputPhone" placeholder="{{ __('user.phone') }}" aria-describedby="phoneHelpBlock">
                                     <div class="input-group-append">
                                         <div class="input-group-text">
                                         <span class="fas fa-phone"></span>
@@ -127,6 +135,9 @@
                                         </div>
                                     @enderror
                                 </div>
+                                <small id="phoneHelpBlock" class="form-text text-muted">
+                                    {{__('app.justNumber')}}
+                                </small>
                             </div>
                         </div>
                         <div class="row">
@@ -145,11 +156,39 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('app.cancel') }}</button>
-                        <button type="submit" class="btn btn-primary">{{ __('app.save') }}</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save mr-1"></i>
+                            @if($showEditModal)
+                            {{__('app.saveChanges')}}
+                            @else
+                            {{ __('app.save') }}
+                            @endif</button>
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+    <!-- ConformationModal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>{{__('user.deleteUser')}}</h5>
+                </div>
+                <div class="modal-body">
+                    <h4>{{__('user.areYouSureDelete')}}<h4>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
+                    <button type="button" wire:click.prevent="deleteUser" class="btn btn-danger">
+                        <i class="fa fa-trash mr-1"></i>
+                        {{__('app.yesDelete')}}
+                        </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

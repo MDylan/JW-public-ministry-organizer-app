@@ -14,11 +14,16 @@ use Illuminate\Auth\Events\Registered;
 class ListUsers extends Component
 {
     public $state = [];
+    public $showEditModal = false;
+    public $user;
+    public $userIdBeeingRemoved = null;
 
     /**
      * Megjeleníti a modalt, amikor a gombra kattintunk
      */
     public function addNew() {
+        $this->showEditModal = false;
+        $this->state = [];
         $this->dispatchBrowserEvent('show-form');
     }
 
@@ -31,7 +36,7 @@ class ListUsers extends Component
             'email' => 'required|email|unique:users',
             'first_name' => 'required|string|max:50|min:2',
             'last_name' => 'required|string|max:50|min:2',
-            'phone' => 'numeric',
+            'phone' => 'nullable|numeric|digits_between:9,11',
             'role' => [
                 'required',
                 Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
@@ -42,12 +47,53 @@ class ListUsers extends Component
 
         $user = User::create($validatedData);
 
-        $this->dispatchBrowserEvent('hide-form', ['message' => __('app.saved')]);
+        $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
         event(new Registered($user));
 
-        return redirect()->back();
+    }
 
-        // dd($validatedData);
+    public function edit(User $user) {
+
+        $this->showEditModal = true;
+        $this->state = $user->toArray();
+        $this->user = $user;
+
+        $this->dispatchBrowserEvent('show-form');
+    }
+
+    public function updateUser() {
+
+        $validatedData = Validator::make($this->state, [
+            'email' => 'required|email|unique:users,email,'.$this->user->id,
+            'first_name' => 'required|string|max:50|min:2',
+            'last_name' => 'required|string|max:50|min:2',
+            'phone' => 'nullable|numeric|digits_between:9,11', 
+            'role' => [
+                'required',
+                Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
+            ],
+        ])->validate();
+
+            // dd('ok');
+
+        $this->user->update($validatedData);
+
+        // $user = User::create($validatedData);
+
+        $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
+
+    }
+
+    public function confirmUserRemoval($userId) {
+        $this->userIdBeeingRemoved = $userId;
+        $this->dispatchBrowserEvent('show-delete-modal');
+    }
+
+    public function deleteUser() {
+        
+        $user = User::findOrFail($this->userIdBeeingRemoved);
+        $user->delete();
+        $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('user.userDeleted')]);
     }
 
     /**

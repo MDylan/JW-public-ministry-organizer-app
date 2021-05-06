@@ -20,6 +20,9 @@ return [
     Ha nem kaptad meg az emailt, akkor <a href=":url">ide kattintva tudsz új emailt kérni</a>.',
     'sendVerifyEmail' => 'Kattints ide, és újra elküldjük az emailt, amivel megerősítheted az email címedet',
     'profile' => 'Profilom',
-    'saved' => 'Sikeresen mentve!',
-    'userRole' => 'Jogosultsága'
+    'saved' => 'Sikeres mentés!',
+    'userRole' => 'Jogosultsága',
+    'saveChanges' => 'Változások mentése',
+    'justNumber' => 'Csak számot írj be. Pl: 06201231212',
+    'yesDelete' => 'Igen, törlöm'
 ];
