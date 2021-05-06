@@ -122,7 +122,7 @@ return [
         'password' => 'jelszó',
         'phone'    => 'telefonszám',
         'first_name' => 'keresztnév',
-        'last_name'  => 'vezetéknév'
-
+        'last_name'  => 'vezetéknév',
+        'role'      => 'jogosultság',
     ],
 ];

@@ -36,6 +36,7 @@
                             <tr>
                                 <th scope="col">#</th>
                                 <th scope="col">{{ __('user.email') }}</th>
+                                <th scope="col">{{ __('app.userRole') }}</th>
                                 <th scope="col">{{ __('user.registered') }}</th>
                                 <th scope="col">{{ __('app.options') }}</th>
                             </tr>
@@ -45,6 +46,7 @@
                                     <tr>
                                         <th scope="row">{{ $user->id }}</th>
                                         <td>{{ $user->email }}</td>
+                                        <td>{{ __('roles.'.$user->role) }}</td>
                                         <td>{{ $user->created_at }}</td>
                                         <td>
                                             <a href="" title="{{ __('app.edit') }}">
@@ -80,17 +82,67 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        
-                            <div class="form-group">
-                            <label for="InputEmail">{{ __('user.email') }}</label>
-                            <input type="email" wire:model.defer="state.email" name="email" class="form-control @error('email') is-invalid @enderror" id="InputEmail" placeholder="{{ __('user.email') }}">
-                            @error('email')
-                                <div class="invalid-feedback">
-                                    {{ __($message) }}.
+                        <div class="row">
+                            @foreach (trans('user.nameFields') as $field => $translate) 
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                    <input type="text" wire:model.defer="state.{{$field}}" name="{{$field}}" class="form-control @error($field) is-invalid @enderror" id="Input{{$field}}" placeholder="{{ $translate }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                        <span class="fas fa-user"></span>
+                                        </div>
+                                    </div>
+                                    @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 </div>
-                            @enderror
                             </div>
-                        
+                            @endforeach
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                    <input type="email" wire:model.defer="state.email" name="email" class="form-control @error('email') is-invalid @enderror" id="InputEmail" placeholder="{{ __('user.email') }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                        <span class="fas fa-envelope"></span>
+                                        </div>
+                                    </div>
+                                    @error('email')
+                                        <div class="invalid-feedback">
+                                            {{ __($message) }}.
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                    <input type="text" wire:model.defer="state.phone" name="phone" class="form-control @error('phone') is-invalid @enderror" id="InputPhone" placeholder="{{ __('user.phone') }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                        <span class="fas fa-phone"></span>
+                                        </div>
+                                    </div>
+                                    @error('phone')
+                                        <div class="invalid-feedback">
+                                            {{ __($message) }}.
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group row">
+                                    <label for="inputRole" class="col-sm-4 col-form-label">{{__('app.userRole')}}</label>
+                                    <div class="col-sm-8">
+                                        <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control">
+                                            @foreach (trans('roles') as $field => $translate) 
+                                                <option value="{{$field}}">{{$translate}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('app.cancel') }}</button>
@@ -101,15 +153,3 @@
         </div>
     </div>
 </div>
-
-
-@section('footer_scripts')
-    <script>
-        window.addEventListener('show-form', event => {
-            $('#form').modal('show');
-        });
-        window.addEventListener('hide-form', event => {
-            $('#form').modal('hide');
-        });
-    </script>
-@endsection

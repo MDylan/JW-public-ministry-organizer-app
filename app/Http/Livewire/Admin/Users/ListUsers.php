@@ -4,9 +4,12 @@ namespace App\Http\Livewire\Admin\Users;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Lang;
 use Livewire\Component;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Auth\Events\Registered;
 
 class ListUsers extends Component
 {
@@ -25,13 +28,22 @@ class ListUsers extends Component
     public function createUser() {
         
         $validatedData = Validator::make($this->state, [
-            'email' => 'required|email|unique:users'
+            'email' => 'required|email|unique:users',
+            'first_name' => 'required|string|max:50|min:2',
+            'last_name' => 'required|string|max:50|min:2',
+            'phone' => 'numeric',
+            'role' => [
+                'required',
+                Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
+            ],
         ])->validate();
+
         $validatedData['password'] = bcrypt(Str::random(10));
 
-        User::create($validatedData);
+        $user = User::create($validatedData);
 
-        $this->dispatchBrowserEvent('hide-form');
+        $this->dispatchBrowserEvent('hide-form', ['message' => __('app.saved')]);
+        event(new Registered($user));
 
         return redirect()->back();
 

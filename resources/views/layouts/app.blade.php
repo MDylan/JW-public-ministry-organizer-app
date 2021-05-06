@@ -12,6 +12,7 @@
   <!-- Theme style -->
   <link rel="stylesheet" href="{{ asset('dist/css/adminlte.min.css') }}">
   <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+  <link rel="stylesheet" href="{{ asset('plugins/toastr/toastr.min.css') }}">
   @livewireStyles
 </head>
 <body class="hold-transition sidebar-mini">
@@ -62,6 +63,22 @@
 <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <!-- AdminLTE App -->
 <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
+<script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
+<script>
+  $(document).ready(function() {
+    toastr.options = {
+      "progressBar": true,
+      "positionClass": "toast-bottom-right",
+    }
+    window.addEventListener('hide-form', event => {
+        $('#form').modal('hide');
+        toastr.success(event.detail.message);
+    });
+    window.addEventListener('show-form', event => {
+        $('#form').modal('show');
+    });
+  });
+</script>
 @yield('footer_scripts')
 @livewireScripts
 </body>
