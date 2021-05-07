@@ -17,35 +17,35 @@
                   </p>
               </a>
           </li>
-          {{-- <li class="nav-item">
-              <a href="/" class="nav-link">
+          @if (auth()->user()->email_verified_at)
+          <li class="nav-item">
+              <a href="{{route('groups')}}" class="nav-link {{ request()->is('groups') ? 'active' : '' }}">
                   <i class="nav-icon fas fa-users"></i>
                   <p>
-                  {{ __('app.menu-users') }}
+                  {{ __('app.menu-groups') }}
                   </p>
               </a>
-          </li> --}}
-          @can('is-admin')
-            @if (auth()->user()->email_verified_at)
-            <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
-              <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-tachometer-alt"></i>
-                <p>
-                  {{ __('app.menu-admin') }}
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
-                    <i class="fas fa-users nav-icon"></i>
-                    <p>{{ __('app.menu-users') }}</p>
-                  </a>
-                </li>
-              </ul>
-            </li>
-          @endif
-        @endcan
+          </li>
+            @can('is-admin')              
+              <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
+                <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-tachometer-alt"></i>
+                  <p>
+                    {{ __('app.menu-admin') }}
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview">
+                  <li class="nav-item">
+                    <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
+                      <i class="fas fa-users nav-icon"></i>
+                      <p>{{ __('app.menu-users') }}</p>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+          @endcan
+        @endif
       </ul>
     </nav>
     <!-- /.sidebar-menu -->

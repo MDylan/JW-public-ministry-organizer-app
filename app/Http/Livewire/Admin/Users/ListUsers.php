@@ -14,8 +14,6 @@ use Illuminate\Auth\Events\Registered;
 class ListUsers extends AppComponent
 {
 
-    public $state = [];
-    public $showEditModal = false;
     public $user;
     public $userIdBeeingRemoved = null;
 

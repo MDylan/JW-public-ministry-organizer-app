@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
+use App\Http\Livewire\Groups\CreateGroupForm;
+use App\Http\Livewire\Groups\ListGroups;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
@@ -86,9 +88,10 @@ Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(fu
     Route::get('profile', Profile::class)->name('profile');
 });
 
-Route::get('/profile', function () {
-    // Only verified users may access this route...
-})->name('profile')->middleware('auth');
+//Csoportok menü
+Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'verified']);
+//Csoport készítés
+Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified']);
 
 /**
  * Adminisztrátorok

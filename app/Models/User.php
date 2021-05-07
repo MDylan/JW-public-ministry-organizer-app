@@ -55,4 +55,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasRole(string $role) {
         return $this->role === $role ? true : null;
     }
+
+    public function userGroups() {
+        return $this->belongsToMany('App\Models\Group')
+                    ->withPivot(['group_role'])
+                    ->withTimestamps();
+    }
 }

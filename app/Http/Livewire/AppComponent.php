@@ -10,4 +10,7 @@ class AppComponent extends Component {
     use WithPagination;
 
     protected $paginationTheme = 'bootstrap';
+
+    public $state = [];
+    public $showEditModal = false;
 }
