@@ -10,6 +10,7 @@ return [
     'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
     'groupCreated' => 'A csoport létrejött!',
     'groupDeleted' => 'A csoport törölve lett!',
+    'role_head' => 'Jogosultságok leírása',
     'roles' => [
         'member' => 'Csoporttag',           
         'helper' => 'Csoport segítő',     
@@ -106,7 +107,10 @@ return [
         '2400' => '24:00',
     ],
     'users' => 'Felhasználók',
-    'users_helper' => 'Elég az email címet megadnod. Ha nincs még regisztrációja, akkor automatikusan fog neki készülni egy hozzáférés, melyről emailben értesítjük.',
-    'user_add' => 'Hozzáadás'
+    'users_helper' => 'Elég az email címet megadnod. Ha nincs még regisztrációja, akkor automatikusan fog neki készülni egy hozzáférés, melyről emailben értesítjük. A nevét, telefonszámát utána kell majd megadnia.',
+    'user_add' => 'Hozzáadás',
+    'search_placeholder' => 'Minden emailt új sorba írj',
+    'note' => 'Megjegyzés',
+    'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoport admin és a kisadmin látja.'
 
 ];

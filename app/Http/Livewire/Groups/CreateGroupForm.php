@@ -32,19 +32,35 @@ class CreateGroupForm extends AppComponent
      */
     public function userAdd() {
 
-        $email['email'] = $this->search;
+        $email_array = preg_split('/\r\n|[\r\n]/', trim($this->search));
+
+        $email = [];
+        if(count($email_array)) {
+            foreach($email_array as $mail) {
+                $email['email'][] = $mail;
+            }
+        }
+
+
+        // dd($email_array);
 
         $validatedData = Validator::make($email, [
-            'email' => 'required|email',
+            'email.*' => 'required|email',
         ])->validate();
 
         // dd($validatedData);
-        $slug = Str::slug($validatedData['email'], '-');
-
-        $this->users[$slug] = [
-            'email' => $validatedData['email'],
-            'group_role' => 'member'
-        ];
+        if(count($validatedData['email'])) {
+            foreach($validatedData['email'] as $mail) {
+                $slug = Str::slug($mail, '-');
+                if(isset($this->users[$slug])) continue;
+                $this->users[$slug] = [
+                    'email' => $mail,
+                    'group_role' => 'member',
+                    'note' => ''
+                ];
+            }
+        }
+        
 
         $this->search = "";
 
@@ -63,6 +79,8 @@ class CreateGroupForm extends AppComponent
     public function createGroup() {
         
         // dd($this->users);
+
+        $this->state['name'] = strip_tags($this->state['name']);
 
         $validatedData = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
@@ -102,7 +120,10 @@ class CreateGroupForm extends AppComponent
                     ['email' => $user['email']],
                     ['password' => bcrypt(Str::random(10))]
                 );
-                $us->userGroups()->save($group, ['group_role' => $user['group_role']]);
+                $us->userGroups()->save($group, [
+                    'group_role' => $user['group_role'],
+                    'note' => strip_tags(trim($user['note']))
+                ]);
             }
         }
 

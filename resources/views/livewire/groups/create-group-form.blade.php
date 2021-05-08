@@ -173,7 +173,9 @@
                                             <label class="mr-sm-2">{{__('user.email')}}</label>
                                         </div>
                                         <div class="col-7 my-1">
-                                          <input wire:model="search" type="email" placeholder="" class="form-control" id="userAddField" />
+                                            <textarea wire:model="search" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
+                                             cols="30" rows="2"></textarea>
+                                          
                                       </div>
                                         <div class="col-auto my-1">
                                             <button wire:click.prevent="userAdd()" type="submit" class="btn btn-primary">
@@ -208,10 +210,32 @@
                                                     <a wire:click.prevent="removeUser('{{$slug}}')" href="#" class="btn btn-danger"><i class="fas fa-trash"></i></a>
                                                     </div>
                                                 </td>
-                                            </tr>    
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3">
+                                                    <div class="form-row">
+                                                        <div class="col-3 d-flex justify-content-end">
+                                                        <label class="my-1 mr-2" for="{{$slug}}_note">{{__('group.note')}}</label>
+                                                    </div>
+                                                    <div class="col-9">
+                                                        <input wire:ignore.self wire:model.defer="users.{{$slug}}.note" 
+                                                        type="text" class="form-control" name="users['{{$slug}}']['note']" id="{{$slug}}_note">
+                                                    </div>
+                                                    </div>
+                                                </td>
+                                            </tr>  
                                         @endforeach                                        
                                     </tbody>
                                 </table>
+                                <div class="alert alert-into">
+                                    <h6><i class="fa fa-info-circle mr-2"></i>{{__('group.role_head')}}</h6>
+                                    <ul>
+                                        @foreach (trans('group.roles') as $role => $translate) 
+                                            <li><strong>{{$translate}}</strong>: {{__('group.role_helper.'.$role)}}</li>
+                                        @endforeach                                        
+                                    </ul>
+                                    {{__('group.users_helper')}}
+                                </div>
                             </div>
                         </div>
                     </div>
