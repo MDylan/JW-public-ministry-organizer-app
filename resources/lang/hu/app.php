@@ -24,5 +24,6 @@ return [
     'userRole' => 'Jogosultsága',
     'saveChanges' => 'Változások mentése',
     'justNumber' => 'Csak számot írj be. Pl: 06201231212',
-    'yesDelete' => 'Igen, törlöm'
+    'yesDelete' => 'Igen, törlöm',
+    'pleaseFixErrors' => 'Kérlek javítsd a hibákat.'
 ];

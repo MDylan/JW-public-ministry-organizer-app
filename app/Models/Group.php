@@ -17,6 +17,11 @@ class Group extends Model
 
     protected $fillable = [
         'name',
+        'max_extend_days',
+        'min_publishers',
+        'max_publishers',
+        'min_time',
+        'max_time',
     ];
 
     public function groupUsers() {
@@ -36,5 +41,9 @@ class Group extends Model
                 ->wherePivot('user_id', '=', Auth::id())
                 ->withPivot('group_role')
                 ->withTimestamps();
+    }
+
+    public function days() {
+        return $this->hasMany('App\Models\GroupDay');
     }
 }

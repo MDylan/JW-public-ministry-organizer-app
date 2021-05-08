@@ -124,5 +124,12 @@ return [
         'first_name' => 'keresztnév',
         'last_name'  => 'vezetéknév',
         'role'      => 'jogosultság',
+        'max_extend_days' => 'napok száma',
+        'min_publishers' => 'hírnökök száma (legalább)',
+        'max_publishers' => 'hírnökök száma (maximum)',
+        'min_time' => 'legkevesebbet eltölthető idő',
+        'max_time' => 'legtöbbet eltölthető idő',
+        'days.*.start_time' => 'szolgálat kezdete',
+        'days.*.end_time' => 'szolgálat vége',
     ],
 ];
