@@ -3,6 +3,7 @@
 
 return [
     'addNew' => 'Új csoport létrehozása',
+    'group_head' => 'Csoport alapadatok',
     'name' => 'Csoport neve',
     'editGroup' => 'Csoport szerkesztése',
     'deletegroup' => 'Csoport törlése',
@@ -10,9 +11,16 @@ return [
     'groupCreated' => 'A csoport létrejött!',
     'groupDeleted' => 'A csoport törölve lett!',
     'roles' => [
-        'member' => 'Csoporttag',           //csak a saját adatait kezelheti
-        'helper' => 'Csoport segítő',       //kezelheti a többiek adatait is
-        'admin' => 'Csoport adminisztrátor' //bármit csinálhat a csoporttal
+        'member' => 'Csoporttag',           
+        'helper' => 'Csoport segítő',     
+        'roler' => 'Csoport kisadmin',  
+        'admin' => 'Csoport adminisztrátor'
+    ],
+    'role_helper' => [
+        'member' => 'Csak a saját adatait kezelheti',           
+        'helper' => 'Kezelheti a többiek adatait is',
+        'roler' => 'Kezelheti az adatokat és jogosultságokat is oszthat ki',
+        'admin' => 'Bármit csinálhat a csoporttal'
     ],
     'min_publishers' => 'Hírnök száma (legalább)',
     'min_publishers_placeholder' => 'Például: 2',
@@ -34,7 +42,7 @@ return [
     ],
     'max_extend_days' => 'Hány nappal előre foglalhatnak le időpontot?',
     'max_extend_days_placeholder' => 'Például 60',
-    'days_head' => 'Jelöld meg, hogy melyik napokon van szolgálat',
+    'days_head' => 'Szolgálati napok',
     'days' => [
         '1' => 'Hétfő',
         '2' => 'Kedd',
@@ -96,5 +104,9 @@ return [
         '2300' => '23:00',
         '2330' => '23:30',
         '2400' => '24:00',
-    ]
+    ],
+    'users' => 'Felhasználók',
+    'users_helper' => 'Elég az email címet megadnod. Ha nincs még regisztrációja, akkor automatikusan fog neki készülni egy hozzáférés, melyről emailben értesítjük.',
+    'user_add' => 'Hozzáadás'
+
 ];

@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\GroupDay;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CreateGroupForm extends AppComponent
 {
@@ -23,12 +24,45 @@ class CreateGroupForm extends AppComponent
         'max_time' => 240,
     ];
 
+    public $users = [];
+    public $search = "";
+
+    /**
+     * Hozzáadja a usert a listához
+     */
+    public function userAdd() {
+
+        $email['email'] = $this->search;
+
+        $validatedData = Validator::make($email, [
+            'email' => 'required|email',
+        ])->validate();
+
+        // dd($validatedData);
+        $slug = Str::slug($validatedData['email'], '-');
+
+        $this->users[$slug] = [
+            'email' => $validatedData['email'],
+            'group_role' => 'member'
+        ];
+
+        $this->search = "";
+
+    }
+
+    /**
+     * Törli a listából a usert
+     */
+    public function removeUser($email) {
+        unset($this->users[$email]);
+    }
+
     /**
      * Elmenti a felhasználó adatait
      */
     public function createGroup() {
         
-        // dd($this->state);
+        // dd($this->users);
 
         $validatedData = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
@@ -46,18 +80,31 @@ class CreateGroupForm extends AppComponent
         $user = User::find(Auth::id());
         $group = Group::create($validatedData);
         // dd('itt');
-        foreach($validatedData['days'] as $d => $day) {
-            // dd($day);
-            if(!$day['day_number']) continue;
-            $day = new GroupDay([
-                'day_number' => $day['day_number'],
-                'start_time' => $day['start_time'],
-                'end_time' => $day['end_time']
-            ]);
-            $group->days()->save($day);    
+        if(isset($validatedData['days'])) {
+            foreach($validatedData['days'] as $d => $day) {
+                // dd($day);
+                if(!$day['day_number']) continue;
+                $day = new GroupDay([
+                    'day_number' => $day['day_number'],
+                    'start_time' => $day['start_time'],
+                    'end_time' => $day['end_time']
+                ]);
+                $group->days()->save($day);    
+            }
         }
 
         $user->userGroups()->save($group, ['group_role' => 'admin']);
+
+        //hozzáadjuk a felhasználókat
+        if(count($this->users) > 0) {
+            foreach($this->users as $user) {
+                $us = User::firstOrCreate(
+                    ['email' => $user['email']],
+                    ['password' => bcrypt(Str::random(10))]
+                );
+                $us->userGroups()->save($group, ['group_role' => $user['group_role']]);
+            }
+        }
 
         $this->dispatchBrowserEvent('alert', ['message' => __('group.groupCreated')]);
 

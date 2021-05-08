@@ -11,6 +11,7 @@ return [
     'lostPassword' => 'Elfelejtett jelszó',
     'register' => 'Regisztráció',
     'registerMessage' => 'Új fiók létrehozása',
+    'name' => 'Név',
     'nameFields' => [
         //itt a mezők sorrendje felel a megjelenítésért is!
         'last_name' => 'Vezetéknév',
