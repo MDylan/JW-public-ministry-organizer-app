@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\GroupUser;
 use App\Models\User;
+use App\Observers\GroupUserAdded;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -23,6 +25,9 @@ class EventServiceProvider extends ServiceProvider
         'Illuminate\Auth\Events\Verified' => [
             'App\Listeners\UserVerified',
         ],
+        // 'App\Events\GroupUserAddedEvent' => [
+        //     'App\Listeners\GroupUserAddedListener'
+        // ]
     ];
 
     /**

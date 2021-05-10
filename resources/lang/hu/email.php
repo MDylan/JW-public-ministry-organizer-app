@@ -11,4 +11,9 @@ return [
         'line_2' => 'Aki kinevezte: :adminBy',
         'line_3' => 'Ha ez tévedés, akkor kérlek mielőbb vedd el tőle az Adminisztrátor jogosultságot!'
     ],
+    'groupUserAdded' => [
+        'subject' => 'Meghívás a(z) :groupName csoportba',
+        'line_1' => 'Ez egy automatikus értesítés arról, hogy :groupAdmin meghívott, hogy csatlakozz a(z) :groupName csoporthoz.',
+        'line_2' => 'A bejelentkezésedet követően a főoldalon tudod elfogadni vagy elutasítani a meghívást.',
+    ]
 ];

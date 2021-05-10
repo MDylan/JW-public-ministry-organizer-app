@@ -47,7 +47,7 @@ class ListUsers extends AppComponent
         $user = User::create($validatedData);
 
         $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
-        event(new Registered($user));
+        // event(new Registered($user));
 
     }
 

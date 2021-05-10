@@ -36,6 +36,16 @@ class Group extends Model
                 ->withTimestamps();
     }
 
+    /**
+     * Akik szerkeszteni tudják a csoportot
+     */
+    public function editors() {
+        return $this->belongsToMany('App\Models\User')
+                ->wherePivotIn('group_role',['roler', 'admin'])
+                ->withTimestamps()
+                ->as('group_editors');
+    }
+
     public function currentList() {
         return $this->belongsToMany('App\Models\User')
                 ->wherePivot('user_id', '=', Auth::id())

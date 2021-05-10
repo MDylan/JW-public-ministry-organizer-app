@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDay;
+use App\Notifications\GroupUserAddedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -115,6 +116,12 @@ class CreateGroupForm extends AppComponent
 
         //hozzáadjuk a felhasználókat
         if(count($this->users) > 0) {
+
+            $data = [
+                'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                'groupName' => $group->name
+            ];
+
             foreach($this->users as $user) {
                 $us = User::firstOrCreate(
                     ['email' => $user['email']],
@@ -123,7 +130,11 @@ class CreateGroupForm extends AppComponent
                 $us->userGroups()->save($group, [
                     'group_role' => $user['group_role'],
                     'note' => strip_tags(trim($user['note']))
-                ]);
+                ]);                
+                //értesítem, hogy hozzá lett adva a csoporthoz
+                $us->notify(
+                    new GroupUserAddedNotification($data)
+                );
             }
         }
 

@@ -3,8 +3,11 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Notifications\NewAdminNotification;
+use App\Notifications\UserRegisteredNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
+
 
 class UserObserver
 {
@@ -20,6 +23,10 @@ class UserObserver
         if($user->role === 'mainAdmin') {
             $this->adminAdded($user);
         }
+
+        $user->notify(new UserRegisteredNotification());
+
+        // event(new UserRegisteredNotification($user));
     }
 
     /**
@@ -71,23 +78,21 @@ class UserObserver
         //
     }
 
+    /**
+     * Értesítem a többi admint, hogy létrejött egy új admin
+    */
     public function adminAdded(User $user) {
 
         $otherAdmins = User::where('role', '=', 'mainAdmin')->where('id', '<>', $user->id)->get();
         $cc = [];
         if(count($otherAdmins) > 0) {
-            foreach($otherAdmins as $admin) {
-                $cc[] = $admin->email;
-            }
-            $data = array(
+            $data = [
                 'newAdmin'=> $user->last_name.' '.$user->first_name, 
                 'adminBy' => auth()->user()->last_name.' '.auth()->user()->first_name, 
-            );
-
-            Mail::send('emails.newadmin', $data, function ($message) use ($cc)  {
-                $message->bcc($cc);
-                $message->subject(__('email.newadmin.subject'));
-            });
+            ];
+            foreach($otherAdmins as $admin) {
+                $admin->notify(new NewAdminNotification($data));
+            }
         }        
     }
 }
