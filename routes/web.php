@@ -6,6 +6,7 @@ use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
+use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
@@ -92,6 +93,7 @@ Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(fu
 Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'verified']);
 //Csoport készítés
 Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified']);
+Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['auth', 'verified']);
 
 /**
  * Adminisztrátorok

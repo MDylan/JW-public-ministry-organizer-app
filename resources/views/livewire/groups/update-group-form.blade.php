@@ -21,7 +21,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form wire:submit.prevent="createGroup">
+            <form wire:submit.prevent="updateGroup">
                 @csrf
                 <div class="row">                
                     <div class="col-lg-6">
@@ -110,19 +110,23 @@
                             </div>
                             <div class="card-body">
                                 <div class="col-lg-12">
+                                    {{-- {{ dd($days) }} --}}
                                     @foreach (trans('group.days') as $day => $translate) 
                                         <div class="row alert alert-light p-1">
                                             <div class="col-lg-3">
                                                 <label>Nap</label>
                                                 <div class="form-group">                                                        
-                                                    <input data-day="{{$day}}" wire:model.defer="state.days.{{$day}}.day_number" type="checkbox" class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
-                                                    <label class="form-check-label" for="day_{{$day}}">{{$translate}}</label>
+                                                    <input data-day="{{$day}}" wire:model.defer="days.{{$day}}.day_number" type="checkbox" 
+                                                        class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
+                                                    <label class="form-check-label" for="day_{{$day}}">{{$translate}}</label>                                                    
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
                                                     <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
-                                                    <select disabled data-day="{{$day}}" wire:ignore.self wire:model.defer="state.days.{{$day}}.start_time" 
+                                                    <select 
+                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.start_time" 
                                                         name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
                                                         class="timeselect start_time form-control 
                                                         @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
@@ -135,19 +139,24 @@
                                             <div class="col-lg-4">
                                                 <div class="form-group">
                                                     <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
-                                                    <select disabled data-day="{{$day}}" wire:ignore.self wire:model.defer="state.days.{{$day}}.end_time" name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" class="timeselect start_end form-control @error('end_time') is-invalid @enderror">
+                                                    <select 
+                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.end_time" 
+                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_start_time" 
+                                                        class="timeselect end_time form-control 
+                                                        @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
                                                         @foreach (trans('group.times') as $field => $translate) 
                                                             <option value="{{$translate}}">{{$translate}}</option>
                                                         @endforeach
                                                     </select>
-                                                    @error('days.{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                    @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div> 
                                             </div>
-                                            @if ($errors->has('days.' .$day. '.start_time') || $errors->has('days.' .$day. '.end_time'))
+                                            @if ($errors->has('' .$day. '.start_time') || $errors->has('' .$day. '.end_time'))
                                                 <div class="col-lg-12">
                                                     <small class="text-danger">
-                                                    {{ $errors->first('days.' .$day. '.start_time') }}
-                                                    {{ $errors->first('days.' .$day. '.end_time') }}
+                                                    {{ $errors->first('' .$day. '.start_time') }}
+                                                    {{ $errors->first('' .$day. '.end_time') }}
                                                     </small>
                                                 </div>
                                             @endif
@@ -195,30 +204,31 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {{-- {{dd($users)}} --}}
                                         @foreach ($users as $slug => $user)
                                             <tr>
-                                                <td>{{$user['email']}}</td>
-                                                <td>
-                                                    <select wire:model="users.{{$slug}}.group_role" wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
+                                                <td class="pb-1 align-middle">{{$user['email']}}</td>
+                                                <td class="pb-1">
+                                                    <select wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
                                                         @foreach (trans('group.roles') as $role => $translate) 
                                                             <option value="{{$role}}">{{$translate}}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
-                                                <td class="text-right py-0 align-middle">
+                                                <td class="text-right align-middle pb-1">
                                                     <div class="btn-group btn-group-sm">
                                                     <a wire:click.prevent="removeUser('{{$slug}}')" href="#" class="btn btn-danger"><i class="fas fa-trash"></i></a>
                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="3">
+                                                <td colspan="3" class="pt-1">
                                                     <div class="form-row">
                                                         <div class="col-3 d-flex justify-content-end">
                                                         <label class="my-1 mr-2" for="{{$slug}}_note">{{__('group.note')}}</label>
                                                     </div>
                                                     <div class="col-9">
-                                                        <input wire:model="users.{{$slug}}.note" wire:model.defer="users.{{$slug}}.note" 
+                                                        <input wire:ignore.self wire:model.defer="users.{{$slug}}.note" 
                                                         type="text" class="form-control" name="users['{{$slug}}']['note']" id="{{$slug}}_note">
                                                     </div>
                                                     </div>
@@ -247,7 +257,7 @@
                             <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
                         </a>        
                         <button type="submit" class="btn btn-primary"><i class="fa fa-save mr-1"></i>
-                            {{__('group.addNew')}}</button>
+                            {{__('app.saveChanges')}}</button>
                     </div>
                     <div class="col-lg-8">
                         @if ($errors->any())

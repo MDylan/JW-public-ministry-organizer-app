@@ -9,6 +9,7 @@ return [
     'deletegroup' => 'Csoport törlése',
     'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
     'groupCreated' => 'A csoport létrejött!',
+    'groupUpdated' => 'A csoport sikeresen módosult!',
     'groupDeleted' => 'A csoport törölve lett!',
     'role_head' => 'Jogosultságok leírása',
     'roles' => [
@@ -16,6 +17,12 @@ return [
         'helper' => 'Csoport segítő',     
         'roler' => 'Csoport kisadmin',  
         'admin' => 'Csoport adminisztrátor'
+    ],
+    'roles_css' => [ //NE FORDÍTSD LE / DO NOT TRANSLATE
+        'member' => 'secondary',           
+        'helper' => 'info',     
+        'roler' => 'success',  
+        'admin' => 'primary'
     ],
     'role_helper' => [
         'member' => 'Csak a saját adatait kezelheti',           

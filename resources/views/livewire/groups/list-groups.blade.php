@@ -37,6 +37,7 @@
                             <tr>
                                 <th scope="col">#</th>
                                 <th scope="col">{{ __('group.name') }}</th>
+                                <th scope="col">{{ __('app.role') }}</th>
                                 <th scope="col">{{ __('app.options') }}</th>
                             </tr>
                             </thead>
@@ -46,8 +47,13 @@
                                         <th scope="row">{{ $group->id }}</th>
                                         <td>{{ $group->name }}</td>
                                         <td>
+                                            <span class="badge badge-{{ $group->group_role }}">
+                                                {{ __('group.roles.'.$group->pivot->group_role) }}
+                                            </span>
+                                        </td>
+                                        <td>
                                             @if(in_array($group->pivot->group_role, ['admin', 'helper']))
-                                            <a href="#" title="{{ __('app.edit') }}">
+                                            <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
                                                 <i class="fa fa-edit mr-2"></i>
                                             </a>
                                             @endif

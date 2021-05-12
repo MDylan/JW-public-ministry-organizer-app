@@ -25,5 +25,12 @@ return [
     'saveChanges' => 'Változások mentése',
     'justNumber' => 'Csak számot írj be. Pl: 06201231212',
     'yesDelete' => 'Igen, törlöm',
-    'pleaseFixErrors' => 'Kérlek javítsd a hibákat.'
+    'pleaseFixErrors' => 'Kérlek javítsd a hibákat.',
+    'role' => 'Jogosultság',
+    'format' => [   //format date and time on pages
+        'datetime' => 'Y.m.d H:i',
+        'date' => 'Y.m.d',
+        'time' => 'H:i',
+    ],
+    
 ];

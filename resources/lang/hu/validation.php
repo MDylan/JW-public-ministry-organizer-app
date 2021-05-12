@@ -131,5 +131,7 @@ return [
         'max_time' => 'legtöbbet eltölthető idő',
         'days.*.start_time' => 'szolgálat kezdete',
         'days.*.end_time' => 'szolgálat vége',
+        '*.start_time' => 'szolgálat kezdete',
+        '*.end_time' => 'szolgálat vége',
     ],
 ];

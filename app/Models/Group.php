@@ -26,7 +26,7 @@ class Group extends Model
 
     public function groupUsers() {
         return $this->belongsToMany('App\Models\User')
-                ->withPivot('group_role')
+                ->withPivot('group_role', 'note')
                 ->withTimestamps();
     }
 
@@ -55,5 +55,18 @@ class Group extends Model
 
     public function days() {
         return $this->hasMany('App\Models\GroupDay');
+    }
+
+    /**
+     * Az adott css-t adja vissza, a megjelenítésnél van szerepe
+     */
+    public function getGroupRoleAttribute() {
+        $css = [
+            'member' => 'secondary',           
+            'helper' => 'info',     
+            'roler' => 'success',  
+            'admin' => 'primary'
+        ];
+        return $css[$this->pivot->group_role];
     }
 }

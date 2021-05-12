@@ -75,7 +75,7 @@ class CreateGroupForm extends AppComponent
     }
 
     /**
-     * Elmenti a felhasználó adatait
+     * Létrehozza a csoportot és ment mindent
      */
     public function createGroup() {
         
@@ -138,7 +138,7 @@ class CreateGroupForm extends AppComponent
             }
         }
 
-        $this->dispatchBrowserEvent('alert', ['message' => __('group.groupCreated')]);
+        $this->dispatchBrowserEvent('success', ['message' => __('group.groupCreated')]);
 
     }
 

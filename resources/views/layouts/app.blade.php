@@ -84,7 +84,9 @@
         $('#confirmationModal').modal('hide');
         toastr.success(event.detail.message, '{{__('app.saved')}}');
     });
-    
+    window.addEventListener('success', event => {
+        toastr.success(event.detail.message, '{{__('app.saved')}}');
+    });
     
   });
 </script>

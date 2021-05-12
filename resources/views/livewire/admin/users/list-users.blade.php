@@ -47,7 +47,7 @@
                                         <th scope="row">{{ $user->id }}</th>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ __('roles.'.$user->role) }}</td>
-                                        <td>{{ $user->created_at }}</td>
+                                        <td>{{ $user->created_at->format(__('app.format.datetime')) }}</td>
                                         <td>
                                             <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                                 <i class="fa fa-edit mr-2"></i>
