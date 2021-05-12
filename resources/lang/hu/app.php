@@ -21,6 +21,8 @@ return [
     'sendVerifyEmail' => 'Kattints ide, és újra elküldjük az emailt, amivel megerősítheted az email címedet',
     'profile' => 'Profilom',
     'saved' => 'Sikeres mentés!',
+    'errorWhileSaved' => 'Hiba a mentés során!',
+    'notAllowed' => 'Ehhez nincs jogosultságod.',
     'userRole' => 'Jogosultsága',
     'saveChanges' => 'Változások mentése',
     'justNumber' => 'Csak számot írj be. Pl: 06201231212',

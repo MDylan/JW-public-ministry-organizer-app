@@ -22,14 +22,15 @@
         <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12">
-                <div class="d-flex justify-content-end mb-2">
-                    <a href="{{route('groups.create')}}">
-                    <button class="btn btn-primary">
-                        <i class="fa fa-plus-circle mr-1"></i>
-                        {{ __('group.addNew') }}</button>
-                    </a>
-                </div>
-                
+                @can ('is-groupcreator')
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{route('groups.create')}}">
+                        <button class="btn btn-primary">
+                            <i class="fa fa-plus-circle mr-1"></i>
+                            {{ __('group.addNew') }}</button>
+                        </a>
+                    </div>
+                @endcan        
                 <div class="card card-primary card-outline">
                     <div class="card-body">
                         <table class="table table-striped table-hover">
@@ -42,6 +43,11 @@
                             </tr>
                             </thead>
                             <tbody>
+                                @if (count($groups) == 0) 
+                                    <tr>
+                                        <td colspan="5">@lang('group.notInGroup')</td>
+                                    </tr>
+                                @endif
                                 @foreach ($groups as $group)
                                     <tr>
                                         <th scope="row">{{ $group->id }}</th>
@@ -52,7 +58,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            @if(in_array($group->pivot->group_role, ['admin', 'helper']))
+                                            @if(in_array($group->pivot->group_role, ['admin', 'roler']))
                                             <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
                                                 <i class="fa fa-edit mr-2"></i>
                                             </a>
@@ -71,8 +77,15 @@
                     <div class="card-footer d-flex justify-content-end">
                         {{$groups->links()}}
                     </div>
-                </div>            
-            </div>
+                </div>
+                @cannot('is-groupcreator')
+                    <div class="callout callout-info">
+                        @lang('group.notGroupCreator', ['url' => '#'])
+                        <button wire:click.prevent="askGroupCreatorPrivilege" class="btn btn-primary">
+                            {{ __('group.requestButton') }}</button>
+                    </div>    
+                @endcannot 
+                </div>
             <!-- /.col-md-12 -->
             
         </div>
@@ -83,16 +96,12 @@
     <!-- Modal -->
     <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog">
-            <form autocomplete="off" wire:submit.prevent="{{ $showEditModal ? 'updateUser' : 'createUser' }}">
+            <form autocomplete="off" wire:submit.prevent="requestGroupCreatorPrivilege">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">
                             <span>
-                                @if($showEditModal)
-                                {{ __('group.editGroup') }}
-                                @else
-                                {{ __('group.addNew') }}
-                                @endif
+                                {{ __('group.request.title') }}
                             </span>
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -100,31 +109,41 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col">
-                                <div class="form-group row">
-                                    <label for="inputRole" class="col-sm-4 col-form-label">{{__('app.userRole')}}</label>
-                                    <div class="col-sm-8">
-                                        <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control">
-                                            @foreach (trans('roles') as $field => $translate) 
-                                                <option value="{{$field}}">{{$translate}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                        
+                            <div class="form-group">
+                                <label for="congregation">@lang('group.request.congregation')</label>
+                                <input wire:model.defer="state.congregation" name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" placeholder="">
+                                @error('congregation')
+                                <div class="invalid-feedback">
+                                    {{ __($message) }}.
                                 </div>
+                                @enderror
                             </div>
-                        </div>
+                            <div class="form-group">
+                              <label for="reason">@lang('group.request.reason')</label>
+                              <textarea wire:model.defer="state.reason" name="reason" class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" placeholder="@lang('group.request.reason_helper')"></textarea>
+                              @error('reason')
+                                <div class="invalid-feedback">
+                                    {{ __($message) }}.
+                                </div>
+                                @enderror
+                            </div>
+                            <div class="callout callout-info">
+                                @lang('group.request.info')
+                            </div>
+                            @error('phone')
+                            <div class="callout callout-danger">
+                                @lang('group.request.phoneError')
+                            </div>
+                            @enderror
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
                             <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save mr-1"></i>
-                            @if($showEditModal)
-                            {{__('app.saveChanges')}}
-                            @else
-                            {{ __('app.save') }}
-                            @endif</button>
+                            <i class="fa fa-send mr-1"></i>
+                            @lang('group.request.button')
+                            </button>
                     </div>
                 </div>
             </form>

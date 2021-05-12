@@ -82,10 +82,16 @@
     });
     window.addEventListener('hide-delete-modal', event => {
         $('#confirmationModal').modal('hide');
-        toastr.success(event.detail.message, '{{__('app.saved')}}');
+        if(event.detail.message)
+          toastr.success(event.detail.message, '{{__('app.saved')}}');
+        if(event.detail.errorMessage)
+          toastr.error(event.detail.errorMessage, '{{__('app.errorWhileSaved')}}');
     });
     window.addEventListener('success', event => {
         toastr.success(event.detail.message, '{{__('app.saved')}}');
+    });
+    window.addEventListener('error', event => {
+        toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
     });
     
   });

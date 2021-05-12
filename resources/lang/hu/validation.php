@@ -133,5 +133,7 @@ return [
         'days.*.end_time' => 'szolgálat vége',
         '*.start_time' => 'szolgálat kezdete',
         '*.end_time' => 'szolgálat vége',
+        'congregation' => 'gyülekezet',
+        'reason' => 'igénylés oka'
     ],
 ];

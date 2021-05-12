@@ -92,7 +92,7 @@ Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(fu
 //Csoportok menü
 Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'verified']);
 //Csoport készítés
-Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified']);
+Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified', 'is-groupcreator']);
 Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['auth', 'verified']);
 
 /**

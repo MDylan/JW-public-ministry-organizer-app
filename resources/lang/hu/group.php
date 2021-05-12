@@ -7,6 +7,7 @@ return [
     'name' => 'Csoport neve',
     'editGroup' => 'Csoport szerkesztése',
     'deletegroup' => 'Csoport törlése',
+    'notInGroup' => 'Jelenleg még egyetlen csoportnak sem vagy a tagja. Vedd fel a kapcsolatot a gyülekezeted/csoportod felvigyázójával, hogy meg tudjon hívni a helyi csoportba.',
     'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
     'groupCreated' => 'A csoport létrejött!',
     'groupUpdated' => 'A csoport sikeresen módosult!',
@@ -118,6 +119,26 @@ return [
     'user_add' => 'Hozzáadás',
     'search_placeholder' => 'Minden emailt új sorba írj',
     'note' => 'Megjegyzés',
-    'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoport admin és a kisadmin látja.'
+    'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoport admin és a kisadmin látja.',
+    'notGroupCreator' => 'Ha csoportokat szeretnél létrehozni, akkor kérjük kérj ehhez jogosultságot az oldal adminisztrátoraitól.',
+    'requestButton' => 'Ehhez kattints ide, és töltsd ki az űrlapot.',
+    'request' => [
+        'title' => 'Csoport létrehozásához jogosultság igénylése',
+        'congregation' => 'Gyülekezeted',
+        'reason' => 'Miért szeretnél saját csoportot létrehozni?',
+        'reason_helper' => 'Pl adott gyülekezetet/csoport kiszolgálásához',
+        'info' => 'Kérjük, <strong>csak akkor igényelj csoport létrehozási jogosultságot, ha a gyülekezetedben te vagy megbízva ennek szervezésével</strong>. Egyéb esetben kérjük szólj a gyülekezeted felvigyázóinak, hogy ők igényeljenek ilyen jogosultságot, és utána az email címedet megadásával meg tudnak hívni a csoportba. Fenntartjuk a jogot ahhoz, hogy igénylésedet elutasítsuk. Itt megadott adataidat nem fogjuk tárolni, jelen elbírálás után töröljük.',
+        'button' => 'Igénylés beküldése',
+        'phoneError' => 'A telefonszámod nincs megadva. Kérjük add meg ezt a Profilom oldalon, és utána küld el az igénylésedet!',
+        'sent' => 'Az igénylésedet továbbítottuk az oldal adminisztrátorainak. Kérjük, várd meg a válaszukat!',
+    ],
+    'requestMail' => [
+        'subject' => 'Csoport létrehozási jogosultság igénylése',
+        'line_1' => 'Valaki csoport létrehozási jogosultságot igényelt. Adatai: ',
+        'line_2' => 'Gyülekezete:',
+        'line_3' => 'Az igénylés oka:',
+        'line_4' => 'Jogosultságot a Felhasználók menüpontban tudsz neki adni, ha jóváhagyod.'
+    ],
+
 
 ];

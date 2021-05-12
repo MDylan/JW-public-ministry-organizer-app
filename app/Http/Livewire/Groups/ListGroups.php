@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class ListGroups extends AppComponent
@@ -19,23 +20,57 @@ class ListGroups extends AppComponent
         $this->dispatchBrowserEvent('show-delete-modal');
     }
 
+    //Törli a csoportot, jogosultság ellenőrzéssel együtt
     public function deleteGroup() {
         
         $user = User::findOrFail(Auth::id());
-        foreach($user->userGroups as $group) {
-            $group->whereId($this->groupBeeingRemoved)->delete();
+        $del = $user->userGroupsDeletable()->whereId($this->groupBeeingRemoved)->delete();
+        
+        if($del == 1) {
+            $user->userGroupsDeletable()->detach($this->groupBeeingRemoved);
+            $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('group.groupDeleted')]);
+        } else {
+            $this->dispatchBrowserEvent('hide-delete-modal', ['errorMessage' => __('app.notAllowed')]);
         }
-        $user->userGroups()->detach($this->groupBeeingRemoved);
+    }
 
-        // $group = Group::findOrFail($this->groupBeeingRemoved);
-        // $group->delete();
+    /**
+     * Megjeleníti a modalt, amikor a gombra kattintunk
+     */
+    public function askGroupCreatorPrivilege() {
+        $this->showEditModal = false;
+        $this->state = [];
+        $this->dispatchBrowserEvent('show-form');
+    }
 
-        $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('group.groupDeleted')]);
+    /**
+     * Elküldi a csoport létrehozási jogosultságról az igénylést emailben
+     */
+    public function requestGroupCreatorPrivilege() {
+        $this->state['phone'] = auth()->user()->phone;
+        $validatedData = Validator::make($this->state, [
+            'congregation' => 'required|min:3',
+            'reason' => 'required|min:10',
+            'phone' => 'required|numeric',
+        ])->validate();
+
+        Mail::send('emails.groupCreatorRequest', [
+            'name' => auth()->user()->last_name.' '.auth()->user()->first_name,
+            'email' => auth()->user()->email,
+            'phone' => $validatedData['phone'],
+            'congregation' => strip_tags($validatedData['congregation']),
+            'reason' => strip_tags($validatedData['reason']),
+         ],
+            function ($message) {
+                    $message->to(config('mail.from.address'))
+                    ->replyTo(auth()->user()->email)
+                    ->subject(__('group.requestMail.subject'));
+         });
+         $this->dispatchBrowserEvent('hide-form', ['message' => __('group.request.sent')]);
     }
 
     public function render()
-    {
-        
+    {        
         $groups = Group::whereHas('groupUsers', function ($query) {
             return $query->where('users.id', '=', Auth::id());
         })->with('groupUsers')->paginate(20);

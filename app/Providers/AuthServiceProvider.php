@@ -35,5 +35,12 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasRole('mainAdmin');
             //return true; //
         });
+
+        Gate::define('is-groupcreator', function(User $user) {
+            if($user->hasRole('mainAdmin') || $user->hasRole('groupCreator'))
+                return true;
+            else return false;
+            //return true; //
+        });
     }
 }
