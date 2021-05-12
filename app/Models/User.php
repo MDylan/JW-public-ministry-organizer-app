@@ -62,6 +62,13 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->withTimestamps();
     }
 
+    public function userGroupsEditable() {
+        return $this->belongsToMany('App\Models\Group')
+                    ->withPivot(['group_role'])
+                    ->wherePivotIn('group_role',['admin', 'roler'])
+                    ->withTimestamps();
+    }
+
     public function userGroupsDeletable() {
         return $this->belongsToMany('App\Models\Group')
                     ->withPivot(['group_role'])
