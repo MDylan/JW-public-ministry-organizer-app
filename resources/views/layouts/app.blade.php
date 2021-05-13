@@ -66,6 +66,7 @@
 <!-- AdminLTE App -->
 <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
 <script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
+<script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
 <script>
   $(document).ready(function() {
     toastr.options = {
@@ -95,7 +96,46 @@
     window.addEventListener('error', event => {
         toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
     });
-    
+    window.addEventListener('show-reject-confirmation', event => {
+      Swal.fire({
+        title: '@lang('group.reject_question')',
+        text: '@lang('group.reject_message')',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '@lang('Yes')',
+        cancelButtonText: '@lang('Cancel')'
+      }).then((result) => {
+        if (result.isConfirmed) {
+            Livewire.emit('rejectConfirmed');
+        }
+      })
+    });
+    window.addEventListener('sweet-error', event => {
+      Swal.fire({
+        icon: 'error',
+        title: '' + event.detail.title + '',
+        text: ''+ event.detail.message + ''
+      })
+    });
+
+    window.addEventListener('show-logout-confirmation', event => {
+      Swal.fire({
+        title: '@lang('group.logout.question')',
+        text: '@lang('group.logout.message')',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '@lang('Yes')',
+        cancelButtonText: '@lang('Cancel')'
+      }).then((result) => {
+        if (result.isConfirmed) {
+            Livewire.emit('logoutConfirmed');
+        }
+      })
+    })
   });
 </script>
 @yield('footer_scripts')

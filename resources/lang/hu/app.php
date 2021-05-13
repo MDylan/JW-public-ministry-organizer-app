@@ -42,5 +42,6 @@ return [
     ],
     'new' => 'új',
     'total_notifications' => ':number új értesítés',
+    'no_notification' => 'Nincs új értesítésed',
     
 ];

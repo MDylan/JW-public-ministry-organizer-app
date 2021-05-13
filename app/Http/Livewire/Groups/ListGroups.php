@@ -14,6 +14,13 @@ class ListGroups extends AppComponent
 
     public $group;
     public $groupBeeingRemoved = null;
+    public $groupBeeingRejected = null;
+    public $groupBeeingLogout = null;
+
+    protected $listeners = [
+        'rejectConfirmed' => 'rejectConfirmed',
+        'logoutConfirmed' => 'logoutConfirmed'
+    ];
 
 
     public function confirmGroupRemoval($groupId) {
@@ -70,6 +77,9 @@ class ListGroups extends AppComponent
          $this->dispatchBrowserEvent('hide-form', ['message' => __('group.request.sent')]);
     }
 
+    /**
+     * Meghívás elfogadása
+     */
     public function accept($groupId) {
 
         $user = User::findOrFail(Auth::id());
@@ -80,30 +90,78 @@ class ListGroups extends AppComponent
         }
         $this->emitTo('partials.side-menu', 'refresh');
         $this->emitTo('partials.nav-bar', 'refresh');
+        
         $user->refresh();
+    }
+
+    /**
+     * Meghívás elutasítása, modal hívás
+     */
+    public function rejectModal($groupId) {
+        // dd($groupId);
+        $this->groupBeeingRejected = $groupId;
+
+        $this->dispatchBrowserEvent('show-reject-confirmation');
+    }
+
+    /**
+     * Elutasította a meghívást, törlöm a kérést.
+     */
+    public function rejectConfirmed() {
+        $group = Group::findOrFail($this->groupBeeingRejected);
+        $res = $group->groupUsers()->detach(Auth::id());
+        if($res) {
+            $this->dispatchBrowserEvent('success', ['message' => __('group.accept_rejected')]);
+        } else {
+            $this->dispatchBrowserEvent('error', ['message' => __('group.accept_error')]);
+        }
+        $this->emitTo('partials.side-menu', 'refresh');
+        $this->emitTo('partials.nav-bar', 'refresh');
+    }
+
+    /**
+     * Kilépés előtti modal
+     */
+    public function confirmLogoutModal($groupId) {
+        $userId = Auth::id();
+        $group = Group::findOrFail($groupId);
+        $users = $group->groupUsers()->get()->toArray();
+        $admins = 0;
+        foreach($users as $user) {
+            $pivot = $user['pivot'];
+            if($pivot['group_role'] == 'admin' && $user['id'] != $userId) {
+                $admins++;
+            }
+        }
+        if($admins == 0) {
+            //nincs más admin, nem léphet ki
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
+        } else {
+            $this->groupBeeingLogout = $groupId;
+            $this->dispatchBrowserEvent('show-logout-confirmation');
+        }
+    }
+
+    /**
+     * Megerősítette a kilépését
+     */
+    public function logoutConfirmed() {
+        $group = Group::findOrFail($this->groupBeeingLogout);
+        $res = $group->groupUsers()->detach(Auth::id());
+        if($res) {
+            $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
+        } else {
+            $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
+        }
     }
 
     public function render()
     {        
-        // $groups = Group::whereHas('groupUsers', function ($query) {
-        //     return $query->where('users.id', '=', Auth::id());
-        // })->with('groupUsers')->paginate(20);
-
-
-        // $groups = Group::with('currentList')->get();
         $user = User::findOrFail(Auth::id());
         $groups = $user->userGroups()->paginate(20);
-
-
-
-        // foreach($user->userGroups as $u) {
-        //     dd($u);
-        // }
-
-        // foreach($groups as $group) {
-        //     dd($group->pivot);
-        // }
-        // // dd($groups);
 
         return view('livewire.groups.list-groups', [
             'groups' => $groups

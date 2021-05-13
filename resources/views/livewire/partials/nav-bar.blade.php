@@ -52,7 +52,13 @@
           @endif          
         </a>
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-          <span class="dropdown-header">{{ __('app.total_notifications', ['number' => $total_notifications]) }}</span>
+          <span class="dropdown-header">
+            @if ( $total_notifications > 0 )
+            {{ __('app.total_notifications', ['number' => $total_notifications]) }}
+            @else
+                @lang('app.no_notification')
+            @endif
+        </span>
           @foreach ($notifications as $notification)
             <div class="dropdown-divider"></div>  
             <a href="{{ $notification['route'] }}" class="dropdown-item">

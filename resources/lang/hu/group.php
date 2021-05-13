@@ -12,6 +12,7 @@ return [
     'groupCreated' => 'A csoport létrejött!',
     'groupUpdated' => 'A csoport sikeresen módosult!',
     'groupDeleted' => 'A csoport törölve lett!',
+    'groupDeleted_log' => 'A csoport törölve lett.',
     'role_head' => 'Jogosultságok leírása',
     'roles' => [
         'member' => 'Csoporttag',           
@@ -131,17 +132,31 @@ return [
         'button' => 'Igénylés beküldése',
         'phoneError' => 'A telefonszámod nincs megadva. Kérjük add meg ezt a Profilom oldalon, és utána küld el az igénylésedet!',
         'sent' => 'Az igénylésedet továbbítottuk az oldal adminisztrátorainak. Kérjük, várd meg a válaszukat!',
+        'log' => 'Csoport létrehozási jogosultságot igényelt'
     ],
     'requestMail' => [
         'subject' => 'Csoport létrehozási jogosultság igénylése',
         'line_1' => 'Valaki csoport létrehozási jogosultságot igényelt. Adatai: ',
         'line_2' => 'Gyülekezete:',
         'line_3' => 'Az igénylés oka:',
-        'line_4' => 'Jogosultságot a Felhasználók menüpontban tudsz neki adni, ha jóváhagyod.'
+        'line_4' => 'Jogosultságot a Felhasználók menüpontban tudsz neki adni, ha jóváhagyod.',
     ],
     'accept_saved' => 'A meghívást elfogadtad.',
+    'accept_log' => 'Belépett a csoportba.',
     'accept_error' => 'Nem sikerült menteni a kérésedet.',
     'accept_rejected' => 'A meghívást elutasítottad.',
+    'reject_question' => 'Biztosan elutasítod a meghívást?',
+    'reject_message' => 'A művelet nem vonható vissza.',
+    'reject_log' => 'Elutasította a csoport meghívást.',
+    'logout' => [
+        'button' => 'Kilépés',
+        'question' => 'Biztosan kilépsz a csoportból?',
+        'message' => 'Ezentúl nem fog látni a csoport eseményeit.',
+        'success' => 'Sikeresen kiléptél a csoportból!',
+        'error'  => 'Hiba a kilépés során',
+        'no_admin' => 'Te vagy az egyedüli adminisztrátor a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
+        'log' => 'Kilépett a csoportból'
+    ]
 
 
 ];

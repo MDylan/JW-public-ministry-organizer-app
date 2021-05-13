@@ -57,9 +57,9 @@
                                                 {{ __('group.roles.'.$group->pivot->group_role) }}
                                             </span>
                                         </td>
-                                        <td>
-                                            
+                                        <td>                                            
                                             @if ($group->pivot->accepted_at == null)
+
                                                 @lang('app.invitation')
                                                 <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary btn-sm">
                                                     <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
@@ -68,15 +68,22 @@
                                             @else                                               
                                             
                                                 @if(in_array($group->pivot->group_role, ['admin', 'roler']))
-                                                <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
-                                                    <i class="fa fa-edit mr-2"></i>
+                                                <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}" class="mr-2">
+                                                    <i class="fa fa-edit"></i> @lang('app.edit')
                                                 </a>
                                                 @endif
+
+                                                <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="mr-2">
+                                                    <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
+                                                </a>
+
                                                 @if(in_array($group->pivot->group_role, ['admin']))
-                                                <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})">
+                                                <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="mr-2">
                                                     <i class="fa fa-trash text-danger"></i>
                                                 </a>
                                                 @endif
+
+                                                
 
                                             @endif
                                         </td>
