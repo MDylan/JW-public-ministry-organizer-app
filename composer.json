@@ -13,7 +13,8 @@
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
-        "livewire/livewire": "^2.4"
+        "livewire/livewire": "^2.4",
+        "spatie/laravel-activitylog": "3.17.0"
     },
     "require-dev": {
         "facade/ignition": "^2.5",

@@ -58,10 +58,18 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function userGroupsNotAccepted() {
         return $this->belongsToMany('App\Models\Group')
-                    ->wherePivot('accepted_at', null);
+                    ->wherePivot('accepted_at', null)
+                    ->using(GroupUser::class);
     }
 
     public function userGroups() {
+        return $this->belongsToMany(Group::class)
+                    ->withPivot(['group_role', 'note', 'accepted_at'])
+                    ->withTimestamps()
+                    ->using(GroupUser::class);
+    }
+
+    public function userGroups_old() {
         return $this->belongsToMany('App\Models\Group')
                     ->withPivot(['group_role', 'note', 'accepted_at'])
                     ->withTimestamps();
@@ -72,13 +80,15 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->withPivot(['group_role'])
                     ->wherePivotIn('group_role', ['admin', 'roler'])
                     ->wherePivotNotNull('accepted_at')
-                    ->withTimestamps();
+                    ->withTimestamps()
+                    ->using(GroupUser::class);
     }
 
     public function userGroupsDeletable() {
         return $this->belongsToMany('App\Models\Group')
                     ->withPivot(['group_role'])
                     ->wherePivot('group_role','admin')
-                    ->withTimestamps();
+                    ->withTimestamps()
+                    ->using(GroupUser::class);
     }
 }
