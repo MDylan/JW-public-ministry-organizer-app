@@ -139,6 +139,9 @@ return [
         'line_3' => 'Az igénylés oka:',
         'line_4' => 'Jogosultságot a Felhasználók menüpontban tudsz neki adni, ha jóváhagyod.'
     ],
+    'accept_saved' => 'A meghívást elfogadtad.',
+    'accept_error' => 'Nem sikerült menteni a kérésedet.',
+    'accept_rejected' => 'A meghívást elutasítottad.',
 
 
 ];

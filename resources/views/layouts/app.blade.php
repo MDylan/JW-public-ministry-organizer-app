@@ -19,11 +19,13 @@
 <div class="wrapper">
 
   <!-- Navbar -->
-  @include('layouts.partials.navbar')
+  {{-- @include('layouts.partials.navbar') --}}
+  @livewire('partials.nav-bar')
   <!-- /.navbar -->
 
   <!-- Main Sidebar Container -->
-  @include('layouts.partials.aside')
+  {{-- @include('layouts.partials.aside') --}}
+  @livewire('partials.side-menu')
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">

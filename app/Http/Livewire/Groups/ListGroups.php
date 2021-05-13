@@ -15,6 +15,7 @@ class ListGroups extends AppComponent
     public $group;
     public $groupBeeingRemoved = null;
 
+
     public function confirmGroupRemoval($groupId) {
         $this->groupBeeingRemoved = $groupId;
         $this->dispatchBrowserEvent('show-delete-modal');
@@ -69,16 +70,29 @@ class ListGroups extends AppComponent
          $this->dispatchBrowserEvent('hide-form', ['message' => __('group.request.sent')]);
     }
 
+    public function accept($groupId) {
+
+        $user = User::findOrFail(Auth::id());
+        if($user->userGroups()->sync([$groupId => [ 'accepted_at' => date('Y-m-d H:i:s')] ], false)) {
+            $this->dispatchBrowserEvent('success', ['message' => __('group.accept_saved')]);
+        } else {
+            $this->dispatchBrowserEvent('error', ['message' => __('group.accept_error')]);
+        }
+        $this->emitTo('partials.side-menu', 'refresh');
+        $this->emitTo('partials.nav-bar', 'refresh');
+        $user->refresh();
+    }
+
     public function render()
     {        
-        $groups = Group::whereHas('groupUsers', function ($query) {
-            return $query->where('users.id', '=', Auth::id());
-        })->with('groupUsers')->paginate(20);
+        // $groups = Group::whereHas('groupUsers', function ($query) {
+        //     return $query->where('users.id', '=', Auth::id());
+        // })->with('groupUsers')->paginate(20);
 
 
         // $groups = Group::with('currentList')->get();
         $user = User::findOrFail(Auth::id());
-        $groups = $user->userGroups()->paginate();
+        $groups = $user->userGroups()->paginate(20);
 
 
 

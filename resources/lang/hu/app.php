@@ -34,5 +34,13 @@ return [
         'date' => 'Y.m.d',
         'time' => 'H:i',
     ],
+    'invitation' => 'Meghívás',
+    'accept' => 'Elfogadás',
+    'reject' => 'Elutasítás',
+    'top_notifies' => [
+        'groups' => ':number új csoportmeghívás',
+    ],
+    'new' => 'új',
+    'total_notifications' => ':number új értesítés',
     
 ];

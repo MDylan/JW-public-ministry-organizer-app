@@ -112,7 +112,7 @@ class CreateGroupForm extends AppComponent
             }
         }
 
-        $user->userGroups()->save($group, ['group_role' => 'admin']);
+        $user->userGroups()->save($group, ['group_role' => 'admin', 'accepted_at' => date('Y-m-d H:i:s')]);
 
         //hozzáadjuk a felhasználókat
         if(count($this->users) > 0) {
