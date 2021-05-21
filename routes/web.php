@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
+use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\UpdateGroupForm;
@@ -94,6 +95,9 @@ Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'v
 //Csoport készítés
 Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified', 'can:is-groupcreator']);
 Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['auth', 'verified', 'groupAdmin']);
+
+//Naptár menü
+Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar')->middleware(['auth', 'verified']);
 
 /**
  * Adminisztrátorok

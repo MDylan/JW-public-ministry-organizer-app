@@ -20,6 +20,13 @@ class SideMenu extends Component
 
     public function mount() {
         $this->request_path = request()->path();
+        // dd(request()->paramters());
+        if (request()->is('calendar/*')) {
+            $this->request_path = 'calendar';
+        }
+        if (request()->is('groups/*')) {
+            $this->request_path = 'groups';
+        }
     }
 
     //ne töröld ki, szükséges függvény

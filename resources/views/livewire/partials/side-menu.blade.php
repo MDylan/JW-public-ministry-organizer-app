@@ -19,6 +19,14 @@
             </li>
             @if (auth()->user()->email_verified_at)
             <li class="nav-item">
+              <a href="{{route('calendar')}}" class="nav-link {{ $request_path == 'calendar' ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-calendar-alt"></i>
+                  <p>
+                  {{ __('app.menu-calendar') }}
+                  </p>
+              </a>
+          </li>
+            <li class="nav-item">
                 <a href="{{route('groups')}}" class="nav-link {{ $request_path == 'groups' ? 'active' : '' }}">
                     <i class="nav-icon fas fa-users"></i>
                     <p>

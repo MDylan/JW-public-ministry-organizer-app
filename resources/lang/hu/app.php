@@ -6,6 +6,7 @@ return [
     'menu-home' => 'Főoldal',
     'menu-users' => 'Felhasználók',
     'menu-groups' => 'Csoportok',
+    'menu-calendar' => 'Naptár',
     'options' => 'Beállítások',
     'edit' => 'Szerkesztés',
     'delete' => 'Törlés',

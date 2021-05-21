@@ -91,4 +91,5 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->withTimestamps()
                     ->using(GroupUser::class);
     }
+
 }

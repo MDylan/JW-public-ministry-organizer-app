@@ -7,3 +7,13 @@
 .navbar-nav>.user-menu>.dropdown-menu>li.user-header p {
     margin-top: 0px;
 }
+.calendar_day {
+    width: 14%;
+}
+.available:hover {
+    font-weight: bold;
+    cursor: pointer;
+}
+.table-active:hover {
+    
+}

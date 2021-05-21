@@ -157,6 +157,4 @@ return [
         'no_admin' => 'Te vagy az egyedüli adminisztrátor a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
         'log' => 'Kilépett a csoportból'
     ]
-
-
 ];

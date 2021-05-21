@@ -73,6 +73,10 @@ class Group extends Model
         return $this->hasMany('App\Models\GroupDay');
     }
 
+    public function events() {
+        return $this->hasMany('App\Models\Event');
+    }
+
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe
      */
