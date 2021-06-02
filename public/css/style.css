@@ -17,3 +17,195 @@
 .table-active:hover {
     
 }
+
+.event {
+    background-color: cadetblue;
+    position: absolute;
+    height: 150px;
+    width: 100px;
+    display: block;
+    float:left;
+}
+
+.event_1 {
+    border-color: #00ff00;
+}
+.event_2 {
+    border-color: #3765ff;
+}
+.event_3 {
+    border-color: #ffff00;
+}
+.event_4 {
+    border-color: #00ffb2;
+}
+.event_5 {
+    border-color: #ff00ff;
+}
+.event_6 {
+    border-color: #ff0000;
+}
+.event_7 {
+    border-color: #ff8000;
+}
+.event_8 {
+    border-color: #ff007f;
+}
+
+/*************************
+ * GRID SCHEDULE LAYOUT
+ *************************/
+
+ .schedule_new {
+  display: grid;
+  /* grid-template-columns: [times] 4em repeat(4, 1fr); */
+  gap: 6px;
+  grid-auto-rows: minmax(30px, auto);
+}
+.time-slot {
+  grid-column: times;
+  z-index: 1;
+}
+
+ @media screen and (min-width:700px) {
+    .schedule {
+      display: grid;
+      grid-gap: 1em;
+      grid-template-rows:
+        [tracks] auto
+        [time-0800] 1fr
+        [time-0830] 1fr
+        [time-0900] 1fr
+        [time-0930] 1fr
+        [time-1000] 1fr
+        [time-1030] 1fr
+        [time-1100] 1fr
+        [time-1130] 1fr
+        [time-1200] 1fr;
+        /* Note 1:
+        Use 24hr time for gridline names for simplicity
+  
+        Note 2: Use "auto" instead of "1fr" for a more compact schedule where height of a slot is not proportional to the session length. Implementing a "compact" shortcode attribute might make sense for this!
+        Try 0.5fr for more compact equal rows. I don't quite understand how that works :)
+        */
+      
+      grid-template-columns:
+        [times] 4em
+        [track-1-start] 1fr
+        [track-1-end track-2-start] 1fr
+        [track-2-end track-3-start] 1fr
+        [track-3-end track-4-start] 1fr
+        [track-4-end];
+    }
+  }
+
+    
+    .track-slot {
+      display: none; /* hidden on small screens and browsers without grid support */
+    }
+    
+  @supports( display:grid ) {
+    @media screen and (min-width:700px) {
+      .track-slot {
+        display: block;
+        padding: 10px 5px 5px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: rgba(255,255,255,.9);
+      }
+    }
+  }
+  
+  /* Small-screen & fallback styles */
+  .session {
+    margin-bottom:  1em;
+  }
+  
+  @supports( display:grid ) {
+    @media screen and (min-width: 700px) {
+      .session {
+        margin: 0;
+      } 
+    }
+  }
+  
+  .session {
+    padding: .5em;
+    border-radius: 2px;
+    font-size: 14px;
+    box-shadow:
+      rgba(255,255,255,.6) 1px 1px 0,
+      rgba(0,0,0,.3) 4px 4px 0;
+    z-index: 1;
+  }
+  
+  .session-title,
+  .session-time,
+  .session-track,
+  .session-presenter {
+    display: block;
+  }
+  
+  .session-title,
+  .time-slot {
+    margin: 0;
+    font-size: 1.2em;
+  }
+  
+  .session-title a {
+    color: #fff;
+    text-decoration-style: dotted;
+    
+    &:hover {
+      font-style: italic;
+    }
+    
+    &:focus {
+      outline: 2px dotted rgba(255,255,255,.8);
+    }
+  }
+  
+  .track-slot,
+  .time-slot {
+    font-weight: bold;
+    font-size:.75em;
+  }
+  
+  .track-1 {
+    background-color: #1259B2;
+    color: #fff;
+  }
+  
+  .track-2 {
+    background-color: #687f00;
+    color: #fff;
+  }
+  
+  .track-3 {
+    background-color: #544D69;
+    color: #fff;
+  }
+  
+  .track-4 {
+    background-color: #c35500;
+    color: #fff;
+  }
+  
+  .track-all {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ccc;
+    color: #000;
+    box-shadow: none;
+  }
+
+  .grid-row {
+    z-index: 0;
+    border-bottom: 1px solid #b5b5b5;
+  }
+  .grid-row:hover {
+    background-color: #fff7a3;
+  }
+  

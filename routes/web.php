@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\GetEvents;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
@@ -98,6 +99,8 @@ Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')-
 
 //Naptár menü
 Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar')->middleware(['auth', 'verified']);
+
+// Route::post('/getevents', [GetEvents::class, 'index'])->name('getevents')->middleware(['auth', 'verified']);
 
 /**
  * Adminisztrátorok

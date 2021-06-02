@@ -74,8 +74,23 @@ class Group extends Model
     }
 
     public function events() {
-        return $this->hasMany('App\Models\Event');
+        return $this->hasMany('App\Models\Event')
+                    ->orderBy('start')
+                    ->with('user')          //join users table
+                    ->with('accept_user');  //join users table
     }
+    
+    public function day_events($day) {
+        return $this->events()->where('day', '=', $day);
+    }
+
+    public function between_events($start, $end) {
+        return $this->events()->whereBetween('day', [$start, $end]);
+    }
+
+    // public function eventUser() {
+    //     return $this->hasManyThrough(Event::class, User::class);
+    // }
 
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe

@@ -49,7 +49,7 @@
                                         @endif
                                     </div>
                                     <div class="col-md d-flex justify-content-center mt-1">
-                                        <h4>{{ $group_data['name'] }}</h4>
+                                        <h4>{{ $cal_group_data['name'] }}</h4>
                                     </div>
                                     <div class="col-md d-flex justify-content-end">
                                         <nav>
@@ -92,13 +92,12 @@
                                         @else
                                             class="pr-1 pt-1
                                             @if ($day['current']) table-secondary
-                                            @elseif (isset($service_days[$day['weekDay']]) == null || !$day['available']) table-active
+                                            @elseif (isset($cal_service_days[$day['weekDay']]) == null || !$day['available']) table-active
                                             @else table-light @endif
                                             @if ($day['service_day']) available @endif
                                             "
                                         @endif data-day="{{ $day['fullDate'] }}"
-                                        @if ($day['service_day']) onclick="modal('{{ $day['fullDate'] }}')" @endif
-                                        {{-- @if ($day['service_day']) wire:click="$emit('openModal', '{{$day['fullDate']}}')" @endif --}}
+                                        @if ($day['service_day']) onclick="modal({{$cal_group_data['id']}}, '{{ $day['fullDate'] }}')" @endif
                                         >
                                         <div class="row">
                                             <div class="col-8">
@@ -112,8 +111,8 @@
                                 </tbody>
                             </table>
                             <script>
-                                function modal(date) {
-                                    livewire.emit('openModal', date);
+                                function modal(groupId, date) {
+                                    livewire.emitTo('events.modal', 'openModal', date);
                                 }
                             </script>
                         </div>
@@ -123,98 +122,9 @@
         </div>
     </div>
 
-    <div  wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header pb-0 pl-0 pt-2">
-                    <ul class="nav nav-tabs border-0" id="custom-tabs-four-tab" role="tablist">
-                        <li class="pt-2 px-3">
-                            <h4 class="card-title">
-                            {{ $group_data['name'] }} - {{$day_data['dateFormat']}}    
-                            </h4>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link @if ($active_tab == '') active @endif" id="custom-tabs-home-tab" data-toggle="pill" href="#custom-tabs-home" role="tab" aria-controls="custom-tabs-four-home" aria-selected="true">                              @lang('event.modal.tab_events')
-                          </a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link @if ($active_tab == 'event') active @endif"" id="custom-tabs-event-tab" data-toggle="pill" href="#custom-tabs-event" role="tab" aria-controls="custom-tabs-four-profile" aria-selected="false">
-                            @lang('event.modal.tab_set_event')
-                          </a>
-                        </li>
-                      </ul>
+    @livewire('events.modal', ['groupId' => $cal_group_data['id']], key('eventsmodal'))
 
-                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                      </button>
-                    
-                </div>
-                <div class="modal-body p-0">
-
-                    <div class="tab-content">
-                        <div class="tab-pane fade @if ($active_tab == '') show active @endif" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
-                            
-                            <table class="table table-hover table-sm mb-0">
-                                @foreach ($day_data['table'] as $time => $timestamp)
-                                <tr>
-                                    <td class="ml-4">
-                                        <button wire:click.prevent="setStart({{$timestamp}})" class="btn btn-primary">{{$time}}</button>
-                                    </td>
-                                    <td></td>
-                                </tr>
-                                @endforeach                        
-                            </table>
-
-                        </div>
-                        <div class="tab-pane fade @if ($active_tab == 'event') show active @endif" id="custom-tabs-event" role="tabpanel" aria-labelledby="custom-tabs-event-tab">
-                            <div class="m-4">
-                                <h4>Válassz időpontot, amikor szolgálnál:</h4>
-                                <form wire:submit.prevent="createEvent">
-                                    @csrf
-                                    <div class="form-group row">
-                                      <label for="start" class="col-md-3 col-form-label">
-                                          @lang('event.service_start')
-                                      </label>
-                                      <div class="col-md-9">
-                                        <select name="start" id="" wire:model.defer="state.start" wire:change="change_end" class="form-control">
-                                            <option value="0">@lang('event.choose_time')</option>
-                                            @foreach ($day_data['selects']['start'] as $time => $option)
-                                                <option value="{{$time}}">{{ $option }}</option>
-                                            @endforeach
-                                        </select>
-                                      </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="end" class="col-md-3 col-form-label">
-                                            @lang('event.service_end')
-                                        </label>
-                                        <div class="col-md-9">
-                                          <select name="end" wire:model.defer="state.end"  wire:change="change_start" id="" class="form-control">
-                                              <option value="0">@lang('event.choose_time')</option>
-                                              @foreach ($day_data['selects']['end'] as $time => $option)
-                                                  <option value="{{$time}}">{{ $option }}</option>
-                                              @endforeach
-                                          </select>
-                                        </div>
-                                      </div>
-                                      <button type="submit" class="btn btn-primary">
-                                        <i class="fa fa-save mr-1"></i>
-                                        @lang('event.save')
-                                        </button>
-                                  </form>
-                            </div>
-                        </div>
-                    </div>                    
-
-                    
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fa fa-times mr-1"></i> @lang('Close')</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
 </div>
 

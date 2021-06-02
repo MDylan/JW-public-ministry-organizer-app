@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
+use DateTime;
 
 class Event extends Model
 {
@@ -34,5 +35,25 @@ class Event extends Model
 
     public function groups() {
         return $this->belongsTo(Group::class);
+    }
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
+
+    public function accept_user() {
+        return $this->belongsTo(User::class, 'accepted_by');
+    }
+
+    //módosítja az adatbázisból visszanyert értéket unixtime-ra
+    public function getStartAttribute($value) {
+        $d = new DateTime( $value );
+        return $d->getTimestamp();
+    }
+
+    //módosítja az adatbázisból visszanyert értéket unixtime-ra
+    public function getEndAttribute($value) {
+        $d = new DateTime( $value );
+        return $d->getTimestamp();
     }
 }

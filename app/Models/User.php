@@ -49,6 +49,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = ['full_name'];
+
     /**
      * Ellenőrzi van e ilyen joga a usernek
      */
@@ -69,10 +71,12 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->using(GroupUser::class);
     }
 
-    public function userGroups_old() {
-        return $this->belongsToMany('App\Models\Group')
-                    ->withPivot(['group_role', 'note', 'accepted_at'])
-                    ->withTimestamps();
+    public function events() {
+        return $this->belongsTo(Event::class);
+    }
+
+    public function getFullNameAttribute() {
+        return "{$this->last_name} {$this->first_name}";
     }
 
     public function userGroupsEditable() {

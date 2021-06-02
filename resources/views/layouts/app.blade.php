@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="{{ asset('dist/css/adminlte.min.css') }}">
   <link rel="stylesheet" href="{{ asset('css/style.css') }}">
   <link rel="stylesheet" href="{{ asset('plugins/toastr/toastr.min.css') }}">
+  @yield('header_style')
   @livewireStyles
 </head>
 <body class="hold-transition sidebar-mini">

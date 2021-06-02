@@ -20,6 +20,11 @@ return [
     'service_end' => 'Szolgálatod befejezése',
     'choose_time' => 'Válassz időpontot',
     'save' => 'Időpont mentése',
-    'saved' => 'A szolgálatodat elmentettük.'
+    'saved' => 'A szolgálatodat elmentettük.',
+    'create_event' => 'Válassz időpontot, amikor szolgálnál',
+    'edit_event' => 'Szolgálat szerkesztése',
+    'save_changes' => 'Módosítások mentése',
+    'cancel_edit' => 'Mégsem módosítok'
+
 
 ];
