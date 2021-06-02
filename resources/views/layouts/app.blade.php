@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="height:auto;">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,130 +16,127 @@
   @yield('header_style')
   @livewireStyles
 </head>
-<body class="hold-transition sidebar-mini">
-<div class="wrapper">
+<body class="sidebar-mini" style="height:auto;">
+  <div class="wrapper">
+    <!-- Navbar -->
+    {{-- @include('layouts.partials.navbar') --}}
+    @livewire('partials.nav-bar')
+    <!-- /.navbar -->
 
-  <!-- Navbar -->
-  {{-- @include('layouts.partials.navbar') --}}
-  @livewire('partials.nav-bar')
-  <!-- /.navbar -->
+    <!-- Main Sidebar Container -->
+    {{-- @include('layouts.partials.aside') --}}
+    @livewire('partials.side-menu')
 
-  <!-- Main Sidebar Container -->
-  {{-- @include('layouts.partials.aside') --}}
-  @livewire('partials.side-menu')
-
-  <!-- Content Wrapper. Contains page content -->
-  <div class="content-wrapper">
-    @if (!auth()->user()->email_verified_at)
-      
-    
-    <div class="callout callout-danger m-2">
-      <h5>{{__('Verify Email Address')}}</h5>
-
-      <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+      @if (!auth()->user()->email_verified_at)
+        <div class="callout callout-danger m-2">
+          <h5>{{__('Verify Email Address')}}</h5>
+          <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
+        </div>
+      @endif
+      {{ $slot }}
     </div>
-    @endif
-    {{ $slot }}
+    <!-- /.content-wrapper -->
+    <!-- Main Footer -->
+    @include('layouts.partials.footer')
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+      <!-- Control sidebar content goes here -->
+      <div class="p-3">
+        <h5>@lang('event.eventsBar.title')</h5>
+        @livewire('partials.events-bar', [], key('eventsBar'))
+      </div>
+    </aside>
+    <!-- /.control-sidebar -->
+    <div id="sidebar-overlay"></div>
+
   </div>
-  <!-- /.content-wrapper -->
+  <!-- ./wrapper -->
 
-  <!-- Control Sidebar -->
-  <aside class="control-sidebar control-sidebar-dark">
-    <!-- Control sidebar content goes here -->
-    <div class="p-3">
-      <h5>Title</h5>
-      <p>Sidebar content</p>
-    </div>
-  </aside>
-  <!-- /.control-sidebar -->
+  <!-- REQUIRED SCRIPTS -->
 
-  <!-- Main Footer -->
-  @include('layouts.partials.footer')
-</div>
-<!-- ./wrapper -->
-
-<!-- REQUIRED SCRIPTS -->
-
-<!-- jQuery -->
-<script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
-<!-- Bootstrap 4 -->
-<script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<!-- AdminLTE App -->
-<script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
-<script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
-<script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
-<script>
-  $(document).ready(function() {
-    toastr.options = {
-      "progressBar": true,
-      "positionClass": "toast-bottom-right",
-    }
-    window.addEventListener('hide-form', event => {
-        $('#form').modal('hide');
-        toastr.success(event.detail.message, '{{__('app.saved')}}');
-    });
-    window.addEventListener('show-form', event => {
-        $('#form').modal('show');
-    });
-    window.addEventListener('show-delete-modal', event => {
-        $('#confirmationModal').modal('show');
-    });
-    window.addEventListener('hide-delete-modal', event => {
-        $('#confirmationModal').modal('hide');
-        if(event.detail.message)
+  <!-- jQuery -->
+  <script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
+  <!-- Bootstrap 4 -->
+  <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <!-- AdminLTE App -->
+  <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
+  <script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
+  <script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
+  <script>
+    $(document).ready(function() {
+      toastr.options = {
+        "progressBar": true,
+        "positionClass": "toast-bottom-right",
+      }
+      window.addEventListener('hide-form', event => {
+          $('#form').modal('hide');
           toastr.success(event.detail.message, '{{__('app.saved')}}');
-        if(event.detail.errorMessage)
-          toastr.error(event.detail.errorMessage, '{{__('app.errorWhileSaved')}}');
-    });
-    window.addEventListener('success', event => {
-        toastr.success(event.detail.message, '{{__('app.saved')}}');
-    });
-    window.addEventListener('error', event => {
-        toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
-    });
-    window.addEventListener('show-reject-confirmation', event => {
-      Swal.fire({
-        title: '@lang('group.reject_question')',
-        text: '@lang('group.reject_message')',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: '@lang('Yes')',
-        cancelButtonText: '@lang('Cancel')'
-      }).then((result) => {
-        if (result.isConfirmed) {
-            Livewire.emit('rejectConfirmed');
-        }
-      })
-    });
-    window.addEventListener('sweet-error', event => {
-      Swal.fire({
-        icon: 'error',
-        title: '' + event.detail.title + '',
-        text: ''+ event.detail.message + ''
-      })
-    });
+      });
+      window.addEventListener('show-form', event => {
+          $('#form').modal('show');
+      });
+      window.addEventListener('show-delete-modal', event => {
+          $('#confirmationModal').modal('show');
+      });
+      window.addEventListener('hide-delete-modal', event => {
+          $('#confirmationModal').modal('hide');
+          if(event.detail.message)
+            toastr.success(event.detail.message, '{{__('app.saved')}}');
+          if(event.detail.errorMessage)
+            toastr.error(event.detail.errorMessage, '{{__('app.errorWhileSaved')}}');
+      });
+      window.addEventListener('success', event => {
+          toastr.success(event.detail.message, '{{__('app.saved')}}');
+      });
+      window.addEventListener('error', event => {
+          toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
+      });
+      window.addEventListener('show-reject-confirmation', event => {
+        Swal.fire({
+          title: '@lang('group.reject_question')',
+          text: '@lang('group.reject_message')',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: '@lang('Yes')',
+          cancelButtonText: '@lang('Cancel')'
+        }).then((result) => {
+          if (result.isConfirmed) {
+              Livewire.emit('rejectConfirmed');
+          }
+        })
+      });
+      window.addEventListener('sweet-error', event => {
+        Swal.fire({
+          icon: 'error',
+          title: '' + event.detail.title + '',
+          text: ''+ event.detail.message + ''
+        })
+      });
 
-    window.addEventListener('show-logout-confirmation', event => {
-      Swal.fire({
-        title: '@lang('group.logout.question')',
-        text: '@lang('group.logout.message')',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: '@lang('Yes')',
-        cancelButtonText: '@lang('Cancel')'
-      }).then((result) => {
-        if (result.isConfirmed) {
-            Livewire.emit('logoutConfirmed');
-        }
+      window.addEventListener('show-logout-confirmation', event => {
+        Swal.fire({
+          title: '@lang('group.logout.question')',
+          text: '@lang('group.logout.message')',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: '@lang('Yes')',
+          cancelButtonText: '@lang('Cancel')'
+        }).then((result) => {
+          if (result.isConfirmed) {
+              Livewire.emit('logoutConfirmed');
+          }
+        })
       })
-    })
-  });
-</script>
-@yield('footer_scripts')
-@livewireScripts
+
+    });
+  </script>
+  @yield('footer_scripts')
+  @livewireScripts
 </body>
 </html>

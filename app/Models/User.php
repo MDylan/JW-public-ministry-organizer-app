@@ -72,7 +72,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     public function events() {
-        return $this->belongsTo(Event::class);
+        return $this->hasMany('App\Models\Event')
+                ->orderBy('start')
+                ->with('groups');
+    }
+
+    public function feature_events() {
+        return $this->events()
+                ->where('day', '>=', date("Y-m-d"));
     }
 
     public function getFullNameAttribute() {

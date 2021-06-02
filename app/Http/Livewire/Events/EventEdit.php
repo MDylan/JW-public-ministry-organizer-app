@@ -259,6 +259,7 @@ class EventEdit extends AppComponent
         
         
         $this->emitUp('refresh');
+        $this->emitTo('partials.events-bar', 'refresh');
         $this->dispatchBrowserEvent('success', ['message' => __('event.saved')]);
         
         // $this->dispatchBrowserEvent('hide-form', ['message' => __('event.saved')]);

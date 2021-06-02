@@ -33,8 +33,10 @@ class Event extends Model
         'end' => 'datetime:Y-m-d H:i',
     ];
 
+    protected $appends = ['full_time', 'day_name'];
+
     public function groups() {
-        return $this->belongsTo(Group::class);
+        return $this->belongsTo(Group::class, 'group_id');
     }
 
     public function user() {
@@ -44,6 +46,8 @@ class Event extends Model
     public function accept_user() {
         return $this->belongsTo(User::class, 'accepted_by');
     }
+
+
 
     //módosítja az adatbázisból visszanyert értéket unixtime-ra
     public function getStartAttribute($value) {
@@ -56,4 +60,16 @@ class Event extends Model
         $d = new DateTime( $value );
         return $d->getTimestamp();
     }
+
+    public function getFullTimeAttribute() {
+        return date("H:i", $this->start)." - ".date("H:i", $this->end);
+    }
+
+    public function getDayNameAttribute() {
+        $d = new DateTime( $this->day );
+        $weekDay = $d->format("w");
+        return $d->format(__('app.format.date'))." ".__('event.weekdays_short.'.$weekDay);
+    }
+
+
 }

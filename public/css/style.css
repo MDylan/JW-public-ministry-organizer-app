@@ -208,4 +208,6 @@
   .grid-row:hover {
     background-color: #fff7a3;
   }
-  
+  .control-sidebar {
+    overflow-y:scroll;
+  }

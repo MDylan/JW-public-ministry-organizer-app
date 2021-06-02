@@ -24,7 +24,11 @@ return [
     'create_event' => 'Válassz időpontot, amikor szolgálnál',
     'edit_event' => 'Szolgálat szerkesztése',
     'save_changes' => 'Módosítások mentése',
-    'cancel_edit' => 'Mégsem módosítok'
+    'cancel_edit' => 'Mégsem módosítok',
+    'eventsBar' => [
+        'title' => 'Közelgő szolgálataid',
+        'no_events' => 'Nincsenek betervezett szolgálataid'
+    ]
 
 
 ];
