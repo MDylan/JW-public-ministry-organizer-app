@@ -25,9 +25,16 @@ return [
     'edit_event' => 'Szolgálat szerkesztése',
     'save_changes' => 'Módosítások mentése',
     'cancel_edit' => 'Mégsem módosítok',
+    'delete_event' => 'Szolgálat törlése',
     'eventsBar' => [
         'title' => 'Közelgő szolgálataid',
         'no_events' => 'Nincsenek betervezett szolgálataid'
+    ],
+    'confirmDelete' => [
+        'question' => 'Biztosan törlöd a szolgálatot?',
+        'message' => 'Ez nem vonható vissza.',
+        'success' => 'Sikeresen törölted a szolgálatot.',
+        'error' => 'Hiba a törlés során'
     ]
 
 

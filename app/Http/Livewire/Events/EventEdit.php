@@ -16,14 +16,17 @@ class EventEdit extends AppComponent
     public $date;
     public $day_data;
     public $formText = [];
+    public $eventId = null;
     public $editEvent = null;
     public $original_day_data = [];
     public $day_events = [];
     public $group_data = [];
+    // public $disabled_slots = [];
     public $listeners = [
         'setStart',
         'createForm',
-        'editForm'
+        'editForm',
+        'deleteConfirmed'
     ];
 
     public function mount($groupId, $date) {
@@ -33,20 +36,22 @@ class EventEdit extends AppComponent
     }
 
     public function createForm() {
+        $this->eventId = null;
         $this->getInfo();
         // dd($this->day_data['selects']);
         $this->formText['title'] = __('event.create_event');
     }
 
     public function editForm($eventId) {
-        $this->getInfo($eventId);
+        $this->eventId = $eventId;
+        $this->getInfo();
         $this->change_start();
         $this->change_end();
         $this->formText['title'] = __('event.edit_event');
     }
 
-    public function getInfo($eventId = false) {
-        if(!isset($eventId)) $this->editEvent = null;
+    public function getInfo() {
+        if($this->eventId == null) $this->editEvent = null;
 
         $groupId = $this->groupId;
         $date = $this->date;
@@ -107,27 +112,23 @@ class EventEdit extends AppComponent
         $events = $group->day_events($date)->get()->toArray();
                 
         $slots = [];
+        $disabled_slots = [];
         
         foreach($events as $event) {
-            if(isset($eventId)) {
-                if($eventId == $event['id']) {
+
+                if($this->eventId == $event['id']) {
                     $this->editEvent = $event;
                     $this->state = $event;
                     continue;
                 }
-            }
+
             $steps = ($event['end'] - $event['start']) / $step;
             
             $row = $day_table["'".date('Hi', $event['start'])."'"]['row'];
             $key = "'".date('Hi', $event['start'])."'";
-            // $cell = 2;
             $cell = 1;
             if(isset($slots[$key])) {
-                // $cell = count($slots[$key]) + 2;
                 $cell = min(array_keys($day_table[$key]['cells']));
-                // $cell = $day_table[$key]['publishers'] + 2;
-                
-                // $table[$key]['available'] = count($slots[$key]);
             }
             
             $day_events[$key][$event['id']] = $event;
@@ -140,17 +141,19 @@ class EventEdit extends AppComponent
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
-                //if($i == 0)
                 $slots[$slot_key][] = true;
                 unset($day_table[$slot_key]['cells'][$cell]);
                 $day_table[$slot_key]['publishers']++;
+                if(Auth::id() == $event['user_id']) {
+                    $disabled_slots[$slot_key] = true;
+                }
                 $cell_start += $step;
             }
         }
         
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->group_data['max_publishers']) {
+            if(count($times) >= $this->group_data['max_publishers'] || $disabled_slots[$key]) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);
@@ -220,6 +223,11 @@ class EventEdit extends AppComponent
         }
     }
 
+    public function cancelEdit() {
+        $this->eventId = null;
+        $this->editEvent = null;
+    }
+
     public function saveEvent() {
         $group = Group::findOrFail($this->groupId);
 
@@ -245,13 +253,12 @@ class EventEdit extends AppComponent
 
         // dd($validatedData);
         if($this->editEvent !== null) {
-            // dd('save', $this->editEvent);
+            //update event
             $group->events()->whereId($this->editEvent['id'])->update(
                 $validatedData
             );
-            // $event = Event::findOrFail($this->editEvent['id']);
-            // $event->save($validatedData);
         } else {
+            //save new event
             $event = new Event($validatedData);
             $group->events()->save($event); 
         }
@@ -263,6 +270,22 @@ class EventEdit extends AppComponent
         $this->dispatchBrowserEvent('success', ['message' => __('event.saved')]);
         
         // $this->dispatchBrowserEvent('hide-form', ['message' => __('event.saved')]);
+    }
+
+    public function confirmEventDelete() {
+        $this->dispatchBrowserEvent('show-eventDelete-confirmation');
+    }
+
+    public function deleteConfirmed() {
+        $event = Event::findOrFail($this->eventId);
+        $res = $event->delete();
+        if($res) {
+            $this->dispatchBrowserEvent('success', ['message' => __('event.confirmDelete.success')]);
+        } else {
+            $this->dispatchBrowserEvent('error', ['message' => __('event.confirmDelete.error')]);
+        }
+        $this->emitTo('partials.events-bar', 'refresh');
+        $this->emitUp('refresh');
     }
 
     public function render()

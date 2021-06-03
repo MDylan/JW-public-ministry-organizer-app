@@ -34,7 +34,7 @@
                                             @if ($r['status'] == 'full') 
                                                 <button disabled class="btn btn-outline-danger">{{$r['hour']}}</button>
                                             @elseif ($r['status'] == 'ready')
-                                            <button wire:click.prevent="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
+                                                <button wire:click.prevent="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
                                             @else
                                                 <button wire:click.prevent="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
                                             @endif                                    
@@ -42,7 +42,14 @@
                                         @if (isset($day_events[$time]))
                                             @foreach ($day_events[$time] as $event)
                                                 <div class="session session-2 track-{{($event['cell'])}}" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
-                                                    <h3 class="session-title"><a href="#" wire:click.prevent="editEvent_modal({{$event['id']}})"><i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}</a></h3>
+                                                    <h3 class="session-title">
+                                                        @if ($event['status'] == 'disabled')
+                                                        <i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}
+                                                        @else
+                                                        <a href="#" wire:click.prevent="editEvent_modal({{$event['id']}})"><i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}</a>    
+                                                        @endif
+                                                        
+                                                    </h3>
                                                     <span class="session-time">{{$event['start_time']}} - {{$event['end_time']}}</span>
                                                     <span class="session-presenter"></span>
                                                 </div>  
@@ -62,54 +69,6 @@
                                     ], key('eventEdit-'.$form_groupId.'-'.$date))
                             </div>
                         </div>
-
-                        <div class="tab-pane fade @if ($active_tab == 'event_edit') show active @endif" id="custom-tabs-event_edit" role="tabpanel" aria-labelledby="custom-tabs-event_edit-tab">
-                            <div class="m-4">
-                                <h4>@lang('event.edit_event')</h4>
-                                <form wire:submit.prevent="editEvent">
-                                    @csrf
-                                    <div class="form-group row">
-                                      <label for="start" class="col-md-3 col-form-label">
-                                          @lang('event.service_start')
-                                      </label>
-                                      <div class="col-md-9">
-                                        <select name="start" id="" wire:model.defer="event_edit.start" wire:change="change_end" class="form-control">
-                                            <option value="0">@lang('event.choose_time')</option>
-                                            @if (!empty($day_data['edit_selects']))
-                                                @foreach ($day_data['edit_selects']['start'] as $time => $option)
-                                                    <option value="{{$time}}">{{ $option }}</option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                      </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="end" class="col-md-3 col-form-label">
-                                            @lang('event.service_end')
-                                        </label>
-                                        <div class="col-md-9">
-                                          <select name="end" wire:model.defer="event_edit.end"  wire:change="change_start" id="" class="form-control">
-                                              <option value="0">@lang('event.choose_time')</option>
-                                              @if (!empty($day_data['edit_selects']))
-                                                @foreach ($day_data['edit_selects']['end'] as $time => $option)
-                                                    <option value="{{$time}}">{{ $option }}</option>
-                                                @endforeach
-                                              @endif
-                                          </select>
-                                        </div>
-                                    </div>
-                                    <button type="button" wire:click.prevent="cancelEdit" class="btn btn-secondary">
-                                        <i class="fa fa-times mr-1"></i>
-                                        @lang('event.cancel_edit')
-                                    </button>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fa fa-save mr-1"></i>
-                                        @lang('event.save_changes')
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
                     </div>                    
                 </div>
                 <div class="modal-footer">

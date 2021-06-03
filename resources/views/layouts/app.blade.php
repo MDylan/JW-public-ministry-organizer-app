@@ -132,7 +132,24 @@
               Livewire.emit('logoutConfirmed');
           }
         })
-      })
+      });
+
+      window.addEventListener('show-eventDelete-confirmation', event => {
+        Swal.fire({
+          title: '@lang('event.confirmDelete.question')',
+          text: '@lang('event.confirmDelete.message')',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: '@lang('Yes')',
+          cancelButtonText: '@lang('Cancel')'
+        }).then((result) => {
+          if (result.isConfirmed) {
+              Livewire.emit('deleteConfirmed');
+          }
+        })
+      });
 
     });
   </script>

@@ -1,4 +1,5 @@
 <div>
+    <div>
     <h4>{{$formText['title']}}</h4>
     <form wire:submit.prevent="saveEvent">
         @csrf
@@ -32,9 +33,35 @@
                 </select>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary">
-            <i class="fa fa-save mr-1"></i>
-            @lang('event.save')
-        </button>
+        @if ($eventId)
+        <div class="row">
+            <div class="col-md-6">
+                <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
+                    <i class="fa fa-times mr-1"></i>
+                    @lang('event.cancel_edit')
+                </a>
+                <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                    <i class="fa fa-save mr-1"></i>
+                    @lang('event.save_changes')
+                </button>
+            </div>
+            <div class="col-md-6">
+                <a wire:loading.attr="disabled" wire:click.prevent="confirmEventDelete()" class="btn btn-danger float-right">
+                    <i class="fa fa-trash mr-1"></i>
+                    @lang('event.delete_event')
+                </a>
+            </div>
+        </div>
+        @else
+            <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
+                <i class="fa fa-times mr-1"></i>
+                @lang('Cancel')
+            </a>
+            <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                <i class="fa fa-save mr-1"></i>
+                @lang('event.save')
+            </button>
+        @endif
     </form>
+    </div>
 </div>
