@@ -6,9 +6,28 @@
                     <ul class="nav nav-tabs border-0" id="custom-tabs-four-tab" role="tablist">
                         <li class="pt-2 px-3">
                             <h4 class="card-title">
-                            {{ $group_data['name'] }} - {{$day_data['dateFormat']}}    
+                            {{ $group_data['name'] }}
                             </h4>
                         </li>
+                        <li class="px-3">
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item">
+                                        <a class="page-link" href="#" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
+                                    <li class="page-item disabled">
+                                        <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true">
+                                            <strong>
+                                            {{$day_data['dateFormat']}}    
+                                            </strong>
+                                        </a>
+                                    </li>                                  
+                                    <li class="page-item">
+                                        <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </li>
+                        
                         <li class="nav-item">
                           <a class="nav-link @if ($active_tab == '') active @endif " id="custom-tabs-home-tab" data-toggle="pill" href="#custom-tabs-home" role="tab" aria-controls="custom-tabs-four-home" aria-selected="true">
                             @lang('event.modal.tab_events')

@@ -27,6 +27,15 @@ class Modal extends AppComponent
     public $date = null;
     public $event_edit = [];
     public $all_select = [];
+    private $weekdays = [
+        1 => 'monday',
+        2 => 'tuesday',
+        3 => 'wednesday',
+        4 => 'thursday',
+        5 => 'friday',
+        6 => 'saturday',
+        0 => 'sunday'
+    ];
 
     public function mount($groupId = 0) {
         if($groupId > 0) {
@@ -68,18 +77,39 @@ class Modal extends AppComponent
         $d = new DateTime( $date );
         $dayOfWeek = $d->format("w");
         $this->day_data['date'] = $date;
-        $this->day_data['dateFormat'] = $d->format('Y.m.d');
+        $this->day_data['dateFormat'] = $d->format('Y.m.d.,')." ".__('event.weekdays_short.'.$dayOfWeek);
         
         $days = $group->days()->get()->toArray();
+        $next = $prev = false;
+        $days_array = [];
         if(count($days)) {
             foreach($days as $day) {
+                $days_array[] = $day['day_number'];
                 $this->service_days[$day['day_number']] = [
                     'start_time' => $day['start_time'],
                     'end_time' => $day['end_time'],
                 ];
             }
         }
-        
+
+        //calculate next end previous day
+        $key = array_search($dayOfWeek, $days_array);
+        $aArray = $days_array;
+        $aKeys = array_keys($aArray); //every element of aKeys is obviously unique
+        $aIndices = array_flip($aKeys); //so array can be flipped without risk
+        $i = $aIndices[$key]; //index of key in aKeys
+        if ($i > 0) $prev = $aArray[$aKeys[$i-1]]; //use previous key in aArray
+        if ($i < count($aKeys)-1) $next = $aArray[$aKeys[$i+1]]; //use next key in aArray
+        if ($prev === false) $prev = end($aArray);
+        if ($next === false) $next = $aArray[array_key_first($aArray)];
+
+        $next_date = new DateTime($date);
+        $next_date->modify("next ".$this->weekdays[$next]);
+        $this->day_data['next_date'] = $next_date->format("Y-m-d");
+        $prev_date = new DateTime($date);
+        $prev_date->modify('last '.$this->weekdays[$prev]);
+        $this->day_data['prev_date'] = $prev_date->format("Y-m-d");
+
         $this->group_data = $group->toArray();
 
         $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
@@ -179,6 +209,11 @@ class Modal extends AppComponent
         $this->date = $date;        
         $this->getInfo();
         $this->dispatchBrowserEvent('show-form');
+    }
+
+    public function setDate($date) {
+        $this->date = $date;
+        $this->getInfo();
     }
 
     public function setStart($time) {

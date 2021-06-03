@@ -102,7 +102,7 @@ class CreateGroupForm extends AppComponent
         if(isset($validatedData['days'])) {
             foreach($validatedData['days'] as $d => $day) {
                 // dd($day);
-                if(!$day['day_number']) continue;
+                if(!isset($day['day_number'])) continue;
                 $day = new GroupDay([
                     'day_number' => $day['day_number'],
                     'start_time' => $day['start_time'],

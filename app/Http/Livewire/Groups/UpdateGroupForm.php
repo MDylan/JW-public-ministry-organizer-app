@@ -143,13 +143,14 @@ class UpdateGroupForm extends AppComponent
             $day_sync = [];
             foreach($validatedDays as $d => $day) {
                 // dd($day);
-                if(!$day['day_number']) continue;
+                if(!isset($day['day_number'])) continue;
                 $day_sync[] = new GroupDay([
                     'day_number' => $day['day_number'],
                     'start_time' => $day['start_time'],
                     'end_time' => $day['end_time']
                 ]);                
-            }            
+            }      
+            // dd($day_sync);      
             $this->group->days()->saveMany($day_sync);
         }
 
