@@ -94,7 +94,7 @@ class Events extends AppComponent
         if($group['id']) {
             session(['groupId' => $this->form_groupId]);
         }
-        // $this->emitTo('events.calendar', 'change');
+        $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
     }
     
     public function getGroupData() {

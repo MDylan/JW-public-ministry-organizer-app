@@ -15,14 +15,19 @@ class Modal extends AppComponent
 {
 
     // public $group;
-    private $service_days = [];
+    public $service_days = [];
     public $group_data = [];
     public $day_data = [];
     public $day_events = [];
 
     public $form_groupId = 0;
     public $original_day_data = [];
-    public $listeners = ['openModal', 'refresh', 'cancelEdit'];
+    public $listeners = [
+        'openModal', 
+        'refresh', 
+        'cancelEdit',
+        'setGroup' => 'mount'
+    ];
     public $active_tab = '';
     public $date = null;
     public $event_edit = [];
@@ -38,6 +43,7 @@ class Modal extends AppComponent
     ];
 
     public function mount($groupId = 0) {
+        $this->date = null;
         if($groupId > 0) {
             $check = auth()->user()->userGroups()->whereId($groupId);
             
@@ -61,6 +67,14 @@ class Modal extends AppComponent
     public function refresh() {
         $this->getInfo();
     }
+
+    // public function setGroup($groupId) {
+    //     $check = auth()->user()->userGroups()->whereId($groupId);            
+    //     if(!$check) {
+    //         abort('403');
+    //     }
+    //     $this->form_groupId = $groupId;
+    // }
 
     public function getInfo() {
         $this->active_tab = '';
