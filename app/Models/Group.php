@@ -88,6 +88,15 @@ class Group extends Model
         return $this->events()->whereBetween('day', [$start, $end]);
     }
 
+    public function stats() {
+        return $this->hasMany(DayStat::class);
+    }
+
+    public function month_stats($start) {
+        $end = date("Y-m-t", strtotime($start));
+        return $this->stats()->whereBetween('day', [$start, $end]);
+    }
+
     // public function eventUser() {
     //     return $this->hasManyThrough(Event::class, User::class);
     // }

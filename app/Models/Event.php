@@ -48,7 +48,6 @@ class Event extends Model
     }
 
 
-
     //módosítja az adatbázisból visszanyert értéket unixtime-ra
     public function getStartAttribute($value) {
         $d = new DateTime( $value );

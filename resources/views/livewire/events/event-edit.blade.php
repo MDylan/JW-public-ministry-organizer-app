@@ -8,7 +8,7 @@
                 @lang('event.service_start')
             </label>
             <div class="col-md-9">
-            <select name="start" id="" wire:model.defer="state.start" wire:change="change_end" class="form-control">
+            <select name="start" id="" wire:model.defer="state.start" wire:change="change_end" class="form-control @error('start') is-invalid @enderror"">
                 <option value="0">@lang('event.choose_time')</option>
                 @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['start'] as $time => $option)
@@ -16,6 +16,7 @@
                     @endforeach
                 @endif
             </select>
+            @error('start')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
         </div>
         <div class="form-group row">
@@ -23,7 +24,7 @@
                 @lang('event.service_end')
             </label>
             <div class="col-md-9">
-                <select name="end" wire:model.defer="state.end"  wire:change="change_start" id="" class="form-control">
+                <select name="end" wire:model.defer="state.end"  wire:change="change_start" id="" class="form-control @error('end') is-invalid @enderror"">
                     <option value="0">@lang('event.choose_time')</option>
                     @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['end'] as $time => $option)
@@ -31,6 +32,7 @@
                     @endforeach
                     @endif
                 </select>
+                @error('end')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
         </div>
         @if ($eventId)

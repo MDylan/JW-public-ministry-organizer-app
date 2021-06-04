@@ -35,7 +35,9 @@ return [
         'message' => 'Ez nem vonható vissza.',
         'success' => 'Sikeresen törölted a szolgálatot.',
         'error' => 'Hiba a törlés során'
-    ]
+    ],
+    'reach_max_publisher' => 'Ebben az idősávban már elértük a maximális hírnökszámot. Válassz más időpontot.',
+    'invalid_value' => 'Hibás időpont érték lett megadva.',
 
 
 ];

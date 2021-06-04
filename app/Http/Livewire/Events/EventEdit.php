@@ -19,7 +19,7 @@ class EventEdit extends AppComponent
     public $eventId = null;
     public $editEvent = null;
     public $original_day_data = [];
-    public $day_events = [];
+    private $day_events = [];
     public $group_data = [];
     // public $disabled_slots = [];
     public $listeners = [
@@ -32,6 +32,7 @@ class EventEdit extends AppComponent
     public function mount($groupId, $date) {
         $this->groupId = $groupId;
         $this->date = $date;
+        $this->state = [];
         $this->createForm();
     }
 
@@ -131,13 +132,13 @@ class EventEdit extends AppComponent
                 $cell = min(array_keys($day_table[$key]['cells']));
             }
             
-            $day_events[$key][$event['id']] = $event;
-            $day_events[$key][$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
-            $day_events[$key][$event['id']]['height'] = $steps;
-            $day_events[$key][$event['id']]['cell'] = $cell;
-            $day_events[$key][$event['id']]['row'] = $row;
-            $day_events[$key][$event['id']]['start_time'] = date("H:i", $event['start']);
-            $day_events[$key][$event['id']]['end_time'] = date("H:i", $event['end']);
+            $day_events[$event['id']] = $event;
+            $day_events[$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
+            $day_events[$event['id']]['height'] = $steps;
+            $day_events[$event['id']]['cell'] = $cell;
+            $day_events[$event['id']]['row'] = $row;
+            $day_events[$event['id']]['start_time'] = date("H:i", $event['start']);
+            $day_events[$event['id']]['end_time'] = date("H:i", $event['end']);
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
@@ -162,6 +163,7 @@ class EventEdit extends AppComponent
                 $day_table[$key]['status'] = 'ready';
             } 
         }
+        
 
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
@@ -221,6 +223,10 @@ class EventEdit extends AppComponent
                 }
             }
         }
+        // dd(count($this->day_data['selects']['end']));
+        if(count($this->day_data['selects']['end']) == 1) {
+            $this->state['end'] = array_key_last($this->day_data['selects']['end']);
+        }
     }
 
     public function cancelEdit() {
@@ -229,27 +235,64 @@ class EventEdit extends AppComponent
     }
 
     public function saveEvent() {
+        //check if time still ok or not
+        $this->getInfo();
+        $step = $this->group_data['min_time'] * 60;
+        $publishers_ok = true;
+        for ($i=$this->state['start']; $i <=$this->state['end'] ; $i+=$step) {
+            $slot_key = "'".date("Hi", $i)."'";
+            if($this->day_data['table'][$slot_key]['publishers'] >= $this->group_data['max_publishers']) {
+                $publishers_ok = false;                
+            }
+        }
+        //check valid time, maybe user modified it in browser
+        $invalid = [];
+        if(!isset($this->day_data['selects']['start'][$this->state['start']]))
+            $invalid['start'] = true;
+        if(!isset($this->day_data['selects']['end'][$this->state['end']]))
+            $invalid['end'] = true;
+
         $group = Group::findOrFail($this->groupId);
 
         $data = [
             'day' => $this->day_data['date'],
-            'start' => date("Y-m-d H:i", $this->state['start']),
-            'end' => date("Y-m-d H:i", $this->state['end']),
+            'start' => $this->state['start'],
+            'end' => $this->state['end'],
             'user_id' => Auth::id(),
             'accepted_at' => date("Y-m-d H:i:s"),
             'accepted_by' => Auth::id()
         ];
-
-        // dd($data);
-
-        $validatedData = Validator::make($data, [
+        $v = Validator::make($data, [
             'user_id' => 'required|exists:App\Models\User,id',
-            'start' => 'required|date_format:Y-m-d H:i|before:end',
-            'end' => 'required|date_format:Y-m-d H:i|after:start',
+            'start' => 'required|numeric|lte:end', 
+            'end' => 'required|numeric|gte:start',
             'day' => 'required|date_format:Y-m-d',
             'accepted_by' => 'sometimes|required|exists:App\Models\User,id',
             'accepted_at' => 'sometimes|required|date_format:Y-m-d H:i:s'
-        ])->validate();
+        ]);
+        
+        $v->after(function ($validator) use ($publishers_ok, $invalid) {
+            if ($publishers_ok === false) {
+                $validator->errors()->add(
+                    'start', __('event.reach_max_publisher')
+                );
+                $validator->errors()->add(
+                    'end', __('event.reach_max_publisher')
+                );
+            }
+            if(count($invalid) > 0) {
+                foreach($invalid as $field => $v) {
+                    $validator->errors()->add(
+                        $field, __('event.invalid_value')
+                    );                    
+                }
+            }
+        });
+
+        $validatedData = $v->validate();
+
+        $validatedData['start'] = date("Y-m-d H:i", $validatedData['start']);
+        $validatedData['end'] = date("Y-m-d H:i", $validatedData['end']);
 
         // dd($validatedData);
         if($this->editEvent !== null) {
