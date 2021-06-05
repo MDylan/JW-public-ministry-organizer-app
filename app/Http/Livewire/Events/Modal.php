@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Events;
 
 use App\Http\Livewire\AppComponent;
+use App\Models\DayStat;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use DateTime;
@@ -41,6 +42,7 @@ class Modal extends AppComponent
         6 => 'saturday',
         0 => 'sunday'
     ];
+    private $day_stat = [];
 
     public function mount($groupId = 0) {
         $this->date = null;
@@ -66,6 +68,19 @@ class Modal extends AppComponent
     //dont delete, it's a listener
     public function refresh() {
         $this->getInfo();
+
+        $stat = DayStat::where([
+            'group_id' => $this->form_groupId,
+            'day' => $this->date
+        ]);
+        $stat->delete();
+
+        DayStat::insert(
+            $this->day_stat
+        );
+
+        $this->emitUp('refresh');
+
     }
 
     // public function setGroup($groupId) {
@@ -88,6 +103,7 @@ class Modal extends AppComponent
     
         $this->day_data = [];
         $this->service_days = [];
+        $this->day_stat = [];
         $d = new DateTime( $date );
         $dayOfWeek = $d->format("w");
         $this->day_data['date'] = $date;
@@ -145,6 +161,12 @@ class Modal extends AppComponent
                 'status' => ($current < $now) ? 'full' : 'free',
                 'publishers' => 0,
             ];
+            $this->day_stat[$key] = [
+                'group_id' => $this->form_groupId,
+                'day' => $this->date,
+                'time_slot' => date('Y-m-d H:i', $current),
+                'events' => 0
+            ];
             for ($i=1; $i <= $this->group_data['max_publishers']; $i++) { 
                 $day_table[$key]['cells'][$i] = true;
             }
@@ -160,7 +182,7 @@ class Modal extends AppComponent
         //események
         $events = $group->day_events($date)->get()->toArray();
                 
-        $slots = [];
+        $disabled_slots = $slots = [];
         
         foreach($events as $event) {
             $steps = ($event['end'] - $event['start']) / $step;
@@ -192,6 +214,7 @@ class Modal extends AppComponent
                 $slots[$slot_key][] = true;
                 unset($day_table[$slot_key]['cells'][$cell]);
                 $day_table[$slot_key]['publishers']++;
+                $this->day_stat[$slot_key]['events']++;
                 if(Auth::id() == $event['user_id']) {
                     $disabled_slots[$slot_key] = true;
                 }
@@ -201,7 +224,7 @@ class Modal extends AppComponent
         
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->group_data['max_publishers'] || $disabled_slots[$key]) {
+            if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);

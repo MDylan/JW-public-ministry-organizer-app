@@ -154,7 +154,7 @@ class EventEdit extends AppComponent
         
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->group_data['max_publishers'] || $disabled_slots[$key]) {
+            if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);

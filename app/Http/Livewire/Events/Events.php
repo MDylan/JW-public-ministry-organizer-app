@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Events;
 
 use App\Http\Livewire\AppComponent;
+use App\Models\DayStat;
+use App\Models\Event;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -30,8 +32,12 @@ class Events extends AppComponent
         ],
     ];
     public $cal_original_day_data = [];
-    public $listeners = ['openModal'];
+    public $listeners = ['openModal', 'refresh' => 'render'];
     public $cal_active_tab = '';
+    private $first_day = null;
+    private $last_day = null;
+    public $day_stat = [];
+    public $userEvents = [];
 
     public function mount(int $year = 0, int $month = 0) {
         if(isset($year)) {
@@ -113,11 +119,56 @@ class Events extends AppComponent
         $this->cal_group_data = $group->whereId($groupId)->first()->toArray();
     }
 
+    public function getStat() {
+        // dd($this->cal_group_data);
+        $groupId = session('groupId');
+        $stats = DayStat::where('group_id', $groupId)
+                            ->whereBetween('day', [$this->first_day, $this->last_day])
+                            ->orderBy('time_slot')
+                            ->get()
+                            ->toArray();
+        foreach($stats as $stat) {
+            if(isset($this->day_stat[$stat['day']]['default'])) {
+                unset($this->day_stat[$stat['day']]['default']);
+            }
+            $color = '#00ff00'; //green
+            if($stat['events'] > 0 && $stat['events'] < $this->cal_group_data['min_publishers']) {
+                $color = '#1259B2'; //blue
+            }
+            if($stat['events'] >= $this->cal_group_data['min_publishers']) {
+                $color = '#ffff00'; //yellow
+            } 
+            if($stat['events'] == $this->cal_group_data['max_publishers']) {
+                $color = '#ff0000'; //red
+            }
+            $this->day_stat[$stat['day']][] = [
+                'color' => $color
+            ];
+        }
+        if(count($this->day_stat)) {
+            $total_percent = [];
+            foreach($this->day_stat as $day => $values) {
+                $total = count($values);
+                $percent = round(100 / $total);
+                $total_percent[$day] = 0;
+                $pos = 0;
+                foreach($values as $k => $data) {
+                    $this->day_stat[$day][$k]['percent'] = $percent;
+                    $this->day_stat[$day][$k]['pos'] = $pos;
+                    $pos+=$percent;
+                    $total_percent[$day]+=$percent;
+                }
+            }
+        }
+        // dd($this->day_stat, $total_percent);
+    }
+
 
     public function render()
     {
         // $this->calendar = [];
         // dd($this->day_data);
+        $this->day_stat = [];
         
         $groups = User::findOrFail(Auth::id());
         $this->groups = $groups->userGroups()->get()->toArray();
@@ -134,6 +185,8 @@ class Events extends AppComponent
         // What is the first day of the month in question?
         $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
         $this->current_month = date('F', $firstDayOfMonth);
+        $this->first_day = date("Y-m-d", $firstDayOfMonth);
+        $this->last_day = date("Y-m-t", $firstDayOfMonth);
 
         // How many days does this month contain?
         $numberDays = date('t',$firstDayOfMonth);
@@ -189,6 +242,13 @@ class Events extends AppComponent
                 'available' => $available,
                 'service_day' => (isset($this->cal_service_days[$weekDays[$dayOfWeek]])) ? true : false
             ];
+            if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
+                $this->day_stat[$date]['default'] = [
+                    'color' => '#00ff00', //green,
+                    'percent' => 100,
+                    'pos' => 0
+                ];
+            }
             // Increment counters
             $currentDay++;
             $dayOfWeek++;
@@ -209,7 +269,17 @@ class Events extends AppComponent
                 'available' => false,
                 'service_day' => false,
             ];
-        }        
+        }  
+        
+        $this->getStat();
+
+        $userEvents = Event::where([
+            'group_id' => $this->cal_group_data['id'],
+            'user_id' => Auth::id()
+        ])->whereBetween('day', [$this->first_day, $this->last_day])->get()->toArray();
+        foreach($userEvents as $ev) {
+            $this->userEvents[$ev['day']] = true;
+        }
         
         // dd($calendar);
         return view('livewire.events.events', [

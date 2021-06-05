@@ -150,7 +150,6 @@
           }
         })
       });
-
     });
   </script>
   @yield('footer_scripts')

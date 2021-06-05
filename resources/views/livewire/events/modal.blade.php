@@ -1,5 +1,5 @@
 <div>
-    <div wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+    <div wire:ignore.self class="modal fade eventModal" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header pb-0 pl-0 pt-2">

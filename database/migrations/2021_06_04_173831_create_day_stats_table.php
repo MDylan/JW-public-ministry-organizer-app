@@ -19,7 +19,6 @@ class CreateDayStatsTable extends Migration
             $table->date('day')->index();
             $table->datetime('time_slot');
             $table->unsignedInteger('events');
-            $table->unsignedInteger('max_publishers');
             
             $table->foreign('group_id')->references('id')->on('groups');
 

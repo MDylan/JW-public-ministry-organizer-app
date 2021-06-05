@@ -90,7 +90,7 @@
                                     @foreach ($row as $day)
                                     <td @if ($day['colspan'] !== null) colspan = "{{$day['colspan']}}" 
                                         @else
-                                            class="pr-1 pt-1
+                                            class="pr-1 py-1
                                             @if ($day['current']) table-secondary
                                             @elseif (isset($cal_service_days[$day['weekDay']]) == null || !$day['available']) table-active
                                             @else table-light @endif
@@ -100,7 +100,16 @@
                                         @if ($day['service_day']) onclick="modal({{$cal_group_data['id']}}, '{{ $day['fullDate'] }}')" @endif
                                         >
                                         <div class="row">
-                                            <div class="col-8">
+                                            <div class="col-8 m-0 p-0">
+                                                @if (isset($day_stat[$day['fullDate']]))
+                                                    <div class="dayStat @if (isset($userEvents[$day['fullDate']]))userEvent @endif"
+                                                    style="
+                                                    background: linear-gradient(90deg
+                                                    @foreach ($day_stat[$day['fullDate']] as $k => $v)
+                                                        , {{$v['color']}} {{$v['percent']}}% {{$v['pos']}}%
+                                                    @endforeach
+                                                    );"></div>
+                                                @endif
                                             </div>
                                             <div class="col-4 d-flex justify-content-end">{{ $day['day'] }}</div>
                                         </div>
@@ -123,8 +132,6 @@
     </div>
 
     @livewire('events.modal', ['groupId' => $cal_group_data['id']], key('eventsmodal'))
-
-    
 
 </div>
 
