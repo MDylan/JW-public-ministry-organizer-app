@@ -103,12 +103,7 @@
                                             <div class="col-8 m-0 p-0">
                                                 @if (isset($day_stat[$day['fullDate']]))
                                                     <div class="dayStat @if (isset($userEvents[$day['fullDate']]))userEvent @endif"
-                                                    style="
-                                                    background: linear-gradient(90deg
-                                                    @foreach ($day_stat[$day['fullDate']] as $k => $v)
-                                                        , {{$v['color']}} {{$v['percent']}}% {{$v['pos']}}%
-                                                    @endforeach
-                                                    );"></div>
+                                                    style="background: {{$day_stat[$day['fullDate']]}}"></div>
                                                 @endif
                                             </div>
                                             <div class="col-4 d-flex justify-content-end">{{ $day['day'] }}</div>

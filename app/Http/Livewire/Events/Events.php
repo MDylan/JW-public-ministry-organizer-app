@@ -120,17 +120,14 @@ class Events extends AppComponent
     }
 
     public function getStat() {
-        // dd($this->cal_group_data);
         $groupId = session('groupId');
         $stats = DayStat::where('group_id', $groupId)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
                             ->orderBy('time_slot')
                             ->get()
                             ->toArray();
+        $colors = [];
         foreach($stats as $stat) {
-            if(isset($this->day_stat[$stat['day']]['default'])) {
-                unset($this->day_stat[$stat['day']]['default']);
-            }
             $color = '#00ff00'; //green
             if($stat['events'] > 0 && $stat['events'] < $this->cal_group_data['min_publishers']) {
                 $color = '#1259B2'; //blue
@@ -141,23 +138,22 @@ class Events extends AppComponent
             if($stat['events'] == $this->cal_group_data['max_publishers']) {
                 $color = '#ff0000'; //red
             }
-            $this->day_stat[$stat['day']][] = [
-                'color' => $color
-            ];
+            $colors[$stat['day']][] = $color;
         }
-        if(count($this->day_stat)) {
+        if(count($colors)) {
             $total_percent = [];
-            foreach($this->day_stat as $day => $values) {
+            foreach($colors as $day => $values) {
                 $total = count($values);
-                $percent = round(100 / $total);
+                $percent = round(100 / $total, 3);
                 $total_percent[$day] = 0;
                 $pos = 0;
-                foreach($values as $k => $data) {
-                    $this->day_stat[$day][$k]['percent'] = $percent;
-                    $this->day_stat[$day][$k]['pos'] = $pos;
+                $this->day_stat[$day] = "linear-gradient(90deg";
+                foreach($values as $k => $color) {
+                    $this->day_stat[$day] .= ", ".$color." ".$percent."% ".$pos."%";
                     $pos+=$percent;
                     $total_percent[$day]+=$percent;
                 }
+                $this->day_stat[$day] .= ");";
             }
         }
         // dd($this->day_stat, $total_percent);
@@ -243,11 +239,7 @@ class Events extends AppComponent
                 'service_day' => (isset($this->cal_service_days[$weekDays[$dayOfWeek]])) ? true : false
             ];
             if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
-                $this->day_stat[$date]['default'] = [
-                    'color' => '#00ff00', //green,
-                    'percent' => 100,
-                    'pos' => 0
-                ];
+                $this->day_stat[$date] = "color: #00ff00;";
             }
             // Increment counters
             $currentDay++;

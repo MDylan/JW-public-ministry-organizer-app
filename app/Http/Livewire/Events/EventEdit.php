@@ -19,7 +19,7 @@ class EventEdit extends AppComponent
     public $eventId = null;
     public $editEvent = null;
     public $original_day_data = [];
-    private $day_events = [];
+    // private $day_events = [];
     public $group_data = [];
     // public $disabled_slots = [];
     public $listeners = [
@@ -30,6 +30,10 @@ class EventEdit extends AppComponent
     ];
 
     public function mount($groupId, $date) {
+        $check = auth()->user()->userGroups()->whereId($groupId);
+        if(!$check) {
+            abort('403');
+        }
         $this->groupId = $groupId;
         $this->date = $date;
         $this->state = [];
@@ -51,7 +55,7 @@ class EventEdit extends AppComponent
         $this->formText['title'] = __('event.edit_event');
     }
 
-    public function getInfo() {
+    public function getInfo($saveProcess = false) {
         if($this->eventId == null) $this->editEvent = null;
 
         $groupId = $this->groupId;
@@ -85,7 +89,7 @@ class EventEdit extends AppComponent
 
         $day_table = [];
         $day_selects = [];
-        $day_events = [];
+        // $day_events = [];
         
         $row = 1;
         for($current=$start;$current < $max;$current+=$step) {
@@ -119,7 +123,8 @@ class EventEdit extends AppComponent
 
                 if($this->eventId == $event['id']) {
                     $this->editEvent = $event;
-                    $this->state = $event;
+                    if($saveProcess === false)
+                        $this->state = $event;
                     continue;
                 }
 
@@ -132,13 +137,13 @@ class EventEdit extends AppComponent
                 $cell = min(array_keys($day_table[$key]['cells']));
             }
             
-            $day_events[$event['id']] = $event;
-            $day_events[$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
-            $day_events[$event['id']]['height'] = $steps;
-            $day_events[$event['id']]['cell'] = $cell;
-            $day_events[$event['id']]['row'] = $row;
-            $day_events[$event['id']]['start_time'] = date("H:i", $event['start']);
-            $day_events[$event['id']]['end_time'] = date("H:i", $event['end']);
+            // $day_events[$event['id']] = $event;
+            // $day_events[$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
+            // $day_events[$event['id']]['height'] = $steps;
+            // $day_events[$event['id']]['cell'] = $cell;
+            // $day_events[$event['id']]['row'] = $row;
+            // $day_events[$event['id']]['start_time'] = date("H:i", $event['start']);
+            // $day_events[$event['id']]['end_time'] = date("H:i", $event['end']);
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
@@ -168,7 +173,7 @@ class EventEdit extends AppComponent
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
-        $this->day_events = $day_events;
+        // $this->day_events = $day_events;
     }
 
     public function setStart($time) {
@@ -236,10 +241,11 @@ class EventEdit extends AppComponent
 
     public function saveEvent() {
         //check if time still ok or not
-        $this->getInfo();
+        // dd($this->state);
+        $this->getInfo(true);
         $step = $this->group_data['min_time'] * 60;
         $publishers_ok = true;
-        for ($i=$this->state['start']; $i <=$this->state['end'] ; $i+=$step) {
+        for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
             $slot_key = "'".date("Hi", $i)."'";
             if($this->day_data['table'][$slot_key]['publishers'] >= $this->group_data['max_publishers']) {
                 $publishers_ok = false;                
