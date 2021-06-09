@@ -10,7 +10,8 @@ use DateTime;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\Event;
-
+use App\Models\GroupUser;
+use App\Notifications\GroupUserAddedNotification;
 
 class Modal extends AppComponent
 {
@@ -43,30 +44,46 @@ class Modal extends AppComponent
         0 => 'sunday'
     ];
     private $day_stat = [];
+    public $error = false;
+    public $current_available = false;
+    private $role = "";
 
     public function mount($groupId = 0) {
         $this->date = null;
         if($groupId > 0) {
             $check = auth()->user()->userGroups()->whereId($groupId);
-            
             if(!$check) {
-                abort('403');
+                $this->error = __('event.error.invalid_group');
+            } else {
+                $this->form_groupId = $groupId;
+                $this->day_data =  [
+                    'date' => 0,
+                    'dateFormat' => 0,
+                    'table' => [],
+                    'selects' => [
+                        'start' => [],
+                        'end' => [],
+                    ],
+                ];
+
+                
+                // dd($this->role);
             }
-            $this->form_groupId = $groupId;
-            $this->day_data =  [
-                'date' => 0,
-                'dateFormat' => 0,
-                'table' => [],
-                'selects' => [
-                    'start' => [],
-                    'end' => [],
-                ],
-            ];
         }
+    }
+
+    public function getRole() {
+        $info = GroupUser::where('user_id', '=', Auth::id())
+            ->where('group_id', '=', $this->form_groupId)
+            ->select('group_role')
+            ->first()->toArray();
+        $this->role = $info['group_role'];
     }
 
     //dont delete, it's a listener
     public function refresh() {
+        if($this->error !== false) return;
+
         $this->getInfo();
 
         $stat = DayStat::where([
@@ -80,7 +97,7 @@ class Modal extends AppComponent
         );
 
         $this->emitUp('refresh');
-
+        $this->emitTo('events.event-edit', 'createForm');
     }
 
     // public function setGroup($groupId) {
@@ -93,7 +110,8 @@ class Modal extends AppComponent
 
     public function getInfo() {
         $this->active_tab = '';
-        
+        $this->getRole();
+        if($this->error !== false) return;
         // $this->setVars();
 
         $groupId = $this->form_groupId;
@@ -121,6 +139,7 @@ class Modal extends AppComponent
                 ];
             }
         }
+        $this->group_data = $group->toArray();
 
         //calculate next end previous day
         $key = array_search($dayOfWeek, $days_array);
@@ -139,18 +158,24 @@ class Modal extends AppComponent
         $prev_date = new DateTime($date);
         $prev_date->modify('last '.$this->weekdays[$prev]);
         $this->day_data['prev_date'] = $prev_date->format("Y-m-d");
+        $now = time();
 
-        $this->group_data = $group->toArray();
-
+        $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
+        if($next_date->getTimestamp() > $max_time) {
+            $this->day_data['next_date'] = false;
+        }
         $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-        $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+        $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");        
 
+        if($now < $max) {
+            $this->current_available = true;
+        }
         $step = $this->group_data['min_time'] * 60;
 
         $day_table = [];
         $day_selects = [];
         $day_events = [];
-        $now = time();
+        
         $row = 1;
         for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
@@ -207,6 +232,11 @@ class Modal extends AppComponent
             $day_events[$key][$event['id']]['start_time'] = date("H:i", $event['start']);
             $day_events[$key][$event['id']]['end_time'] = date("H:i", $event['end']);
             $day_events[$key][$event['id']]['status'] = $event['start'] < $now ? 'disabled' : '';
+            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+                && $event['user_id'] !== Auth::id()
+                ) {
+                    $day_events[$key][$event['id']]['status'] = 'disabled';
+            }
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
@@ -221,7 +251,7 @@ class Modal extends AppComponent
                 $cell_start += $step;
             }
         }
-        
+        // dd($this->role);
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
             if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
@@ -287,8 +317,6 @@ class Modal extends AppComponent
             ]);
         }
         
-        return <<<'blade'
-        <div></div>
-        blade;
+        return view('livewire.default');
     }
 }

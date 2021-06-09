@@ -134,6 +134,9 @@ return [
         '*.start_time' => 'szolgálat kezdete',
         '*.end_time' => 'szolgálat vége',
         'congregation' => 'gyülekezet',
-        'reason' => 'igénylés oka'
+        'reason' => 'igénylés oka',
+        'user_id' => 'hírnök',
+        'start' => 'szolgálat kezdete',
+        'end' => 'szolgálat vége'
     ],
 ];

@@ -3,6 +3,29 @@
     <h4>{{$formText['title']}}</h4>
     <form wire:submit.prevent="saveEvent">
         @csrf
+        @if (in_array($role, ['admin', 'roler', 'helper']))
+            <div class="form-group row">
+                <label for="start" class="col-md-3 col-form-label">
+                    @lang('event.publisher')
+                </label>
+                <div class="col-md-9">
+                    @if ($eventId === null)
+                    <select name="user_id" id="" wire:model.defer="state.user_id" wire:change="change_user" class="form-control @error('user_id') is-invalid @enderror"">
+                        <option value="0">@lang('event.choose_publisher')</option>
+                        @if (!empty($users))
+                            @foreach ($users as $user)
+                                <option value="{{$user['id']}}">{{ $user['full_name'] }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    @error('user_id')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror    
+                    @else
+                        {{ $editEvent['user']['full_name'] }}
+                    @endif
+                
+                </div>
+            </div>
+        @endif
         <div class="form-group row">
             <label for="start" class="col-md-3 col-form-label">
                 @lang('event.service_start')

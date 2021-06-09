@@ -86,6 +86,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return "{$this->last_name} {$this->first_name}";
     }
 
+    public function canSetEventUser() {
+        return $this->belongsToMany(Group::class)
+                    ->withPivot(['group_role'])
+                    ->wherePivotIn('group_role', ['admin', 'roler', 'helper'])
+                    ->wherePivotNotNull('accepted_at');
+                    // ->using(GroupUser::class);
+    }
+
     public function userGroupsEditable() {
         return $this->belongsToMany('App\Models\Group')
                     ->withPivot(['group_role'])

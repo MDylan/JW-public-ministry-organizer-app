@@ -20,10 +20,12 @@
                                             {{$day_data['dateFormat']}}    
                                             </strong>
                                         </a>
-                                    </li>                                  
-                                    <li class="page-item">
-                                        <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
                                     </li>
+                                    @if ($day_data['next_date'] !== false)
+                                        <li class="page-item">
+                                            <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
+                                        </li>
+                                    @endif
                                 </ul>
                             </nav>
                         </li>
@@ -33,11 +35,13 @@
                             @lang('event.modal.tab_events')
                           </a>
                         </li>
-                        <li class="nav-item">
-                          <a class="nav-link @if ($active_tab == 'event') active @endif " id="custom-tabs-event-tab" data-toggle="pill" href="#custom-tabs-event" role="tab" aria-controls="custom-tabs-four-profile" aria-selected="false">
-                            @lang('event.modal.tab_set_event')
-                          </a>
-                        </li>
+                        @if ($current_available === true)
+                            <li class="nav-item">
+                            <a wire:click="$emitTo('events.event-edit', 'createForm')" class="nav-link @if ($active_tab == 'event') active @endif " id="custom-tabs-event-tab" data-toggle="pill" href="#custom-tabs-event" role="tab" aria-controls="custom-tabs-four-profile" aria-selected="false">
+                                @lang('event.modal.tab_set_event')
+                            </a>
+                            </li>
+                        @endif
                     </ul>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -60,7 +64,9 @@
                                         </div>
                                         @if (isset($day_events[$time]))
                                             @foreach ($day_events[$time] as $event)
-                                                <div class="session session-2 track-{{($event['cell'])}}" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
+                                                <div class="session session-2 track-{{($event['cell'])}} @if ($event['user_id'] == auth()->id())
+                                                    userEvent
+                                                @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
                                                     <h3 class="session-title">
                                                         @if ($event['status'] == 'disabled')
                                                         <i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}

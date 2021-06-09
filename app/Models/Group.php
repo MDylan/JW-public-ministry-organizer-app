@@ -37,6 +37,13 @@ class Group extends Model
                         ->using(GroupUser::class);
     }
 
+    public function users() {
+        return $this->belongsToMany(User::class)
+                        ->select(['users.id', 'users.first_name', 'users.last_name'])
+                        ->withPivot('group_role')
+                        ->using(GroupUser::class);
+    }
+
     public function groupUsers_old() {
         return $this->belongsToMany('App\Models\User')
                 ->withPivot('group_role', 'note', 'accepted_at')

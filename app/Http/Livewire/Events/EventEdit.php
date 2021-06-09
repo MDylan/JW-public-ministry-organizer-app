@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Events;
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
 use App\Models\Group;
+use App\Models\GroupUser;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -19,36 +20,71 @@ class EventEdit extends AppComponent
     public $eventId = null;
     public $editEvent = null;
     public $original_day_data = [];
-    // private $day_events = [];
     public $group_data = [];
-    // public $disabled_slots = [];
     public $listeners = [
         'setStart',
         'createForm',
         'editForm',
         'deleteConfirmed'
     ];
+    public $users = [];
+    public $role = null;
+    private $pleaseWait = false;
+    private $error = false;
 
     public function mount($groupId, $date) {
         $check = auth()->user()->userGroups()->whereId($groupId);
         if(!$check) {
-            abort('403');
+            $this->error = __('event.error.invalid_group');
+        } else {
+            $this->groupId = $groupId;
+            $this->date = $date;
+            $this->state = [];
+            $this->users = [];
+            $this->error = false;
+            $this->getRole();
+            $this->createForm();
         }
-        $this->groupId = $groupId;
-        $this->date = $date;
-        $this->state = [];
-        $this->createForm();
+    }
+
+    public function getRole() {
+        $info = GroupUser::where('user_id', '=', Auth::id())
+            ->where('group_id', '=', $this->groupId)
+            ->select('group_role')
+            ->first()->toArray();
+        $this->role = $info['group_role'];
     }
 
     public function createForm() {
         $this->eventId = null;
-        $this->getInfo();
-        // dd($this->day_data['selects']);
+        $this->state = [];
+        $this->state['user_id'] = Auth::id();
+        $this->error = false;
+        $this->getInfo();        
         $this->formText['title'] = __('event.create_event');
     }
 
     public function editForm($eventId) {
         $this->eventId = $eventId;
+        $groupId = $this->groupId;
+        $date = $this->date;
+        $this->getRole();
+
+        $group = Group::findOrFail($groupId);
+
+        if($this->eventId !== null) {
+            $editEvent = $group->day_events($date)->whereId($this->eventId)->firstOrFail()->toArray();
+
+            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+                && $editEvent['user_id'] !== Auth::id()) {
+                    $this->error = __('event.error.no_permission');
+                    $this->cancelEdit();
+                return;
+            }            
+            $this->editEvent = $editEvent;
+            $this->state['user_id'] = $editEvent['user_id'];
+        }
+
         $this->getInfo();
         $this->change_start();
         $this->change_end();
@@ -62,6 +98,9 @@ class EventEdit extends AppComponent
         $date = $this->date;
 
         $group = Group::findOrFail($groupId);
+        if(in_array($this->role, ['admin', 'roler', 'helper'])) {
+            $this->users = $group->users()->get()->toArray();
+        }
     
         $this->day_data = [];
         $this->service_days = [];
@@ -86,11 +125,8 @@ class EventEdit extends AppComponent
         $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
 
         $step = $this->group_data['min_time'] * 60;
-
         $day_table = [];
         $day_selects = [];
-        // $day_events = [];
-        
         $row = 1;
         for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
@@ -112,24 +148,20 @@ class EventEdit extends AppComponent
             $row++;
         }
         $day_selects['end'][$max] = date("H:i", $max);
-        // dd($day_table);
-        //események
+        //other events
         $events = $group->day_events($date)->get()->toArray();
                 
         $slots = [];
         $disabled_slots = [];
         
         foreach($events as $event) {
+            if($this->eventId == $event['id']) {
+                if($saveProcess === false)
+                    $this->state = $event;
+                continue;
+            }
 
-                if($this->eventId == $event['id']) {
-                    $this->editEvent = $event;
-                    if($saveProcess === false)
-                        $this->state = $event;
-                    continue;
-                }
-
-            $steps = ($event['end'] - $event['start']) / $step;
-            
+            $steps = ($event['end'] - $event['start']) / $step;            
             $row = $day_table["'".date('Hi', $event['start'])."'"]['row'];
             $key = "'".date('Hi', $event['start'])."'";
             $cell = 1;
@@ -137,27 +169,20 @@ class EventEdit extends AppComponent
                 $cell = min(array_keys($day_table[$key]['cells']));
             }
             
-            // $day_events[$event['id']] = $event;
-            // $day_events[$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
-            // $day_events[$event['id']]['height'] = $steps;
-            // $day_events[$event['id']]['cell'] = $cell;
-            // $day_events[$event['id']]['row'] = $row;
-            // $day_events[$event['id']]['start_time'] = date("H:i", $event['start']);
-            // $day_events[$event['id']]['end_time'] = date("H:i", $event['end']);
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
                 $slots[$slot_key][] = true;
                 unset($day_table[$slot_key]['cells'][$cell]);
                 $day_table[$slot_key]['publishers']++;
-                if(Auth::id() == $event['user_id']) {
+                if($this->state['user_id'] == $event['user_id']) {
                     $disabled_slots[$slot_key] = true;
                 }
                 $cell_start += $step;
             }
         }
         
-        //kiszűröm ami nem elérhető
+        //filter out what not available
         foreach($slots as $key => $times) {
             if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
@@ -167,13 +192,15 @@ class EventEdit extends AppComponent
             } elseif(count($times) >= $this->group_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
-        }
-        
+        }        
 
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
-        // $this->day_events = $day_events;
+    }
+
+    public function change_user() {
+        $this->getInfo();
     }
 
     public function setStart($time) {
@@ -215,11 +242,10 @@ class EventEdit extends AppComponent
         }
         $max_time = $this->state['start'] + ($this->group_data['max_time'] * 60);
         $step = $this->group_data['min_time'] * 60;
-        // dd('here', date("Y.m.d H:i", $this->state['start']));  
         if(count($this->original_day_data['selects']['end'])) {
             $this->day_data['selects']['end'] = [];
             foreach($this->original_day_data['selects']['end'] as $key => $value) {
-                //kiszűröm azokat, amik egyébként nem folytonosan jönnek
+                //filter out what is not continuous
                 if(isset($last_key) && $key > ($last_key + $step)) continue;
 
                 if($key > $this->state['start'] && $key <= $max_time) {
@@ -228,7 +254,6 @@ class EventEdit extends AppComponent
                 }
             }
         }
-        // dd(count($this->day_data['selects']['end']));
         if(count($this->day_data['selects']['end']) == 1) {
             $this->state['end'] = array_key_last($this->day_data['selects']['end']);
         }
@@ -237,12 +262,23 @@ class EventEdit extends AppComponent
     public function cancelEdit() {
         $this->eventId = null;
         $this->editEvent = null;
+        $this->state = null;
+        $this->state['user_id'] = Auth::id();
     }
 
     public function saveEvent() {
         //check if time still ok or not
-        // dd($this->state);
+        $this->getRole();
         $this->getInfo(true);
+
+        if($this->editEvent !== null) {
+            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+                && $this->editEvent['user_id'] !== Auth::id()) {
+                    $this->error = __('event.error.no_permission');
+                    return;
+            }  
+        }
+
         $step = $this->group_data['min_time'] * 60;
         $publishers_ok = true;
         for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
@@ -264,7 +300,7 @@ class EventEdit extends AppComponent
             'day' => $this->day_data['date'],
             'start' => $this->state['start'],
             'end' => $this->state['end'],
-            'user_id' => Auth::id(),
+            'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
             'accepted_at' => date("Y-m-d H:i:s"),
             'accepted_by' => Auth::id()
         ];
@@ -296,29 +332,25 @@ class EventEdit extends AppComponent
         });
 
         $validatedData = $v->validate();
-
         $validatedData['start'] = date("Y-m-d H:i", $validatedData['start']);
         $validatedData['end'] = date("Y-m-d H:i", $validatedData['end']);
 
-        // dd($validatedData);
         if($this->editEvent !== null) {
             //update event
             $group->events()->whereId($this->editEvent['id'])->update(
                 $validatedData
             );
+            $this->cancelEdit();
         } else {
             //save new event
             $event = new Event($validatedData);
             $group->events()->save($event); 
         }
-        
-        
-        
+
         $this->emitUp('refresh');
         $this->emitTo('partials.events-bar', 'refresh');
         $this->dispatchBrowserEvent('success', ['message' => __('event.saved')]);
-        
-        // $this->dispatchBrowserEvent('hide-form', ['message' => __('event.saved')]);
+        $this->pleaseWait = true;
     }
 
     public function confirmEventDelete() {
@@ -335,10 +367,19 @@ class EventEdit extends AppComponent
         }
         $this->emitTo('partials.events-bar', 'refresh');
         $this->emitUp('refresh');
+        $this->pleaseWait = true;
     }
 
     public function render()
     {
-        return view('livewire.events.event-edit');
+        if($this->error !== false) {
+            return view('livewire.default', ['error' => $this->error]);
+        }
+
+        if($this->pleaseWait === true) {
+            return view('livewire.events.pleasewait');
+        } else {
+            return view('livewire.events.event-edit');
+        }
     }
 }

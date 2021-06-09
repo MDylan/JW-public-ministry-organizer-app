@@ -38,6 +38,13 @@ return [
     ],
     'reach_max_publisher' => 'Ebben az idősávban már elértük a maximális hírnökszámot. Válassz más időpontot.',
     'invalid_value' => 'Hibás időpont érték lett megadva.',
+    'publisher' => 'Hírnök',
+    'choose_publisher' => 'Válassz hírnököt',
+    'please_wait' => 'Kérlek várj...',
+    'error' => [
+        'invalid_group' => 'Hibás csoport lett kiválasztva, vagy nincs jogosultságod ezt szerkeszteni.',
+        'no_permission' => 'Ehhez nincs jogosultságod.'
+    ]
 
 
 ];
