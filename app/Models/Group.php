@@ -44,14 +44,8 @@ class Group extends Model
                         ->using(GroupUser::class);
     }
 
-    public function groupUsers_old() {
-        return $this->belongsToMany('App\Models\User')
-                ->withPivot('group_role', 'note', 'accepted_at')
-                ->withTimestamps();
-    }
-
     public function groupAdmins() {
-        return $this->belongsToMany('App\Models\User')
+        return $this->belongsToMany(User::class)
                 ->wherePivot('group_role','admin')
                 ->withTimestamps()
                 ->using(GroupUser::class);
@@ -61,7 +55,7 @@ class Group extends Model
      * Akik szerkeszteni tudják a csoportot
      */
     public function editors() {
-        return $this->belongsToMany('App\Models\User')
+        return $this->belongsToMany(User::class)
                 ->wherePivotIn('group_role',['roler', 'admin'])
                 ->withTimestamps()
                 ->as('group_editors')
@@ -69,7 +63,7 @@ class Group extends Model
     }
 
     public function currentList() {
-        return $this->belongsToMany('App\Models\User')
+        return $this->belongsToMany(User::class)
                 ->wherePivot('user_id', '=', Auth::id())
                 ->withPivot('group_role')
                 ->withTimestamps()
@@ -77,7 +71,7 @@ class Group extends Model
     }
 
     public function days() {
-        return $this->hasMany('App\Models\GroupDay');
+        return $this->hasMany(GroupDay::class);
     }
 
     public function justEvents() {
@@ -107,10 +101,6 @@ class Group extends Model
         $end = date("Y-m-t", strtotime($start));
         return $this->stats()->whereBetween('day', [$start, $end]);
     }
-
-    // public function eventUser() {
-    //     return $this->hasManyThrough(Event::class, User::class);
-    // }
 
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe

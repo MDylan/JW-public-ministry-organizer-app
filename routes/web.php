@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\GetEvents;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
@@ -10,7 +8,6 @@ use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
-use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
