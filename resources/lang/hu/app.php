@@ -45,5 +45,6 @@ return [
     'total_notifications' => ':number új értesítés',
     'no_notification' => 'Nincs új értesítésed',
     'error' => 'Hiba történt!',
+    'jump_to_calendar' => 'Ugrás a havi naptárhoz'
     
 ];

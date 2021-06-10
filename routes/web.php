@@ -9,6 +9,7 @@ use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\UpdateGroupForm;
+use App\Http\Livewire\Home;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
@@ -79,7 +80,7 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 //Kezdőoldal
-Route::get('/home', DashboardController::class)->name('home.home')->middleware('auth');
+Route::get('/home', Home::class)->name('home.home')->middleware('auth');
 Route::get('/contact', function () {
     return 'contact page';
 })->name('contact')->middleware('auth');

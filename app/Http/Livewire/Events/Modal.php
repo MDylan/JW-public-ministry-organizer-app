@@ -272,8 +272,11 @@ class Modal extends AppComponent
         $this->day_events = $day_events;
     }
 
-    public function openModal($date) {
-        $this->date = $date;        
+    public function openModal($date, $groupId = 0) {
+        $this->date = $date;
+        if($groupId > 0) {
+            $this->form_groupId = $groupId;
+        }
         $this->getInfo();
         $this->dispatchBrowserEvent('show-form');
     }

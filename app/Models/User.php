@@ -71,8 +71,12 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->using(GroupUser::class);
     }
 
+    public function groupsAccepted() {
+        return $this->userGroups()->wherePivotNotNull('accepted_at');
+    }
+
     public function events() {
-        return $this->hasMany('App\Models\Event')
+        return $this->hasMany(Event::class)
                 ->orderBy('start')
                 ->with('groups');
     }

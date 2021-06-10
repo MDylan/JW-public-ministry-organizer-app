@@ -80,9 +80,13 @@ class Group extends Model
         return $this->hasMany('App\Models\GroupDay');
     }
 
+    public function justEvents() {
+        return $this->hasMany(Event::class)
+                    ->orderBy('start');
+    }
+
     public function events() {
-        return $this->hasMany('App\Models\Event')
-                    ->orderBy('start')
+        return $this->justEvents()
                     ->with('user')          //join users table
                     ->with('accept_user');  //join users table
     }

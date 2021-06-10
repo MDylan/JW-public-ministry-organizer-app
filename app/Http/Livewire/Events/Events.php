@@ -96,8 +96,8 @@ class Events extends AppComponent
     }
 
     public function changeGroup() {
-        $group = Group::findOrFail($this->form_groupId)->whereId($this->form_groupId)->first()->toArray();
-        if($group['id']) {
+        $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $this->form_groupId)->firstOrFail()->toArray();
+        if($group['pivot']['group_id']) {
             session(['groupId' => $this->form_groupId]);
         }
         $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
@@ -166,11 +166,12 @@ class Events extends AppComponent
         // dd($this->day_data);
         $this->day_stat = [];
         
-        $groups = User::findOrFail(Auth::id());
-        $this->groups = $groups->userGroups()->get()->toArray();
+        // $groups =  User::findOrFail(Auth::id());
+        $groups = Auth()->user();// ->groupsAccepted()->get();
+        $this->groups = $groups->groupsAccepted()->get()->toArray();
 
         if(!session('groupId')) {
-            $first = $groups->userGroups()->first()->toArray();
+            $first = $groups->groupsAccepted()->first()->toArray();
             session(['groupId' => $first['id']]);
         }
         $this->getGroupData();

@@ -20,7 +20,7 @@ class SideMenu extends Component
 
     public function mount() {
         $this->request_path = request()->path();
-        // dd(request()->paramters());
+        // dd(request()->path());
         if (request()->is('calendar/*')) {
             $this->request_path = 'calendar';
         }
