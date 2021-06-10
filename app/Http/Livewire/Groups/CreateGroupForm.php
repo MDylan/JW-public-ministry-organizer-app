@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
-use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;

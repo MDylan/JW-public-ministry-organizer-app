@@ -4,10 +4,8 @@ namespace App\Http\Livewire\Groups;
 
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 
 class ListGroups extends AppComponent
