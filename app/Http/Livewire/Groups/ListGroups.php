@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 
 class ListGroups extends AppComponent
@@ -22,17 +23,15 @@ class ListGroups extends AppComponent
         'logoutConfirmed' => 'logoutConfirmed'
     ];
 
-
     public function confirmGroupRemoval($groupId) {
         $this->groupBeeingRemoved = $groupId;
         $this->dispatchBrowserEvent('show-delete-modal');
     }
 
     //Törli a csoportot, jogosultság ellenőrzéssel együtt
-    public function deleteGroup() {
-        
-        $user = User::findOrFail(Auth::id());
-        $del = $user->userGroupsDeletable()->whereId($this->groupBeeingRemoved)->delete();
+    public function deleteGroup() {        
+        $user = Auth()->user(); //  User::findOrFail(Auth::id());
+        $del = $user->userGroupsDeletable()->where('group_id', $this->groupBeeingRemoved)->delete();
         
         if($del == 1) {
             $user->userGroupsDeletable()->detach($this->groupBeeingRemoved);
@@ -81,8 +80,7 @@ class ListGroups extends AppComponent
      * Meghívás elfogadása
      */
     public function accept($groupId) {
-
-        $user = User::findOrFail(Auth::id());
+        $user = Auth()->user(); // User::findOrFail(Auth::id());
         if($user->userGroups()->sync([$groupId => [ 'accepted_at' => date('Y-m-d H:i:s')] ], false)) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.accept_saved')]);
         } else {
@@ -160,7 +158,7 @@ class ListGroups extends AppComponent
 
     public function render()
     {        
-        $user = User::findOrFail(Auth::id());
+        $user = Auth()->user(); // User::findOrFail(Auth::id());
         $groups = $user->userGroups()->paginate(20);
 
         return view('livewire.groups.list-groups', [

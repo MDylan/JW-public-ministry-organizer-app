@@ -4,7 +4,7 @@
         <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-            <h1 class="m-0">{{ __('group.addNew') }}</h1>
+            <h1 class="m-0">{{ __('group.editGroup') }}</h1>
             </div><!-- /.col -->
             <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
@@ -237,6 +237,9 @@
                                         @endforeach                                        
                                     </tbody>
                                 </table>
+                                @error('users')
+                                <p class="text-danger mx-2">{{$message}}</p>
+                                @enderror
                                 <div class="alert alert-into">
                                     <h6><i class="fa fa-info-circle mr-2"></i>{{__('group.role_head')}}</h6>
                                     <ul>

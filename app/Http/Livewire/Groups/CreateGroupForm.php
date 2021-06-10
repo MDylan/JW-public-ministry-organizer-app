@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -42,9 +43,6 @@ class CreateGroupForm extends AppComponent
             }
         }
 
-
-        // dd($email_array);
-
         $validatedData = Validator::make($email, [
             'email.*' => 'required|email',
         ])->validate();
@@ -61,10 +59,7 @@ class CreateGroupForm extends AppComponent
                 ];
             }
         }
-        
-
         $this->search = "";
-
     }
 
     /**
@@ -96,7 +91,7 @@ class CreateGroupForm extends AppComponent
         ])->validate();
         // dd($validatedData['days']);
 
-        $user = User::find(Auth::id());
+        $user = Auth()->user(); // User::find(Auth::id());
         $group = Group::create($validatedData);
         // dd('itt');
         if(isset($validatedData['days'])) {
@@ -138,7 +133,10 @@ class CreateGroupForm extends AppComponent
             }
         }
 
-        $this->dispatchBrowserEvent('success', ['message' => __('group.groupCreated')]);
+        Session::flash('message', __('group.groupCreated')); 
+        redirect()->route('groups');
+
+        // $this->dispatchBrowserEvent('success', ['message' => __('group.groupCreated')]);
 
     }
 

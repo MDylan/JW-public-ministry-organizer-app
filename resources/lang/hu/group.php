@@ -155,6 +155,8 @@ return [
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
         'no_admin' => 'Te vagy az egyedüli adminisztrátor a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
+        'no_other_admin' => 'Nincs más adminisztrátor, jelölj ki valakit helyette.',
         'log' => 'Kilépett a csoportból'
-    ]
+    ],
+    'error_no_admin_user' => 'Nem jelöltél ki senkit csoport adminisztrátornak!',
 ];

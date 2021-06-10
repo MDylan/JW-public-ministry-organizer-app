@@ -150,6 +150,9 @@
           }
         })
       });
+      @if(Session::has('message'))
+        toastr.success('{{Session::get('message')}}', '{{__('app.saved')}}');
+      @endif
     });
   </script>
   @yield('footer_scripts')

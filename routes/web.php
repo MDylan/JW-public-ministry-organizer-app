@@ -70,33 +70,57 @@ Route::get('/terms', function () {
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
 
-//email megerősítése
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $result = $request->fulfill();
-    return redirect('/home');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+//verify email
+// Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+//     $result = $request->fulfill();
+//     return redirect('/home');
+// })->middleware(['auth', 'signed'])->name('verification.verify');
+
+//Logged in users
+Route::middleware(['auth'])->group(function () {
+    Route::get('/home', Home::class)->name('home.home');
+    Route::get('/contact', function () {
+        return 'contact page';
+    })->name('contact');
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $result = $request->fulfill();
+        return redirect('/home');
+    })->name('verification.verify');
+
+    //Only for verified users
+    Route::middleware(['verified'])->group(function () {
+        Route::get('user/profile', Profile::class)->name('user.profile');
+        Route::get('/groups', ListGroups::class)->name('groups');
+        Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+
+        //For special roles
+        Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
+        Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['groupAdmin']);
+        Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
+    });
+});
 
 //Kezdőoldal
-Route::get('/home', Home::class)->name('home.home')->middleware('auth');
-Route::get('/contact', function () {
-    return 'contact page';
-})->name('contact')->middleware('auth');
+// Route::get('/home', Home::class)->name('home.home')->middleware('auth');
+// Route::get('/contact', function () {
+//     return 'contact page';
+// })->name('contact')->middleware('auth');
 
 /**
  * Csak megerősített felhasználók láthatják
  */
-Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(function() {
-    Route::get('profile', Profile::class)->name('profile');
-});
+// Route::prefix('user')->middleware(['auth', 'verified'])->name('user.')->group(function() {
+//     Route::get('profile', Profile::class)->name('profile');
+// });
 
 //Csoportok menü
-Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'verified']);
+// Route::get('/groups', ListGroups::class)->name('groups')->middleware(['auth', 'verified']);
 //Csoport készítés
-Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified', 'can:is-groupcreator']);
-Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['auth', 'verified', 'groupAdmin']);
+// Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['auth', 'verified', 'can:is-groupcreator']);
+// Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['auth', 'verified', 'groupAdmin']);
 
 //Naptár menü
-Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar')->middleware(['auth', 'verified']);
+// Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar')->middleware(['auth', 'verified']);
 
 // Route::post('/getevents', [GetEvents::class, 'index'])->name('getevents')->middleware(['auth', 'verified']);
 
@@ -104,4 +128,4 @@ Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar')->middl
  * Adminisztrátorok
  */
 // Admin / Felhasználók
-Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
+// Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');

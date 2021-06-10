@@ -8,9 +8,9 @@ use App\Models\Group;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Session;
 
 class UpdateGroupForm extends AppComponent
 {
@@ -100,7 +100,20 @@ class UpdateGroupForm extends AppComponent
      * Törli a listából a usert
      */
     public function removeUser($email) {
-        unset($this->users[$email]);
+        $admins = 0;
+        foreach($this->users as $slug => $user) {
+            if($slug == $email) continue;
+            if($user['group_role'] == "admin") $admins++;
+        }
+        if($admins == 0) {
+            //no other admin, can't remove this user
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_other_admin'),
+            ]);
+        } else {
+            unset($this->users[$email]);
+        }
     }
 
     /**
@@ -114,7 +127,12 @@ class UpdateGroupForm extends AppComponent
 
         $this->state['name'] = strip_tags($this->state['name']);
 
-        $validatedData = Validator::make($this->state, [
+        $admins = 0;
+        foreach($this->users as $slug => $user) {
+            if($user['group_role'] == "admin") $admins++;
+        }
+
+        $v = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
             'max_extend_days' => 'required|numeric|digits_between:1,365',
             'min_publishers' => 'required|numeric|digits_between:1,365|lte:max_publishers',
@@ -124,7 +142,16 @@ class UpdateGroupForm extends AppComponent
             'days.*.start_time' => 'required|date_format:H:i|before:days.*.end_time',
             'days.*.end_time' => 'required|date_format:H:i|after:days.*.start_time',
             'days.*.day_number' => 'required',
-        ])->validate();
+        ]);
+
+        $v->after(function ($validator) use ($admins) {
+            if ($admins == 0) {
+                $validator->errors()->add(
+                    'users', __('group.error_no_admin_user')
+                );
+            }
+        });
+        $validatedData = $v->validate();
 
         $validatedDays = Validator::make($this->days, [
             '*.day_number' => 'required',
@@ -132,9 +159,11 @@ class UpdateGroupForm extends AppComponent
             '*.end_time' => 'required|date_format:H:i|after:*.start_time',
             // '*.day_number' => 'required',
         ])->validate();
+
+
         // dd($validatedDays);
 
-        $user = User::find(Auth::id());
+        $user = Auth()->user(); // User::find(Auth::id());
         // $group = Group::findOrFail($this->group_id);
         $this->group->update($validatedData);
         // dd('itt');
@@ -197,8 +226,11 @@ class UpdateGroupForm extends AppComponent
 
         $this->group->refresh();
 
-        $this->dispatchBrowserEvent('success', ['message' => __('group.groupUpdated')]);
+        Session::flash('message', __('group.groupUpdated')); 
+        redirect()->route('groups');
 
+        // $this->dispatchBrowserEvent('success', ['message' => __('group.groupUpdated')]);
+        
     }
 
     public function render()
