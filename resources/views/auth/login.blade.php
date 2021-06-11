@@ -11,7 +11,11 @@
             <a href="/" class="h1">{{__('app.title')}}</a>
         </div>
         <div class="card-body">
-    
+            @if (session('status'))
+                <div class="alert alert-success">
+                    {{ session('status') }}
+                </div>
+            @endif
             <form action="{{route('login')}}" method="POST">
                 @csrf
             <div class="input-group mb-3">

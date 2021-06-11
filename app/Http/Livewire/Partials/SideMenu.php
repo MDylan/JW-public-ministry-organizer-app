@@ -10,6 +10,7 @@ class SideMenu extends Component
 
     public $sideMenu = [
         'invites' => 0,
+        'groups' => 0
     ];
 
     public $request_path = "";
@@ -36,6 +37,7 @@ class SideMenu extends Component
     {
         if(Auth::user()) {
             $this->sideMenu['invites'] = count(auth()->user()->userGroupsNotAccepted);
+            $this->sideMenu['groups'] = count(auth()->user()->groupsAccepted);
         }
 
         return view('livewire.partials.side-menu');

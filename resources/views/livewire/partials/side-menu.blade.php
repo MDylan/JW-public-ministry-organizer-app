@@ -18,25 +18,27 @@
                 </a>
             </li>
             @if (auth()->user()->email_verified_at)
-            <li class="nav-item">
-              <a href="{{route('calendar')}}" class="nav-link {{ $request_path == 'calendar' ? 'active' : '' }}">
-                  <i class="nav-icon fas fa-calendar-alt"></i>
-                  <p>
-                  {{ __('app.menu-calendar') }}
-                  </p>
-              </a>
-          </li>
-            <li class="nav-item">
-                <a href="{{route('groups')}}" class="nav-link {{ $request_path == 'groups' ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-users"></i>
-                    <p>
-                    {{ __('app.menu-groups') }}
-                    @if ($sideMenu['invites'])
-                      <span class="right badge badge-danger">{{ $sideMenu['invites'] }} @lang('app.new')</span>
-                    @endif
-                    </p>
-                </a>
-            </li>
+              @if ($sideMenu['groups'])
+                <li class="nav-item">
+                  <a href="{{route('calendar')}}" class="nav-link {{ $request_path == 'calendar' ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-calendar-alt"></i>
+                      <p>
+                      {{ __('app.menu-calendar') }}
+                      </p>
+                  </a>
+                </li>
+              @endif
+              <li class="nav-item">
+                  <a href="{{route('groups')}}" class="nav-link {{ $request_path == 'groups' ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-users"></i>
+                      <p>
+                      {{ __('app.menu-groups') }}
+                      @if ($sideMenu['invites'])
+                        <span class="right badge badge-danger">{{ $sideMenu['invites'] }} @lang('app.new')</span>
+                      @endif
+                      </p>
+                  </a>
+              </li>
               @can('is-admin')              
                 <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
                   <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">

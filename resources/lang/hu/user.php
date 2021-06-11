@@ -29,6 +29,8 @@ return [
     'userSaved' => 'A felhasználó adatai el lettek mentve.',
     'deleteUser' => 'Felhasználó törlése',
     'areYouSureDelete' => 'Biztosan törlöd ezt a felhasználót? A művelet nem vonható vissza!',
-    'userDeleted' => 'A felhasználó törölve lett'
+    'userDeleted' => 'A felhasználó törölve lett',
+    'password_updated' => 'A jelszavad sikeresen módosult.',
+    'profile_updated' => 'Az adataid sikeresen módosultak.'
 
 ];
