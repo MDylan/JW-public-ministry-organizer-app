@@ -169,6 +169,11 @@ class Events extends AppComponent
         // $groups =  User::findOrFail(Auth::id());
         $groups = Auth()->user();// ->groupsAccepted()->get();
         $this->groups = $groups->groupsAccepted()->get()->toArray();
+        if(count($this->groups) == 0) {
+            return view('livewire.default', [
+                'error' => __('group.notInGroup')
+            ]);
+        }
 
         if(!session('groupId')) {
             $first = $groups->groupsAccepted()->first()->toArray();

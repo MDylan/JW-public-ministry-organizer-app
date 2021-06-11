@@ -20,7 +20,7 @@
     <div class="content">
         <div class="container-fluid">
         <div class="row d-block">
-            @foreach ($groups as $group)
+            @forelse ($groups as $group)
             <div class="col-md-6 float-left">
                 <div class="card card-primary card-outline">
                     <div class="card-header">
@@ -80,18 +80,33 @@
                     </div>
                 </div>
             </div>
-            @endforeach
+            @empty
+                <div class="col-md-12">
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                        <h5 class="m-0">@lang('app.information')</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>@lang('app.no_any_groups')</p>
+                        </div>
+                    </div>
+                </div>
+            @endforelse
             <!-- /.col-md-6 -->
         </div>
-        <div style="clear:both;"></div>
-        <!-- /.row -->
-        <script>
-            function modal(groupId, date) {
-                livewire.emitTo('events.modal', 'openModal', date, groupId);
-            }
-        </script>
+        @if(!$groups->isEmpty())
+            <div style="clear:both;"></div>
+            <!-- /.row -->
+            <script>
+                function modal(groupId, date) {
+                    livewire.emitTo('events.modal', 'openModal', date, groupId);
+                }
+            </script>
+        @endif
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
-      @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))
+    @if(!$groups->isEmpty())
+        @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))
+    @endif
 </div>
