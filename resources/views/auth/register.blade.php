@@ -1,6 +1,6 @@
 @extends('public')
 
-@section('title') | __('user.register')@endsection
+@section('title') | @lang('user.register')@endsection
 
 @section('content')
 <div class="register-page">
@@ -70,7 +70,9 @@
             </div>
         {!! Form::close() !!}
 
-        <a href="{{route('login')}}" class="text-center">{{__('user.loginWithUser')}}</a>
+        </div>
+        <div class="card-footer text-muted">
+            <a href="{{route('login')}}" class="text-center">{{__('user.loginWithUser')}}</a>
         </div>
         <!-- /.form-box -->
     </div><!-- /.card -->

@@ -1,6 +1,6 @@
 @extends('public')
 
-@section('title') | __('user.login')@endsection
+@section('title') | @lang('user.login')@endsection
 
 @section('content')
 <div class="login-page">
@@ -49,14 +49,23 @@
             </div>
             </form>
     
-            <p class="mb-1">
-            <a href="{{route('password.update')}}">{{__('user.lostPassword')}}</a>
-            </p>
-            <p class="mb-0">
-            <a href="{{route('register')}}" class="text-center">{{__('user.register')}}</a>
-            </p>
+            
         </div>
         <!-- /.card-body -->
+        <div class="card-footer text-muted">
+            <div class="row">
+                <div class="col text-center">
+                    @if (Route::has('password.request'))
+                        <a href="{{route('password.request')}}">{{__('user.lostPassword')}}</a>
+                    @endif  
+                </div>
+                <div class="col text-center">
+                    @if (Route::has('register'))
+                        <a href="{{route('register')}}" class="text-center">{{__('user.register')}}</a>
+                    @endif
+                </div>
+            </div>
+        </div>
         </div>
         <!-- /.card -->
     </div>
