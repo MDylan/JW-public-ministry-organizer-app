@@ -165,6 +165,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
        // Collective\Html\HtmlServiceProvider::class,
+    //    RachidLaasri\LaravelInstaller\Providers\LaravelInstallerServiceProvider::class,
 
         /*
          * Package Service Providers...

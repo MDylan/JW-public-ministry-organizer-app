@@ -52,7 +52,7 @@
                 @error('password_confirmation')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
             <div class="row">
-            <div class="col-8">
+            <div class="col-sm-8">
                 <div class="icheck-primary">
                     {!! Form::checkbox('terms', "yes", false, ['id' => 'agreeTerms', 'class' => ( $errors->has('terms') ? ' is-invalid' : '' )]) !!}
                 
@@ -63,7 +63,7 @@
                 </div>
             </div>
             <!-- /.col -->
-            <div class="col-4">
+            <div class="col-sm-4">
                 <button type="submit" class="btn btn-primary btn-block">{{__('user.register')}}</button>
             </div>
             <!-- /.col -->

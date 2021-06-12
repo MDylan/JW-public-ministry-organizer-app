@@ -40,7 +40,7 @@
                             <div class="row">
                                 
                             @foreach (trans('user.nameFields') as $field => $translate) 
-                            <div class="col">
+                            <div class="col-sm-6">
                                 <div class="input-group mb-3">
                                     {!! Form::text($field, auth()->user()->$field, ['class' => 'form-control'. ( $errors->has($field) ? ' is-invalid' : '' ), 'placeholder' => $translate]) !!}
                                     <div class="input-group-append">
@@ -54,7 +54,7 @@
                             @endforeach
                             </div>
                             <div class="row">
-                                <div class="col">
+                                <div class="col-sm-6">
                                 <div class="input-group mb-3">
                                     {!! Form::email('email', auth()->user()->email, ['class' => 'form-control'. ( $errors->has('email') ? ' is-invalid' : '' ), 'placeholder' => __('user.email')]) !!}
                                     <div class="input-group-append">
@@ -65,7 +65,7 @@
                                     @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 </div>
                                 </div>
-                                <div class="col">
+                                <div class="col-sm-6">
                                     <div class="input-group mb-3">
                                         {!! Form::text('phone', auth()->user()->phone, ['class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 'placeholder' => __('user.phone')]) !!}
                                         <div class="input-group-append">
