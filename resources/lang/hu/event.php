@@ -44,7 +44,9 @@ return [
     'error' => [
         'invalid_group' => 'Hibás csoport lett kiválasztva, vagy nincs jogosultságod ezt szerkeszteni.',
         'no_permission' => 'Ehhez nincs jogosultságod.'
-    ]
+    ],
+    'date' => 'Dátum',
+    'status' => 'Állapot',
 
 
 ];

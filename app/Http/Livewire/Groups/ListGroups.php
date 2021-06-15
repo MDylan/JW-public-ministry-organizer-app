@@ -146,6 +146,9 @@ class ListGroups extends AppComponent
      */
     public function logoutConfirmed() {
         $group = Group::findOrFail($this->groupBeeingLogout);
+        auth()->user()->feature_events()
+                    ->where('group_id', $this->groupBeeingLogout)
+                    ->delete();
         $res = $group->groupUsers()->detach(Auth::id());
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);

@@ -219,6 +219,14 @@ class UpdateGroupForm extends AppComponent
                     );
                 }                
             }
+            if(isset($res['detached'])) {
+                foreach($res['detached'] as $user) {
+                    $us = User::find($user);
+                    $us->feature_events()
+                        ->where('group_id', $this->group->id)
+                        ->delete();
+                }                
+            }
         } else {
             //nincs egy user sem, törlöm aki eddig volt
             $this->group->groupUsers()->sync([]);

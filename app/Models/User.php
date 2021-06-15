@@ -83,7 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function feature_events() {
         return $this->events()
-                ->where('day', '>=', date("Y-m-d"));
+                ->where('start', '>=', date("Y-m-d H:i:s"));
     }
 
     public function getFullNameAttribute() {

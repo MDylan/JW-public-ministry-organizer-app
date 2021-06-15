@@ -59,7 +59,7 @@ class Home extends Component
             }
             foreach($group["just_events"] as $event) { 
                 $this->day_stat[$group['id']][$event['day']]['event'] = true;
-                $this->events[$group['id']][] = $event;
+                $this->events[$group['id']][$event['day']][] = $event;
             }
             
             foreach($group["days"] as $day) { 
