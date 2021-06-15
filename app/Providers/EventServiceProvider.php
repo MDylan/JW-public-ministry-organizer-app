@@ -2,14 +2,16 @@
 
 namespace App\Providers;
 
-use App\Models\GroupUser;
+use App\Listeners\LoginListener;
+// use App\Models\GroupUser;
 use App\Models\User;
-use App\Observers\GroupUserAdded;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
+// use App\Observers\GroupUserAdded;
+// use Illuminate\Auth\Events\Registered;
+// use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
+// use Illuminate\Support\Facades\Event;
 use App\Observers\UserObserver;
+use Illuminate\Auth\Events\Login;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,9 @@ class EventServiceProvider extends ServiceProvider
         'Illuminate\Auth\Events\Verified' => [
             'App\Listeners\UserVerified',
         ],
+        Login::class => [
+            LoginListener::class
+        ]
         // 'App\Events\GroupUserAddedEvent' => [
         //     'App\Listeners\GroupUserAddedListener'
         // ]
