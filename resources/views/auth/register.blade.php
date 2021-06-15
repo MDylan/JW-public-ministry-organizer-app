@@ -34,6 +34,15 @@
                 @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
             <div class="input-group mb-3">
+                {!! Form::text('phone', '', ['class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 'placeholder' => __('user.phone')]) !!}
+                <div class="input-group-append">
+                    <div class="input-group-text">
+                    <span class="fas fa-phone"></span>
+                    </div>
+                </div>
+                @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+            </div>   
+            <div class="input-group mb-3">
                 {!! Form::password('password', ['class' => 'form-control'. ( $errors->has('password') ? ' is-invalid' : '' ), 'placeholder' => __('user.password')]) !!}
                 <div class="input-group-append">
                     <div class="input-group-text">
