@@ -14,7 +14,7 @@ return [
     'groupUserAdded' => [
         'subject' => 'Meghívás a(z) :groupName csoportba',
         'line_1' => 'Ez egy automatikus értesítés arról, hogy :groupAdmin meghívott, hogy csatlakozz a(z) :groupName csoporthoz.',
-        'line_2' => 'A bejelentkezésedet követően a főoldalon tudod elfogadni vagy elutasítani a meghívást.',
+        'line_2' => 'A bejelentkezésedet követően a "Csoportok" menüben tudod elfogadni vagy elutasítani a meghívást.',
     ],
     'loginData' => [
         'subject' => 'Belépési adataid',
