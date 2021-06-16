@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Groups;
 
+use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
 use App\Models\User;
 use App\Models\Group;
@@ -239,9 +240,17 @@ class UpdateGroupForm extends AppComponent
             if(isset($res['detached'])) {
                 foreach($res['detached'] as $user) {
                     $us = User::find($user);
-                    $us->feature_events()
-                        ->where('group_id', $this->group->id)
-                        ->delete();
+                    $events = $us->feature_events()
+                        ->where('group_id', $this->group->id);
+                    $days = [];
+                    foreach($events->get()->toArray() as $event) {
+                        $days[] = $event['day'];
+                    }
+                    $events->delete();
+                    foreach($days as $day) {
+                        $stat = new GenerateStat();
+                        $stat->generate($this->group->id, $day);
+                    }
                 }                
             }
         } else {

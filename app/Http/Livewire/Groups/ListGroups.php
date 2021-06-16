@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Groups;
 
+use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
@@ -146,9 +147,18 @@ class ListGroups extends AppComponent
      */
     public function logoutConfirmed() {
         $group = Group::findOrFail($this->groupBeeingLogout);
-        auth()->user()->feature_events()
-                    ->where('group_id', $this->groupBeeingLogout)
-                    ->delete();
+        $events = auth()->user()->feature_events()
+                    ->where('group_id', $this->groupBeeingLogout);
+        //recalculate events
+        $days = [];
+        foreach($events->get()->toArray() as $event) {
+            $days[] = $event['day'];
+        }
+        $events->delete();
+        foreach($days as $day) {
+            $stat = new GenerateStat();
+            $stat->generate($this->groupBeeingLogout, $day);
+        }
         $res = $group->groupUsers()->detach(Auth::id());
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
