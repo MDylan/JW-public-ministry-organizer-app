@@ -8,7 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
 
-class LoginData extends Notification
+class LoginData extends Notification implements ShouldQueue
 {
     use Queueable;
     private $data;

@@ -11,6 +11,7 @@ use App\Http\Livewire\Home;
 // use Illuminate\Auth\Notifications\VerifyEmail;
 // use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Support\Facades\Artisan;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,40 +25,26 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 */
 
 
-
 Route::get('/', function () {
     return view('main');
 })->middleware(['guest']);
 
-// Route::get('/tesztmail', function () {
-//     $to_name = 'Dávid';
-//     $to_email = 'molnar.david@gmail.com';
-//     $data = array('name'=>'Dávid', 'body' => 'Ez egy próba levél');
-//     $res = Mail::send('auth.email.registered', $data, 
-//         function($message) use ($to_name, $to_email) {
-//             $message->to($to_email, $to_name)->subject('Laravel próba levél');
-//             $message->from('info@koz.teruletek.hu','Próba tárgy');
-//         });
-
-//         Mail::send('Html.view', $data, function ($message) {
-//             $message->from('john@johndoe.com', 'John Doe');
-//             $message->sender('john@johndoe.com', 'John Doe');
-//             $message->to('john@johndoe.com', 'John Doe');
-//             $message->cc('john@johndoe.com', 'John Doe');
-//             $message->bcc('john@johndoe.com', 'John Doe');
-//             $message->replyTo('john@johndoe.com', 'John Doe');
-//             $message->subject('Subject');
-//             $message->priority(3);
-//             $message->attach('pathToFile');
-//         });
-//     echo "Levél elküldve!";
-//     dd($res);
-// });
 
 //Felhasználási feltételek, bárki láthatja
 Route::get('/terms', function () {
     return 'terms page';
 })->name('terms');
+
+/**
+ * Run scheduled queue 
+ */
+// Route::get('/run-jobs', function() {
+//     $exitCode = Artisan::call('schedule:run');
+
+//     // $exitCode = Artisan::call('schedule:list');
+//     // var_dump($exitCode);
+//     return 'ok: '.$exitCode;
+// });
 
 /**
  * Belépett felhasználók linkjei
