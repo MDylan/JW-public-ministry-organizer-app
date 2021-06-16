@@ -33,5 +33,7 @@ return [
     'password_updated' => 'A jelszavad sikeresen módosult.',
     'profile_updated' => 'Az adataid sikeresen módosultak.',
     'profile_empty' => 'Kérjük add meg a hiányzó adataidat ahhoz, hogy továbbléphess.',
+    'last_login' => 'Legutóbbi belépés',
+    'phone_helper' => 'Csak szám lehet országhívóval az elején, pl:'
 
 ];

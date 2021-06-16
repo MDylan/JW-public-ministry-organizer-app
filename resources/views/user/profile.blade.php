@@ -72,12 +72,20 @@
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="input-group mb-3">
-                                        {!! Form::text('phone', auth()->user()->phone, ['class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 'placeholder' => __('user.phone')]) !!}
+                                        {!! Form::text('phone', auth()->user()->phone, [
+                                            'class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 
+                                            'placeholder' => __('user.phone'),
+                                            'aria-describedby' => 'phoneHelpBlock'
+                                            ]) !!}
                                         <div class="input-group-append">
                                             <div class="input-group-text">
                                             <span class="fas fa-phone"></span>
                                             </div>
                                         </div>
+                                        <span class="w-100"></span>
+                                        <small id="phoneHelpBlock" class="text-muted">
+                                            @lang('user.phone_helper') <strong>362012345689</strong>
+                                        </small>
                                         @error('phone')<div class="invalid-feedback" role="alert">{{__($message, ['attribute' => __('user.phone')])}}</div>@enderror
                                     </div>
                                 </div>

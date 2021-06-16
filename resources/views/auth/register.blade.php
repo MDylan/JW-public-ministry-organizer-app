@@ -34,12 +34,20 @@
                 @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
             <div class="input-group mb-3">
-                {!! Form::text('phone', '', ['class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 'placeholder' => __('user.phone')]) !!}
+                {!! Form::text('phone', '', [
+                    'class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 
+                    'placeholder' => __('user.phone'),
+                    'aria-describedby' => 'phoneHelpBlock'
+                ]) !!}
                 <div class="input-group-append">
                     <div class="input-group-text">
                     <span class="fas fa-phone"></span>
                     </div>
                 </div>
+                <span class="w-100"></span>
+                <small id="phoneHelpBlock" class="text-muted">
+                    @lang('user.phone_helper') <strong>362012345689</strong>
+                </small>
                 @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>   
             <div class="input-group mb-3">

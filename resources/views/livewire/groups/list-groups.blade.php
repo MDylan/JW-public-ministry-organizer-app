@@ -33,64 +33,68 @@
                 @endcan        
                 <div class="card card-primary card-outline">
                     <div class="card-body">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">{{ __('group.name') }}</th>
-                                <th scope="col">{{ __('app.role') }}</th>
-                                <th scope="col">{{ __('app.options') }}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                                @if (count($groups) == 0) 
-                                    <tr>
-                                        <td colspan="5">@lang('group.notInGroup')</td>
-                                    </tr>
-                                @endif
-                                @foreach ($groups as $group)
-                                    <tr>
-                                        <th scope="row">{{ $group->id }}</th>
-                                        <td>{{ $group->name }}</td>
-                                        <td>
-                                            <span class="badge badge-{{ $group->group_role }}">
-                                                {{ __('group.roles.'.$group->pivot->group_role) }}
-                                            </span>
-                                        </td>
-                                        <td>                                            
-                                            @if ($group->pivot->accepted_at == null)
+                        <div class="table-responsive-md">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">{{ __('group.name') }}</th>
+                                    <th scope="col">{{ __('app.role') }}</th>
+                                    <th scope="col">{{ __('group.users') }}</th>
+                                    <th scope="col">{{ __('app.options') }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @if (count($groups) == 0) 
+                                        <tr>
+                                            <td colspan="5">@lang('group.notInGroup')</td>
+                                        </tr>
+                                    @endif
+                                    @foreach ($groups as $group)
+                                        <tr>
+                                            <th scope="row">{{ $group->id }}</th>
+                                            <td>{{ $group->name }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ $group->group_role }}">
+                                                    {{ __('group.roles.'.$group->pivot->group_role) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('groups.users', ['group' => $group->id]) }}">@lang('group.users')</a>
+                                            </td>
+                                            <td>                                            
+                                                @if ($group->pivot->accepted_at == null)
 
-                                                @lang('app.invitation')
-                                                <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
-                                                <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger btn-sm">
-                                                    <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
-                                            @else                                               
-                                            
-                                                @if(in_array($group->pivot->group_role, ['admin', 'roler']))
-                                                <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}" class="mr-2">
-                                                    <i class="fa fa-edit"></i> @lang('app.edit')
-                                                </a>
-                                                @endif
-
-                                                <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="mr-2">
-                                                    <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
-                                                </a>
-
-                                                @if(in_array($group->pivot->group_role, ['admin']))
-                                                <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="mr-2">
-                                                    <i class="fa fa-trash text-danger"></i>
-                                                </a>
-                                                @endif
-
+                                                    @lang('app.invitation')
+                                                    <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary btn-sm">
+                                                        <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
+                                                    <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger btn-sm">
+                                                        <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
+                                                @else                                               
                                                 
+                                                    @if(in_array($group->pivot->group_role, ['admin', 'roler']))
+                                                    <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}" class="mr-2">
+                                                        <i class="fa fa-edit"></i> @lang('app.edit')
+                                                    </a>
+                                                    @endif
 
-                                            @endif
-                                        </td>
-                                    </tr>            
-                                @endforeach                
-                            </tbody>                      
-                        </table>
+                                                    <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="mr-2">
+                                                        <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
+                                                    </a>
+
+                                                    @if(in_array($group->pivot->group_role, ['admin']))
+                                                    <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="mr-2">
+                                                        <i class="fa fa-trash text-danger"></i>
+                                                    </a>
+                                                    @endif
+
+                                                @endif
+                                            </td>
+                                        </tr>            
+                                    @endforeach                
+                                </tbody>                      
+                            </table>
+                        </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end">
                         {{$groups->links()}}

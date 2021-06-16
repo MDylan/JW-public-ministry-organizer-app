@@ -6,6 +6,7 @@ use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
+use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
 // use Illuminate\Auth\Notifications\VerifyEmail;
@@ -80,8 +81,8 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['profileFull'])->group(function () {
             Route::get('/groups', ListGroups::class)->name('groups');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
-
             //For special roles
+            Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users')->middleware(['groupMember']);
             Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
             Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['groupAdmin']);
             Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
