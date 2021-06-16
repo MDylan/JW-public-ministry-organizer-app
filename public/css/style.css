@@ -252,6 +252,12 @@
     padding-right: 3px;
     margin-right: 6px;
   }
+  .dark-mode .dayNumber {
+    background-color: hsl(0, 0%, 35%);
+  }
+  .dark-mode .grid-row:hover {
+    background-color: hsl(55, 21%, 44%);
+  }
   .eventsTable tr {
     height: 46px;
   }

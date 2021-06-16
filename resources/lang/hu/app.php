@@ -48,6 +48,7 @@ return [
     'jump_to_calendar' => 'Ugrás a havi naptárhoz',
     'information' => 'Tájékoztatás',
     'no_any_groups' => 'Jelenleg még nem tartozol egyetlen szolgálati csoporthoz sem. Ha csatlakozol egyhez, akkor itt fog megjelenni egy áttekintés a közelgő szolgálataidról.',
-    'back' => 'Vissza az előző oldalra'
+    'back' => 'Vissza az előző oldalra',
+    'dark_theme' => 'Sötét mód'
     
 ];
