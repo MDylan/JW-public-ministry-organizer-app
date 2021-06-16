@@ -182,7 +182,7 @@
                                             <label class="mr-sm-2">{{__('user.email')}}</label>
                                         </div>
                                         <div class="col-7 my-1">
-                                            <textarea wire:model="search" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
+                                            <textarea wire:model.defer="search" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
                                              cols="30" rows="2"></textarea>
                                           
                                       </div>

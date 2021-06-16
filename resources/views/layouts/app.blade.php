@@ -170,9 +170,7 @@
           mainHeader.classList.add('navbar-dark');
           mainHeader.classList.remove('navbar-light');
         }
-        console.log(toggleSwitch.checked);
         toggleSwitch.checked = true;
-        console.log(toggleSwitch.checked);
       }
     }
 

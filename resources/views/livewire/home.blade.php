@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.30000ms>
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -22,10 +22,10 @@
         <div class="card-columns">
             @forelse ($groups as $group)
             {{-- <div class="col-md-6 float-left"> --}}
-                <div class="card card-primary card-outline">
+                <div class="card card-primary card-outline" wire:ignore.self>
                     <div class="card-header">
                         <div class="card-title">{{ $group->name }}</div>
-                        <div class="card-tools">
+                        <div class="card-tools" wire:ignore>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                             <i class="fas fa-minus"></i>
                             </button>

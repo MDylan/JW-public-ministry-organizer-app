@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.visible.30000ms>
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -32,12 +32,9 @@
                                             @csrf
                                             <div class="input-group">
                                                 <div class="custom-file">
-                                                    <select wire:model="form_groupId" class="form-control" id="inlineForm">
-                                                        <option selected>@lang('event.choose_group')</option>
+                                                    <select wire:model.defer="form_groupId" class="form-control" id="inlineForm">
                                                         @foreach ($groups as $group)
-                                                            {{-- @if ($group['id'] != $group_data['id']) --}}
-                                                                <option value="{{$group['id']}}">{{ $group['name'] }}</option>
-                                                            {{-- @endif --}}
+                                                            <option value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
                                                         @endforeach
                                                     </select> 
                                                 </div>
