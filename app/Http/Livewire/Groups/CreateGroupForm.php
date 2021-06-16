@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
+use App\Notifications\LoginData;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
@@ -118,10 +119,25 @@ class CreateGroupForm extends AppComponent
             ];
 
             foreach($this->users as $user) {
-                $us = User::firstOrCreate(
-                    ['email' => $user['email']],
-                    ['password' => bcrypt(Str::random(10))]
-                );
+                // $us = User::firstOrCreate(
+                //     ['email' => $user['email']],
+                //     ['password' => bcrypt(Str::random(10))]
+                // );
+                $us = User::where('email', $user['email'])->firstOr(function () use ($user) {
+                    $password = Str::random(10);
+                    $u = User::create([
+                        'email' => $user['email'],
+                        'password' => bcrypt($password)
+                    ]);
+                    $u->notify(
+                        new LoginData([
+                            'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                            'userMail' => $user['email'],
+                            'userPassword' => $password
+                        ])
+                    );
+                    return $u;
+                });
                 $us->userGroups()->save($group, [
                     'group_role' => $user['group_role'],
                     'note' => strip_tags(trim($user['note']))

@@ -90,13 +90,15 @@ Route::middleware(['auth'])->group(function () {
     //Only for verified users
     Route::middleware(['verified'])->group(function () {
         Route::get('user/profile', Profile::class)->name('user.profile');
-        Route::get('/groups', ListGroups::class)->name('groups');
-        Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+        Route::middleware(['profileFull'])->group(function () {
+            Route::get('/groups', ListGroups::class)->name('groups');
+            Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
 
-        //For special roles
-        Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
-        Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['groupAdmin']);
-        Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
+            //For special roles
+            Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
+            Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['groupAdmin']);
+            Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
+        });
     });
 });
 

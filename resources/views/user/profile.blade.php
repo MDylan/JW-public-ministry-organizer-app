@@ -34,6 +34,11 @@
                                 @lang('user.profile_updated')
                             </div>
                         @endif
+                        @if (session('profile_message'))
+                        <div class="alert alert-danger">
+                            {{session('profile_message')}}
+                        </div>
+                        @endif
                         <form method="POST" action="{{ route('user-profile-information.update')}}">
                             @csrf
                             @method("PUT")

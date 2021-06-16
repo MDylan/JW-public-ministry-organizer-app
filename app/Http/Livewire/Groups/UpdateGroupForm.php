@@ -8,6 +8,7 @@ use App\Models\Group;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
+use App\Notifications\LoginData;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
@@ -200,10 +201,26 @@ class UpdateGroupForm extends AppComponent
             ];
             $user_sync = [];
             foreach($this->users as $slug => $user) {
-                $us = User::firstOrCreate(
-                    ['email' => $user['email']],
-                    ['password' => bcrypt(Str::random(10))]
-                );
+                // $password = Str::random(10);
+                // $us = User::firstOrCreate(
+                //     ['email' => $user['email']],
+                //     ['password' => bcrypt($password)]
+                // );
+                $us = User::where('email', $user['email'])->firstOr(function () use ($user) {
+                    $password = Str::random(10);
+                    $u = User::create([
+                        'email' => $user['email'],
+                        'password' => bcrypt($password)
+                    ]);
+                    $u->notify(
+                        new LoginData([
+                            'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                            'userMail' => $user['email'],
+                            'userPassword' => $password
+                        ])
+                    );
+                    return $u;
+                });
                 $user_sync[$us->id] = [
                     'group_role' => $user['group_role'],
                     'note' => strip_tags(trim($user['note']))

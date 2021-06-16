@@ -15,5 +15,13 @@ return [
         'subject' => 'Meghívás a(z) :groupName csoportba',
         'line_1' => 'Ez egy automatikus értesítés arról, hogy :groupAdmin meghívott, hogy csatlakozz a(z) :groupName csoporthoz.',
         'line_2' => 'A bejelentkezésedet követően a főoldalon tudod elfogadni vagy elutasítani a meghívást.',
+    ],
+    'loginData' => [
+        'subject' => 'Belépési adataid',
+        'line_1' => ':groupAdmin létrehozott neked egy fiókot az oldalon.',
+        'line_2' => 'Bejelentkezési adataid:',
+        'line_3' => 'Felhasználónév: :userMail',
+        'line_4' => 'Jelszó: :userPassword',
+        'line_5' => 'Kérjük, ezt a jelszót mindenképpen változtasd meg a bejelentkezésedet követően a "Profilom" oldalon.',
     ]
 ];

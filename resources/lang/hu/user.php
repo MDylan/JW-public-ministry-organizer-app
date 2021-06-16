@@ -31,6 +31,7 @@ return [
     'areYouSureDelete' => 'Biztosan törlöd ezt a felhasználót? A művelet nem vonható vissza!',
     'userDeleted' => 'A felhasználó törölve lett',
     'password_updated' => 'A jelszavad sikeresen módosult.',
-    'profile_updated' => 'Az adataid sikeresen módosultak.'
+    'profile_updated' => 'Az adataid sikeresen módosultak.',
+    'profile_empty' => 'Kérjük add meg a hiányzó adataidat ahhoz, hogy továbbléphess.',
 
 ];
