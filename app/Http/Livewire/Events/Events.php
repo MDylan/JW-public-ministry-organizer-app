@@ -270,7 +270,7 @@ class Events extends AppComponent
         }  
         
         $this->getStat();
-
+        $this->userEvents = [];
         $userEvents = Event::where([
             'group_id' => $this->cal_group_data['id'],
             'user_id' => Auth::id()

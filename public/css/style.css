@@ -7,6 +7,9 @@
 .calendar_day {
     width: 14%;
 }
+.available {
+  background-color: #00ff00;
+}
 .available:hover {
     font-weight: bold;
     cursor: pointer;
@@ -68,6 +71,9 @@
   .card-columns {
     column-count: 1;
   }
+  .eventModal {
+    max-width: 660px;
+  }
 }
 .card-columns {
   @include media-breakpoint-only(lg) {
@@ -79,6 +85,9 @@
 }
 
  @media screen and (min-width:700px) {
+    .eventModal {
+      min-width: 660px;
+    }
     .card-columns {
       column-count: 2;
     }
@@ -234,5 +243,15 @@
     height: 40px;
   }
   .userEvent {
-    border-bottom: 6px solid #ff8000;
+    border-bottom: 6px solid #ff8000 !important;
+  }
+  .dayNumber {
+    background-color: #fdfbf9;
+    border-radius: 4px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin-right: 6px;
+  }
+  .eventsTable tr {
+    height: 46px;
   }

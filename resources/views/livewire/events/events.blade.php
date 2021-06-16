@@ -3,10 +3,10 @@
     <div class="content-header">
         <div class="container-fluid">
         <div class="row mb-2">
-            <div class="col-sm-6">
-            <h1 class="m-0">{{ __('app.menu-calendar') }}</h1>
+            <div class="col-sm-8">
+            <h1 class="m-0">{{ __('app.menu-calendar') }} - {{ $cal_group_data['name'] }}</h1>
             </div><!-- /.col -->
-            <div class="col-sm-6">
+            <div class="col-sm-4">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{route('home.home')}}">{{ __('app.menu-home') }}</a></li>
                 <li class="breadcrumb-item active">{{ __('app.menu-calendar') }}</li>
@@ -23,12 +23,12 @@
             <div class="row">                
                 <div class="col-lg-12">
                     <div class="card card-primary card-outline">
-                        <div class="card-body">
-                            <div class="container-fluid pl-0 pr-0">
+                        <div class="card-header">
+                            <div class="container-md pl-0 pr-0">
                                 <div class="row">
-                                    <div class="col-md">
+                                    <div class="col-12 col-lg-6 col-md-6 justify-content-center">
                                         @if (count($groups) > 1)
-                                        <form wire:submit.prevent="changeGroup" class="form-inline">
+                                        <form wire:submit.prevent="changeGroup" class="form-inline m-0">
                                             @csrf
                                             <div class="input-group">
                                                 <div class="custom-file">
@@ -48,12 +48,9 @@
                                         </form>
                                         @endif
                                     </div>
-                                    <div class="col-md d-flex justify-content-center mt-1">
-                                        <h4>{{ $cal_group_data['name'] }}</h4>
-                                    </div>
-                                    <div class="col-md d-flex justify-content-end">
+                                    <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center">
                                         <nav>
-                                            <ul class="pagination justify-content-center">
+                                            <ul class="pagination justify-content-center m-0">
                                                 <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
                                                 <li class="page-item disabled">
                                                     <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true"><strong>{{$year}}. {{__("$current_month")}}</strong></a>
@@ -65,9 +62,10 @@
                                         </nav>
                                     </div>                                
                                 </div>
-                            </div>
-                            {{-- @livewire('events.calendar', ['month' => $month, 'year' => $year])  --}}
-                            <table class="table table-bordered">
+                            </div>                            
+                        </div>
+                        <div class="card-body p-2">
+                            <table class="table table-bordered eventsTable">
                                 <thead>
                                     <tr>
                                         @foreach (trans('group.days') as $dn => $translate)
@@ -95,18 +93,22 @@
                                             @elseif (isset($cal_service_days[$day['weekDay']]) == null || !$day['available']) table-active
                                             @else table-light @endif
                                             @if ($day['service_day']) available @endif
+                                            @if (isset($userEvents[$day['fullDate']])) userEvent @endif
                                             "
                                         @endif data-day="{{ $day['fullDate'] }}"
                                         @if ($day['service_day']) onclick="modal({{$cal_group_data['id']}}, '{{ $day['fullDate'] }}')" @endif
+                                        @if (isset($day_stat[$day['fullDate']]))
+                                                    style="background: {{$day_stat[$day['fullDate']]}}"
+                                                @endif
                                         >
-                                        <div class="row">
-                                            <div class="col-8 m-0 p-0">
+                                        <div class="row justify-content-end">                                            
+                                            {{-- <div class="col-8 m-0 p-0">
                                                 @if (isset($day_stat[$day['fullDate']]))
                                                     <div class="dayStat @if (isset($userEvents[$day['fullDate']]))userEvent @endif"
                                                     style="background: {{$day_stat[$day['fullDate']]}}"></div>
                                                 @endif
-                                            </div>
-                                            <div class="col-4 d-flex justify-content-end">{{ $day['day'] }}</div>
+                                            </div> --}}
+                                            <div class="dayNumber mr-2">{{ $day['day'] }}</div>
                                         </div>
                                     </td>
                                     @endforeach

@@ -1,48 +1,54 @@
 <div>
-    <div wire:ignore.self class="modal fade eventModal" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+    <div wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl eventModal"> 
             <div class="modal-content">
                 <div class="modal-header pb-0 pl-0 pt-2">
-                    <ul class="nav nav-tabs border-0" id="custom-tabs-four-tab" role="tablist">
-                        <li class="pt-2 px-3">
-                            <h4 class="card-title">
-                            {{ $group_data['name'] }}
-                            </h4>
-                        </li>
-                        <li class="px-3">
-                            <nav>
-                                <ul class="pagination justify-content-center">
-                                    <li class="page-item">
-                                        <a class="page-link" href="#" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
-                                    <li class="page-item disabled">
-                                        <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true">
-                                            <strong>
-                                            {{$day_data['dateFormat']}}    
-                                            </strong>
-                                        </a>
-                                    </li>
-                                    @if ($day_data['next_date'] !== false)
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-12 col-lg-4 mt-2 pb-2 text-center">
+                                <h5>
+                                    {{ $group_data['name'] }}
+                                </h5>
+                            </div>
+                            <div class="col-12 col-lg-4 text-center">
+                                <nav>
+                                    <ul class="pagination justify-content-center">
                                         <li class="page-item">
-                                            <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
+                                            <a class="page-link" href="#" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
+                                        <li class="page-item disabled">
+                                            <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true">
+                                                <strong>
+                                                {{$day_data['dateFormat']}}    
+                                                </strong>
+                                            </a>
+                                        </li>
+                                        @if ($day_data['next_date'] !== false)
+                                            <li class="page-item">
+                                                <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </nav>
+                            </div>
+                            <div class="col-12 col-lg-4 text-center">
+                                <ul class="nav nav-tabs border-0 justify-content-center" id="custom-tabs-four-tab" role="tablist">
+                                    <li class="nav-item">
+                                    <a class="nav-link @if ($active_tab == '') active @endif " id="custom-tabs-home-tab" data-toggle="pill" href="#custom-tabs-home" role="tab" aria-controls="custom-tabs-four-home" aria-selected="true">
+                                        @lang('event.modal.tab_events')
+                                    </a>
+                                    </li>
+                                    @if ($current_available === true)
+                                        <li class="nav-item">
+                                        <a wire:click="$emitTo('events.event-edit', 'createForm')" class="nav-link @if ($active_tab == 'event') active @endif " id="custom-tabs-event-tab" data-toggle="pill" href="#custom-tabs-event" role="tab" aria-controls="custom-tabs-four-profile" aria-selected="false">
+                                            @lang('event.modal.tab_set_event')
+                                        </a>
                                         </li>
                                     @endif
                                 </ul>
-                            </nav>
-                        </li>
-                        
-                        <li class="nav-item">
-                          <a class="nav-link @if ($active_tab == '') active @endif " id="custom-tabs-home-tab" data-toggle="pill" href="#custom-tabs-home" role="tab" aria-controls="custom-tabs-four-home" aria-selected="true">
-                            @lang('event.modal.tab_events')
-                          </a>
-                        </li>
-                        @if ($current_available === true)
-                            <li class="nav-item">
-                            <a wire:click="$emitTo('events.event-edit', 'createForm')" class="nav-link @if ($active_tab == 'event') active @endif " id="custom-tabs-event-tab" data-toggle="pill" href="#custom-tabs-event" role="tab" aria-controls="custom-tabs-four-profile" aria-selected="false">
-                                @lang('event.modal.tab_set_event')
-                            </a>
-                            </li>
-                        @endif
-                    </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                     </button>

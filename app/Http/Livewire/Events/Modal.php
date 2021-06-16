@@ -139,6 +139,7 @@ class Modal extends AppComponent
                 ];
             }
         }
+        // dd($this->service_days);
         $this->group_data = $group->toArray();
 
         //calculate next end previous day

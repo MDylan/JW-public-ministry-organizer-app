@@ -71,7 +71,8 @@ class Group extends Model
     }
 
     public function days() {
-        return $this->hasMany(GroupDay::class);
+        return $this->hasMany(GroupDay::class)
+                    ->orderBy('day_number');
     }
 
     public function justEvents() {
