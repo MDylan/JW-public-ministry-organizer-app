@@ -61,8 +61,8 @@
         </span>
           @foreach ($notifications as $notification)
             <div class="dropdown-divider"></div>  
-            <a href="{{ $notification['route'] }}" class="dropdown-item">
-                <i class="fas {{ $notification['icon'] }} mr-2"></i> 
+            <a href="{{ $notification['route'] }}" class="dropdown-item" style="overflow: hidden;">
+                <i class="{{ $notification['icon'] }} mr-2"></i> 
                 {{ $notification['message'] }}
             </a>
           @endforeach

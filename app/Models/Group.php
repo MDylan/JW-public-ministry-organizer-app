@@ -103,6 +103,23 @@ class Group extends Model
         return $this->stats()->whereBetween('day', [$start, $end]);
     }
 
+    public function news() {
+        return $this->hasMany(GroupNews::class)
+                    ->orderBy('date', 'DESC')
+                    ->with('user');
+    }
+
+    public function latest_news() {
+        return $this->hasMany(GroupNews::class)
+                ->where('status', 1)
+                ->whereDate('date', '<=', now())
+                ->orderBy('date', 'DESC');
+    }
+
+    public function news_log() {
+        return $this->hasMany(GroupNewsUserLogs::class);
+    }
+
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe
      */

@@ -27,7 +27,6 @@
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>#</th>
                                     <th>@lang('user.name')</th>
                                     <th>@lang('user.email')</th>
                                     <th>@lang('user.phone')</th>
@@ -37,11 +36,17 @@
                             </thead>
                             <tbody>
                                 @foreach ($users as $user)
+                                    @if ($user->pivot->accepted_at == null && $editor == 0)
+                                        @continue                                        
+                                    @endif
                                 <tr>
-                                    <td>{{ $user->id }}</td>
-                                    <td>{{ $user->full_name }}</td>
+                                    <td>{{ $user->full_name }}
+                                    </td>
                                     <td>
-                                        <a href="mailto:{{ $user->email }}">{{ $user->email }}</a>                                    
+                                        <a href="mailto:{{ $user->email }}">{{ $user->email }}</a>
+                                        @if ($user->pivot->accepted_at == null)
+                                            <br/><span class="badge badge-warning"> @lang('group.waiting_approval') </span>
+                                        @endif                                    
                                     </td>
                                     <td>
                                         <a href="tel:+{{ $user->phone }}">{{ $user->phone }}</a>
@@ -55,7 +60,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <a href="{{ route('groups') }}" class="btn btn-primary">@lang('app.back')</a>
+                    <a href="{{ route('groups') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-alt-circle-left mr-1"></i>
+                        @lang('app.back')</a>
                 </div>
             </div>
         </div>

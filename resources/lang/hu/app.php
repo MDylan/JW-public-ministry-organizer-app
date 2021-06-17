@@ -40,6 +40,7 @@ return [
     'reject' => 'Elutasítás',
     'top_notifies' => [
         'groups' => ':number új csoportmeghívás',
+        'group_news' => ':number új hír',
     ],
     'new' => 'új',
     'total_notifications' => ':number új értesítés',
@@ -49,6 +50,7 @@ return [
     'information' => 'Tájékoztatás',
     'no_any_groups' => 'Jelenleg még nem tartozol egyetlen szolgálati csoporthoz sem. Ha csatlakozol egyhez, akkor itt fog megjelenni egy áttekintés a közelgő szolgálataidról.',
     'back' => 'Vissza az előző oldalra',
-    'dark_theme' => 'Sötét mód'
+    'dark_theme' => 'Sötét mód',
+    'show' => 'Megtekintés'
     
 ];

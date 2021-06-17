@@ -41,6 +41,7 @@
                                     <th scope="col">{{ __('group.name') }}</th>
                                     <th scope="col">{{ __('app.role') }}</th>
                                     <th scope="col">{{ __('group.users') }}</th>
+                                    <th scope="col">{{ __('group.news') }}</th>
                                     <th scope="col">{{ __('app.options') }}</th>
                                 </tr>
                                 </thead>
@@ -60,7 +61,14 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="{{ route('groups.users', ['group' => $group->id]) }}">@lang('group.users')</a>
+                                                @if ($group->pivot->accepted_at !== null)
+                                                    <a href="{{ route('groups.users', ['group' => $group->id]) }}">@lang('group.users')</a>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($group->pivot->accepted_at !== null)
+                                                    <a href="{{ route('groups.news', ['group' => $group->id]) }}">@lang('app.show')</a>
+                                                @endif
                                             </td>
                                             <td>                                            
                                                 @if ($group->pivot->accepted_at == null)

@@ -159,4 +159,7 @@ return [
         'log' => 'Kilépett a csoportból'
     ],
     'error_no_admin_user' => 'Nem jelöltél ki senkit csoport adminisztrátornak!',
+    'news' => 'Csoport hírek',
+    'news_add' => 'Hír létrehozása',
+    'waiting_approval' => 'Még nem fogadta el a meghívást.'
 ];
