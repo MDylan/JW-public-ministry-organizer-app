@@ -261,3 +261,6 @@
   .eventsTable tr {
     height: 46px;
   }
+  .highlight:hover {
+    background-color: #eeeded;
+  }

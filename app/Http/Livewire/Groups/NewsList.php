@@ -25,7 +25,7 @@ class NewsList extends Component
 
         return view('livewire.groups.news-list', [
             'editor' => $this->group->editors()->wherePivot('user_id', Auth::id())->count(),
-            'news' => $this->group->news,
+            'news' => $this->group->news()->with('files')->get(),
             'group' => $this->group
         ]);
     }

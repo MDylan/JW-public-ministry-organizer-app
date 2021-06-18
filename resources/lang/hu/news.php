@@ -6,7 +6,7 @@ return [
     'edit' => 'Hír szerkesztése',
     'title' => 'Cím',
     'status' => 'Állapot',
-    'date' => 'Dátum',
+    'date' => 'Megjelenés dátuma',
     'date_helper' => 'Ez előtt nem fog megjelenni csak a szerkesztőknek.',
     'content' => 'Tartalom',
     /*
@@ -27,5 +27,17 @@ return [
         'message' => 'A művelet nem vonható vissza, és a csatolt fájlok is törölve lesznek.',
         'success' => 'A hír törölve lett.',
         'error' => 'Sikertelen törlés!'
+    ],
+    'attachments' => 'Csatolt fájlok',
+    'file' => [
+        'browse' => 'Tallózás',
+        'choose' => 'Fájlok feltöltése',
+        'uploaded' => 'Feltöltött fájlok:',
+        'available_types' => 'Engedélyezett formátumok',
+        'wrong_type'    => 'Hibás fájlformátum',
+        'wrong_size'    => 'Túl nagy a fájl mérete. Maximum 2 MB tölthető fel.'
+    ],
+    'confirmFileDelete' => [
+        'question' => 'Biztosan törlöd ezt a fájlt?'
     ]
 ];

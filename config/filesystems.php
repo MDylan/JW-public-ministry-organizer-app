@@ -42,6 +42,13 @@ return [
             'visibility' => 'public',
         ],
 
+        'news_files' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/news_files'),
+            // 'url' => env('APP_URL').'/storage/news_files',
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -67,6 +74,7 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
+        // public_path('storage/news_files') => storage_path('app/private/news_files'),
     ],
 
 ];

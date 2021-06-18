@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GroupNewsFileDownloadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Users\ListUsers;
@@ -75,9 +76,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);            
             Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
 
+            
+
             Route::middleware(['groupMember'])->group(function () {
                 Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users');
                 Route::get('/groups/{group}/news', NewsList::class)->name('groups.news');
+                Route::get('/news_file/{group}/{file}', [GroupNewsFileDownloadController::class, 'download'])->name('groups.news.filedownload');    
             });
 
             Route::middleware(['groupAdmin'])->group(function () {

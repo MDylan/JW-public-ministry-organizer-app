@@ -71,19 +71,31 @@
                                                 @if( Carbon\Carbon::parse($new->date)->isPast() != 1) 
                                                 <span class="ml-2 badge badge-secondary"> @lang('news.future') </span>
                                                 @endif
+                                                @if (count($new->files))
+                                                    <i class="fa fa-paperclip"></i>
+                                                @endif
                                             </h4>
                                         </div>
                                     </a>
                                     <div id="collapse-{{ $new->id }}" class="collapse" data-parent="#accordion" style="">
                                         <div class="card-body">
                                             {!! $new->content !!}
-                                            <div class="d-flex justify-content-end">
-                                                <p class="text-left mb-0">{{  $new->user->full_name }}</p>
-                                                @if ($editor)
-                                                <a class="ml-2 btn btn-primary btn-sm" href="{{ route('groups.news_edit', ['group' => $group->id, 'new' => $new->id]) }}">
-                                                    @lang('Edit')
-                                                </a>    
-                                                @endif                                                
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    @foreach ($new->files as $file)
+                                                        <a class="btn btn-outline-primary btn-sm mr-1" href="{{ $file->url }}">
+                                                            <i class="fa fa-download mr-1"></i>
+                                                            {{ $file->name }}</a>
+                                                    @endforeach
+                                                </div>
+                                                <div class="col-md-4 justify-content-end text-right">
+                                                    <span class="text-left mb-0">{{  $new->user->full_name }}</span>
+                                                    @if ($editor)
+                                                    <a class="ml-2 btn btn-primary btn-sm" href="{{ route('groups.news_edit', ['group' => $group->id, 'new' => $new->id]) }}">
+                                                        @lang('Edit')
+                                                    </a>    
+                                                    @endif 
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
