@@ -55,6 +55,12 @@
                         <p>{{ __('app.menu-users') }}</p>
                       </a>
                     </li>
+                    <li class="nav-item">
+                      <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->is('admin/settings') ? 'active' : '' }}">
+                        <i class="fas fa-cog nav-icon"></i>
+                        <p>{{ __('app.menu-settings') }}</p>
+                      </a>
+                    </li>
                   </ul>
                 </li>
             @endcan

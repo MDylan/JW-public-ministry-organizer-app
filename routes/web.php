@@ -3,6 +3,7 @@
 use App\Http\Controllers\GroupNewsFileDownloadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
+use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Groups\CreateGroupForm;
@@ -73,10 +74,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/groups', ListGroups::class)->name('groups');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
             //For special roles
-            Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);            
-            Route::get('/admin/users', ListUsers::class)->name('admin.users')->middleware('can:is-admin');
+            Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
 
-            
+            Route::middleware('can:is-admin')->group(function () {
+                Route::get('/admin/users', ListUsers::class)->name('admin.users');
+                Route::get('/admin/settings', Settings::class)->name('admin.settings');
+            });
 
             Route::middleware(['groupMember'])->group(function () {
                 Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users');

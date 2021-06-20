@@ -7,6 +7,7 @@ return [
     'menu-users' => 'Felhasználók',
     'menu-groups' => 'Csoportok',
     'menu-calendar' => 'Naptár',
+    'menu-settings' => 'Beállítások',
     'options' => 'Beállítások',
     'edit' => 'Szerkesztés',
     'delete' => 'Törlés',
@@ -51,6 +52,8 @@ return [
     'no_any_groups' => 'Jelenleg még nem tartozol egyetlen szolgálati csoporthoz sem. Ha csatlakozol egyhez, akkor itt fog megjelenni egy áttekintés a közelgő szolgálataidról.',
     'back' => 'Vissza az előző oldalra',
     'dark_theme' => 'Sötét mód',
-    'show' => 'Megtekintés'
+    'show' => 'Megtekintés',
+    'choose_language' => 'Nyelv választás',
+    'language_changed' => 'A nyelv megváltozott'
     
 ];

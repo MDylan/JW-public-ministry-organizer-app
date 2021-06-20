@@ -15,18 +15,14 @@
         <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
           <i class="far fa-user"></i>
           <span class="d-none d-md-inline">
-            @foreach (trans('user.nameFields') as $field => $translate) 
-              {{ auth()->user()->$field }}
-            @endforeach
+            {{ auth()->user()->full_name }}
             </span>
         </a>
         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right" style="left: inherit; right: 0px;">
           <!-- User image -->
           <li class="user-header bg-primary">
             <p>
-              @foreach (trans('user.nameFields') as $field => $translate) 
-                {{ auth()->user()->$field }}
-              @endforeach
+              {{ auth()->user()->full_name }}
               <small>{{ __('roles.'.auth()->user()->role) }}</small>
             </p>
           </li>
@@ -68,6 +64,21 @@
           @endforeach
         </div>
       </li>
+      @if (count(Config('available_languages')) > 1)
+        <li class="nav-item dropdown">
+          <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="true">
+            <i class="fa fa-globe"></i>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right p-0" style="left: inherit; right: 0px;">
+            <p class="text-center my-1">@lang('app.choose_language')</p>
+              @foreach (Config('available_languages') as $code => $lang)
+                <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
+                  {{ $lang }}
+                </a>
+              @endforeach
+          </div>
+        </li>
+      @endif
       <li class="nav-item">
         <a class="nav-link" data-widget="fullscreen" href="#" role="button">
           <i class="fas fa-expand-arrows-alt"></i>

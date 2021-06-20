@@ -43,7 +43,6 @@
 
                     <div class="row">
                         <div class="col-12" id="accordion">
-                            
                             @forelse ($news as $new)
                                 @if ( $editor == 0 
                                         && (
