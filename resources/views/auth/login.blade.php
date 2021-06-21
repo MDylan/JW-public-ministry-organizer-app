@@ -63,11 +63,13 @@
                         <a href="{{route('password.request')}}">{{__('user.lostPassword')}}</a>
                     @endif  
                 </div>
-                <div class="col text-center">
-                    @if (Route::has('register'))
-                        <a href="{{route('register')}}" class="text-center">{{__('user.register')}}</a>
-                    @endif
-                </div>
+                @if (config('settings_registration') == 1)
+                    <div class="col text-center">
+                        @if (Route::has('register'))
+                            <a href="{{route('register')}}" class="text-center">{{__('user.register')}}</a>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
         </div>

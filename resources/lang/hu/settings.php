@@ -24,4 +24,10 @@ return [
             'error'     => 'Nem létezik ez a nyelv a nyelvek listájában!',
         ]
     ],
+    'others' => [
+        'title' => 'Egyéb beállítások',
+        'registration'  => 'Regisztrálás lehetősége',
+        'claim_group_creator' => 'Csoport létrehozó jogosultság igényelhető'
+    ],
+    'others_saved'  => 'A beállítások sikeresen mentve lettek.'
 ];

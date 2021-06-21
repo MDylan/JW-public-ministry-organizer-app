@@ -54,6 +54,9 @@ return [
     'dark_theme' => 'Sötét mód',
     'show' => 'Megtekintés',
     'choose_language' => 'Nyelv választás',
-    'language_changed' => 'A nyelv megváltozott'
+    'language_changed' => 'A nyelv megváltozott',
+    'on'    => 'Be',
+    'off'   => 'Ki',
+    'registration_disabled' => 'A regisztráció lehetősége ki lett kapcsolva.'
     
 ];

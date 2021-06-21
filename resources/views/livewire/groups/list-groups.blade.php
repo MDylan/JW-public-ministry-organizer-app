@@ -109,11 +109,13 @@
                     </div>
                 </div>
                 @cannot('is-groupcreator')
-                    <div class="callout callout-info">
-                        @lang('group.notGroupCreator', ['url' => '#'])
-                        <button wire:click.prevent="askGroupCreatorPrivilege" class="btn btn-primary">
-                            {{ __('group.requestButton') }}</button>
-                    </div>    
+                    @if (config('settings_claim_group_creator') == 1)
+                        <div class="callout callout-info">
+                            @lang('group.notGroupCreator', ['url' => '#'])
+                            <button wire:click.prevent="askGroupCreatorPrivilege" class="btn btn-primary">
+                                {{ __('group.requestButton') }}</button>
+                        </div>    
+                    @endif
                 @endcannot 
                 </div>
             <!-- /.col-md-12 -->

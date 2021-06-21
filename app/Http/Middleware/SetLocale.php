@@ -20,7 +20,7 @@ class SetLocale
     public function handle(Request $request, Closure $next)
     {
         // $language = 'en'; // default
-        $language = Config::get('default_language');   //default
+        $language = Config::get('settings_default_language');   //default
         $languages = Config::get('available_languages');
 
         if (request('language')) {            

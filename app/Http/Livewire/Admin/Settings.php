@@ -14,8 +14,27 @@ class Settings extends AppComponent
 
     public $listeners = ['languageRemoveConfirmed'];
 
-    public function mount() {
+    //These will be only checkboxes (true/false)
+    public $others = [
+        'registration'  => true,
+        'claim_group_creator' => true
+        /*
+        !!! Important! 
+        If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
+        in defaults array !!!
+        */
+    ];
 
+    public function mount() {
+        $this->load();
+
+        foreach($this->others as $key => $value) {
+            if(!isset($this->settings[$key])) {
+                $this->state['others'][$key] = $value;
+            } else {
+                $this->state['others'][$key] = $this->settings[$key];
+            }
+        }
     }
 
     private function getLanguages() {
@@ -85,8 +104,20 @@ class Settings extends AppComponent
         }
     }
 
-    public function render()
-    {
+    public function saveOthers() {
+        // dd($this->state['others']);
+        if(isset($this->state['others'])) {
+            foreach($this->state['others'] as $key => $value) {
+                ModelsSettings::updateOrCreate(
+                    ['name' => $key],
+                    ['value' => $value]
+                ); 
+            }
+            $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
+        }
+    }
+
+    public function load() {
         $settings = ModelsSettings::all()->toArray();
         foreach($settings as $setting) {
             $this->settings[$setting['name']] = $setting['value'];
@@ -94,6 +125,13 @@ class Settings extends AppComponent
         if(!isset($this->settings['default_language'])) {
             $this->settings['default_language'] = config('app.locale');
         }
+    }
+
+    public function render()
+    {
+        
+        $this->load();        
+
         $this->state['default_language'] = $this->settings['default_language'];
 
         return view('livewire.admin.settings');

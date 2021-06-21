@@ -101,10 +101,36 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            @lang('settings.others.title')
+                        </div>
+                        <div class="card-body" wire:ignore>
+                            @foreach ($this->others as $key => $value)
+                                <div class="row mb-1">
+                                    <div class="col-md-2 d-flex justify-content-end">
+                                        <input type="checkbox" data-key="{{ $key }}" @if($state['others'][$key] == 1) checked="" @endif data-bootstrap-switch="" data-off-color="danger" data-on-color="success">
+                                    </div>
+                                    <div class="col-md-10 pt-1">
+                                        {{ __('settings.others.'.$key) }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="card-footer">
+                            <button type="button" class="btn btn-primary" wire:click="saveOthers">
+                                <i class="fa fa-save"></i>
+                                @lang('app.saveChanges')
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     @section('footer_scripts')
+    <script src="{{ asset('plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             window.addEventListener('show-languageRemove-confirmation', event => {
@@ -123,7 +149,19 @@
                 }
                 })
             });
+            $("input[data-bootstrap-switch]").each(function(){
+                $(this).bootstrapSwitch({
+                    'onText' : '@lang('app.on')',
+                    'offText' : '@lang('app.off')',
+                    'size' : 'normal',
+                    'onSwitchChange' : function(event, state) {
+                        var key = $(this).data('key');
+                        @this.set('state.others.' + key, state);
+                    }
+                });
+            })
         });
     </script>
+    
     @endsection
 </div>
