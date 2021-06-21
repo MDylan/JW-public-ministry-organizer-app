@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Admin;
 
 use App\Http\Livewire\AppComponent;
 use App\Models\Settings as ModelsSettings;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 
 class Settings extends AppComponent
@@ -124,6 +125,16 @@ class Settings extends AppComponent
         }
         if(!isset($this->settings['default_language'])) {
             $this->settings['default_language'] = config('app.locale');
+        }
+    }
+
+    public function run($command) {
+        $commands = [
+            'optimize' => 'optimize:clear'
+        ];
+        if(isset($commands[$command])) {
+            Artisan::call($commands[$command]);
+            $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
         }
     }
 

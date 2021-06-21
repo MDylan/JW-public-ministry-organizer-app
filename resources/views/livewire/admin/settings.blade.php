@@ -65,7 +65,7 @@
                                 <thead>
                                     <tr>
                                         <th>@lang('settings.languages.country_code')</th>
-                                        <th colspan="2">@lang('settings.languages.country_name')</th>
+                                        <th colspan="3">@lang('settings.languages.country_name')</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -77,6 +77,12 @@
                                                 </td>
                                                 <td class="pt-2">
                                                     {{ $country_name }}
+                                                </td>
+                                                <td class="pt-2">
+                                                    <a href="/languages/{{ $country_code }}/translations" target="_blank">
+                                                        <i class="fa fa-arrow-right mr-1"></i>
+                                                        @lang('settings.languages.translate')
+                                                    </a>
                                                 </td>
                                                 <td class="col-3">
                                                     @if ($country_code != $settings['default_language'])
@@ -97,6 +103,10 @@
                             </table>
                             <div class="alert alert-light mt-2" role="alert">
                                 @lang('settings.languages.lang_help')
+                                <a href="/languages" class="btn btn-info" target="_blank">
+                                    <i class="fa fa-arrow-right mr-1"></i>
+                                    @lang('settings.languages.start_translation')
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -122,6 +132,18 @@
                             <button type="button" class="btn btn-primary" wire:click="saveOthers">
                                 <i class="fa fa-save"></i>
                                 @lang('app.saveChanges')
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            @lang('settings.run.title')
+                        </div>
+                        <div class="card-body" wire:ignore>
+                            <button type="button" class="btn btn-primary" wire:click="run('optimize')">
+                                <i class="fa fa-play mr-1"></i>
+                                @lang('settings.run.optimize'): optimize:clear
                             </button>
                         </div>
                     </div>

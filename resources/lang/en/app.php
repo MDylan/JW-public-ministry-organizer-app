@@ -1,8 +1,10 @@
 <?php
 
-return [
-    'title' => 'Public Ministry Organizer',
-    'menu-home' => 'Home',
-    'menu-users' => 'Users',
-    'menu-groups' => 'Groups',
-];
+return array (
+  'menu-admin' => 'Administration',
+  'menu-calendar' => 'Calendar',
+  'menu-groups' => 'Groups',
+  'menu-home' => 'Home',
+  'menu-users' => 'Users',
+  'title' => 'Public Ministry Organizer',
+);

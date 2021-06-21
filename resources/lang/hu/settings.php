@@ -14,6 +14,8 @@ return [
                         Ha az adott nyelven nincs lefordítva valami, akkor ettől még használható lesz az oldal, de nem fog megjelenni értelmezhető szöveg a tartalom helyén.<br/>
                         Bővebb információért lásd a <a class="alert-link" href="https://laravel.com/docs/8.x/localization" target="_blank">laravel dokumentációt</a>.',
         'success' => 'A nyelv hozzá lett adva',
+        'translate' => 'Fordítás',
+        'start_translation' => 'Fordítás elkezdése',
         'confirmDelete' => [
             'question'  => 'Biztosan törlöd ezt a nyelvet?',
             'message'   => 'Ezt követően a nyelv nem lesz elérhető senki számára.',
@@ -29,5 +31,10 @@ return [
         'registration'  => 'Regisztrálás lehetősége',
         'claim_group_creator' => 'Csoport létrehozó jogosultság igényelhető'
     ],
-    'others_saved'  => 'A beállítások sikeresen mentve lettek.'
+    'others_saved'  => 'A beállítások sikeresen mentve lettek.',
+    'run' => [
+        'title'    => 'Artisan parancsok futtatása',
+        'optimize' => 'Parancs futtatása',
+        'success'  => 'A parancs lefutott!',
+    ]
 ];
