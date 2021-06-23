@@ -76,8 +76,8 @@
                                                 <div class="form-group">
                                                     <label for="min_time">{{__('group.min_time')}}</label>
                                                     <select name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror" wire:model.defer="state.min_time">
-                                                        @foreach (trans('group.min_time_options') as $field => $translate) 
-                                                            <option value="{{$field}}">{{$translate}}</option>
+                                                        @foreach ($min_time_options as $field => $translate) 
+                                                            <option value="{{$field}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -87,8 +87,8 @@
                                                 <div class="form-group">
                                                     <label for="max_time">{{__('group.max_time')}}</label>
                                                     <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model.defer="state.max_time">
-                                                        @foreach (trans('group.max_time_options') as $field => $translate) 
-                                                            <option value="{{$field}}">{{$translate}}</option>
+                                                        @foreach ($max_time_options as $field => $translate) 
+                                                            <option value="{{$field}}">{{__('group.max_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -110,13 +110,13 @@
                             </div>
                             <div class="card-body">
                                 <div class="col-lg-12">
-                                    @foreach (trans('group.days') as $day => $translate) 
+                                    @foreach ($group_days as $day => $translate) 
                                         <div class="row alert alert-light p-1">
                                             <div class="col-lg-3">
                                                 <label>Nap</label>
                                                 <div class="form-group">                                                        
                                                     <input data-day="{{$day}}" wire:model.defer="state.days.{{$day}}.day_number" type="checkbox" class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
-                                                    <label class="form-check-label" for="day_{{$day}}">{{$translate}}</label>
+                                                    <label class="form-check-label" for="day_{{$day}}">{{__('group.days.'.$translate)}}</label>
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
@@ -126,8 +126,8 @@
                                                         name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
                                                         class="timeselect start_time form-control 
                                                         @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
-                                                        @foreach (trans('group.times') as $field => $translate) 
-                                                            <option value="{{$translate}}">{{$translate}}</option>
+                                                        @foreach ($group_times as $field => $translate) 
+                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                 </div>
@@ -136,8 +136,8 @@
                                                 <div class="form-group">
                                                     <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
                                                     <select disabled data-day="{{$day}}" wire:ignore.self wire:model.defer="state.days.{{$day}}.end_time" name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" class="timeselect start_end form-control @error('end_time') is-invalid @enderror">
-                                                        @foreach (trans('group.times') as $field => $translate) 
-                                                            <option value="{{$translate}}">{{$translate}}</option>
+                                                        @foreach ($group_times as $field => $translate) 
+                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('days.{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -200,8 +200,8 @@
                                                 <td>{{$user['email']}}</td>
                                                 <td>
                                                     <select wire:model="users.{{$slug}}.group_role" wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
-                                                        @foreach (trans('group.roles') as $role => $translate) 
-                                                            <option value="{{$role}}">{{$translate}}</option>
+                                                        @foreach ($group_roles as $role => $translate) 
+                                                            <option value="{{$role}}">{{ __('group.roles.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -230,9 +230,9 @@
                                 <div class="alert alert-into">
                                     <h6><i class="fa fa-info-circle mr-2"></i>{{__('group.role_head')}}</h6>
                                     <ul>
-                                        @foreach (trans('group.roles') as $role => $translate) 
-                                            <li><strong>{{$translate}}</strong>: {{__('group.role_helper.'.$role)}}</li>
-                                        @endforeach                                        
+                                        @foreach ($group_roles as $role => $translate) 
+                                            <li><strong>{{ __('group.roles.'.$translate)}}</strong>: {{__('group.role_helper.'.$translate)}}</li>
+                                        @endforeach
                                     </ul>
                                     {{__('group.users_helper')}}
                                 </div>

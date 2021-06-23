@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
+use DateTime;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
@@ -156,8 +157,39 @@ class CreateGroupForm extends AppComponent
 
     }
 
+    function hoursRange( $lower = 0, $upper = 86400, $step = 3600, $format = '' ) {
+        $times = array();
+    
+        if ( empty( $format ) ) {
+            $format = 'H:i';
+        }
+    
+        foreach ( range( $lower, $upper, $step ) as $increment ) {
+            $increment = gmdate( 'H:i', $increment );
+            list( $hour, $minutes ) = explode( ':', $increment );
+            $date = new DateTime( $hour . ':' . $minutes );
+            $times[(string) $increment] = $date->format( $format );
+        }
+    
+        return $times;
+    }
+
     public function render()
     {
-        return view('livewire.groups.create-group-form');
+
+        $group_times = $this->hoursRange( 0, 86400, 1800 );
+
+        return view('livewire.groups.create-group-form', [
+            'min_time_options' => [30,60,120],
+            'max_time_options' => [60, 120, 180, 240, 320],
+            'group_days' => range(0,6,1),
+            'group_times' => $group_times,
+            'group_roles' => [
+                'member', 
+                'helper',
+                'roler',
+                'admin',
+            ]
+        ]);
     }
 }

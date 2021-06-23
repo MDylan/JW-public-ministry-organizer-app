@@ -8,6 +8,7 @@ return [
     'menu-groups' => 'Csoportok',
     'menu-calendar' => 'Naptár',
     'menu-settings' => 'Beállítások',
+    'menu-staticpages' => 'Statikus oldalak',
     'options' => 'Beállítások',
     'edit' => 'Szerkesztés',
     'delete' => 'Törlés',

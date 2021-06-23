@@ -1,10 +1,10 @@
 @extends('public')
 
-@section('title') | @lang('user.register')@endsection
+@section('title')@lang('user.register')@endsection
 
 @section('content')
-<div class="register-page">
-    <div class="register-box">
+<div class="row justify-content-center">
+    <div class="col-md-6 align-self-center">
     <div class="card card-outline card-primary">
         <div class="card-header text-center">
             <a href="/" class="h1">{{__('app.title')}}</a>
@@ -14,7 +14,7 @@
                 <p class="login-box-msg">{{__('user.registerMessage')}}</p>
 
                 {!! Form::open() !!}
-                @foreach (trans('user.nameFields') as $field => $translate) 
+                @foreach ($nameFields as $field => $translate) 
                 <div class="input-group mb-3">
                     {!! Form::text($field, '', ['class' => 'form-control'. ( $errors->has($field) ? ' is-invalid' : '' ), 'placeholder' => $translate]) !!}
                     <div class="input-group-append">

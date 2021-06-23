@@ -65,7 +65,7 @@
                             <table class="table table-bordered eventsTable">
                                 <thead>
                                     <tr>
-                                        @foreach (trans('group.days') as $dn => $translate)
+                                        @foreach ($group_days as $dn => $translate)
                                         <th class="calendar_day">
                                             <div class="d-flex justify-content-center">
                                                 <div class="d-none d-sm-block">

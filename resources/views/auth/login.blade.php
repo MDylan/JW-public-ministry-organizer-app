@@ -1,10 +1,10 @@
 @extends('public')
 
-@section('title') | @lang('user.login')@endsection
+@section('title')@lang('user.login')@endsection
 
 @section('content')
-<div class="login-page">
-    <div class="login-box">
+<div class="row justify-content-center">
+    <div class="col-md-6 align-self-center">
         <!-- /.login-logo -->
         <div class="card card-outline card-primary">
         <div class="card-header text-center">

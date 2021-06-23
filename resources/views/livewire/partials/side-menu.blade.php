@@ -39,6 +39,9 @@
                       </p>
                   </a>
               </li>
+
+              <x-SideStaticPages></x-SideStaticPages> 
+              
               @can('is-admin')              
                 <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
                   <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
@@ -53,6 +56,12 @@
                       <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
                         <i class="fas fa-users nav-icon"></i>
                         <p>{{ __('app.menu-users') }}</p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="{{ route('admin.staticpages') }}" class="nav-link {{ request()->is('admin/staticpages*') ? 'active' : '' }}">
+                        <i class="fa fa-file-alt nav-icon"></i>
+                        <p>{{ __('app.menu-staticpages') }}</p>
                       </a>
                     </li>
                     <li class="nav-item">

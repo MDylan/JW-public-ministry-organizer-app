@@ -104,7 +104,15 @@ class ListUsers extends AppComponent
         $users = User::latest()->paginate(20);
 
         return view('livewire.admin.users.list-users', [
-            'users' => $users
+            'users' => $users,
+            'userFields' => is_array(trans('user.nameFields')) ? trans('user.nameFields') : ['first_name', 'last_name'],
+            'roles' => [
+                'registered',
+                'activated',
+                'groupMember',
+                'groupCreator',
+                'mainAdmin'
+            ]
         ]);
     }
 }

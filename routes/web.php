@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\GroupNewsFileDownloadController;
+use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Settings;
+use App\Http\Livewire\Admin\StaticPageEdit;
+use App\Http\Livewire\Admin\StaticPages;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Groups\CreateGroupForm;
@@ -13,7 +16,8 @@ use App\Http\Livewire\Groups\NewsEdit;
 use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
-use App\Models\GroupNews;
+// use App\Models\GroupNews;
+// use App\Models\StaticPage;
 // use Illuminate\Auth\Notifications\VerifyEmail;
 // use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -31,14 +35,13 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 */
 
 Route::get('/', function () {
-    return view('main');
+    // return view('main');
+    return StaticPageController::render('home');
 })->middleware(['guest']);
 
 
-//Felhasználási feltételek, bárki láthatja
-Route::get('/terms', function () {
-    return 'terms page';
-})->name('terms');
+Route::get('/page/{slug}', [StaticPageController::class, 'render'])->name('static_page');
+
 
 /**
  * Run scheduled queue 
@@ -79,6 +82,9 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware('can:is-admin')->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');
                 Route::get('/admin/settings', Settings::class)->name('admin.settings');
+                Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
+                Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
+                Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
             });
 
             Route::middleware(['groupMember'])->group(function () {

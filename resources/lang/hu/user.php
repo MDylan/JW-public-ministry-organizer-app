@@ -19,7 +19,7 @@ return [
     ],
     'password' => 'Jelszó',
     'passwordConfirmation' => 'Jelszó megerősítése',
-    'agreeTerms' => 'Elfogadom a használat <a href="/terms" target="_blank">feltételeit</a>',
+    'agreeTerms' => 'Elfogadom a használat <a href="/page/terms" target="_blank">feltételeit</a>',
     'loginWithUser' => 'Már van fiókom, belépek',
     'updateProfile' => 'Adataim szerkesztése',
     'userData' => 'Elérhetőségeim',

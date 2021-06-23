@@ -282,7 +282,8 @@ class Events extends AppComponent
         // dd($calendar);
         return view('livewire.events.events', [
             'service_days' => $this->cal_service_days,
-            'calendar' => $calendar
+            'calendar' => $calendar,
+            'group_days' => is_array(trans('group.days')) ? trans('group.days') : range(0,6,1)
         ]);
 
         // return view('livewire.events.calendar');

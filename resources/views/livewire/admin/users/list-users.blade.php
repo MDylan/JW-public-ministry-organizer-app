@@ -38,6 +38,7 @@
                                 <th scope="col">{{ __('user.email') }}</th>
                                 <th scope="col">{{ __('app.userRole') }}</th>
                                 <th scope="col">{{ __('user.registered') }}</th>
+                                <th scope="col">@lang('user.last_login')</th>
                                 <th scope="col">{{ __('app.options') }}</th>
                             </tr>
                             </thead>
@@ -48,6 +49,7 @@
                                         <td>{{ $user->email }}</td>
                                         <td>{{ __('roles.'.$user->role) }}</td>
                                         <td>{{ $user->created_at->format(__('app.format.datetime')) }}</td>
+                                        <td>{{ $user->last_login_time }}</td>
                                         <td>
                                             <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                                 <i class="fa fa-edit mr-2"></i>
@@ -94,7 +96,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            @foreach (trans('user.nameFields') as $field => $translate) 
+                            @foreach ($userFields as $field => $translate) 
                             <div class="col">
                                 <div class="input-group mb-3">
                                     <input type="text" wire:model.defer="state.{{$field}}" name="{{$field}}" class="form-control @error($field) is-invalid @enderror" id="Input{{$field}}" placeholder="{{ $translate }}">
@@ -149,8 +151,8 @@
                                     <label for="inputRole" class="col-sm-4 col-form-label">{{__('app.userRole')}}</label>
                                     <div class="col-sm-8">
                                         <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control">
-                                            @foreach (trans('roles') as $field => $translate) 
-                                                <option value="{{$field}}">{{$translate}}</option>
+                                            @foreach ($roles as $field => $translate) 
+                                                <option value="{{$field}}">{{ __('roles.'.$translate)}}</option>
                                             @endforeach
                                         </select>
                                     </div>

@@ -50,7 +50,12 @@ class AppServiceProvider extends ServiceProvider
                 // }
             }
         } 
-        Config::set(['available_languages' => $available_languages]);
+        //overwrite default config values from database
+        Config::set([
+            'available_languages' => $available_languages,
+            'translatable.fallback_locale' => $defaults['default_language'],
+            'translatable.locales' => array_keys($available_languages),
+        ]);
         foreach($defaults as $key => $value) {
             Config::set(['settings_'.$key => $value]);
         }

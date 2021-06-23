@@ -1,10 +1,10 @@
 @extends('public')
 
-@section('title') | @lang('user.register')@endsection
+@section('title')@lang('user.register')@endsection
 
 @section('content')
-<div class="register-page">
-    <div class="register-box">
+<div class="row justify-content-center">
+    <div class="col-md-6 align-self-center">
         <div class="card card-outline card-primary">
             <div class="card-header text-center">
                 <a href="/" class="h1">{{__('app.title')}}</a>
