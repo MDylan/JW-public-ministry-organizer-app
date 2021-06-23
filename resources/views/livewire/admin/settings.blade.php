@@ -31,11 +31,12 @@
                         <div class="card-body">
                             <div class="form-row  align-items-end">
                                 <div class="form-group col-md-9">
+                                    {{-- {{ var_dump(json_decode($settings['languages'], true)) }} --}}
                                     <label for="default_lang">@lang('settings.languages.default')</label>
                                     <select wire:model.defer="state.default_language" class="form-control" id="default_lang">
                                         @if (isset($settings['languages']))
-                                            @foreach (json_decode($settings['languages']) as $country_code => $country_name)
-                                                <option value="{{ $country_code }}">{{ $country_name }}</option>
+                                            @foreach (json_decode($settings['languages'], true) as $country_code => $value)
+                                                <option value="{{ $country_code }}">{{ $value['name'] }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -70,13 +71,13 @@
                                 </thead>
                                 <tbody>
                                     @if (isset($settings['languages']))
-                                        @foreach (json_decode($settings['languages']) as $country_code => $country_name)
+                                        @foreach (json_decode($settings['languages'], true) as $country_code => $value)
                                             <tr>
-                                                <td class="col-3 pt-2">
+                                                <td class="col-2 pt-2">
                                                     {{ $country_code }}
                                                 </td>
                                                 <td class="pt-2">
-                                                    {{ $country_name }}
+                                                    {{ $value['name'] }}
                                                 </td>
                                                 <td class="pt-2">
                                                     <a href="/languages/{{ $country_code }}/translations" target="_blank">
@@ -84,12 +85,23 @@
                                                         @lang('settings.languages.translate')
                                                     </a>
                                                 </td>
-                                                <td class="col-3">
+                                                <td class="col-4">
                                                     @if ($country_code != $settings['default_language'])
+                                                        <div class="btn-group" role="group" aria-label="">
+                                                            @if($value['visible'])
+                                                                <button type="button" class="btn btn-success btn-sm" wire:click="languageVisibility('{{ $country_code }}')" data-toggle="tooltip" data-placement="bottom" title="@lang('settings.languages.visibility.show')">
+                                                                    <i class="fas fa-eye mr-1"></i>
+                                                                </button>
+                                                            @else
+                                                                <button type="button" class="btn btn-warning btn-sm" wire:click="languageVisibility('{{ $country_code }}')"  data-toggle="tooltip" data-placement="bottom" title="@lang('settings.languages.visibility.admin')">
+                                                                    <i class="fas fa-eye-slash mr-1"></i>
+                                                                </button>
+                                                            @endif
                                                         <button type="button" class="btn btn-danger btn-sm" wire:click="languageRemoveConfirmation('{{ $country_code }}')">
                                                             <i class="fa fa-trash mr-1"></i>
                                                                 @lang('Remove')
                                                         </button>
+                                                    </div>
                                                     @endif
                                                 </td>
                                             </tr>

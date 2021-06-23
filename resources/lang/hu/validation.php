@@ -139,6 +139,7 @@ return [
         'start' => 'szolgálat kezdete',
         'end' => 'szolgálat vége',
         'country_code'  => 'országkód',
-        'country_name'  => 'nyelv'
+        'country_name'  => 'nyelv',
+        'terms' => 'felhasználási feltételek'
     ],
 ];

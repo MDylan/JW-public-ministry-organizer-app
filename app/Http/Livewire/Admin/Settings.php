@@ -51,7 +51,10 @@ class Settings extends AppComponent
 
         $languages = $this->getLanguages();
         // dd($languages);
-        $languages[$validatedData['country_code']] = $validatedData['country_name'];
+        $languages[$validatedData['country_code']] = [
+            'name' => $validatedData['country_name'],
+            'visible' => true
+        ];
 
         $languages = \json_encode($languages);
 
@@ -103,6 +106,25 @@ class Settings extends AppComponent
         } else {
             $this->dispatchBrowserEvent('error', ['message' => __('settings.languages.defaultSet.error')]);
         }
+    }
+
+    public function languageVisibility($code) {
+        $languages = $this->getLanguages();
+        if(isset($languages[$code])) {
+            $languages[$code] = [
+                'name' => $languages[$code]['name'],
+                'visible' => ($languages[$code]['visible'] ? false : true)
+            ];
+
+            $languages = \json_encode($languages);
+
+            ModelsSettings::updateOrCreate(
+                ['name' => 'languages'],
+                ['value' => $languages]
+            );        
+
+            $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.visibility_changed')]);
+        } 
     }
 
     public function saveOthers() {

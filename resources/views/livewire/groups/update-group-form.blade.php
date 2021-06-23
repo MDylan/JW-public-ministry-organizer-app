@@ -211,7 +211,7 @@
                                                 <td class="pb-1">
                                                     <select wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
                                                         @foreach ($group_roles as $role => $translate) 
-                                                            <option value="{{$role}}">{{ __('group.roles.'.$translate)}}</option>
+                                                            <option value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>

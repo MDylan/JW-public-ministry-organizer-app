@@ -24,7 +24,12 @@ return [
         'defaultSet' => [
             'success'   => 'Az új alapértelmezett nyelv beállítva',
             'error'     => 'Nem létezik ez a nyelv a nyelvek listájában!',
-        ]
+        ],
+        'visibility' => [
+            'show'  => 'Mindenki számára látható',
+            'admin' => 'Csak admin számára látható'
+        ],
+        'visibility_changed' => 'A nyelv láthatósága megváltozott.',
     ],
     'others' => [
         'title' => 'Egyéb beállítások',

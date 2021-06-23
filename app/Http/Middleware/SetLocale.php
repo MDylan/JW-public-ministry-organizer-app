@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Settings as ModelsSettings;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 
@@ -25,9 +26,20 @@ class SetLocale
 
         if (request('language')) {            
             $new_language = request('language');
-            if(isset($languages[$new_language])) {                
-                session()->put('language', $new_language);
-                $language = $new_language;
+            if(isset($languages[$new_language])) {
+                if($languages[$new_language]['visible'] == true) {
+                    session()->put('language', $new_language);
+                    $language = $new_language;    
+                } else {
+                    //only admins can see this language
+                    $user = Auth::user();
+                    if($user !== null) {
+                        if($user->role == "mainAdmin") {
+                            session()->put('language', $new_language);
+                            $language = $new_language;
+                        }
+                    } 
+                }
             }
         } elseif (session('language')) {
             $language = session('language');

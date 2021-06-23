@@ -156,9 +156,11 @@ return [
         'error'  => 'Hiba a kilépés során',
         'no_admin' => 'Te vagy az egyedüli adminisztrátor a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
         'no_other_admin' => 'Nincs más adminisztrátor, jelölj ki valakit helyette.',
-        'log' => 'Kilépett a csoportból'
+        'log' => 'Kilépett a csoportból',
+        'self_delete_error' => 'Magadat nem törölheted a csoportból. A Csoportok oldalon lépj ki, ha szeretnél.'
     ],
     'error_no_admin_user' => 'Nem jelöltél ki senkit csoport adminisztrátornak!',
+    'error_no_right' => 'Nincs jogosultságod új csoport adminisztrátort kinevezni.',
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',
     'waiting_approval' => 'Még nem fogadta el a meghívást.'

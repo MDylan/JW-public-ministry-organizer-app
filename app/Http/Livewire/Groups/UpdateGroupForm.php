@@ -11,6 +11,7 @@ use App\Models\GroupDay;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
 use DateTime;
+use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
@@ -23,6 +24,7 @@ class UpdateGroupForm extends AppComponent
     public $search = "";
     public $group;
     public $days = [];
+    public $admins = [];
 
     public function mount(Group $group) {
         // dd($group->days);
@@ -55,6 +57,9 @@ class UpdateGroupForm extends AppComponent
                     'note' => $user->pivot->note,
                     'user_id' => $user->id
                 ];
+                if($user->pivot->group_role == 'admin') {
+                    $this->admins[$slug] = true;
+                }
             }
         }
 
@@ -92,7 +97,8 @@ class UpdateGroupForm extends AppComponent
                 $this->users[$slug] = [
                     'email' => $mail,
                     'group_role' => 'member',
-                    'note' => ''
+                    'note' => '',
+                    'user_id' => false
                 ];
             }
         }
@@ -114,6 +120,11 @@ class UpdateGroupForm extends AppComponent
                 'title' => __('group.logout.error'),
                 'message' => __('group.logout.no_other_admin'),
             ]);
+        } elseif($this->users[$email]['user_id'] == Auth::id()) {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.self_delete_error'),
+            ]);
         } else {
             unset($this->users[$email]);
         }
@@ -131,8 +142,12 @@ class UpdateGroupForm extends AppComponent
         $this->state['name'] = strip_tags($this->state['name']);
 
         $admins = 0;
+        $current_admins = [];
         foreach($this->users as $slug => $user) {
-            if($user['group_role'] == "admin") $admins++;
+            if($user['group_role'] == "admin") {
+                $admins++;
+                $current_admins[$slug] = true;
+            }
         }
 
         $v = Validator::make($this->state, [
@@ -147,10 +162,17 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
         ]);
 
-        $v->after(function ($validator) use ($admins) {
+        $v->after(function ($validator) use ($admins, $current_admins) {
             if ($admins == 0) {
                 $validator->errors()->add(
                     'users', __('group.error_no_admin_user')
+                );
+            }
+            $current_user = $this->group->groupUsers()->where('user_id', Auth::id())->first(); //->toArray();
+
+            if($current_admins != $this->admins && $current_user->pivot->group_role != 'admin') {
+                $validator->errors()->add(
+                    'users', __('group.error_no_right')
                 );
             }
         });

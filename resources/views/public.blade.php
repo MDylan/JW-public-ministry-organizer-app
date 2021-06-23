@@ -71,11 +71,14 @@ scratch. This page gets rid of all links and provides the needed markup only.
             </a>
             <div class="dropdown-menu dropdown-menu-right p-0" style="left: inherit; right: 0px;">
               <p class="text-center my-1">@lang('app.choose_language')</p>
-                @foreach (Config('available_languages') as $code => $lang)
-                  <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
-                    {{ $lang }}
-                  </a>
-                @endforeach
+              @foreach (Config('available_languages') as $code => $value)
+                @if (!$value['visible'])
+                  @continue
+                @endif
+                <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
+                  {{ $value['name'] }}
+                </a>
+              @endforeach
             </div>
           </li>
         @endif

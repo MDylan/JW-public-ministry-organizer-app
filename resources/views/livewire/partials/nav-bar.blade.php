@@ -71,9 +71,15 @@
           </a>
           <div class="dropdown-menu dropdown-menu-right p-0" style="left: inherit; right: 0px;">
             <p class="text-center my-1">@lang('app.choose_language')</p>
-              @foreach (Config('available_languages') as $code => $lang)
+              @foreach (Config('available_languages') as $code => $value)
+                @if (!$value['visible'] && auth()->user()->role !== "mainAdmin")
+                  @continue
+                @endif
                 <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
-                  {{ $lang }}
+                 @if (!$value['visible'])
+                 <i class="fas fa-eye-slash mr-1"></i>
+                 @endif
+                  {{ $value['name'] }}
                 </a>
               @endforeach
           </div>

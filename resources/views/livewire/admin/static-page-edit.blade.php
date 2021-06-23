@@ -44,7 +44,9 @@
                                     @foreach ($languages as $code => $lang)
                                         <li class="nav-item">
                                             <a class="nav-link @if ($lang == reset($languages )) active @endif" id="custom-tabs-{{$code}}-tab" data-toggle="pill" href="#custom-tabs-{{$code}}" role="tab" aria-controls="custom-tabs-{{$code}}" aria-selected="false">
-                                                {{ $lang }}
+                                                @if (!$lang['visible'])
+                                                    <i class="fas fa-eye-slash mr-1"></i>
+                                                @endif{{ $lang['name'] }}
                                             </a>
                                         </li>      
                                     @endforeach
