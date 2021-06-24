@@ -6,8 +6,10 @@ use App\Http\Livewire\AppComponent;
 use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
-use App\Models\User;
+// use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 
 class Events extends AppComponent
@@ -106,17 +108,29 @@ class Events extends AppComponent
     public function getGroupData() {
         $this->cal_service_days = [];
         $groupId = session('groupId');
-        $group = Group::findOrFail($groupId);
-        $days = $group->days()->get()->toArray();
-        if(count($days)) {
-            foreach($days as $day) {
-                $this->cal_service_days[$day['day_number']] = [
-                    'start_time' => $day['start_time'],
-                    'end_time' => $day['end_time'],
-                ];
+        try {
+            //mybe logout the current session group
+            $group = Group::findOrFail($groupId);
+            $days = $group->days()->get()->toArray();
+            if(count($days)) {
+                foreach($days as $day) {
+                    $this->cal_service_days[$day['day_number']] = [
+                        'start_time' => $day['start_time'],
+                        'end_time' => $day['end_time'],
+                    ];
+                }
             }
-        }
-        $this->cal_group_data = $group->whereId($groupId)->first()->toArray();
+            $this->cal_group_data = $group->whereId($groupId)->first()->toArray();
+        } catch(ModelNotFoundException $e)
+        {
+            $first = Auth()->user()->groupsAccepted()->first()->toArray();
+            if(isset($first['id'])) {
+                session(['groupId' => $first['id']]);
+                $this->reset();
+            } else {
+                abort('404');
+            }
+        }        
     }
 
     public function getStat() {

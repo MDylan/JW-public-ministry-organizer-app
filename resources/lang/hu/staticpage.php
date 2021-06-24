@@ -28,7 +28,7 @@ return [
     ],
     'positions_helper' => 'A nyilvánosan is elérhető linkek "Bal menü" esetén az oldal tetején fognak megjelenni ha nincs belépve a látogató.',
     'icon' => 'Ikon',
-    'iconHelp' => 'A teljes ikonkészlet <a href="https://fontawesome.com/v5.15/icons" target="_blank">megtekinthető itt</a>. 
+    'iconHelp' => 'A teljes ikonkészlet <a href="https://fontawesome.com/v5.15/icons?d=gallery&p=2&m=free" target="_blank">megtekinthető itt</a>. 
                     Neked a "class" után lévő idézőjelek közötti részt kell kimásolnod ide.<br/>
                     Például: &lt;i class="fas fa-address-book"&gt;&lt;/i&gt; esetén a <strong>fas fa-address-book</strong> szükséges.',
     'created' => 'Az oldal létrejött.',

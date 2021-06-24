@@ -63,9 +63,9 @@
                                             @if ($r['status'] == 'full') 
                                                 <button disabled class="btn btn-outline-danger">{{$r['hour']}}</button>
                                             @elseif ($r['status'] == 'ready')
-                                                <button wire:click.prevent="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
+                                                <button wire:click="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
                                             @else
-                                                <button wire:click.prevent="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
+                                                <button wire:click="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
                                             @endif                                    
                                         </div>
                                         @if (isset($day_events[$time]))

@@ -77,7 +77,7 @@
                                                     <label for="min_time">{{__('group.min_time')}}</label>
                                                     <select name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror" wire:model.defer="state.min_time">
                                                         @foreach ($min_time_options as $field => $translate) 
-                                                            <option value="{{$field}}">{{__('group.min_time_options.'.$translate)}}</option>
+                                                            <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -88,7 +88,7 @@
                                                     <label for="max_time">{{__('group.max_time')}}</label>
                                                     <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model.defer="state.max_time">
                                                         @foreach ($max_time_options as $field => $translate) 
-                                                            <option value="{{$field}}">{{__('group.max_time_options.'.$translate)}}</option>
+                                                            <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

@@ -33,75 +33,69 @@
                 @endcan        
                 <div class="card card-primary card-outline">
                     <div class="card-body">
-                        <div class="table-responsive-md">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">{{ __('group.name') }}</th>
-                                    <th scope="col">{{ __('app.role') }}</th>
-                                    <th scope="col">{{ __('group.users') }}</th>
-                                    <th scope="col">{{ __('group.news') }}</th>
-                                    <th scope="col">{{ __('app.options') }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                    @if (count($groups) == 0) 
-                                        <tr>
-                                            <td colspan="5">@lang('group.notInGroup')</td>
-                                        </tr>
-                                    @endif
-                                    @foreach ($groups as $group)
-                                        <tr>
-                                            <th scope="row">{{ $group->id }}</th>
-                                            <td>{{ $group->name }}</td>
-                                            <td>
-                                                <span class="badge badge-{{ $group->group_role }}">
-                                                    {{ __('group.roles.'.$group->pivot->group_role) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                @if ($group->pivot->accepted_at !== null)
-                                                    <a href="{{ route('groups.users', ['group' => $group->id]) }}">@lang('group.users')</a>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($group->pivot->accepted_at !== null)
-                                                    <a href="{{ route('groups.news', ['group' => $group->id]) }}">@lang('app.show')</a>
-                                                @endif
-                                            </td>
-                                            <td>                                            
-                                                @if ($group->pivot->accepted_at == null)
+                        <div class="grid-striped">
+                            @forelse ($groups as $group)
+                                <div class="row py-2 rounded mb-1">
+                                    <div class="col-md-4 py-2 py-md-0 text-md-left text-center">
+                                        @can('is-admin')
+                                        {{ $group->id }}. 
+                                        @endcan                                            
+                                        <strong>{{ $group->name }}</strong><br/>
+                                        <span class="ml-2 badge badge-{{ $group->group_role }}">
+                                            {{ __('group.roles.'.$group->pivot->group_role) }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6 py-2 py-md-0 text-center my-auto">
+                                        @if ($group->pivot->accepted_at !== null)
+                                            <a class="btn btn-outline-secondary" href="{{ route('groups.users', ['group' => $group->id]) }}">
+                                                <i class="fa fa-user-friends mr-1"></i>
+                                                @lang('group.users')
+                                            </a>
+                                            <a class="btn btn-outline-info" href="{{ route('groups.news', ['group' => $group->id]) }}">
+                                                <i class="fa fa-file mr-1"></i>
+                                                @lang('group.news')</a>
 
-                                                    @lang('app.invitation')
-                                                    <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary btn-sm">
-                                                        <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
-                                                    <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger btn-sm">
-                                                        <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
-                                                @else                                               
-                                                
-                                                    @if(in_array($group->pivot->group_role, ['admin', 'roler']))
-                                                    <a href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}" class="mr-2">
+                                                @if(in_array($group->pivot->group_role, ['admin', 'roler']))
+                                                    <a class="btn btn-outline-success" href="{{ route('groups.statistics', $group) }}" title="@lang('statistics.statistics')">
+                                                        <i class="fa fa-chart-bar"></i> @lang('statistics.statistics')
+                                                    </a>
+                                                    <a class="btn btn-outline-primary" href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
                                                         <i class="fa fa-edit"></i> @lang('app.edit')
                                                     </a>
-                                                    @endif
-
-                                                    <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="mr-2">
-                                                        <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
-                                                    </a>
-
-                                                    @if(in_array($group->pivot->group_role, ['admin']))
-                                                    <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="mr-2">
-                                                        <i class="fa fa-trash text-danger"></i>
-                                                    </a>
-                                                    @endif
-
                                                 @endif
-                                            </td>
-                                        </tr>            
-                                    @endforeach                
-                                </tbody>                      
-                            </table>
+                                        @else
+
+                                            @lang('app.invitation')
+                                            <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary">
+                                                <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
+                                            <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger">
+                                                <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
+                                        
+                                        @endif
+                                        </div>
+                                        <div class="col-md-2 py-2 py-md-0 text-center my-auto">
+                                            @if ($group->pivot->accepted_at !== null)
+                                                <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="btn btn-outline-dark">
+                                                    <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
+                                                    @lang('group.logout.button')
+                                                </a>
+
+                                                @if(in_array($group->pivot->group_role, ['admin']))
+                                                    <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="btn btn-outline-danger">
+                                                        <i class="fa fa-trash"></i>
+                                                        @lang('app.delete')
+                                                    </a>
+                                                @endif
+                                            @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        @lang('group.notInGroup')
+                                    </div>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end">
@@ -112,7 +106,7 @@
                     @if (config('settings_claim_group_creator') == 1)
                         <div class="callout callout-info">
                             @lang('group.notGroupCreator', ['url' => '#'])
-                            <button wire:click.prevent="askGroupCreatorPrivilege" class="btn btn-primary">
+                            <button wire:click.prevent="askGroupCreatorPrivilege" class="btn btn-primary btn-sm">
                                 {{ __('group.requestButton') }}</button>
                         </div>    
                     @endif

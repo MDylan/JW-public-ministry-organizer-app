@@ -14,6 +14,7 @@ use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
 use App\Http\Livewire\Groups\NewsEdit;
 use App\Http\Livewire\Groups\NewsList;
+use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
 // use App\Models\GroupNews;
@@ -97,6 +98,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit');
                 Route::get('/groups/{group}/news/create', NewsEdit::class)->name('groups.news_create');
                 Route::get('/groups/{group}/news/edit/{new}', NewsEdit::class)->name('groups.news_edit');
+                Route::get('/groups/{group}/statistics', Statistics::class)->name('groups.statistics');
             });
         });
     });

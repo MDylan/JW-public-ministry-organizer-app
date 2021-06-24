@@ -17,8 +17,8 @@ return [
     'roles' => [
         'member' => 'Csoporttag',           
         'helper' => 'Csoport segítő',     
-        'roler' => 'Csoport kisadmin',  
-        'admin' => 'Csoport adminisztrátor'
+        'roler' => 'Csoportszolga',  
+        'admin' => 'Csoportfelvigyázó'
     ],
     'roles_css' => [ //NE FORDÍTSD LE / DO NOT TRANSLATE
         'member' => 'secondary',           
@@ -27,10 +27,10 @@ return [
         'admin' => 'primary'
     ],
     'role_helper' => [
-        'member' => 'Csak a saját adatait kezelheti',           
-        'helper' => 'Kezelheti a többiek adatait is',
-        'roler' => 'Kezelheti az adatokat és jogosultságokat is oszthat ki',
-        'admin' => 'Bármit csinálhat a csoporttal'
+        'member' => 'Csak a saját adatait kezelheti.',
+        'helper' => 'Szerkesztheti mások időpont foglalását is.',
+        'roler' => 'Kezelheti a csoport adatait, jogosultságokat oszthat ki (kivéve csoportfelvigyázó jogkört), híreket szerkeszthet és a statisztikákat is látja.',
+        'admin' => 'Bármit csinálhat a csoporttal. Tipp: Egyedül ő képes törölni is a csoportot, ezért ezt a jogosultságot csak korlátozott számban oszd ki. A törlésen kívül minden mást a csoportszolga is el tud végezni.'
     ],
     'min_publishers' => 'Hírnök száma (legalább)',
     'min_publishers_placeholder' => 'Például: 2',
@@ -115,12 +115,12 @@ return [
         '23:30' => '23:30',
         '24:00' => '24:00',
     ],
-    'users' => 'Felhasználók',
+    'users' => 'Hírnökök',
     'users_helper' => 'Elég az email címet megadnod. Ha nincs még regisztrációja, akkor automatikusan fog neki készülni egy hozzáférés, melyről emailben értesítjük. A nevét, telefonszámát utána kell majd megadnia.',
     'user_add' => 'Hozzáadás',
     'search_placeholder' => 'Minden emailt új sorba írj',
     'note' => 'Megjegyzés',
-    'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoport admin és a kisadmin látja.',
+    'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoportfelvigyázó és a Csoportszolga látja.',
     'notGroupCreator' => 'Ha csoportokat szeretnél létrehozni, akkor kérjük kérj ehhez jogosultságot az oldal adminisztrátoraitól.',
     'requestButton' => 'Ehhez kattints ide, és töltsd ki az űrlapot.',
     'request' => [
@@ -154,13 +154,13 @@ return [
         'message' => 'Ezentúl nem fog látni a csoport eseményeit.',
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
-        'no_admin' => 'Te vagy az egyedüli adminisztrátor a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
-        'no_other_admin' => 'Nincs más adminisztrátor, jelölj ki valakit helyette.',
+        'no_admin' => 'Te vagy az egyedüli csoportfelvigyázó a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
+        'no_other_admin' => 'Nincs más csoportfelvigyázó, jelölj ki valakit helyette.',
         'log' => 'Kilépett a csoportból',
         'self_delete_error' => 'Magadat nem törölheted a csoportból. A Csoportok oldalon lépj ki, ha szeretnél.'
     ],
-    'error_no_admin_user' => 'Nem jelöltél ki senkit csoport adminisztrátornak!',
-    'error_no_right' => 'Nincs jogosultságod új csoport adminisztrátort kinevezni.',
+    'error_no_admin_user' => 'Nem jelöltél ki senkit csoportfelvigyázónak!',
+    'error_no_right' => 'Nincs jogosultságod új csoportfelvigyázót kinevezni.',
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',
     'waiting_approval' => 'Még nem fogadta el a meghívást.'
