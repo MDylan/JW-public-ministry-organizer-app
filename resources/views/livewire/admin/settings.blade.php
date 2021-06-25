@@ -26,7 +26,7 @@
                 <div class="col-md-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
-                            @lang('settings.languages.title')
+                            <div class="card-title">@lang('settings.languages.title')</div>
                         </div>
                         <div class="card-body">
                             <div class="form-row  align-items-end">
@@ -126,7 +126,7 @@
                 <div class="col-md-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
-                            @lang('settings.others.title')
+                            <div class="card-title">@lang('settings.others.title')</div>                            
                         </div>
                         <div class="card-body" wire:ignore>
                             @foreach ($this->others as $key => $value)
@@ -148,9 +148,14 @@
                         </div>
                     </div>
 
-                    <div class="card card-primary card-outline">
+                    <div class="card card-primary card-outline collapsed-card">
                         <div class="card-header">
-                            @lang('settings.run.title')
+                            <div class="card-title">@lang('settings.run.title')</div>
+                            <div class="card-tools" wire:ignore>
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body" wire:ignore>
                             <button type="button" class="btn btn-primary" wire:click="run('optimize')">

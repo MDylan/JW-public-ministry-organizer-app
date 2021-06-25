@@ -55,14 +55,7 @@
                                                 <i class="fa fa-file mr-1"></i>
                                                 @lang('group.news')</a>
 
-                                                @if(in_array($group->pivot->group_role, ['admin', 'roler']))
-                                                    <a class="btn btn-outline-success" href="{{ route('groups.statistics', $group) }}" title="@lang('statistics.statistics')">
-                                                        <i class="fa fa-chart-bar"></i> @lang('statistics.statistics')
-                                                    </a>
-                                                    <a class="btn btn-outline-primary" href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
-                                                        <i class="fa fa-edit"></i> @lang('app.edit')
-                                                    </a>
-                                                @endif
+                                                
                                         @else
 
                                             @lang('app.invitation')
@@ -75,21 +68,38 @@
                                         </div>
                                         <div class="col-md-2 py-2 py-md-0 text-center my-auto">
                                             @if ($group->pivot->accepted_at !== null)
-                                                <a href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})" class="btn btn-outline-dark">
-                                                    <i class="fa fa-sign-out-alt text-danger" aria-hidden="true"></i>
-                                                    @lang('group.logout.button')
-                                                </a>
-
-                                                @if(in_array($group->pivot->group_role, ['admin']))
-                                                    <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})" class="btn btn-outline-danger">
-                                                        <i class="fa fa-trash"></i>
-                                                        @lang('app.delete')
-                                                    </a>
-                                                @endif
+                                                <div class="dropdown">
+                                                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fa fa-hammer mr-1"></i> @lang('group.manage')
+                                                </button>
+                                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                    
+                                                        @if(in_array($group->pivot->group_role, ['admin', 'roler']))
+                                                            <a class="dropdown-item" href="{{ route('groups.statistics', $group) }}" title="@lang('statistics.statistics')">
+                                                                <i class="fa fa-chart-bar mr-1"></i> @lang('statistics.statistics')
+                                                            </a>
+                                                            <a class="dropdown-item text-info" href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
+                                                                <i class="fa fa-edit mr-1"></i> @lang('app.edit')
+                                                            </a>
+                                                            <div class="dropdown-divider"></div>
+                                                        @endif
+                                                        <a class="dropdown-item text-danger" href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})">
+                                                            <i class="fa fa-sign-out-alt mr-1" aria-hidden="true"></i>
+                                                            @lang('group.logout.button')
+                                                        </a>
+        
+                                                        @if(in_array($group->pivot->group_role, ['admin']))
+                                                            <a class="dropdown-item text-danger" href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})">
+                                                                <i class="fa fa-trash mr-1"></i>
+                                                                @lang('app.delete')
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             @endif
+                                        </div>
                                     </div>
-                                </div>
-                            @empty
+                                @empty
                                 <div class="row">
                                     <div class="col-md-12">
                                         @lang('group.notInGroup')
@@ -119,62 +129,64 @@
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
-    <!-- Modal -->
-    <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
-        <div class="modal-dialog">
-            <form autocomplete="off" wire:submit.prevent="requestGroupCreatorPrivilege">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">
-                            <span>
-                                {{ __('group.request.title') }}
-                            </span>
-                        </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        
-                            <div class="form-group">
-                                <label for="congregation">@lang('group.request.congregation')</label>
-                                <input wire:model.defer="state.congregation" name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" placeholder="">
-                                @error('congregation')
-                                <div class="invalid-feedback">
-                                    {{ __($message) }}.
-                                </div>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                              <label for="reason">@lang('group.request.reason')</label>
-                              <textarea wire:model.defer="state.reason" name="reason" class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" placeholder="@lang('group.request.reason_helper')"></textarea>
-                              @error('reason')
-                                <div class="invalid-feedback">
-                                    {{ __($message) }}.
-                                </div>
-                                @enderror
-                            </div>
-                            <div class="callout callout-info">
-                                @lang('group.request.info')
-                            </div>
-                            @error('phone')
-                            <div class="callout callout-danger">
-                                @lang('group.request.phoneError')
-                            </div>
-                            @enderror
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-send mr-1"></i>
-                            @lang('group.request.button')
+    @if (config('settings_claim_group_creator') == 1)
+        <!-- Modal -->
+        <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
+            <div class="modal-dialog">
+                <form autocomplete="off" wire:submit.prevent="requestGroupCreatorPrivilege">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="ModalLabel">
+                                <span>
+                                    {{ __('group.request.title') }}
+                                </span>
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
                             </button>
+                        </div>
+                        <div class="modal-body">
+                            
+                                <div class="form-group">
+                                    <label for="congregation">@lang('group.request.congregation')</label>
+                                    <input wire:model.defer="state.congregation" name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" placeholder="">
+                                    @error('congregation')
+                                    <div class="invalid-feedback">
+                                        {{ __($message) }}.
+                                    </div>
+                                    @enderror
+                                </div>
+                                <div class="form-group">
+                                <label for="reason">@lang('group.request.reason')</label>
+                                <textarea wire:model.defer="state.reason" name="reason" class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" placeholder="@lang('group.request.reason_helper')"></textarea>
+                                @error('reason')
+                                    <div class="invalid-feedback">
+                                        {{ __($message) }}.
+                                    </div>
+                                    @enderror
+                                </div>
+                                <div class="callout callout-info">
+                                    @lang('group.request.info')
+                                </div>
+                                @error('phone')
+                                <div class="callout callout-danger">
+                                    @lang('group.request.phoneError')
+                                </div>
+                                @enderror
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-send mr-1"></i>
+                                @lang('group.request.button')
+                                </button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+    @endif
     <!-- ConformationModal -->
     <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog">

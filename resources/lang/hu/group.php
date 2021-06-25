@@ -163,5 +163,6 @@ return [
     'error_no_right' => 'Nincs jogosultságod új csoportfelvigyázót kinevezni.',
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',
-    'waiting_approval' => 'Még nem fogadta el a meghívást.'
+    'waiting_approval' => 'Még nem fogadta el a meghívást.',
+    'manage' => 'Kezelés',
 ];
