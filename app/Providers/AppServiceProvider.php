@@ -70,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
             'available_languages' => $available_languages,
             'translatable.fallback_locale' => $defaults['default_language'],
             'translatable.locales' => $locales, //array_keys($available_languages),
+            'app.fallback_locale' => $defaults['default_language']
         ]);
         foreach($defaults as $key => $value) {
             Config::set(['settings_'.$key => $value]);

@@ -20,12 +20,10 @@
 <body class="sidebar-mini" style="height:auto;">
   <div class="wrapper">
     <!-- Navbar -->
-    {{-- @include('layouts.partials.navbar') --}}
     @livewire('partials.nav-bar')
     <!-- /.navbar -->
 
     <!-- Main Sidebar Container -->
-    {{-- @include('layouts.partials.aside') --}}
     @livewire('partials.side-menu')
 
     <!-- Content Wrapper. Contains page content -->
@@ -63,9 +61,9 @@
   <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
   <!-- AdminLTE App -->
   <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
-  <script src="{{ asset('js/custom.js') }}"></script>
   <script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
   <script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
+  <script src="{{ asset('js/custom.js') }}"></script>
   <script>
     $(document).ready(function() {
       toastr.options = {
@@ -156,9 +154,7 @@
         toastr.success('{{Session::get('message')}}', '{{__('app.saved')}}');
       @endif
     });
-  </script>
-
-  
+  </script>  
 
   @yield('footer_scripts')
   @livewireScripts
