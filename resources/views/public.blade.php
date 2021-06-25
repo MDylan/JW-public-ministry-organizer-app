@@ -33,7 +33,7 @@
 
         <ul class="navbar-nav">
 
-          <li class="nav-item active">
+          <li class="nav-item {{ request()->is('/') ? 'active' : '' }}"">
             <a class="nav-link" href="/">{{__('app.menu-home')}}</a>
           </li>
           @if (Route::has('login'))
@@ -46,7 +46,7 @@
                 </form>
               </li>  
               @else            
-              <li class="nav-item">
+              <li class="nav-item {{ request()->is('login') ? 'active' : '' }}">
                   <a class="nav-link" href="{{ route('login') }}">{{__('user.login')}}</a>
               </li>
               @endif
@@ -120,6 +120,13 @@
       <div class="container">
         <div class="row">
           <div class="col-md-12">
+
+            @if (config('settings_maintenance') == 1) 
+              <div class="callout callout-danger">
+                <h5>@lang('app.maintenance')</h5>
+                <p>@lang('app.maintenance_mode')</p>
+              </div>
+            @endif
 
             @yield('content')
 

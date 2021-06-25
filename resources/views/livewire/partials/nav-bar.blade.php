@@ -8,6 +8,11 @@
         <a href="{{route('home.home')}}" class="nav-link">{{__('app.menu-home')}}</a>
       </li>
     </ul>
+    @if (config('settings_maintenance') == 1) 
+      <span class="navbar-text text-danger">
+        @lang('app.maintenance_header')
+      </span>  
+    @endif   
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">

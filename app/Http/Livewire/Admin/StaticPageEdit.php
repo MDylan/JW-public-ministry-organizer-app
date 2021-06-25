@@ -44,7 +44,7 @@ class StaticPageEdit extends AppComponent
         
 
         $validatedData = Validator::make($this->state, [
-            'status' => 'required|numeric|in:0,1,2',
+            'status' => 'required|numeric|in:0,1,2,3',
             'slug' => 'required|alpha|unique:static_pages,slug'.(isset($this->state['id']) ? ','.$this->state['id'] : '' ),
             'icon' => 'sometimes',
             'position' => 'required|string|in:'.implode(",", $this->positions),

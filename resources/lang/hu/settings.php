@@ -33,8 +33,10 @@ return [
     ],
     'others' => [
         'title' => 'Egyéb beállítások',
-        'registration'  => 'Regisztrálás lehetősége',
-        'claim_group_creator' => 'Csoport létrehozó jogosultság igényelhető'
+        'registration'  => 'Regisztrálás lehetősége. (Ha kikapcsolod, csak belépett felhasználó - pl csoportfelvigyázó - hozhat létre új felhasználót).',
+        'claim_group_creator' => 'Csoport létrehozó jogkör igényelhető a Csoportok oldalon.',
+        'debugbar'  => 'Debugbar bekapcsolása (Csak tesztelési/hibajavítási céllal kapcsold be! Egyébként biztonsági kockázat!)',
+        'maintenance' => 'Karbantartás mód (Csak adminisztrátorok léphetnek be, senki más.)'
     ],
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
     'run' => [

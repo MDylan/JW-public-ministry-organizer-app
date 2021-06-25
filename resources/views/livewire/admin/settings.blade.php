@@ -131,7 +131,7 @@
                         <div class="card-body" wire:ignore>
                             @foreach ($this->others as $key => $value)
                                 <div class="row mb-1">
-                                    <div class="col-md-2 d-flex justify-content-end">
+                                    <div class="col-md-2 pt-1 d-flex justify-content-end">
                                         <input type="checkbox" data-key="{{ $key }}" @if($state['others'][$key] == 1) checked="" @endif data-bootstrap-switch="" data-off-color="danger" data-on-color="success">
                                     </div>
                                     <div class="col-md-10 pt-1">

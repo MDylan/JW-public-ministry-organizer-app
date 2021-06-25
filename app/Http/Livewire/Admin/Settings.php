@@ -18,7 +18,9 @@ class Settings extends AppComponent
     //These will be only checkboxes (true/false)
     public $others = [
         'registration'  => true,
-        'claim_group_creator' => true
+        'claim_group_creator' => true,
+        'debugbar'  => false,
+        'maintenance' => false
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 

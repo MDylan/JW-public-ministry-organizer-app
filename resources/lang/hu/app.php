@@ -58,6 +58,9 @@ return [
     'language_changed' => 'A nyelv megváltozott',
     'on'    => 'Be',
     'off'   => 'Ki',
-    'registration_disabled' => 'A regisztráció lehetősége ki lett kapcsolva.'
+    'registration_disabled' => 'A regisztráció lehetősége ki lett kapcsolva.',
+    'maintenance' => 'Karbantartás',
+    'maintenance_mode' => 'Az oldalon karbantartás zajlik, csak adminisztrátorok léphetnek be. Kérjük térj vissza később!',
+    'maintenance_header' => 'A Karbantartás mód be van kapcsolva!'
     
 ];

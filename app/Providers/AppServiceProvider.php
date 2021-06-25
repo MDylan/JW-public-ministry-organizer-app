@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Settings as ModelsSettings;
 use App\Models\StaticPage;
+use DebugBar\DebugBar;
 use Illuminate\Contracts\View\View;
 // use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
@@ -66,12 +67,20 @@ class AppServiceProvider extends ServiceProvider
             }   
         }
         //overwrite default config values from database
+        // dd(Config::get('debugbar.enabled'));
         Config::set([
             'available_languages' => $available_languages,
             'translatable.fallback_locale' => $defaults['default_language'],
             'translatable.locales' => $locales, //array_keys($available_languages),
-            'app.fallback_locale' => $defaults['default_language']
+            'app.fallback_locale' => $defaults['default_language'],
+            // 'debugbar.enabled'  => isset($defaults['debugbar']) ? $defaults['debugbar'] : false
         ]);
+        // dd(auth()->user()->id);
+        if(isset($defaults['debugbar'])) {
+            if($defaults['debugbar'] == 1)
+                \Debugbar::enable();
+        }
+        // dd(Config::get('debugbar.enabled'));
         foreach($defaults as $key => $value) {
             Config::set(['settings_'.$key => $value]);
         }
@@ -79,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Set Static menus into view
         */
-        View()->share('sidemenu', StaticPage::whereIn('status', (Auth::id() ? [0,1,3] : [1,2]))->get());
+        // View()->share('sidemenu', StaticPage::whereIn('status', (Auth::id() ? [0,1,3] : [1,2]))->get());
 
     }
 }
