@@ -98,11 +98,13 @@ class Events extends AppComponent
     }
 
     public function changeGroup() {
-        $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $this->form_groupId)->firstOrFail()->toArray();
-        if($group['pivot']['group_id']) {
+        $key = array_search($this->form_groupId, array_column($this->groups, 'id'));
+        // $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $this->form_groupId)->firstOrFail()->toArray();
+        // if($group['pivot']['group_id']) {
+        if($key !== false) {
             session(['groupId' => $this->form_groupId]);
-        }
-        $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
+            $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
+        }         
     }
     
     public function getGroupData() {
@@ -179,10 +181,14 @@ class Events extends AppComponent
         // $this->calendar = [];
         // dd($this->day_data);
         $this->day_stat = [];
+        $this->cal_service_days = [];
+        $this->cal_group_data = [];
         
         // $groups =  User::findOrFail(Auth::id());
         $groups = Auth()->user();// ->groupsAccepted()->get();
-        $this->groups = $groups->groupsAccepted()->get()->toArray();
+        $this->groups = $groups->groupsAcceptedFiltered()
+                ->get()->toArray();
+        // dd($this->groups);
         if(count($this->groups) == 0) {
             return view('livewire.default', [
                 'error' => __('group.notInGroup')
@@ -190,11 +196,32 @@ class Events extends AppComponent
         }
 
         if(!session('groupId')) {
-            $first = $groups->groupsAccepted()->first()->toArray();
-            session(['groupId' => $first['id']]);
+            // $first = $groups->groupsAccepted()->first()->toArray();
+            session(['groupId' => $this->groups[0]['id']]);
         }
-        $this->getGroupData();
+        $groupId = session('groupId');
+        $this->form_groupId = $groupId;
+
+        $key = array_search($groupId, array_column($this->groups, 'id'));
+        if($key === false) {
+            abort('404');
+        }
+        $this->cal_group_data = $this->groups[$key];
+        $days = $this->cal_group_data['days'];
+        if(count($days)) {
+            foreach($days as $day) {
+                $this->cal_service_days[$day['day_number']] = [
+                    'start_time' => $day['start_time'],
+                    'end_time' => $day['end_time'],
+                ];
+            }
+        }
+        
+        // dd($key." ".$groupId, $this->groups);
+        // $this->getGroupData();
         $this->build_pagination();
+
+        // dd($this->cal_service_days);
 
         $calendar = [];
 

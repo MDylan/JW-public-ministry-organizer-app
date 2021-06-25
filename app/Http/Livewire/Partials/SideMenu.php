@@ -16,7 +16,7 @@ class SideMenu extends Component
     public $request_path = "";
 
     protected $listeners = [
-        'refresh' => 'refresh'
+        'refresh' => 'render'
     ];
 
     public function mount() {
@@ -30,14 +30,16 @@ class SideMenu extends Component
         }
     }
 
-    //ne töröld ki, szükséges függvény
-    public function refresh() { }
-
     public function render()
     {
         if(Auth::user()) {
-            $this->sideMenu['invites'] = count(auth()->user()->userGroupsNotAccepted);
-            $this->sideMenu['groups'] = count(auth()->user()->groupsAccepted);
+            // $res = auth()->user()->with(['userGroupsNotAccepted', 'groupsAccepted'])->get()->toArray();
+            // dd($res, auth()->user()->userGroupsNotAcceptedNumber());
+            // $this->sideMenu['invites'] = count(auth()->user()->userGroupsNotAccepted);
+            // $this->sideMenu['groups'] = count(auth()->user()->groupsAccepted);
+
+            $this->sideMenu['invites'] = auth()->user()->userGroupsNotAcceptedNumber();
+            $this->sideMenu['groups'] = auth()->user()->groupsAcceptedNumber();
         }
 
         return view('livewire.partials.side-menu');

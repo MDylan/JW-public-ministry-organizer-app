@@ -12,6 +12,7 @@ use App\Models\Group;
 use App\Models\Event;
 use App\Models\GroupUser;
 use App\Notifications\GroupUserAddedNotification;
+// use Barryvdh\Debugbar;
 
 class Modal extends AppComponent
 {
@@ -110,15 +111,29 @@ class Modal extends AppComponent
 
     public function getInfo() {
         $this->active_tab = '';
-        $this->getRole();
+        // $this->getRole();
         if($this->error !== false) return;
         // $this->setVars();
 
         $groupId = $this->form_groupId;
         $date = $this->date;
 
-        $group = Group::findOrFail($groupId);
-    
+        $group = Group::with(['days', 
+                        'events' => function($q) use ($date) {
+                            $q->select(['id', 'group_id', 'user_id', 'day', 'start', 'end']);
+                            $q->where('day', '=', $date);
+                        },
+                        'currentUser' => function($q) {
+                            $q->select('users.id');
+                            $q->where('user_id', auth()->user()->id);
+                            $q->take(1);
+                        },
+                    ])->findOrFail($groupId)->toArray();
+        $this->role = $group['current_user'][0]['pivot']['group_role'];
+        //unset this part, it's not public for livewire
+        unset($group['current_user']);
+        // dd($group);
+
         $this->day_data = [];
         $this->service_days = [];
         $this->day_stat = [];
@@ -127,7 +142,8 @@ class Modal extends AppComponent
         $this->day_data['date'] = $date;
         $this->day_data['dateFormat'] = $d->format('Y.m.d.,')." ".__('event.weekdays_short.'.$dayOfWeek);
         
-        $days = $group->days()->get()->toArray();
+        // $days = $group->days()->get()->toArray();
+        $days = $group['days'];
         $next = $prev = false;
         $days_array = [];
         if(count($days)) {
@@ -140,7 +156,7 @@ class Modal extends AppComponent
             }
         }
         // dd($this->service_days);
-        $this->group_data = $group->toArray();
+        $this->group_data = $group; //->toArray();
 
         //calculate next end previous day
         $key = array_search($dayOfWeek, $days_array);
@@ -206,7 +222,8 @@ class Modal extends AppComponent
         $day_selects['end'][$max] = date("H:i", $max);
         // dd($day_table);
         //események
-        $events = $group->day_events($date)->get()->toArray();
+        // $events = $group->day_events($date)->get()->toArray();
+        $events = $group['events'];
                 
         $disabled_slots = $slots = [];
         
@@ -284,6 +301,8 @@ class Modal extends AppComponent
 
     public function setDate($date) {
         $this->date = $date;
+        
+        // Debugbar::addMessage('setDate lefutott', 'mylabel');
         $this->getInfo();
     }
 

@@ -1,5 +1,8 @@
 <div class="footer-menu">
-    @foreach ($menus as $menu) 
+    @foreach ($sidemenu as $menu) 
+        @if ($menu->position !== 'bottom')
+            @continue;
+        @endif
         @if ($menu->status === 0 && auth()->user()->can('is-admin') == false)
             @continue
         @endif

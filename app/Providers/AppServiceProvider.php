@@ -3,14 +3,18 @@
 namespace App\Providers;
 
 use App\Models\Settings as ModelsSettings;
-use Illuminate\Support\Facades\App;
+use App\Models\StaticPage;
+use Illuminate\Contracts\View\View;
+// use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Fortify;
+// use Laravel\Fortify\Fortify;
+
 
 class AppServiceProvider extends ServiceProvider
 {
+
     /**
      * Register any application services.
      *
@@ -28,7 +32,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        
+        /**
+         * Set Language settings
+         */
         
         $default_language = config('app.locale');
         $available_languages = [$default_language => [
@@ -48,16 +54,9 @@ class AppServiceProvider extends ServiceProvider
                 if($setting->name == 'languages') {
                     $langs = json_decode($setting->value, true);
                     $available_languages = $langs;
-                    // foreach($langs as $lang => $value) {
-                    //     if(Auth::user()->role != "mainAdmin" && $value['visible'] == false) continue;
-                    //     $available_languages[$lang] = $value['name'];
-                    // }                    
                 } else {
                     $defaults[$setting->name] = $setting->value;
                 }
-                // if($setting->name == 'default_language') {
-                //     $default_language = $setting->value;
-                // }
             }
         } 
         $locales = array($default_language => $default_language);
@@ -75,8 +74,11 @@ class AppServiceProvider extends ServiceProvider
         foreach($defaults as $key => $value) {
             Config::set(['settings_'.$key => $value]);
         }
-        // if(!$defaults['registration']) {
-        //     Fortify::routes(['register' => false]);
-        // }
+        
+        /**
+         * Set Static menus into view
+        */
+        View()->share('sidemenu', StaticPage::whereIn('status', (Auth::id() ? [0,1,3] : [1,2]))->get());
+
     }
 }

@@ -61,11 +61,11 @@
                                     @foreach ($day_data['table'] as $time => $r)
                                         <div class="time-slot" style="grid-row: {{$r['row']}};">
                                             @if ($r['status'] == 'full') 
-                                                <button disabled class="btn btn-outline-danger">{{$r['hour']}}</button>
+                                                <button id="ts_{{$r['ts']}}" disabled class="btn btn-outline-danger">{{$r['hour']}}</button>
                                             @elseif ($r['status'] == 'ready')
-                                                <button wire:click="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
+                                                <button id="ts_{{$r['ts']}}" wire:click="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
                                             @else
-                                                <button wire:click="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
+                                                <button id="ts_{{$r['ts']}}" wire:click="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
                                             @endif                                    
                                         </div>
                                         @if (isset($day_events[$time]))

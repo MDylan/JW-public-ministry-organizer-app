@@ -94,9 +94,9 @@ class Home extends Component
         $end = strtotime("+ 10 day");
         $this->days = range($start, $end, (24 * 60 * 60));
         
-        $user = Auth()->user();
-        $groups = $user->groupsAccepted();
-        $stats = $groups->with([
+        // $user = Auth()->user();
+        // $groups = Auth::user()->groupsAccepted();
+        $stats = Auth::user()->groupsAccepted()->with([
             'stats' => function($q) use($start, $end) {
                 $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
                 $q->orderBy('time_slot');
@@ -110,7 +110,8 @@ class Home extends Component
         // dd($stats);
         $this->getStat($stats);
         return view('livewire.home', [
-            'groups' => $groups->get()
+            // 'groups' => $groups->get()
+            'groups' => $stats
         ]);
     }
 }

@@ -25,18 +25,18 @@ class SideStaticPages extends Component
      */
     public function render()
     {
-        if(Auth::id()) {
-            //logged in menus
-            $status = [0,1,3];
-        } else {
-            $status = [1,2];
-        }
-        $menus = StaticPage::where('position', '=', 'left')->whereIn('status', $status);
+        // if(Auth::id()) {
+        //     //logged in menus
+        //     $status = [0,1,3];
+        // } else {
+        //     $status = [1,2];
+        // }
+        // $menus = StaticPage::where('position', '=', 'left')->whereIn('status', $status);
 
         // dd($menus->get()->toArray());
 
         return view('components.side-static-pages', [
-            'left_menus' => $menus->get()
+            // 'left_menus' => $menus->get()
         ]);
     }
 }

@@ -37,6 +37,12 @@ class Group extends Model
                         ->using(GroupUser::class);
     }
 
+    public function currentUser() {
+        return $this->belongsToMany(User::class)
+                        ->withPivot('group_role')
+                        ->using(GroupUser::class);
+    }
+
     public function users() {
         return $this->belongsToMany(User::class)
                         ->select(['users.id', 'users.first_name', 'users.last_name'])
@@ -72,6 +78,7 @@ class Group extends Model
 
     public function days() {
         return $this->hasMany(GroupDay::class)
+                    ->select(['group_id', 'day_number', 'start_time', 'end_time'])
                     ->orderBy('day_number');
     }
 
@@ -116,9 +123,28 @@ class Group extends Model
                 ->orderBy('date', 'DESC');
     }
 
-    public function news_log() {
+    public function latest_new() {
+        return $this->hasOne(GroupNews::class)->ofMany(
+            [ 'id' => 'max'], 
+            function($q) { 
+                $q->where('status', '1');
+                $q->whereDate('date', '<=', now());
+                // $q->whereDate('updated_at', '>', auth()->user()->last_login_time);
+            });
+    }
+
+    public function news_log_old() {
         return $this->hasMany(GroupNewsUserLogs::class);
     }
+
+    public function news_log() {
+        return $this->hasOne(GroupNewsUserLogs::class)->ofMany(
+            [ 'updated_at' => 'max'], 
+            function($q) { 
+                $q->where('user_id', Auth()->user()->id);
+            });
+    }
+
 
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe

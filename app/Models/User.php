@@ -66,6 +66,13 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->using(GroupUser::class);
     }
 
+    public function userGroupsNotAcceptedNumber() {
+        return $this->belongsToMany(Group::class)
+                    ->wherePivot('accepted_at', null)
+                    ->using(GroupUser::class)
+                    ->count();
+    }
+
     public function userGroups() {
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role', 'note', 'accepted_at'])
@@ -75,6 +82,19 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function groupsAccepted() {
         return $this->userGroups()->wherePivotNotNull('accepted_at');
+    }
+
+    public function groupsAcceptedFiltered() {
+        return $this->belongsToMany(Group::class)
+                        ->withPivot(['group_role', 'note', 'accepted_at'])
+                        ->wherePivotNotNull('accepted_at')
+                        ->select(['groups.id', 'groups.name', 'groups.min_publishers', 'groups.max_publishers', 'groups.max_extend_days'])
+                        ->with('days');
+    }
+
+    public function groupsAcceptedNumber() {
+        return $this->userGroups()->wherePivotNotNull('accepted_at')
+                    ->count();
     }
 
     public function events() {

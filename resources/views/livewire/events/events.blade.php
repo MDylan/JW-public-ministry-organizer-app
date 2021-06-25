@@ -1,4 +1,5 @@
-<div wire:poll.visible.30000ms>
+{{-- <div wire:poll.visible.30000ms> --}}
+<div>
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

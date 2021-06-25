@@ -26,18 +26,18 @@ class Footer extends Component
     public function render()
     {
 
-        if(Auth::id()) {
-            //logged in menus
-            $status = [0,1,3];
-        } else {
-            $status = [1,2];
-        }
-        $menus = StaticPage::where('position', '=', 'bottom')->whereIn('status', $status);
+        // if(Auth::id()) {
+        //     //logged in menus
+        //     $status = [0,1,3];
+        // } else {
+        //     $status = [1,2];
+        // }
+        // $menus = StaticPage::where('position', '=', 'bottom')->whereIn('status', $status);
 
         // dd($menus->get()->toArray());
 
         return view('components.footer', [
-            'menus' => $menus->get()
+            // 'menus' => $menus->get()
         ]);
     }
 }
