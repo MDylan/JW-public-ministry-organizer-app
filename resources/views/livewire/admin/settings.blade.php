@@ -31,7 +31,6 @@
                         <div class="card-body">
                             <div class="form-row  align-items-end">
                                 <div class="form-group col-md-9">
-                                    {{-- {{ var_dump(json_decode($settings['languages'], true)) }} --}}
                                     <label for="default_lang">@lang('settings.languages.default')</label>
                                     <select wire:model.defer="state.default_language" class="form-control" id="default_lang">
                                         @if (isset($settings['languages']))
