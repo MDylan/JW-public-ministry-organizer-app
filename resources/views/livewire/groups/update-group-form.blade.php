@@ -165,6 +165,63 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <div class="card-title">@lang('group.literature.title')</div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                      <i class="fas fa-minus"></i>
+                                    </button>
+                                  </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <input wire:model.defer="state.literatureAdd" type="text" class="form-control" placeholder="@lang('group.literature.language')" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-primary" wire:click="literatureAdd" wire:loading.attr="disabled">
+                                            <i class="fa fa-plus mr-1"></i>
+                                                @lang('Add')                                        
+                                    </div>
+                                </div>
+                                <div class="grid-striped">
+                                @foreach ($literatures as $type => $languages)
+                                    @if($type == "removed") @continue; @endif
+                                    @foreach ($languages as $id => $language)
+                                    <div class="row p-2">
+                                        @if($editedLiteratureType == $type && $editedLiteratureId == $id)
+                                            <div class="col-md-6 my-auto">
+                                                <input wire:model.defer="state.editedLiterature" type="text" class="form-control" value="{{ $language }}" />
+                                            </div>
+                                            <div class="col-md-6 text-right my-auto">
+                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEditSave()" wire:loading.attr="disabled">
+                                                    <i class="fa fa-save mr-1"></i>
+                                                        @lang('Save')
+                                                <button type="button" class="btn btn-warning btn-sm" wire:click="literatureEditCancel()" wire:loading.attr="disabled">
+                                                    <i class="fa fa-times mr-1"></i>
+                                                        @lang('Cancel')
+                                            </div>   
+                                        @else                                        
+                                            <div class="col-md-6 my-auto">
+                                                {{ $language }}
+                                            </div>
+                                            <div class="col-md-6 text-right my-auto">
+                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEdit('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
+                                                    <i class="fa fa-edit mr-1"></i>
+                                                        @lang('Edit')
+                                                <button type="button" class="btn btn-danger btn-sm" wire:click="literatureRemove('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
+                                                    <i class="fa fa-trash mr-1"></i>
+                                                        @lang('Remove')
+                                            </div>                                        
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                    
+                                @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="card card-primary card-outline">
@@ -187,7 +244,7 @@
                                           
                                       </div>
                                         <div class="col-auto my-1">
-                                            <button wire:click.prevent="userAdd()" type="submit" class="btn btn-primary">
+                                            <button wire:click.prevent="userAdd()" wire:loading.attr="disabled" type="submit" class="btn btn-primary">
                                                 <i class="fa fa-plus mr-1"></i>
                                                 {{__('group.user_add')}}</button>
                                       </div>
@@ -207,7 +264,9 @@
                                         {{-- {{dd($users)}} --}}
                                         @foreach ($users as $slug => $user)
                                             <tr>
-                                                <td class="pb-1 align-middle">{{$user['email']}}</td>
+                                                <td class="pb-1 align-middle">
+                                                    <strong>{{$user['full_name']}}</strong> - {{$user['email']}}
+                                                </td>
                                                 <td class="pb-1">
                                                     <select wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
                                                         @foreach ($group_roles as $role => $translate) 
@@ -283,6 +342,23 @@
             let enabled = $(this).is(':checked');
             $('.timeselect[data-day="'+day+'"]').attr('disabled', !enabled);
         });
+    });
+
+    window.addEventListener('show-literature-confirmation', event => {
+        Swal.fire({
+            title: '@lang('group.literature.confirmDelete.question')',
+            text: event.detail.lang + ' - @lang('group.literature.confirmDelete.message')',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '@lang('Yes')',
+            cancelButtonText: '@lang('Cancel')'
+        }).then((result) => {
+        if (result.isConfirmed) {
+            Livewire.emit('literatureDeleteConfirmed');
+        }
+        })
     });
 </script>
 @endsection

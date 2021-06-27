@@ -165,4 +165,20 @@ return [
     'news_add' => 'Hír létrehozása',
     'waiting_approval' => 'Még nem fogadta el a meghívást.',
     'manage' => 'Kezelés',
+    'literature' => [
+        'title' => 'A csoport ezeken a nyelveken terjeszt irodalmat',
+        'language' => 'Nyelv',
+        'help' => 'Ha itt hozzáadott nyelvek alapján tudják a hírnökök leadni a közterületen végzett munka szántóföldi eredményét. Ha nem adsz meg egy nyelvet sem, akkor ez a funkció nem lesz elérhető számukra.',
+        'added' => 'A nyelv hozzá lett adva!',
+        'saved' => 'A nyelv neve megváltozott',
+        'add_error' => 'Hiba a nyelv hozzáadásakor',
+        'save_error' => 'Hiba a nyelv mentésekor',
+        'tooShort' => 'Kérlek legalább 3 karaktert adj meg.',
+        'confirmDelete' => [
+            'question' => 'Biztosan törlöd ezt a nyelvet?',
+            'message' => 'Ha törlöd, akkor - az űrlap mentése után - minden korábbi szántóföldi jelentés, ami ehhez a nyelvhez lett rögzítve, törlésre kerül.',
+            'success' => 'A nyelv törölve lett.',
+            'error' => 'Sikertelen törlés!'
+        ],
+    ]
 ];

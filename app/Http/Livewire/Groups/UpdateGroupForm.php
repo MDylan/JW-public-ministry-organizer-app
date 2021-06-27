@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Group;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
+use App\Models\GroupLiterature;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
 use DateTime;
@@ -25,6 +26,12 @@ class UpdateGroupForm extends AppComponent
     public $group;
     public $days = [];
     public $admins = [];
+    public $literatures = [];
+    public $editedLiteratureType = null;
+    public $editedLiteratureId = null;
+    public $editedLiteratureRemove = [];
+
+    public $listeners = ['literatureDeleteConfirmed'];
 
     public function mount(Group $group) {
         // dd($group->days);
@@ -46,6 +53,13 @@ class UpdateGroupForm extends AppComponent
             ];
         }
         $this->days = $days;
+        $literatures = $group->literatures;
+        if(count($literatures)) {
+            foreach($literatures as $literature) {
+                $this->literatures['current'][$literature->id] = $literature->name;
+            }
+        }
+        
         // dd($days);
         // dd($this->state['days'], $group->days, $collection);
         if($group->groupUsers) {
@@ -55,7 +69,8 @@ class UpdateGroupForm extends AppComponent
                     'email' => $user->email,
                     'group_role' => $user->pivot->group_role,
                     'note' => $user->pivot->note,
-                    'user_id' => $user->id
+                    'user_id' => $user->id,
+                    'full_name' => $user->full_name
                 ];
                 if($user->pivot->group_role == 'admin') {
                     $this->admins[$slug] = true;
@@ -98,7 +113,8 @@ class UpdateGroupForm extends AppComponent
                     'email' => $mail,
                     'group_role' => 'member',
                     'note' => '',
-                    'user_id' => false
+                    'user_id' => false,
+                    'full_name' => '?',
                 ];
             }
         }
@@ -281,6 +297,28 @@ class UpdateGroupForm extends AppComponent
             $this->group->groupUsers()->sync([]);
         }
 
+        if(count($this->literatures)) {
+            if(isset($this->literatures['new'])) {
+                $save = [];
+                foreach ($this->literatures['new'] as $language) {
+                    $save[] = new GroupLiterature([
+                        'name' => $language
+                    ]);    
+                }
+                $this->group->literatures()->saveMany($save);
+            }
+            if(isset($this->literatures['current'])) {
+                foreach ($this->literatures['current'] as $id => $language) {
+                    $this->group->literatures()->whereId($id)->update(['name' => $language]);
+                }
+            }
+            if(isset($this->literatures['removed'])) {
+                foreach ($this->literatures['removed'] as $id => $language) {
+                    $this->group->literatures()->whereId($id)->delete();
+                }
+            }
+        }
+
         $this->group->refresh();
 
         Session::flash('message', __('group.groupUpdated')); 
@@ -305,6 +343,65 @@ class UpdateGroupForm extends AppComponent
         }
     
         return $times;
+    }
+
+    public function literatureAdd() {
+        if(isset($this->state['literatureAdd'])) {
+            if(strlen(trim($this->state['literatureAdd'])) > 2) {
+                $this->literatures['new'][] = $this->state['literatureAdd'];
+                $this->state['literatureAdd'] = '';
+                $this->dispatchBrowserEvent('success', ['message' => __('group.literature.added')]);
+            } else {
+                $this->dispatchBrowserEvent('sweet-error', [
+                    'title' => __('group.literature.add_error'),
+                    'message' => __('group.literature.tooShort'),
+                ]);
+            }
+        }
+    }
+
+    public function literatureRemove($type, $id) {
+        if($type == "new") {
+            unset($this->literatures['new'][$id]);
+            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+        } else {
+            $this->editedLiteratureRemove['type'] = $type;
+            $this->editedLiteratureRemove['id'] = $id;
+            $this->dispatchBrowserEvent('show-literature-confirmation', ['lang' => $this->literatures[$type][$id]]);
+        }
+    }
+
+    public function literatureEdit($type, $id) {
+        if(isset($this->literatures[$type][$id])) {
+            $this->editedLiteratureType = $type;
+            $this->editedLiteratureId = $id;
+            $this->state['editedLiterature'] = $this->literatures[$type][$id];
+        }
+    }
+
+    public function literatureDeleteConfirmed() {
+        $this->literatures['removed'][$this->editedLiteratureRemove['id']] = true;
+        unset($this->literatures[$this->editedLiteratureRemove['type']][$this->editedLiteratureRemove['id']]);
+        $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+    }
+
+    public function literatureEditCancel() {
+        $this->editedLiteratureType = null;
+        $this->editedLiteratureId = null;
+        $this->state['editedLiterature'] = '';
+    }
+
+    public function literatureEditSave() {
+        if(strlen(trim($this->state['editedLiterature'])) > 2) {
+            $this->literatures[$this->editedLiteratureType][$this->editedLiteratureId] = $this->state['editedLiterature'];
+            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.saved')]);
+            $this->literatureEditCancel();
+        } else {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.literature.save_error'),
+                'message' => __('group.literature.tooShort'),
+            ]);
+        }
     }
 
     public function render()

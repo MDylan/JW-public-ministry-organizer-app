@@ -50,6 +50,9 @@ class Event extends Model
                         ->addselect(['id', 'first_name', 'last_name']);;
     }
 
+    public function serviceReports() {
+        return $this->hasMany(EventServiceReport::class);
+    }
 
     //módosítja az adatbázisból visszanyert értéket unixtime-ra
     public function getStartAttribute($value) {

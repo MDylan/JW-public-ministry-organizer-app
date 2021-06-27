@@ -145,6 +145,10 @@ class Group extends Model
             });
     }
 
+    public function literatures() {
+        return $this->hasMany(GroupLiterature::class);
+    }
+
 
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe
