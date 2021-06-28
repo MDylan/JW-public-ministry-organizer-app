@@ -152,7 +152,7 @@
                                     <div class="col-sm-8">
                                         <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control">
                                             @foreach ($roles as $field => $translate) 
-                                                <option value="{{$field}}">{{ __('roles.'.$translate)}}</option>
+                                                <option value="{{$translate}}">{{ __('roles.'.$translate)}}</option>
                                             @endforeach
                                         </select>
                                     </div>

@@ -6,10 +6,12 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -52,6 +54,13 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $appends = ['full_name'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+        ->logOnly(['role'])->useLogName('userRole')->logOnlyDirty()->dontSubmitEmptyLogs();
+        // Chain fluent methods for configuration options
+    }
 
     /**
      * Ellenőrzi van e ilyen joga a usernek

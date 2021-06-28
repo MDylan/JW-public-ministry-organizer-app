@@ -32,17 +32,36 @@
                 <div class="row">                    
                     <div class="col-md-8">
                         <div class="card card-primary card-outline">
+                            <div class="card-header p-0 pt-1 border-bottom-0">
+                                <ul wire:ignore class="nav nav-tabs" id="pageTab" role="tablist">
+                                    @foreach ($languages as $code => $lang)
+                                        <li class="nav-item">
+                                            <a class="nav-link @if ($lang == reset($languages )) active @endif" id="custom-tabs-{{$code}}-tab" data-toggle="pill" href="#custom-tabs-{{$code}}" role="tab" aria-controls="custom-tabs-{{$code}}" aria-selected="false">
+                                                @if (!$lang['visible'])
+                                                    <i class="fas fa-eye-slash mr-1"></i>
+                                                @endif{{ $lang['name'] }}
+                                            </a>
+                                        </li>      
+                                    @endforeach
+                                </ul>
+                              </div>
                             <div class="card-body">
-                                <div class="form-group">
-                                    <label for="form_title">@lang('news.title')</label>
-                                    <input wire:model.defer="state.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
-                                    @error('title')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                <div class="tab-content" id="pageTabContent">
+                                    @foreach ($languages as $code => $lang)
+                                        <div wire:ignore.self class="tab-pane fade @if ($lang == reset($languages )) show active @endif " id="custom-tabs-{{ $code }}" role="tabpanel" aria-labelledby="custom-tabs-{{ $code }}">
+                                            <div class="form-group">
+                                                <label for="form_title">@lang('news.title')</label>
+                                                <input wire:model.defer="state.lang.{{$code}}.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
+                                                @error('title')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                            </div>
+                                            <div class="form-group" wire:ignore>
+                                                <label for="form_content">@lang('news.content')</label>
+                                                <textarea data-lang="{{$code}}" wire:model.defer="state.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
+                                            </div>
+                                            @error('content')<code>{{$message}}</code>@enderror
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <div class="form-group" wire:ignore>
-                                    <label for="form_content">@lang('news.content')</label>
-                                    <textarea wire:model.defer="state.content" class="form-control @error('content') is-invalid @enderror" rows="10" id="summernote" name="content"></textarea>
-                                </div>
-                                @error('content')<code>{{$message}}</code>@enderror
                             </div>
                         </div>
                     </div>
@@ -197,7 +216,7 @@
                     })
                 });
 
-                $('#summernote').summernote({
+                $('.summernote').summernote({
                     height: 200,
                     @if (trans('news.editor_lang') !== null)
                         lang: '@lang('news.editor_lang')', // default: 'en-US'
@@ -216,7 +235,10 @@
                             //save into livewire model when leave texteditor
                             onBlur: function(e) {
                                 code = $(this).summernote('code');
-                                @this.set('state.content', code);
+                                lang = $(this).data('lang');
+                                @this.set('state.lang.'+ lang +'.content', code);
+                                // code = $(this).summernote('code');
+                                // @this.set('state.content', code);
                             }
                         }
                 });

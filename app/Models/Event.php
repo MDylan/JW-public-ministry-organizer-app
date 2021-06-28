@@ -7,17 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 use DateTime;
 
 class Event extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
-    use LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity;
 
-    protected static $logFillable = true;
-    protected static $logName = 'event';
-    protected static $logOnlyDirty = true;
+    // protected static $logFillable = true;
+    // protected static $logName = 'event';
+    // protected static $logOnlyDirty = true;
 
     protected $fillable = [
         'day',
@@ -35,6 +34,15 @@ class Event extends Model
     ];
 
     protected $appends = ['full_time', 'day_name', 'service_hour'];
+
+    protected static $recordEvents = ['updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logFillable()->useLogName('event')->logOnlyDirty()->dontSubmitEmptyLogs();
+        // ->logOnly(['name', 'value']);
+        // Chain fluent methods for configuration options
+    }
 
     public function groups() {
         return $this->belongsTo(Group::class, 'group_id');

@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Group extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
-    use LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $dates = ['deleted_at'];
 
@@ -25,10 +24,18 @@ class Group extends Model
         'max_time',
     ];
 
-    protected static $logFillable = true;
-    protected static $logName = 'group';
-    protected static $logOnlyDirty = true;
+    // protected static $logFillable = true;
+    // protected static $logName = 'group';
+    // protected static $logOnlyDirty = true;
 
+    protected static $recordEvents = ['updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logFillable()->useLogName('group')->logOnlyDirty()->dontSubmitEmptyLogs();
+        // ->logOnly(['name', 'value']);
+        // Chain fluent methods for configuration options
+    }
 
     public function groupUsers() {
         return $this->belongsToMany(User::class)

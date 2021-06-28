@@ -337,9 +337,15 @@ class EventEdit extends AppComponent
 
         if($this->editEvent !== null) {
             //update event
-            $group->events()->whereId($this->editEvent['id'])->update(
-                $validatedData
-            );
+            $exists = $group->events()->whereId($this->editEvent['id']);
+            if($exists !== null) {
+                $event = Event::findOrFail($this->editEvent['id']);
+                $event->update($validatedData);
+            }
+
+            // $group->events()->whereId($this->editEvent['id'])->update(
+            //     $validatedData
+            // );
             $this->cancelEdit();
         } else {
             //save new event

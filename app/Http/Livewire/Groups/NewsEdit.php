@@ -36,6 +36,14 @@ class NewsEdit extends AppComponent
             $this->new_data = $this->group->news()->with('files')->whereId($new)->firstOrFail();
             $this->state = $this->new_data->toArray();
             $this->attached_files = $this->state['files']; // $files;
+            if(count($this->state['translations'])) {
+                foreach($this->state['translations'] as $translation) {
+                    $this->state['lang'][$translation['locale']] = [
+                        'title' => $translation['title'],
+                        'content' => $translation['content'],
+                    ];                    
+                }
+            }
         }
     }
 
@@ -46,13 +54,18 @@ class NewsEdit extends AppComponent
             $this->state['title'] = strip_tags($this->state['title']);
 
         $validatedData = Validator::make($this->state, [
-            'title' => 'required|string|max:50|min:2',
+            // 'title' => 'required|string|max:50|min:2',
             'date' => 'required|date_format:Y-m-d',
             'status' => 'numeric|in:0,1',
-            'content' => 'required',
+            // 'content' => 'required',
         ])->validate();
 
         $validatedData['user_id'] = Auth::id();
+        if(isset($this->state['lang'])) {
+            foreach($this->state['lang'] as $code => $fields) {
+                $validatedData[$code] = $fields;
+            }
+        }
 
         if(isset($this->state['id'])) {
             $this->new_data->update($validatedData);
@@ -149,6 +162,7 @@ class NewsEdit extends AppComponent
     {
         return view('livewire.groups.news-edit', [
             // 'group' => $this->group
+            'languages' => config('available_languages')
         ]);
     }
 }
