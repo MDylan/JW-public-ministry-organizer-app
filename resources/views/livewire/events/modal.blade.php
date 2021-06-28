@@ -30,7 +30,7 @@
                                     </ul>
                                 </nav>
                             </div>
-                            <div class="col-12 col-lg-4 text-center">
+                            {{-- <div class="col-12 col-lg-4 text-center">
                                 <ul class="nav nav-tabs border-0 justify-content-center" id="custom-tabs-four-tab" role="tablist">
                                     <li class="nav-item">
                                     <a class="nav-link @if ($active_tab == '') active @endif " id="custom-tabs-home-tab" data-toggle="pill" href="#custom-tabs-home" role="tab" aria-controls="custom-tabs-four-home" aria-selected="true">
@@ -45,7 +45,7 @@
                                         </li>
                                     @endif
                                 </ul>
-                            </div>
+                            </div> --}}
                         </div>
                     </div>
                     

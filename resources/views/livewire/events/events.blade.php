@@ -23,12 +23,12 @@
             <div class="row">                
                 <div class="col-lg-12">
                     <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <div class="container-md pl-0 pr-0">
-                                <div class="row">
-                                    <div class="col-12 col-lg-6 col-md-6 justify-content-center">
+                        <div class="card-header px-1">
+                            {{-- <div class="container-md mx-0 pl-0 pr-0"> --}}
+                                <div class="row mx-0">
+                                    <div class="col-12 col-md-6 ">
                                         @if (count($groups) > 1)
-                                        <form wire:submit.prevent="changeGroup" class="form-inline m-0">
+                                        <form wire:submit.prevent="changeGroup" class="form-inline m-0 justify-content-center justify-content-md-start">
                                             @csrf
                                             <div class="input-group">
                                                 <div class="custom-file">
@@ -45,7 +45,7 @@
                                         </form>
                                         @endif
                                     </div>
-                                    <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center">
+                                    <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center justify-content-md-end mt-4 mt-md-0">
                                         <nav>
                                             <ul class="pagination justify-content-center m-0">
                                                 <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
@@ -59,7 +59,7 @@
                                         </nav>
                                     </div>                                
                                 </div>
-                            </div>                            
+                            {{-- </div>                             --}}
                         </div>
                         <div class="card-body p-2">
                             <table class="table table-bordered eventsTable">

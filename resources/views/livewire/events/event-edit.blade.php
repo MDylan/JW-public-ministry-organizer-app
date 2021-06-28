@@ -60,32 +60,40 @@
         </div>
         @if ($eventId)
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-6 col-md-4">
                 <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
                     <i class="fa fa-times mr-1"></i>
                     @lang('event.cancel_edit')
                 </a>
+            </div>
+            <div class="col-6 col-md-4 text-right text-md-center">
                 <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
                     <i class="fa fa-save mr-1"></i>
                     @lang('event.save_changes')
                 </button>
             </div>
-            <div class="col-md-6">
-                <a wire:loading.attr="disabled" wire:click.prevent="confirmEventDelete()" class="btn btn-danger float-right">
+            <div class="col-12 col-md-4 mt-md-0 mt-4 text-center text-md-right">
+                <a wire:loading.attr="disabled" wire:click.prevent="confirmEventDelete()" class="btn btn-danger">
                     <i class="fa fa-trash mr-1"></i>
                     @lang('event.delete_event')
                 </a>
             </div>
         </div>
         @else
-            <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
-                <i class="fa fa-times mr-1"></i>
-                @lang('Cancel')
-            </a>
-            <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
-                <i class="fa fa-save mr-1"></i>
-                @lang('event.save')
-            </button>
+            <div class="row">
+                <div class="col-6 col-md-4">
+                    <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
+                        <i class="fa fa-times mr-1"></i>
+                        @lang('Cancel')
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 text-right text-md-center">
+                    <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                        <i class="fa fa-save mr-1"></i>
+                        @lang('event.save')
+                    </button>
+                </div>
+            </div>
         @endif
     </form>
     </div>
