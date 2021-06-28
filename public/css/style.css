@@ -280,3 +280,6 @@
     max-width: 90% !important;
   }
 }
+.brand-link .brand-image {
+  margin-left: 10px !important;
+}

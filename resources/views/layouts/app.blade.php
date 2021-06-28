@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" type="image/jpg" href="favicon.png"/>
   <title>{{ __('app.title') }}</title>
 
   <!-- Google Font: Source Sans Pro -->
