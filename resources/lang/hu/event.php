@@ -47,6 +47,21 @@ return [
     ],
     'date' => 'Dátum',
     'status' => 'Állapot',
+    'no_last_events' => 'Ebben a hónapban nem végeztél még szolgálatot.',
+    'event_time' => 'Szolgálati időszak',
+    'service' => [
+        'placements' => 'Terjesztések',
+        'language' => 'Nyelv',
+        'videos'    => 'Videó',
+        'return_visits' => 'Újralátogatás',
+        'bible_studies' => 'Bt bevezetés',
+        'note' => 'Megjegyzés',
+        'no_placements' => 'Nem volt terjesztés',
+        'success' => 'A terjesztéseket elmentettük.',
+        'error' => 'Ehhez az eseményhez nem rögzíthetsz terjesztést.',
+
+    ]
+
 
 
 ];

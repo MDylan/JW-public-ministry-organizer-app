@@ -4,7 +4,7 @@
         <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-md-8">
-            <h1 class="m-0">@lang('statistics.statistics') ({{$group->name}})</h1>
+            <h1 class="m-0">@lang('statistics.statistics') ({{$groupName}})</h1>
             </div><!-- /.col -->
             <div class="col-md-4">
             <ol class="breadcrumb float-sm-right">
@@ -52,6 +52,7 @@
                 <div class="col-md-12">
                     <div class="card card-primary card-outline card-outline-tabs">
                         <div class="card-header p-0 border-bottom-0">
+                            <!-- Tabs on top of the page -->
                             <ul wire:ignore class="nav nav-tabs" id="custom-tabs-four-tab" role="tablist">
                               <li class="nav-item">
                                 <a class="nav-link active" id="tabs-daily_data-tab" data-toggle="pill" href="#tabs-daily_data" role="tab" aria-controls="tabs-daily_data" aria-selected="true">
@@ -65,7 +66,14 @@
                                     @lang('statistics.publishers_data')
                                 </a>
                               </li>
+                              <li class="nav-item">
+                                <a class="nav-link" id="tabs-placements_data-tab" data-toggle="pill" href="#tabs-placements_data" role="tab" aria-controls="tabs-placements_data" aria-selected="false">
+                                    <i class="fa fa-list-alt mr-1"></i>
+                                    @lang('event.service.placements')
+                                </a>
+                              </li>
                             </ul>
+                            <!-- End Tabs -->
                         </div>
                         <div class="card-body">
                             <div wire:loading.delay class="w-100 text-center py-4">
@@ -174,6 +182,10 @@
                                                 <th class="text-right">@lang('statistics.publisher.events')</th>
                                                 <th class="text-right">@lang('statistics.publisher.days')</th>
                                                 <th class="text-right">@lang('statistics.publisher.hours')</th>
+                                                <th class="text-right">@lang('event.service.placements')</th>
+                                                <th class="text-right">@lang('event.service.videos')</th>
+                                                <th class="text-right">@lang('event.service.return_visits')</th>
+                                                <th class="text-right">@lang('event.service.bible_studies')</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -183,6 +195,10 @@
                                                     <td class="text-right">{{ $stat['events'] }}</td>
                                                     <td class="text-right">{{ count($stat['days']) }}</td>
                                                     <td class="text-right">{{ $stat['hours'] }}</td>
+                                                    <td class="text-right">{{ $stat['placements'] }}</td>
+                                                    <td class="text-right">{{ $stat['videos'] }}</td>
+                                                    <td class="text-right">{{ $stat['return_visits'] }}</td>
+                                                    <td class="text-right">{{ $stat['bible_studies'] }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -194,6 +210,57 @@
                                         </ul>
                                     </div>
                                 </div> <!-- end of publishers tab -->
+                                <div wire:ignore.self class="tab-pane fade" id="tabs-placements_data" role="tabpanel" aria-labelledby="tabs-placements_data-tab">
+                                    <div class="table-responsive">
+                                        <table wire:loading.remove class="table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>@lang('statistics.day')</th>
+                                                    <th>@lang('event.service.language')</th>
+                                                    <th class="text-right">@lang('event.service.placements')</th>
+                                                    <th class="text-right">@lang('event.service.videos')</th>
+                                                    <th class="text-right">@lang('event.service.return_visits')</th>
+                                                    <th class="text-right">@lang('event.service.bible_studies')</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($placements_stats as $day => $languages)
+                                                    @foreach ($languages as $lang => $report)
+                                                    @php
+                                                        
+                                                        $date = \Carbon\Carbon::parse($day);
+
+                                                    @endphp
+                                                    <tr>
+                                                        <td>{{ $date->format(__('app.format.date')) }}</td>
+                                                        <td>{{ $lang }}</td>
+                                                        <td class="text-right">{{ $report['placements'] }}</td>
+                                                        <td class="text-right">{{ $report['videos'] }}</td>
+                                                        <td class="text-right">{{ $report['return_visits'] }}</td>
+                                                        <td class="text-right">{{ $report['bible_studies'] }}</td>
+                                                    </tr>    
+                                                    @endforeach
+                                                    
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <th colspan="10" class="text-bold">@lang('statistics.summary')</th>
+                                                </tr>
+                                                @foreach ($placements_total as $lang => $total)
+                                                    <tr>
+                                                        <td></td>
+                                                        <td>{{ $lang }}</td>
+                                                        <td class="text-right">{{ $total['placements'] }}</td>
+                                                        <td class="text-right">{{ $total['videos'] }}</td>
+                                                        <td class="text-right">{{ $total['return_visits'] }}</td>
+                                                        <td class="text-right">{{ $total['bible_studies'] }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div> <!-- end of placements tab -->
                             </div>
                         </div>
                     </div>
@@ -206,5 +273,5 @@
             livewire.emitTo('events.modal', 'openModal', date);
         }
     </script>
-    @livewire('events.modal', ['groupId' => $this->group->id], key('eventsmodal'))
+    @livewire('events.modal', ['groupId' => $groupId], key('eventsmodal'))
 </div>

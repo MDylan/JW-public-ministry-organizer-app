@@ -140,6 +140,12 @@ return [
         'end' => 'szolgálat vége',
         'country_code'  => 'országkód',
         'country_name'  => 'nyelv',
-        'terms' => 'felhasználási feltételek'
+        'terms' => 'felhasználási feltételek',
+        '*.placements' => 'terjesztések',
+        '*.videos' => 'videók',
+        '*.return_visits' => 'újralátogatások',
+        '*.bible_studies' => 'bt bevezetések',
+        '*.note' => 'megjegyzés',
+
     ],
 ];

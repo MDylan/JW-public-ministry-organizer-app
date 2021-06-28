@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Groups;
 
 use App\Http\Livewire\AppComponent;
 use App\Models\DayStat;
+use App\Models\Event;
 use App\Models\Group;
 // use DateTime;
 use Carbon\Carbon;
@@ -13,21 +14,22 @@ use Illuminate\Support\Facades\DB;
 class Statistics extends AppComponent
 {
 
-    public $group;
+    protected $group;
+    public $groupId = 0;
     public $months = [];
     public $year = 0;
     public $month = 0;
     public $current_month = 0;
 
-    public function mount(Group $group) {
-        $this->group = $group;
+    public function mount($group) {
+        $this->groupId = $group;
         
         if(!isset($this->state['month'])) {
             $this->state['month'] = date("Y-m-")."01";
         }
         $this->year = date("Y");
         $this->month = date("m");
-        $this->getMonthListFromDate(Carbon::parse($this->group->created_at));
+        
 
     }
 
@@ -49,6 +51,10 @@ class Statistics extends AppComponent
 
     public function render()
     {
+        $this->group = Group::findOrFail($this->groupId);
+        $this->getMonthListFromDate(Carbon::parse($this->group->created_at));
+
+
         $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
         $this->current_month = date('F', $firstDayOfMonth);
         $this->first_day = date("Y-m-d", $firstDayOfMonth);
@@ -165,6 +171,14 @@ class Statistics extends AppComponent
         //Publisher's stats
 
         $users_stats = [];
+        $placements_stats = [];
+        $placements_total = [];
+        $placements_list = [
+            'placements',
+            'videos',
+            'return_visits',
+            'bible_studies'
+        ];
         $users = $this->group->groupUsers;
         foreach($users as $user) {
             $users_stats[$user->id] = [
@@ -173,17 +187,31 @@ class Statistics extends AppComponent
                 'hours' => 0,
                 'days' => []
             ];
+
+            foreach($placements_list as $placement) {
+                $users_stats[$user->id][$placement] = 0;
+            }
         }
 
-        $events = DB::select('SELECT id, user_id, day, start, end 
-                                FROM events 
-                                WHERE deleted_at IS NULL
-                                    AND accepted_at IS NOT NULL
-                                    AND group_id = ?
-                                    AND day BETWEEN ? AND ?', 
-                                    [$this->group->id, $this->first_day, $this->last_day]);
+        // $events = DB::select('SELECT id, user_id, day, start, end 
+        //                         FROM events 
+        //                         WHERE deleted_at IS NULL
+        //                             AND accepted_at IS NOT NULL
+        //                             AND group_id = ?
+        //                             AND day BETWEEN ? AND ?', 
+        //                             [$this->group->id, $this->first_day, $this->last_day]);
 
         
+        $events = Event::where('group_id', $this->group->id)
+                    ->whereBetween('day', [$this->first_day, $this->last_day])
+                    ->whereNotNull('accepted_at')
+                    ->orderBy('start', 'desc')
+                    ->with(['serviceReports.literature']) //, 'groups.literatures'
+                    ->get();
+
+
+
+        // dd($events->toArray());
         if(count($events)) {
             foreach($events as $event) {
                 // dd($event);
@@ -193,18 +221,41 @@ class Statistics extends AppComponent
 
                 $totalDuration = $finishTime->diffInHours($startTime);
                 $users_stats[$event->user_id]['hours'] += $totalDuration;
-                $users_stats[$event->user_id]['days'][$event->day] = true;
+                $users_stats[$event->user_id]['days'][$event->day.''] = true;
+
+                if(count($event->serviceReports)) {
+                    foreach($event->serviceReports as $report) {
+                        // dd($report);
+                        $lang = $report->literature->name;
+
+                        foreach($placements_list as $placement) {
+                            if(!isset($placements_stats[$event->day.''][$lang][$placement]))
+                                $placements_stats[$event->day.''][$lang][$placement] = 0;
+                            $placements_stats[$event->day.''][$lang][$placement] += $report->$placement;
+
+                            if(!isset($placements_total[$lang][$placement]))
+                                $placements_total[$lang][$placement] = 0;
+                            $placements_total[$lang][$placement] += $report->$placement;
+
+                            $users_stats[$event->user_id][$placement] += $report->$placement;
+                        }
+                    }
+                }
 
             }
         }
-        // dd($users_stats);
-        // dd($day_stats);
-        // dd($total);
+
+        // dd($this->group->name);
 
         return view('livewire.groups.statistics', [
+            'groupName' => $this->group->name,
+            'groupId' => $this->group->id,
             'total' => $total,
             'day_stats' => $day_stats,
-            'users_stats' => $users_stats
+            'users_stats' => $users_stats,
+            'placements_stats' => $placements_stats,
+            'placements_total' => $placements_total,
+            // 'period' => $period
         ]);
     }
 }

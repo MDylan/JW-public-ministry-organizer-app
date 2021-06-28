@@ -9,6 +9,7 @@ use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
+use App\Http\Livewire\Events\LastEvents;
 use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
@@ -77,6 +78,8 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['profileFull'])->group(function () {
             Route::get('/groups', ListGroups::class)->name('groups');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+            Route::get('/lastevents', LastEvents::class)->name('lastevents');
+
             //For special roles
             Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
 
@@ -91,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware(['groupMember'])->group(function () {
                 Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users');
                 Route::get('/groups/{group}/news', NewsList::class)->name('groups.news');
-                Route::get('/news_file/{group}/{file}', [GroupNewsFileDownloadController::class, 'download'])->name('groups.news.filedownload');    
+                Route::get('/news_file/{group}/{file}', [GroupNewsFileDownloadController::class, 'download'])->name('groups.news.filedownload');
             });
 
             Route::middleware(['groupAdmin'])->group(function () {

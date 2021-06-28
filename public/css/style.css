@@ -274,3 +274,9 @@
   .bootstrap-switch-normal {
     max-height: 28px;
   }
+
+@media screen and (min-width:700px) and (max-width: 1000px) {
+  .reportModal {
+    max-width: 90% !important;
+  }
+}

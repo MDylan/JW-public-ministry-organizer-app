@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,7 +34,7 @@ class Event extends Model
         'end' => 'datetime:Y-m-d H:i',
     ];
 
-    protected $appends = ['full_time', 'day_name'];
+    protected $appends = ['full_time', 'day_name', 'service_hour'];
 
     public function groups() {
         return $this->belongsTo(Group::class, 'group_id');
@@ -74,6 +75,12 @@ class Event extends Model
         $d = new DateTime( $this->day );
         $weekDay = $d->format("w");
         return $d->format(__('app.format.date'))." ".__('event.weekdays_short.'.$weekDay);
+    }
+
+    public function getServiceHourAttribute() {
+        $startTime = Carbon::parse($this->start);
+        $finishTime = Carbon::parse($this->end);
+        return round(($finishTime->diffInMinutes($startTime) / 60), 2);
     }
 
 

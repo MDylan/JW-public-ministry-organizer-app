@@ -39,6 +39,14 @@
                       </p>
                   </a>
               </li>
+              <li class="nav-item">
+                <a href="{{route('lastevents')}}" class="nav-link {{ $request_path == 'lastevents' ? 'active' : '' }}">
+                    <i class="nav-icon fa fa-history"></i>
+                    <p>
+                    {{ __('app.menu-lastevents') }}
+                    </p>
+                </a>
+            </li>
 
               <x-SideStaticPages></x-SideStaticPages> 
               

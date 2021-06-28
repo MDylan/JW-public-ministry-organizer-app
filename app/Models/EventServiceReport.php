@@ -21,4 +21,8 @@ class EventServiceReport extends Model
     public function event() {
         return $this->belongsTo(Event::class);
     }
+
+    public function literature() {
+        return $this->belongsTo(GroupLiterature::class, 'group_literature_id');
+    }
 }
