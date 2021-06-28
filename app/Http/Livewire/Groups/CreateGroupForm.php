@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDay;
+use App\Models\GroupLiterature;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
 use DateTime;
@@ -30,6 +31,12 @@ class CreateGroupForm extends AppComponent
 
     public $users = [];
     public $search = "";
+    public $literatures = [];
+    public $editedLiteratureType = null;
+    public $editedLiteratureId = null;
+    public $editedLiteratureRemove = [];
+
+    public $listeners = ['literatureDeleteConfirmed'];
 
     /**
      * Hozzáadja a usert a listához
@@ -57,7 +64,8 @@ class CreateGroupForm extends AppComponent
                 $this->users[$slug] = [
                     'email' => $mail,
                     'group_role' => 'member',
-                    'note' => ''
+                    'note' => '',
+                    'hidden' => false
                 ];
             }
         }
@@ -141,13 +149,36 @@ class CreateGroupForm extends AppComponent
                 });
                 $us->userGroups()->save($group, [
                     'group_role' => $user['group_role'],
-                    'note' => strip_tags(trim($user['note']))
+                    'note' => strip_tags(trim($user['note'])),
+                    'hidden' => $user['hidden'] == 1 ? 1 : 0
                 ]);                
                 //értesítem, hogy hozzá lett adva a csoporthoz
                 $us->notify(
                     new GroupUserAddedNotification($data)
                 );
             }
+        }
+
+        if(count($this->literatures)) {
+            if(isset($this->literatures['new'])) {
+                $save = [];
+                foreach ($this->literatures['new'] as $language) {
+                    $save[] = new GroupLiterature([
+                        'name' => $language
+                    ]);    
+                }
+                $group->literatures()->saveMany($save);
+            }
+            // if(isset($this->literatures['current'])) {
+            //     foreach ($this->literatures['current'] as $id => $language) {
+            //         $this->group->literatures()->whereId($id)->update(['name' => $language]);
+            //     }
+            // }
+            // if(isset($this->literatures['removed'])) {
+            //     foreach ($this->literatures['removed'] as $id => $language) {
+            //         $this->group->literatures()->whereId($id)->delete();
+            //     }
+            // }
         }
 
         Session::flash('message', __('group.groupCreated')); 
@@ -172,6 +203,65 @@ class CreateGroupForm extends AppComponent
         }
     
         return $times;
+    }
+
+    public function literatureAdd() {
+        if(isset($this->state['literatureAdd'])) {
+            if(strlen(trim($this->state['literatureAdd'])) > 2) {
+                $this->literatures['new'][] = $this->state['literatureAdd'];
+                $this->state['literatureAdd'] = '';
+                $this->dispatchBrowserEvent('success', ['message' => __('group.literature.added')]);
+            } else {
+                $this->dispatchBrowserEvent('sweet-error', [
+                    'title' => __('group.literature.add_error'),
+                    'message' => __('group.literature.tooShort'),
+                ]);
+            }
+        }
+    }
+
+    public function literatureRemove($type, $id) {
+        if($type == "new") {
+            unset($this->literatures['new'][$id]);
+            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+        } else {
+            $this->editedLiteratureRemove['type'] = $type;
+            $this->editedLiteratureRemove['id'] = $id;
+            $this->dispatchBrowserEvent('show-literature-confirmation', ['lang' => $this->literatures[$type][$id]]);
+        }
+    }
+
+    public function literatureEdit($type, $id) {
+        if(isset($this->literatures[$type][$id])) {
+            $this->editedLiteratureType = $type;
+            $this->editedLiteratureId = $id;
+            $this->state['editedLiterature'] = $this->literatures[$type][$id];
+        }
+    }
+
+    public function literatureDeleteConfirmed() {
+        $this->literatures['removed'][$this->editedLiteratureRemove['id']] = true;
+        unset($this->literatures[$this->editedLiteratureRemove['type']][$this->editedLiteratureRemove['id']]);
+        $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+    }
+
+    public function literatureEditCancel() {
+        $this->editedLiteratureType = null;
+        $this->editedLiteratureId = null;
+        $this->state['editedLiterature'] = '';
+    }
+
+    public function literatureEditSave() {
+        if(strlen(trim($this->state['editedLiterature'])) > 2) {
+            $this->literatures[$this->editedLiteratureType][$this->editedLiteratureId] = $this->state['editedLiterature'];
+            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.saved')]);
+            $this->literatureEditCancel();
+        } else {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.literature.save_error'),
+                'message' => __('group.literature.tooShort'),
+            ]);
+        }
     }
 
     public function render()

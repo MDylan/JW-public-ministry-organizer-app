@@ -70,7 +70,8 @@ class UpdateGroupForm extends AppComponent
                     'group_role' => $user->pivot->group_role,
                     'note' => $user->pivot->note,
                     'user_id' => $user->id,
-                    'full_name' => $user->full_name
+                    'full_name' => $user->full_name,
+                    'hidden' => $user->pivot->hidden == 1 ? true : false
                 ];
                 if($user->pivot->group_role == 'admin') {
                     $this->admins[$slug] = true;
@@ -115,6 +116,7 @@ class UpdateGroupForm extends AppComponent
                     'note' => '',
                     'user_id' => false,
                     'full_name' => '?',
+                    'hidden' => false
                 ];
             }
         }
@@ -150,10 +152,7 @@ class UpdateGroupForm extends AppComponent
      * Elmenti a csoport adatait
      */
     public function updateGroup() {
-        
-        // dd('here');
-
-        // dd($this->days);
+        // dd($this->users);
 
         $this->state['name'] = strip_tags($this->state['name']);
 
@@ -263,10 +262,13 @@ class UpdateGroupForm extends AppComponent
                 });
                 $user_sync[$us->id] = [
                     'group_role' => $user['group_role'],
-                    'note' => strip_tags(trim($user['note']))
+                    'note' => strip_tags(trim($user['note'])),
+                    'hidden' => $user['hidden'] == 1 ? 1 : 0
                 ];
             }
+            // dd($user_sync);
             $res = $this->group->groupUsers()->sync($user_sync);
+            // dd($res);
             //az újakat értesítem, hogy hozzá lett adva a csoporthoz
             if(isset($res['attached'])) {
                 foreach($res['attached'] as $user) {
@@ -278,6 +280,7 @@ class UpdateGroupForm extends AppComponent
             }
             if(isset($res['detached'])) {
                 foreach($res['detached'] as $user) {
+                    // dd($user);
                     $us = User::find($user);
                     $events = $us->feature_events()
                         ->where('group_id', $this->group->id);

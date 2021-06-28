@@ -14,7 +14,7 @@ final class GroupUser extends Pivot
     public $incrementing = true;
 
     protected $table 	= 'group_user';
-    protected $fillable = ['user_id', 'group_id', 'group_role', 'accepted_at', 'note'];
+    protected $fillable = ['user_id', 'group_id', 'group_role', 'accepted_at', 'note', 'hidden'];
     protected $dates = ['created_at','updated_at'];
 
     // Activity Log

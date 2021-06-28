@@ -120,6 +120,8 @@ return [
     'user_add' => 'Hozzáadás',
     'search_placeholder' => 'Minden emailt új sorba írj',
     'note' => 'Megjegyzés',
+    'hidden' => 'Rejtett',
+    'hidden_helper' => 'A rejtett felhasználók nem fognak látszódni a csoport tagjai között, csak csoporszolga és a csoportfelvigyázó számára. Csak az események között lesznek láthatóak, ha beterveznek egy szolgálatot.',
     'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoportfelvigyázó és a Csoportszolga látja.',
     'notGroupCreator' => 'Ha csoportokat szeretnél létrehozni, akkor kérjük kérj ehhez jogosultságot az oldal adminisztrátoraitól.',
     'requestButton' => 'Ehhez kattints ide, és töltsd ki az űrlapot.',

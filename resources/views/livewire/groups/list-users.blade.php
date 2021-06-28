@@ -39,8 +39,13 @@
                                     @if ($user->pivot->accepted_at == null && $editor == 0)
                                         @continue                                        
                                     @endif
+                                    @if ($user->pivot->hidden == 1 && $editor == 0)
+                                        @continue                                        
+                                    @endif
                                 <tr>
-                                    <td>{{ $user->full_name }}
+                                    <td>{{ $user->full_name }} @if ($user->pivot->hidden == 1)
+                                        <span class="badge badge-success"> @lang('group.hidden') </span>
+                                    @endif                                    
                                     </td>
                                     <td>
                                         <a href="mailto:{{ $user->email }}">{{ $user->email }}</a>

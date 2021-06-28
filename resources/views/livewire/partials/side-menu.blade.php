@@ -2,7 +2,7 @@
     <!-- Brand Logo -->
     <a href="/" class="brand-link">
       <span class="brand-text font-weight-light ml-1">
-        <img src="favicon.png" alt="@lang('app.title')" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <img src="{{ asset('favicon.png') }} " alt="@lang('app.title')" class="brand-image img-circle elevation-3" style="opacity: .8">
         {{ __('app.title') }}</span>
     </a>
   

@@ -220,6 +220,11 @@
                                     
                                 @endforeach
                                 </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        @lang('group.literature.help')
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -281,15 +286,23 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="3" class="pt-1">
-                                                    <div class="form-row">
-                                                        <div class="col-3 d-flex justify-content-end">
-                                                        <label class="my-1 mr-2" for="{{$slug}}_note">{{__('group.note')}}</label>
-                                                    </div>
-                                                    <div class="col-9">
-                                                        <input wire:ignore.self wire:model.defer="users.{{$slug}}.note" 
-                                                        type="text" class="form-control" name="users['{{$slug}}']['note']" id="{{$slug}}_note">
-                                                    </div>
+                                                <td colspan="3" class="pt-1" style="border-bottom: 1px solid #000;">
+                                                    <div class="row">
+                                                        <div class="col-2 my-auto">
+                                                            <div class="icheck-primary d-inline">
+                                                                <input wire:model.defer="users.{{$slug}}.hidden" type="checkbox" id="user_{{$slug}}" value="1">
+                                                                <label for="user_{{$slug}}">
+                                                                    @lang('group.hidden')
+                                                                </label>
+                                                              </div>
+                                                        </div>
+                                                        <div class="col-2">
+                                                            <label class="my-1 mr-2" for="{{$slug}}_note">{{__('group.note')}}</label>
+                                                        </div>
+                                                        <div class="col-8">
+                                                            <input wire:ignore.self wire:model.defer="users.{{$slug}}.note" 
+                                                            type="text" class="form-control" name="users['{{$slug}}']['note']" id="{{$slug}}_note">
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>  
@@ -306,7 +319,9 @@
                                             <li><strong>{{ __('group.roles.'.$translate)}}</strong>: {{__('group.role_helper.'.$translate)}}</li>
                                         @endforeach
                                     </ul>
-                                    {{__('group.users_helper')}}
+                                    {{__('group.users_helper')}}<br/>
+                                    {{__('group.hidden_helper')}}<br/>
+                                    {{__('group.note_helper')}}<br/>
                                 </div>
                             </div>
                         </div>
