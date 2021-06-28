@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -29,6 +30,11 @@ class Kernel extends ConsoleKernel
                     ->everyMinute()
                     // ->runInBackground()
                     ->withoutOverlapping(1);
+        //delete users who not verify their emails more then one week
+        $schedule->call(function () {
+            User::whereNull('email_verified_at')
+                        ->where('created_at', '<', date("Y-m-d H:i:s", strtotime("-1 week")))->delete();
+        })->hourlyAt(50);
     }
 
     /**

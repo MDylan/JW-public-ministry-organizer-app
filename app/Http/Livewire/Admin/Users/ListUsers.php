@@ -103,6 +103,10 @@ class ListUsers extends AppComponent
 
         $users = User::latest()->paginate(20);
 
+        // $old = User::whereNull('email_verified_at')
+        //         ->where('created_at', '<', date("Y-m-d H:i:s", strtotime("-1 week")));
+        // dd($old->get()->toArray());
+
         return view('livewire.admin.users.list-users', [
             'users' => $users,
             'userFields' => is_array(trans('user.nameFields')) ? trans('user.nameFields') : ['first_name', 'last_name'],

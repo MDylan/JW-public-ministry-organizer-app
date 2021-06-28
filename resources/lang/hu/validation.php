@@ -20,6 +20,7 @@ return [
     ],
     'boolean'              => 'A(z) :attribute mező csak true vagy false értéket kaphat!',
     'confirmed'            => 'A(z) :attribute nem egyezik a megerősítéssel.',
+    'current_password'     => 'A jelszó nem megfelelő',
     'date'                 => 'A(z) :attribute nem érvényes dátum.',
     'date_equals'          => ':attribute meg kell egyezzen a következővel: :date.',
     'date_format'          => 'A(z) :attribute nem egyezik az alábbi dátum formátummal :format!',

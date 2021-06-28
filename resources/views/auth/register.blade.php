@@ -35,7 +35,7 @@
                     @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                 </div>
                 <div class="input-group mb-3">
-                    {!! Form::text('phone', '', [
+                    {!! Form::number('phone', '', [
                         'class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 
                         'placeholder' => __('user.phone'),
                         'aria-describedby' => 'phoneHelpBlock'
