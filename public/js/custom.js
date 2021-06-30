@@ -10,6 +10,7 @@ if (currentTheme) {
     if (mainHeader.classList.contains('navbar-light')) {
         mainHeader.classList.add('navbar-dark');
         mainHeader.classList.remove('navbar-light');
+        mainHeader.classList.remove('navbar-white');
     }
     toggleSwitch.checked = true;
     }
