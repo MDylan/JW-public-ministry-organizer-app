@@ -1,4 +1,4 @@
-<nav class="main-header navbar navbar-expand navbar-light navbar-white">
+<nav wire:ignore.self class="main-header navbar navbar-expand navbar-light navbar-white">
     <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">

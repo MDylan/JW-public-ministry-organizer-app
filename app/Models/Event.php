@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\CalendarLinks\Link;
 use DateTime;
 
 class Event extends Model
@@ -33,7 +34,7 @@ class Event extends Model
         'end' => 'datetime:Y-m-d H:i',
     ];
 
-    protected $appends = ['full_time', 'day_name', 'service_hour'];
+    protected $appends = ['full_time', 'day_name', 'service_hour', 'calendar_google', 'calendar_ics'];
 
     protected static $recordEvents = ['updated', 'deleted'];
 
@@ -89,6 +90,25 @@ class Event extends Model
         $startTime = Carbon::parse($this->start);
         $finishTime = Carbon::parse($this->end);
         return round(($finishTime->diffInMinutes($startTime) / 60), 2);
+    }
+
+    public function calendarLink() {
+        $name = optional($this->groups)->name;
+        if(!$name) $name = '';
+        // dd($this->start, $this->end);
+        return Link::create(
+            $name,
+            DateTime::createFromFormat('U', $this->start),
+            DateTime::createFromFormat('U', $this->end)
+        );
+    }
+
+    public function getCalendarGoogleAttribute() {
+        return $this->calendarLink()->google();
+    }
+
+    public function getCalendarIcsAttribute() {
+        return $this->calendarLink()->ics();
     }
 
 

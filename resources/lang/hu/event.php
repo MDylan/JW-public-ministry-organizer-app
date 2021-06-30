@@ -59,8 +59,9 @@ return [
         'no_placements' => 'Nem volt terjesztés',
         'success' => 'A terjesztéseket elmentettük.',
         'error' => 'Ehhez az eseményhez nem rögzíthetsz terjesztést.',
-
-    ]
+    ],
+    'google' => 'Google',
+    'ics' => 'ICS fájl'
 
 
 

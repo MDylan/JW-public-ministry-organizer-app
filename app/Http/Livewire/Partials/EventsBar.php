@@ -17,7 +17,7 @@ class EventsBar extends Component
     {
         $events = Auth()->user()->feature_events->toArray();
 
-       // dd($events);
+    //    dd($events);
 
         return view('livewire.partials.events-bar', [
             'events' => $events

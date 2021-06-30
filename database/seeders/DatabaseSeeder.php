@@ -17,20 +17,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $request = Request();
-        
-        if( $request->input('admin_email') !== null) {
-            DB::table('users')->insert([
-                'email' => $request->input('admin_email'),
-                'password' => Hash::make($request->input('admin_password')),
-                'role' => 'mainAdmin'
-            ]);
-        } else {
-			DB::table('users')->insert([
-                'email' => 'molnar.david@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'mainAdmin'
-            ]);
-		}
+        // DB::table('users')->insert([
+        //     'email' => 'user@gmail.com',
+        //     'password' => Hash::make('password'),
+        //     'role' => 'mainAdmin'
+        // ]);
     }
 }
