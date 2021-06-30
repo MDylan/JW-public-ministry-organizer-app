@@ -179,7 +179,7 @@ class Statistics extends AppComponent
             'return_visits',
             'bible_studies'
         ];
-        $users = $this->group->groupUsers;
+        $users = $this->group->groupUsersAll;
         foreach($users as $user) {
             $users_stats[$user->id] = [
                 'name' => $user->full_name,
@@ -204,7 +204,7 @@ class Statistics extends AppComponent
         
         $events = Event::where('group_id', $this->group->id)
                     ->whereBetween('day', [$this->first_day, $this->last_day])
-                    ->whereNotNull('accepted_at')
+                    // ->whereNotNull('accepted_at')
                     ->orderBy('start', 'desc')
                     ->with(['serviceReports.literature']) //, 'groups.literatures'
                     ->get();

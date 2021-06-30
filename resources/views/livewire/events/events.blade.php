@@ -105,7 +105,7 @@
                                                     style="background: {{$day_stat[$day['fullDate']]}}"></div>
                                                 @endif
                                             </div> --}}
-                                            <div class="dayNumber mr-2">{{ $day['day'] }}</div>
+                                            <div class="dayNumber mr-2 noselect">{{ $day['day'] }}</div>
                                         </div>
                                     </td>
                                     @endforeach

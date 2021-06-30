@@ -147,10 +147,11 @@ class CreateGroupForm extends AppComponent
                     );
                     return $u;
                 });
-                $us->userGroups()->save($group, [
+                $us->userGroupsAll()->save($group, [
                     'group_role' => $user['group_role'],
                     'note' => strip_tags(trim($user['note'])),
-                    'hidden' => $user['hidden'] == 1 ? 1 : 0
+                    'hidden' => $user['hidden'] == 1 ? 1 : 0,
+                    'deleted_at' => null //because maybe we try to reattach logged out user
                 ]);                
                 //értesítem, hogy hozzá lett adva a csoporthoz
                 $us->notify(

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\GroupDelete;
+use App\Http\Controllers\GroupLogout;
 use App\Http\Controllers\GroupNewsFileDownloadController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,9 @@ use App\Http\Livewire\Home;
 // use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 // use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redirect;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,19 +76,34 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/home');
     })->name('verification.verify');
 
+    Route::get('/confirm-password', function () {
+        return view('auth.confirm-password');
+    })->name('password.confirm');
+
+    Route::post('/confirm-password', function (Request $request) {
+        if (! Hash::check($request->password, $request->user()->password)) {
+            return back()->withErrors([
+                'password' => [__('app.authentication_error')]
+            ]);
+        }    
+        $request->session()->passwordConfirmed();    
+        return redirect()->intended();
+    })->middleware(['throttle:6,1'])->name('password.confirm');
+
     //Only for verified users
     Route::middleware(['verified'])->group(function () {
         Route::get('user/profile', Profile::class)->name('user.profile');
 
         Route::middleware(['profileFull'])->group(function () {
-            Route::get('/groups', ListGroups::class)->name('groups');
-            Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+            
             Route::get('/lastevents', LastEvents::class)->name('lastevents');
+            Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+            Route::get('/groups', ListGroups::class)->name('groups');            
 
             //For special roles
             Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
 
-            Route::middleware('can:is-admin')->group(function () {
+            Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');
                 Route::get('/admin/settings', Settings::class)->name('admin.settings');
                 Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
@@ -91,14 +111,16 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
             });
 
-            Route::middleware(['groupMember'])->group(function () {
+            Route::middleware(['groupMember'])->group(function () {                
                 Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users');
                 Route::get('/groups/{group}/news', NewsList::class)->name('groups.news');
                 Route::get('/news_file/{group}/{file}', [GroupNewsFileDownloadController::class, 'download'])->name('groups.news.filedownload');
+                Route::get('/groups/{group}/logout', [GroupLogout::class, 'index'])->name('groups.logout')->middleware(['password.confirm']);
             });
 
             Route::middleware(['groupAdmin'])->group(function () {
-                Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit');
+                Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['password.confirm']);
+                Route::get('/groups/{group}/delete', [GroupDelete::class, 'index'])->name('groups.delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/news/create', NewsEdit::class)->name('groups.news_create');
                 Route::get('/groups/{group}/news/edit/{new}', NewsEdit::class)->name('groups.news_edit');
                 Route::get('/groups/{group}/statistics', Statistics::class)->name('groups.statistics');

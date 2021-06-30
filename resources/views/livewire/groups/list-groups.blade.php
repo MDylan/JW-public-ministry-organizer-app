@@ -200,12 +200,56 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
-                    <button type="button" wire:click.prevent="deleteGroup" class="btn btn-danger">
-                        <i class="fa fa-trash mr-1"></i>
-                        {{__('app.yesDelete')}}
-                        </button>
+                    {{-- <button type="button" wire:click.prevent="deleteGroup" class="btn btn-danger"> --}}
+                        @if ($groupBeeingRemoved !== null)
+                        <a href="{{ route('groups.delete', ['group' => $groupBeeingRemoved]) }}" class="btn btn-danger">
+                            <i class="fa fa-trash mr-1"></i>
+                            {{__('app.yesDelete')}}
+                        </a>
+                        @endif
                 </div>
             </div>
         </div>
     </div>
+
+    @section('footer_scripts')
+    <script>
+    $(document).ready(function() {
+        window.addEventListener('show-logout-confirmation', event => {
+            Swal.fire({
+            title: '@lang('group.logout.question')',
+            text: '@lang('group.logout.message')',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '@lang('Yes')',
+            cancelButtonText: '@lang('Cancel')'
+            }).then((result) => {
+            if (result.isConfirmed) {
+                // Livewire.emit('logoutConfirmed');
+                window.location.replace('{{ config('app.url') }}/groups/' + event.detail.groupId + '/logout');
+            }
+            })
+        });
+
+        window.addEventListener('show-reject-confirmation', event => {
+            Swal.fire({
+            title: '@lang('group.reject_question')',
+            text: '@lang('group.reject_message')',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '@lang('Yes')',
+            cancelButtonText: '@lang('Cancel')'
+            }).then((result) => {
+            if (result.isConfirmed) {
+                Livewire.emit('rejectConfirmed');
+            }
+            })
+        });
+    });
+    </script>
+    @endsection
 </div>

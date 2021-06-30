@@ -138,7 +138,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_placements">@lang('event.service.placements'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input wire:model.defer="reports.{{$literature->id}}.placements" type="number" class="form-control @if ($errors->has($literature->id. '.placements')) is-invalid @endif" id="{{$literature->id}}_placements" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.placements" type="number" class="form-control @if ($errors->has($literature->id. '.placements')) is-invalid @endif" id="{{$literature->id}}_placements" />
                                         </div>
                                     </div>
                                 </div>
@@ -146,7 +146,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_videos">@lang('event.service.videos'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input wire:model.defer="reports.{{$literature->id}}.videos" type="number" class="form-control @if ($errors->has($literature->id. '.videos')) is-invalid @endif" id="{{$literature->id}}_videos" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.videos" type="number" class="form-control @if ($errors->has($literature->id. '.videos')) is-invalid @endif" id="{{$literature->id}}_videos" />
                                         </div>
                                     </div>
                                 </div>
@@ -154,7 +154,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_return_visits">@lang('event.service.return_visits'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input wire:model.defer="reports.{{$literature->id}}.return_visits" type="number" class="form-control @if ($errors->has($literature->id. '.return_visits')) is-invalid @endif" id="{{$literature->id}}_return_visits" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.return_visits" type="number" class="form-control @if ($errors->has($literature->id. '.return_visits')) is-invalid @endif" id="{{$literature->id}}_return_visits" />
                                         </div>
                                     </div>
                                 </div>
@@ -162,7 +162,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_bible_studies">@lang('event.service.bible_studies'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input wire:model.defer="reports.{{$literature->id}}.bible_studies" type="number" class="form-control @if ($errors->has($literature->id. '.bible_studies')) is-invalid @endif" id="{{$literature->id}}_bible_studies" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.bible_studies" type="number" class="form-control @if ($errors->has($literature->id. '.bible_studies')) is-invalid @endif" id="{{$literature->id}}_bible_studies" />
                                         </div>
                                     </div>
                                 </div>
@@ -191,10 +191,12 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
+                    @if(!$eventFormDisabled)
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-save mr-1"></i>
                         {{ __('app.save') }}
                     </button>
+                    @endif
                 </div>
             </div>
         </form>

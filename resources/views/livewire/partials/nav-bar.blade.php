@@ -80,7 +80,7 @@
                 @if (!$value['visible'] && auth()->user()->role !== "mainAdmin")
                   @continue
                 @endif
-                <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
+                <a href="{{ url()->current() }}?lang={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
                  @if (!$value['visible'])
                  <i class="fas fa-eye-slash mr-1"></i>
                  @endif

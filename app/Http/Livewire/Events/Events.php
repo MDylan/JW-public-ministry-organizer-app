@@ -203,8 +203,14 @@ class Events extends AppComponent
         $this->form_groupId = $groupId;
 
         $key = array_search($groupId, array_column($this->groups, 'id'));
-        if($key === false) {
-            abort('404');
+        if($key === false/* && count($this->groups) == 0*/) {
+            if(count($this->groups) == 0) {
+                abort('404');
+            } else {
+                session(['groupId' => $this->groups[0]['id']]);
+                $groupId = session('groupId');
+                $this->form_groupId = $groupId;
+            }
         }
         $this->cal_group_data = $this->groups[$key];
         $days = $this->cal_group_data['days'];

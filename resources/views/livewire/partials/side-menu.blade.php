@@ -48,7 +48,8 @@
                     {{ __('app.menu-lastevents') }}
                     </p>
                 </a>
-            </li>
+              </li>
+
 
               <x-SideStaticPages></x-SideStaticPages> 
               

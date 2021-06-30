@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon" type="image/jpg" href="favicon.png"/>
+  <link rel="shortcut icon" type="image/jpg" href="{{ asset('favicon.png') }}"/>
   <title>@lang('app.title') | @yield('title')</title>
 
   <!-- Google Font: Source Sans Pro -->
   {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"> --}}
-  @googlefonts
+  {{-- @googlefonts --}}
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
   <!-- Theme style -->
@@ -85,7 +85,7 @@
                 @if (!$value['visible'])
                   @continue
                 @endif
-                <a href="{{ url()->current() }}?language={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
+                <a href="{{ url()->current() }}?lang={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">
                   {{ $value['name'] }}
                 </a>
               @endforeach

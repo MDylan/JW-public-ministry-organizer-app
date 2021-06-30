@@ -56,7 +56,7 @@
                                             </div>
                                             <div class="form-group" wire:ignore>
                                                 <label for="form_content">@lang('news.content')</label>
-                                                <textarea data-lang="{{$code}}" wire:model.defer="state.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
+                                                <textarea data-lang="{{$code}}" wire:model.defer="state.lang.{{$code}}.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
                                             </div>
                                             @error('content')<code>{{$message}}</code>@enderror
                                         </div>

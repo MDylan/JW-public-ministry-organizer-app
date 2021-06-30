@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
         $locales = array($default_language => $default_language);
         if(count($langs)) {
             foreach($langs as $lang => $value) {
-                $locales[$lang] = $lang;
+                $locales[] = $lang;
             }   
         }
         //overwrite default config values from database
@@ -75,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
             'app.fallback_locale' => $defaults['default_language'],
             // 'debugbar.enabled'  => isset($defaults['debugbar']) ? $defaults['debugbar'] : false
         ]);
+        // dd($locales);
         // dd(auth()->user()->id);
         if(isset($defaults['debugbar'])) {
             if($defaults['debugbar'] == 1)

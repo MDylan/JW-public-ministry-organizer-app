@@ -8,7 +8,8 @@ return [
      */
     'fonts' => [
         // 'default' => 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;1,400;1,700',
-        'default' => 'https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700',
+        // 'default' => 'https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700',
+        'default' => 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,700;1,400',
     ],
 
     /*

@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Groups;
 
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
+use App\Models\GroupNews;
 use App\Models\GroupNewsFile;
 // use App\Models\GroupNews;
 use Illuminate\Support\Facades\Auth;
@@ -50,8 +51,8 @@ class NewsEdit extends AppComponent
     public function editNews() {
         // dd($this->state);
         
-        if(isset($this->state['title']))
-            $this->state['title'] = strip_tags($this->state['title']);
+        // if(isset($this->state['title']))
+        //     $this->state['title'] = strip_tags($this->state['title']);
 
         $validatedData = Validator::make($this->state, [
             // 'title' => 'required|string|max:50|min:2',
@@ -66,6 +67,8 @@ class NewsEdit extends AppComponent
                 $validatedData[$code] = $fields;
             }
         }
+
+        // dd($validatedData);
 
         if(isset($this->state['id'])) {
             $this->new_data->update($validatedData);
@@ -110,13 +113,26 @@ class NewsEdit extends AppComponent
     }
 
     public function deleteConfirmed() {
+        $group_id = intval($this->group->id);
         if(isset($this->state['id'])) {
-            $this->new_data->delete();
+            $files = $this->new_data->files()->get()->toArray();
+            if(count($files)) {
+                foreach($files as $file) {
+                    if(GroupNewsFile::find($file['id'])->delete()) {
+                        if (Storage::disk('news_files')->exists($file['file'])) {
+                            Storage::disk('news_files')->delete($file['file']);
+                        }
+                    }
+                }
+            }
+            GroupNews::whereId($this->state['id'])->delete();
             Session::flash('message', __('news.confirmDelete.success')); 
         } else {
             Session::flash('message', __('news.confirmDelete.error')); 
         }
-        redirect()->route('groups.news', ['group' => $this->group->id]);
+        //this is because when we delete current model, livewire get an error exception
+        $this->new_data = GroupNews::make();
+        return redirect()->route('groups.news', ['group' => $group_id]);
     }
 
     public function updatedFiles() {

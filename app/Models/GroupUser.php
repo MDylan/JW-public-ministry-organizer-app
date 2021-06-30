@@ -6,16 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class GroupUser extends Pivot
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     public $incrementing = true;
 
     protected $table 	= 'group_user';
-    protected $fillable = ['user_id', 'group_id', 'group_role', 'accepted_at', 'note', 'hidden'];
-    protected $dates = ['created_at','updated_at'];
+    protected $fillable = ['user_id', 'group_id', 'group_role', 'accepted_at', 'note', 'hidden','deleted_at'];
+    protected $dates = ['created_at','updated_at','deleted_at'];
 
     // Activity Log
     // protected static $logFillable = true;

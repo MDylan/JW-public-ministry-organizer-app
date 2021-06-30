@@ -72,12 +72,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function userGroupsNotAccepted() {
         return $this->belongsToMany(Group::class)
                     ->wherePivot('accepted_at', null)
+                    ->wherePivot('deleted_at', null)
                     ->using(GroupUser::class);
     }
 
     public function userGroupsNotAcceptedNumber() {
         return $this->belongsToMany(Group::class)
                     ->wherePivot('accepted_at', null)
+                    ->wherePivot('deleted_at', null)
                     ->using(GroupUser::class)
                     ->count();
     }
@@ -86,6 +88,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role', 'note', 'accepted_at'])
                     ->withTimestamps()
+                    ->wherePivot('deleted_at', null)
                     ->using(GroupUser::class);
     }
 
@@ -97,6 +100,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Group::class)
                         ->withPivot(['group_role', 'note', 'accepted_at'])
                         ->wherePivotNotNull('accepted_at')
+                        ->wherePivotNull('deleted_at')
                         ->select(['groups.id', 'groups.name', 'groups.min_publishers', 'groups.max_publishers', 'groups.max_extend_days'])
                         ->with('days');
     }
@@ -125,7 +129,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role'])
                     ->wherePivotIn('group_role', ['admin', 'roler', 'helper'])
-                    ->wherePivotNotNull('accepted_at');
+                    ->wherePivotNotNull('accepted_at')
+                    ->wherePivot('deleted_at', null);
                     // ->using(GroupUser::class);
     }
 
@@ -134,6 +139,7 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->withPivot(['group_role'])
                     ->wherePivotIn('group_role', ['admin', 'roler'])
                     ->wherePivotNotNull('accepted_at')
+                    ->wherePivot('deleted_at', null)
                     ->withTimestamps()
                     ->using(GroupUser::class);
     }
@@ -142,6 +148,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role'])
                     ->wherePivot('group_role','admin')
+                    ->wherePivot('deleted_at', null)
                     ->withTimestamps()
                     ->using(GroupUser::class);
     }

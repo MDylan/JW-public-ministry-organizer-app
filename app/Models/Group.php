@@ -39,7 +39,15 @@ class Group extends Model
 
     public function groupUsers() {
         return $this->belongsToMany(User::class)
-                        ->withPivot('group_role', 'note', 'accepted_at', 'hidden')
+                        ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at')
+                        ->withTimestamps()
+                        ->whereNull('deleted_at')
+                        ->using(GroupUser::class);
+    }
+
+    public function groupUsersAll() {
+        return $this->belongsToMany(User::class)
+                        ->withPivot('group_role', 'note', 'accepted_at', 'hidden', 'deleted_at')
                         ->withTimestamps()
                         ->using(GroupUser::class);
     }
@@ -47,6 +55,7 @@ class Group extends Model
     public function currentUser() {
         return $this->belongsToMany(User::class)
                         ->withPivot('group_role')
+                        ->wherePivot('deleted_at', null)
                         ->using(GroupUser::class);
     }
 
@@ -54,6 +63,7 @@ class Group extends Model
         return $this->belongsToMany(User::class)
                         ->select(['users.id', 'users.first_name', 'users.last_name'])
                         ->withPivot('group_role')
+                        ->wherePivot('deleted_at', null)
                         ->using(GroupUser::class);
     }
 
@@ -61,6 +71,7 @@ class Group extends Model
         return $this->belongsToMany(User::class)
                 ->wherePivot('group_role','admin')
                 ->withTimestamps()
+                ->wherePivot('deleted_at', null)
                 ->using(GroupUser::class);
     }
 
@@ -70,6 +81,7 @@ class Group extends Model
     public function editors() {
         return $this->belongsToMany(User::class)
                 ->wherePivotIn('group_role',['roler', 'admin'])
+                ->wherePivot('deleted_at', null)
                 ->withTimestamps()
                 ->as('group_editors')
                 ->using(GroupUser::class);
@@ -79,6 +91,7 @@ class Group extends Model
         return $this->belongsToMany(User::class)
                 ->wherePivot('user_id', '=', Auth::id())
                 ->withPivot('group_role')
+                ->wherePivot('deleted_at', null)
                 ->withTimestamps()
                 ->using(GroupUser::class);
     }

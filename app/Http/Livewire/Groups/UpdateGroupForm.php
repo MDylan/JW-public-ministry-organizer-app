@@ -263,11 +263,12 @@ class UpdateGroupForm extends AppComponent
                 $user_sync[$us->id] = [
                     'group_role' => $user['group_role'],
                     'note' => strip_tags(trim($user['note'])),
-                    'hidden' => $user['hidden'] == 1 ? 1 : 0
+                    'hidden' => $user['hidden'] == 1 ? 1 : 0,
+                    'deleted_at' => null //because maybe we try to reattach logged out user
                 ];
             }
             // dd($user_sync);
-            $res = $this->group->groupUsers()->sync($user_sync);
+            $res = $this->group->groupUsersAll()->sync($user_sync);
             // dd($res);
             //az újakat értesítem, hogy hozzá lett adva a csoporthoz
             if(isset($res['attached'])) {
@@ -282,16 +283,20 @@ class UpdateGroupForm extends AppComponent
                 foreach($res['detached'] as $user) {
                     // dd($user);
                     $us = User::find($user);
-                    $events = $us->feature_events()
-                        ->where('group_id', $this->group->id);
-                    $days = [];
-                    foreach($events->get()->toArray() as $event) {
-                        $days[] = $event['day'];
-                    }
-                    $events->delete();
-                    foreach($days as $day) {
-                        $stat = new GenerateStat();
-                        $stat->generate($this->group->id, $day);
+                    if($us) {
+                        $events = $us->feature_events()
+                            ->where('group_id', $this->group->id);
+                        if($events) {
+                            $days = [];
+                            foreach($events->get()->toArray() as $event) {
+                                $days[] = $event['day'];
+                            }
+                            $events->delete();
+                            foreach($days as $day) {
+                                $stat = new GenerateStat();
+                                $stat->generate($this->group->id, $day);
+                            }
+                        }
                     }
                 }                
             }

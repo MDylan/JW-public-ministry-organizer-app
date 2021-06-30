@@ -23,7 +23,7 @@ return [
     |
     */
     'route_group_config' => [
-        'middleware' => ['web', 'auth', 'can:is-admin'],
+        'middleware' => ['web', 'auth', 'can:is-admin', 'password.confirm'],
     ],
 
     /*

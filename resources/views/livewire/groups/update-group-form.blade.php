@@ -142,7 +142,7 @@
                                                     <select 
                                                     @if (!isset($days[$day]['day_number'])) disabled @endif
                                                      data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.end_time" 
-                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_start_time" 
+                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
                                                         class="timeselect end_time form-control 
                                                         @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
                                                         @foreach ($group_times as $field => $translate) 

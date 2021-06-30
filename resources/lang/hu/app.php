@@ -62,6 +62,11 @@ return [
     'registration_disabled' => 'A regisztráció lehetősége ki lett kapcsolva.',
     'maintenance' => 'Karbantartás',
     'maintenance_mode' => 'Az oldalon karbantartás zajlik, csak adminisztrátorok léphetnek be. Kérjük térj vissza később!',
-    'maintenance_header' => 'A Karbantartás mód be van kapcsolva!'
+    'maintenance_header' => 'A Karbantartás mód be van kapcsolva!',
+    'authentication_needed' => 'Hitelesítés szükséges',
+    'authentication_info' => 'A kért funkcióhoz vagy oldalhoz, meg kell adnod a jelenlegi jelszavadat. Ha megadod, akkor :number órán belül nem fogjuk újra kérni.',
+    'authentication_error' => 'A megadott jelszó helytelen.',
+    'authentication_success' => 'Sikeres hitelesítés!',
+    'send' => 'Küldés'
     
 ];

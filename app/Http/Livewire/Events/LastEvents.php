@@ -18,6 +18,7 @@ class LastEvents extends AppComponent
     public $month = 0;
     public $current_month = 0;
     public $reports = [];
+    public $eventFormDisabled = false;
 
     public function mount() {
         if(!isset($this->state['month'])) {
@@ -43,6 +44,15 @@ class LastEvents extends AppComponent
         }
     }
 
+    public function searchForId($id, $array) {
+        foreach ($array as $key => $val) {
+            if ($val['id'] === $id) {
+                return $key;
+            }
+        }
+        return false;
+    }
+
     public function editReports($eventId) {
         $this->showEditModal = false;
 
@@ -60,6 +70,12 @@ class LastEvents extends AppComponent
             ]);
         } else {
             // dd($event->toArray());
+            $groups = Auth()->user()->userGroups->toArray();
+            $this->eventFormDisabled = false;
+            if($this->searchForId($event->groups->id, $groups) === false) {
+                $this->eventFormDisabled = true;
+            }
+
             $this->eventForm = $event;
             if(count($event->serviceReports)) {
                 foreach($event->serviceReports as $report)  {
@@ -73,6 +89,8 @@ class LastEvents extends AppComponent
     }
 
     public function saveReport() {
+        if($this->eventFormDisabled) return;
+        
         if(count($this->reports)) {
             // dd($this->reports);
             $validatedData = Validator::make($this->reports, [
@@ -117,8 +135,13 @@ class LastEvents extends AppComponent
 
         // dd($events->toArray());
 
+        // $groups = Auth()->user()->userGroups->toArray();
+        // dd($groups);
+        
+
         return view('livewire.events.last-events', [
-            'events' => $events
+            'events' => $events,
+            // 'groups' => $groups
         ]);
     }
 }

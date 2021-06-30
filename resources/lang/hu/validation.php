@@ -147,6 +147,7 @@ return [
         '*.return_visits' => 'újralátogatások',
         '*.bible_studies' => 'bt bevezetések',
         '*.note' => 'megjegyzés',
+        'date' => 'Dátum',
 
     ],
 ];

@@ -27,8 +27,8 @@ class SetLocale
         $language = Config::get('settings_default_language');   //default
         $languages = Config::get('available_languages');
         $user = Auth::user();
-        if (request('language')) {            
-            $new_language = request('language');
+        if (request('lang')) {      
+            $new_language = request('lang');
             if(isset($languages[$new_language])) {
                 if($languages[$new_language]['visible'] == true) {
                     session()->put('language', $new_language);

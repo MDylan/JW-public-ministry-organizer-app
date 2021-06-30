@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon" type="image/jpg" href="favicon.png"/>
+  <link rel="shortcut icon" type="image/jpg" href="{{ asset('favicon.png') }}"/>
   <title>{{ __('app.title') }}</title>
 
   <!-- Google Font: Source Sans Pro -->
   {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"> --}}
-  @googlefonts
+  {{-- @googlefonts --}}
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
   <!-- Theme style -->
@@ -96,44 +96,11 @@
       window.addEventListener('error', event => {
           toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
       });
-      window.addEventListener('show-reject-confirmation', event => {
-        Swal.fire({
-          title: '@lang('group.reject_question')',
-          text: '@lang('group.reject_message')',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: '@lang('Yes')',
-          cancelButtonText: '@lang('Cancel')'
-        }).then((result) => {
-          if (result.isConfirmed) {
-              Livewire.emit('rejectConfirmed');
-          }
-        })
-      });
       window.addEventListener('sweet-error', event => {
         Swal.fire({
           icon: 'error',
           title: '' + event.detail.title + '',
           text: ''+ event.detail.message + ''
-        })
-      });
-
-      window.addEventListener('show-logout-confirmation', event => {
-        Swal.fire({
-          title: '@lang('group.logout.question')',
-          text: '@lang('group.logout.message')',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: '@lang('Yes')',
-          cancelButtonText: '@lang('Cancel')'
-        }).then((result) => {
-          if (result.isConfirmed) {
-              Livewire.emit('logoutConfirmed');
-          }
         })
       });
 

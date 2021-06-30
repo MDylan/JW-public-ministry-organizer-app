@@ -153,7 +153,7 @@ return [
     'logout' => [
         'button' => 'Kilépés',
         'question' => 'Biztosan kilépsz a csoportból?',
-        'message' => 'Ezentúl nem fog látni a csoport eseményeit.',
+        'message' => 'Ezentúl nem fogod látni a csoport eseményeit.',
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
         'no_admin' => 'Te vagy az egyedüli csoportfelvigyázó a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
@@ -170,7 +170,7 @@ return [
     'literature' => [
         'title' => 'A csoport ezeken a nyelveken terjeszt irodalmat',
         'language' => 'Nyelv',
-        'help' => 'Ha itt hozzáadott nyelvek alapján tudják a hírnökök leadni a közterületen végzett munka szántóföldi eredményét. Ha nem adsz meg egy nyelvet sem, akkor ez a funkció nem lesz elérhető számukra.',
+        'help' => 'Az itt hozzáadott nyelvek alapján tudják a hírnökök leadni a közterületen végzett munka szántóföldi eredményét. Ha nem adsz meg egy nyelvet sem, akkor ez a funkció nem lesz elérhető számukra.',
         'added' => 'A nyelv hozzá lett adva!',
         'saved' => 'A nyelv neve megváltozott',
         'add_error' => 'Hiba a nyelv hozzáadásakor',
