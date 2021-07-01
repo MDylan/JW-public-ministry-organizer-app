@@ -23,7 +23,7 @@ class GroupLiteratureObserver
         }
         
         $saved_data = [
-            'event' => 'create',
+            'event' => 'created',
             'group_id' => $groupLiterature->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => json_encode($store)
@@ -58,7 +58,7 @@ class GroupLiteratureObserver
         }
         if(count($store)) {
             $saved_data = [
-                'event' => 'update',
+                'event' => 'updated',
                 'group_id' => $groupLiterature->group_id,
                 'causer_id' => auth()->user()->id,
                 'changes' => json_encode($store)
@@ -84,7 +84,7 @@ class GroupLiteratureObserver
         }
         
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $groupLiterature->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => json_encode($store)

@@ -66,14 +66,18 @@ class EventEdit extends AppComponent
 
     public function editForm($eventId) {
         $this->eventId = $eventId;
-        $groupId = $this->groupId;
-        $date = $this->date;
+        // $groupId = $this->groupId;
+        // $date = $this->date;
         $this->getRole();
 
-        $group = Group::findOrFail($groupId);
+        // $group = Group::findOrFail($groupId);
 
         if($this->eventId !== null) {
-            $editEvent = $group->day_events($date)->whereId($this->eventId)->firstOrFail()->toArray();
+            // $editEvent_old = $group->day_events($date)->whereId($this->eventId)->firstOrFail()->toArray();
+            // $event = $group->load('events.histories')->firstWhere('id', $this->eventId);
+            $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
+            // dd($editEvent);
+            // dd($editEvent_old, $editEvent);
 
             if(!in_array($this->role, ['admin', 'roler', 'helper']) 
                 && $editEvent['user_id'] !== Auth::id()) {
@@ -161,7 +165,10 @@ class EventEdit extends AppComponent
                 continue;
             }
 
-            $steps = ($event['end'] - $event['start']) / $step;            
+            $steps = ($event['end'] - $event['start']) / $step;     
+            
+            if(!isset($day_table["'".date('Hi', $event['start'])."'"])) continue;
+
             $row = $day_table["'".date('Hi', $event['start'])."'"]['row'];
             $key = "'".date('Hi', $event['start'])."'";
             $cell = 1;
@@ -301,9 +308,12 @@ class EventEdit extends AppComponent
             'start' => $this->state['start'],
             'end' => $this->state['end'],
             'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
-            'accepted_at' => date("Y-m-d H:i:s"),
+            // 'accepted_at' => date("Y-m-d H:i:s"),
             'accepted_by' => Auth::id()
         ];
+        if($this->editEvent === null) {
+            $data['accepted_at'] = date("Y-m-d H:i:s");
+        }
         $v = Validator::make($data, [
             'user_id' => 'required|exists:App\Models\User,id',
             'start' => 'required|numeric|lte:end', 

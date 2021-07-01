@@ -22,7 +22,7 @@ class GroupDayObserver
             $store[$field] = $new;
         }
         $saved_data = [
-            'event' => 'create',
+            'event' => 'created',
             'group_id' => $groupDay->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => json_encode($store)
@@ -57,7 +57,7 @@ class GroupDayObserver
         }
         if(count($store)) {
             $saved_data = [
-                'event' => 'update',
+                'event' => 'updated',
                 'group_id' => $groupDay->group_id,
                 'causer_id' => auth()->user()->id,
                 'changes' => json_encode($store)
@@ -84,7 +84,7 @@ class GroupDayObserver
             $store[$field] = $new;
         }
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $groupDay->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => json_encode($store)
@@ -109,7 +109,7 @@ class GroupDayObserver
             $store[$field] = $new;
         }
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $groupDay->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => json_encode($store)

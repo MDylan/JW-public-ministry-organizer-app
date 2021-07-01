@@ -229,7 +229,7 @@ class Modal extends AppComponent
         
         foreach($events as $event) {
             $steps = ($event['end'] - $event['start']) / $step;
-            
+            if(!isset($day_table["'".date('Hi', $event['start'])."'"])) continue;
             $row = $day_table["'".date('Hi', $event['start'])."'"]['row'];
             $key = "'".date('Hi', $event['start'])."'";
             // $cell = 2;

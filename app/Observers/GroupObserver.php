@@ -32,7 +32,7 @@ class GroupObserver
         }
         if(count($store)) {
             $saved_data = [
-                'event' => 'update',
+                'event' => 'updated',
                 'group_id' => $group->id,
                 'causer_id' => auth()->user()->id,
                 'changes' => json_encode($store)
@@ -52,7 +52,7 @@ class GroupObserver
     public function deleted(Group $group)
     {
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $group->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => ''

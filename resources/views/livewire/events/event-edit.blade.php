@@ -59,26 +59,63 @@
             </div>
         </div>
         @if ($eventId)
-        <div class="row">
-            <div class="col-6 col-md-4">
-                <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
-                    <i class="fa fa-times mr-1"></i>
-                    @lang('event.cancel_edit')
-                </a>
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1 w-100">
+                        <i class="fa fa-times mr-1"></i>
+                        @lang('event.cancel_edit')
+                    </a>
+                </div>
+                <div class="col-6 col-md-3 text-right text-md-center">
+                    <button wire:loading.attr="disabled" type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-save mr-1"></i>
+                        @lang('event.save_changes')
+                    </button>
+                </div>
+                <div class="col-6 col-md-3 text-left text-md-center mt-md-0 mt-4">
+                    <button class="btn btn-info w-100" type="button" data-toggle="collapse" data-target="#histories" aria-expanded="false" aria-controls="histories">
+                        <i class="fa fa-history mr-1"></i> @lang('loghistory.history_button')
+                    </button>
+                </div>
+                <div class="col-6 col-md-3 mt-md-0 mt-4 text-right text-md-right">
+                    <a wire:loading.attr="disabled" wire:click.prevent="confirmEventDelete()" class="btn btn-danger w-100">
+                        <i class="fa fa-trash mr-1"></i>
+                        @lang('event.delete_event')
+                    </a>
+                </div>
             </div>
-            <div class="col-6 col-md-4 text-right text-md-center">
-                <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
-                    <i class="fa fa-save mr-1"></i>
-                    @lang('event.save_changes')
-                </button>
-            </div>
-            <div class="col-12 col-md-4 mt-md-0 mt-4 text-center text-md-right">
-                <a wire:loading.attr="disabled" wire:click.prevent="confirmEventDelete()" class="btn btn-danger">
-                    <i class="fa fa-trash mr-1"></i>
-                    @lang('event.delete_event')
-                </a>
-            </div>
-        </div>
+            @if(count($editEvent['histories']))
+                <div class="collapse" id="histories">
+                    <div class="row m-2 mt-4">
+                        <div class="col-12 text-bold">
+                            <i class="fa fa-history mr-1"></i> @lang('loghistory.history_title')
+                        </div>
+                    </div>
+                    @foreach ($editEvent['histories'] as $history)
+                        <div class="row mx-2 mb-sm-2">
+                            <div class="col-md-4">
+                                {{ __('loghistory.events.'.$history['event'], [ 
+                                    'userName' => $history['user']['full_name'],
+                                    'date' => $history['created_at_format']
+                                ]) }}
+                            </div>
+                            <div class="col-md-8 mb-3 mb-md-0">
+                                @if(count($history['changes_array']))
+                                    <div class="row">
+                                        @foreach ($history['changes_array'] as $type => $changes)
+                                        <div class="col-6"><strong>{{ __('loghistory.change_type.'.$type) }}:</strong><br/>
+                                            @foreach ($changes as $field => $change)
+                                                {{ __('loghistory.models.'.$history['model_name'].'.'.$field) }} : {{ $change }}<br/>
+                                            @endforeach
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>                        
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         @else
             <div class="row">
                 <div class="col-6 col-md-4">

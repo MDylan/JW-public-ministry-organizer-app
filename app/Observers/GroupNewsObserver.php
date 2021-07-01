@@ -43,7 +43,7 @@ class GroupNewsObserver
         }
         if(count($store)) {
             $saved_data = [
-                'event' => 'update',
+                'event' => 'updated',
                 'group_id' => $groupNews->group_id,
                 'causer_id' => auth()->user()->id,
                 'changes' => json_encode($store)
@@ -63,7 +63,7 @@ class GroupNewsObserver
     public function deleted(GroupNews $groupNews)
     {
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $groupNews->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => ''

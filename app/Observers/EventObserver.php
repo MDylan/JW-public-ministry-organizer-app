@@ -16,17 +16,17 @@ class EventObserver
      */
     public function created(Event $event)
     {
-        $store = [];
-        $fillable = $event->getFillable();
-        foreach($fillable as $field) {
-            $new = $event->$field;
-            $store['new'][$field] = $new;
-        }
+        // $store = [];
+        // $fillable = $event->getFillable();
+        // foreach($fillable as $field) {
+        //     $new = $event->$field;
+        //     $store['new'][$field] = $new;
+        // }
         $saved_data = [
-            'event' => 'create',
+            'event' => 'created',
             'group_id' => $event->group_id,
             'causer_id' => auth()->user()->id,
-            'changes' => json_encode($store)
+            'changes' => '', // json_encode($store)
         ];
 
         $history = new LogHistory($saved_data);
@@ -50,6 +50,10 @@ class EventObserver
                     $old = $event->getOriginal($field);
                     $new = $event->$field;
                     if($old !== $new) {
+                        if(in_array($field, array('start', 'end'))) {
+                            $old = date('H:i', $old);
+                            $new = date('H:i', $new);
+                        }
                         $store['old'][$field] = $old;
                         $store['new'][$field] = $new;
                     }
@@ -58,7 +62,7 @@ class EventObserver
         }
         if(count($store)) {
             $saved_data = [
-                'event' => 'update',
+                'event' => 'updated',
                 'group_id' => $event->group_id,
                 'causer_id' => auth()->user()->id,
                 'changes' => json_encode($store)
@@ -78,7 +82,7 @@ class EventObserver
     public function deleted(Event $event)
     {
         $saved_data = [
-            'event' => 'delete',
+            'event' => 'deleted',
             'group_id' => $event->group_id,
             'causer_id' => auth()->user()->id,
             'changes' => ''
