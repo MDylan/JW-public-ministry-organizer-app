@@ -33,4 +33,8 @@ class GroupDay extends Model
     public function getEndTimeAttribute($value) {
         return date( 'H:i', strtotime($value) );
     }
+    public function histories()
+    {
+        return $this->morphMany(LogHistory::class, 'model');
+    }
 }

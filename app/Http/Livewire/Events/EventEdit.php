@@ -334,6 +334,7 @@ class EventEdit extends AppComponent
         $validatedData = $v->validate();
         $validatedData['start'] = date("Y-m-d H:i", $validatedData['start']);
         $validatedData['end'] = date("Y-m-d H:i", $validatedData['end']);
+        // $validatedData['group_id'] = $this->groupId;
 
         if($this->editEvent !== null) {
             //update event

@@ -207,20 +207,36 @@ class UpdateGroupForm extends AppComponent
         // $group = Group::findOrFail($this->group_id);
         $this->group->update($validatedData);
         // dd('itt');
-        $this->group->days()->delete();
+        // $this->group->days()->delete();
+        // dd($validatedDays);
         if(isset($validatedDays)) {
-            $day_sync = [];
+            // $day_sync = [];
             foreach($validatedDays as $d => $day) {
                 // dd($day);
                 if(!isset($day['day_number'])) continue;
-                $day_sync[] = new GroupDay([
-                    'day_number' => $day['day_number'],
-                    'start_time' => $day['start_time'],
-                    'end_time' => $day['end_time']
-                ]);                
+                if($day['day_number'] == false) {
+                    $del = GroupDay::where('group_id', $this->group->id)->where('day_number', $d)->first();
+                    $del->delete();
+                } else {
+                    GroupDay::updateOrCreate(
+                        [
+                            'group_id' => $this->group->id,
+                            'day_number' => $day['day_number']
+                        ], 
+                        [
+                            'start_time' => $day['start_time'],
+                            'end_time' => $day['end_time']
+                        ]
+                    );
+                }
+                // $day_sync[] = new GroupDay([
+                //     'day_number' => $day['day_number'],
+                //     'start_time' => $day['start_time'],
+                //     'end_time' => $day['end_time']
+                // ]);                
             }      
             // dd($day_sync);      
-            $this->group->days()->saveMany($day_sync);
+            // $this->group->days()->saveMany($day_sync);
         }
 
         //eltávolítom azokat, akik törölve lettek
@@ -317,12 +333,12 @@ class UpdateGroupForm extends AppComponent
             }
             if(isset($this->literatures['current'])) {
                 foreach ($this->literatures['current'] as $id => $language) {
-                    $this->group->literatures()->whereId($id)->update(['name' => $language]);
+                    $this->group->literatures()->firstWhere('id', $id)->update(['name' => $language]);                    
                 }
             }
             if(isset($this->literatures['removed'])) {
                 foreach ($this->literatures['removed'] as $id => $language) {
-                    $this->group->literatures()->whereId($id)->delete();
+                    $this->group->literatures()->firstWhere('id', $id)->delete();
                 }
             }
         }

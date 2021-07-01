@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GroupDelete;
 use App\Http\Controllers\GroupLogout;
+use App\Http\Controllers\GroupNewsDelete;
 use App\Http\Controllers\GroupNewsFileDownloadController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,7 @@ use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Events\LastEvents;
 use App\Http\Livewire\Groups\CreateGroupForm;
+use App\Http\Livewire\Groups\History;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
 use App\Http\Livewire\Groups\NewsEdit;
@@ -28,7 +30,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 // use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redirect;
+// use Illuminate\Support\Facades\Redirect;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,9 +70,9 @@ Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@veri
 //Logged in users
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
-    Route::get('/contact', function () {
-        return 'contact page';
-    })->name('contact');
+    // Route::get('/contact', function () {
+    //     return 'contact page';
+    // })->name('contact');
     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
         $result = $request->fulfill();
         return redirect('/home');
@@ -123,7 +125,9 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/groups/{group}/delete', [GroupDelete::class, 'index'])->name('groups.delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/news/create', NewsEdit::class)->name('groups.news_create');
                 Route::get('/groups/{group}/news/edit/{new}', NewsEdit::class)->name('groups.news_edit');
+                Route::get('/groups/{group}/news/delete/{new}', [GroupNewsDelete::class, 'delete'])->name('groups.news_delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/statistics', Statistics::class)->name('groups.statistics');
+                Route::get('/groups/{group}/history', History::class)->name('groups.history');
             });
         });
     });

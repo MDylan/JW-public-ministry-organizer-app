@@ -78,9 +78,12 @@
                                                             <a class="dropdown-item" href="{{ route('groups.statistics', $group) }}" title="@lang('statistics.statistics')">
                                                                 <i class="fa fa-chart-bar mr-1"></i> @lang('statistics.statistics')
                                                             </a>
+                                                            <a class="dropdown-item" href="{{ route('groups.history', $group) }}" title="{{ __('group.history') }}">
+                                                                <i class="fa fa-history mr-1"></i> @lang('group.history')
+                                                            </a>
                                                             <a class="dropdown-item text-info" href="{{ route('groups.edit', $group) }}" title="{{ __('app.edit') }}">
                                                                 <i class="fa fa-edit mr-1"></i> @lang('app.edit')
-                                                            </a>
+                                                            </a>                                                            
                                                             <div class="dropdown-divider"></div>
                                                         @endif
                                                         <a class="dropdown-item text-danger" href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})">

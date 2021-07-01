@@ -182,5 +182,7 @@ return [
             'success' => 'A nyelv törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
-    ]
+    ],
+    'history' => 'Előzmények',
+    
 ];

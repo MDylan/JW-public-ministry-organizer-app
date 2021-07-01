@@ -11,4 +11,9 @@ class GroupNewsTranslation extends Model
 
     public $timestamps = false;
     protected $fillable = ['title', 'content'];
+
+    public function histories()
+    {
+        return $this->morphMany(LogHistory::class, 'model');
+    }
 }

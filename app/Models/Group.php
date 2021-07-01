@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
 
 class Group extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes;//, LogsActivity;
 
     protected $dates = ['deleted_at'];
 
@@ -28,13 +28,18 @@ class Group extends Model
     // protected static $logName = 'group';
     // protected static $logOnlyDirty = true;
 
-    protected static $recordEvents = ['updated', 'deleted'];
+    // protected static $recordEvents = ['updated', 'deleted'];
 
-    public function getActivitylogOptions(): LogOptions
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()->logFillable()->useLogName('group')->logOnlyDirty()->dontSubmitEmptyLogs();
+    //     // ->logOnly(['name', 'value']);
+    //     // Chain fluent methods for configuration options
+    // }
+
+    public function histories()
     {
-        return LogOptions::defaults()->logFillable()->useLogName('group')->logOnlyDirty()->dontSubmitEmptyLogs();
-        // ->logOnly(['name', 'value']);
-        // Chain fluent methods for configuration options
+        return $this->morphMany(LogHistory::class, 'model');
     }
 
     public function groupUsers() {

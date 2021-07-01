@@ -182,22 +182,25 @@
         @endif
         <script>
             $(document).ready(function() {
-                window.addEventListener('show-newsDelete-confirmation', event => {
-                    Swal.fire({
-                        title: '@lang('news.confirmDelete.question')',
-                        text: '@lang('news.confirmDelete.message')',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: '@lang('Yes')',
-                        cancelButtonText: '@lang('Cancel')'
-                    }).then((result) => {
-                    if (result.isConfirmed) {
-                        Livewire.emit('deleteConfirmed');
-                    }
-                    })
-                });
+                @if(isset($state['id']))    
+                    window.addEventListener('show-newsDelete-confirmation', event => {
+                        Swal.fire({
+                            title: '@lang('news.confirmDelete.question')',
+                            text: '@lang('news.confirmDelete.message')',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: '@lang('Yes')',
+                            cancelButtonText: '@lang('Cancel')'
+                        }).then((result) => {
+                        if (result.isConfirmed) {
+                                window.location.replace('{{ route('groups.news_delete', ['group' => $group->id, 'new' => $state['id']]) }}');
+                            // Livewire.emit('deleteConfirmed');
+                        }
+                        })
+                    });
+                @endif
 
                 window.addEventListener('show-fileDelete-confirmation', event => {
                     Swal.fire({

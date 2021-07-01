@@ -6,14 +6,14 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
 use Spatie\CalendarLinks\Link;
 use DateTime;
 
 class Event extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes; //, LogsActivity;
 
     // protected static $logFillable = true;
     // protected static $logName = 'event';
@@ -26,6 +26,7 @@ class Event extends Model
         'user_id',
         'accepted_by',
         'accepted_at',
+        'group_id'
     ];
 
     protected $casts = [
@@ -36,14 +37,28 @@ class Event extends Model
 
     protected $appends = ['full_time', 'day_name', 'service_hour', 'calendar_google', 'calendar_ics'];
 
-    protected static $recordEvents = ['updated', 'deleted'];
+    // protected static $recordEvents = ['created', 'updated', 'deleted'];
 
-    public function getActivitylogOptions(): LogOptions
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()->logOnly([
+    //         'day',
+    //         'start',
+    //         'end',
+    //         'user_id',
+    //         'accepted_by',
+    //         'accepted_at',
+    //         'group_id'
+    //     ])->useLogName('event')->logOnlyDirty()->dontSubmitEmptyLogs();
+    //     // ->logOnly(['name', 'value']);
+    //     // Chain fluent methods for configuration options
+    // }
+
+    public function histories()
     {
-        return LogOptions::defaults()->logFillable()->useLogName('event')->logOnlyDirty()->dontSubmitEmptyLogs();
-        // ->logOnly(['name', 'value']);
-        // Chain fluent methods for configuration options
+        return $this->morphMany(LogHistory::class, 'model');
     }
+
 
     public function groups() {
         return $this->belongsTo(Group::class, 'group_id');

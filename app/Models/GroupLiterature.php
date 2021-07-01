@@ -14,4 +14,9 @@ class GroupLiterature extends Model
     public function group() {
         return $this->belongsTo(Group::class);
     }
+    
+    public function histories()
+    {
+        return $this->morphMany(LogHistory::class, 'model');
+    }
 }

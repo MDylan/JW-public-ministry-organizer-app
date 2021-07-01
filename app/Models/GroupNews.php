@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 
 class GroupNews extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity, Translatable;
+    use HasFactory, SoftDeletes, Translatable;
 
     public $translatedAttributes = ['title', 'content'];
 
@@ -33,13 +33,18 @@ class GroupNews extends Model
         'date' => 'datetime:Y-m-d',
     ];
 
-    protected static $recordEvents = ['updated', 'deleted'];
+    // protected static $recordEvents = ['updated', 'deleted'];
 
-    public function getActivitylogOptions(): LogOptions
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()->logFillable()->useLogName('group_news')->logOnlyDirty()->dontSubmitEmptyLogs();
+    //     // ->logOnly(['name', 'value']);
+    //     // Chain fluent methods for configuration options
+    // }
+
+    public function histories()
     {
-        return LogOptions::defaults()->logFillable()->useLogName('group_news')->logOnlyDirty()->dontSubmitEmptyLogs();
-        // ->logOnly(['name', 'value']);
-        // Chain fluent methods for configuration options
+        return $this->morphMany(LogHistory::class, 'model');
     }
 
     public function group() {
