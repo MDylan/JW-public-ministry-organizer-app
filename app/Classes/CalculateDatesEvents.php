@@ -74,35 +74,13 @@ class CalculateDatesEvents {
                 $cell_start += $step;
             }
         }
-        // dd($updateDays);
-
-        // $container = new Container();
-
-        // $container->bind(EventObserver::class, function () {
-        //     return new EventObserver("modified_service_time");
-        // });
-        // $dispatcher = new Dispatcher($container);
-        // Model::setEventDispatcher($dispatcher);
-        // Event::observe(EventObserver::class); 
-
-        // Session::flash('message', __('group.groupUpdated'));
+        //we will notify users about modify/delete reason
         session()->now('reason', 'modified_service_time');
 
+        //we use firstDelete for store LogHistory event
         foreach($deletes as $deleteId) {
             Event::firstWhere('id', '=', $deleteId)->delete();
-            // Event::where('id', '=', $deleteId)->delete();
-
-            // $saved_data = [
-            //     'model_id' => $deleteId,
-            //     'model_type' => 'App\Models\Event',
-            //     'event' => 'deleted',
-            //     'group_id' => $group_id,
-            //     'causer_id' => auth()->user()->id,
-            //     'changes' => ''
-            // ];
-            // LogHistory::create($saved_data);
-        }
-        //we use firstDelete for store LogHistory event
+        }        
         foreach($updates as $id => $field) {
             Event::firstWhere('id', '=', $id)->update($field);
         }

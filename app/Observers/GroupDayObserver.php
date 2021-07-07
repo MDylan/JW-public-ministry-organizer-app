@@ -121,6 +121,8 @@ class GroupDayObserver
                         $updateDays[$event->day] = $event->day;
                     }
                 }
+                //we will notify users about modify/delete reason
+                session()->now('reason', 'modified_service_time');
                 // dd($updateDays);
                 //we use firstDelete for store LogHistory event
                 foreach($deletes as $deleteId) {
