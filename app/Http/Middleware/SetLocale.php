@@ -32,13 +32,21 @@ class SetLocale
             if(isset($languages[$new_language])) {
                 if($languages[$new_language]['visible'] == true) {
                     session()->put('language', $new_language);
-                    $language = $new_language;    
+                    $language = $new_language;
+                    if($user !== null) {
+                        //save new language
+                        $user->language = $language;
+                        $user->save();
+                    }
                 } else {
                     //only admins can see this language
                     if($user !== null) {
                         if($user->role == "mainAdmin") {
                             session()->put('language', $new_language);
                             $language = $new_language;
+                            //save new language
+                            $user->language = $new_language;
+                            $user->save();
                         }
                     } 
                 }

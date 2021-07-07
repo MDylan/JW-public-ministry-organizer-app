@@ -23,5 +23,37 @@ return [
         'line_3' => 'Felhasználónév: :userMail',
         'line_4' => 'Jelszó: :userPassword',
         'line_5' => 'Kérjük, ezt a jelszót mindenképpen változtasd meg a bejelentkezésedet követően a "Profilom" oldalon.',
-    ]
+    ],
+    'event' => [
+        'deleted' => [
+            'subject' => 'A :date napra tervezett szolgálatod törölve lett! (:groupName)',
+            'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatod törölve lett:',
+            'line_2' => ':oldServiceDate',
+            'line_3' => 'A törlés oka: :reason',
+            'line_4' => 'A törlést :userName kezdeményezte, ő tud bővebb felvilágosítással szolgálni.',
+        ],
+        'deletion_reasons' => [
+            'unknown' => 'Ismeretlen.',
+            'modified_service_time' => 'Ezen a napon módosult a szolgálat ideje, és a tervezett szolgálatod nem fért bele az új szolgálati időbe.',
+        ],
+        'modified' => [
+            'subject' => 'A :date napra tervezett szolgálatod módosítva lett! (:groupName)',
+            'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatod módosult:',
+            'line_2' => 'Régi időpont: :oldServiceDate',
+            'line_3' => 'Új időpont: :newServiceDate',
+            'line_4' => 'Kérjük ennek megfelelően tervezd a szolgálatodat.',
+            'line_5' => 'A módosítás oka: :reason',
+            'line_6' => 'A módosítást :userName kezdeményezte, ő tud bővebb felvilágosítással szolgálni.',
+        ],
+        'modify_reasons' => [
+            'unknown' => 'Ismeretlen.',
+            'modified_service_time' => 'Ezen a napon módosult a szolgálat ideje, és a tervezett szolgálatod nem fért bele az új szolgálati időbe.',
+        ],
+        'created' => [
+            'subject' => 'A :date napra tervezett szolgálatod (:groupName)',
+            'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban :userName az alábbi szolgálatot tervezte be számodra.',
+            'line_2' => ':newServiceDate',
+            'line_3' => 'Jó szolgálatot! :)',
+        ],
+    ],
 ];

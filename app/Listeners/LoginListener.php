@@ -29,5 +29,9 @@ class LoginListener
             'last_login_time' => now(),
             'last_login_ip' => request()->getClientIp(),
         ]);
+        //load user's language
+        if($event->user->language) {
+            session()->put('language', $event->user->language);
+        }
     }
 }

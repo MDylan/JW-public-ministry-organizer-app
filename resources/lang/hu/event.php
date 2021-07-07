@@ -62,8 +62,8 @@ return [
         'error' => 'Ehhez az eseményhez nem rögzíthetsz terjesztést.',
     ],
     'google' => 'Google',
-    'ics' => 'ICS fájl'
-
+    'ics' => '.ics fájl',
+    
 
 
 ];

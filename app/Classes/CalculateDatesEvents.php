@@ -5,7 +5,11 @@ namespace App\Classes;
 use App\Models\Event;
 use App\Models\GroupDate;
 use App\Models\LogHistory;
+use App\Observers\EventObserver;
 use DateTime;
+use Illuminate\Container\Container;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class CalculateDatesEvents {
@@ -61,6 +65,8 @@ class CalculateDatesEvents {
             $cell_start = strtotime($event->start);
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
+                if(!isset($day_events[$event->day][$slot_key]['events'])) 
+                    $day_events[$event->day][$slot_key]['events'] = 0;
                 $day_events[$event->day][$slot_key]['events']++;
                 if($day_events[$event->day][$slot_key]['events'] > $event->date_max_publishers) {
                     $deletes[$event->id] = $event->id;
@@ -69,20 +75,32 @@ class CalculateDatesEvents {
             }
         }
         // dd($updateDays);
-        
-        foreach($deletes as $deleteId) {
-            // Event::firstWhere('id', '=', $deleteId)->delete();
-            Event::where('id', '=', $deleteId)->delete();
 
-            $saved_data = [
-                'model_id' => $deleteId,
-                'model_type' => 'App\Models\Event',
-                'event' => 'deleted',
-                'group_id' => $group_id,
-                'causer_id' => auth()->user()->id,
-                'changes' => ''
-            ];
-            LogHistory::create($saved_data);
+        // $container = new Container();
+
+        // $container->bind(EventObserver::class, function () {
+        //     return new EventObserver("modified_service_time");
+        // });
+        // $dispatcher = new Dispatcher($container);
+        // Model::setEventDispatcher($dispatcher);
+        // Event::observe(EventObserver::class); 
+
+        // Session::flash('message', __('group.groupUpdated'));
+        session()->now('reason', 'modified_service_time');
+
+        foreach($deletes as $deleteId) {
+            Event::firstWhere('id', '=', $deleteId)->delete();
+            // Event::where('id', '=', $deleteId)->delete();
+
+            // $saved_data = [
+            //     'model_id' => $deleteId,
+            //     'model_type' => 'App\Models\Event',
+            //     'event' => 'deleted',
+            //     'group_id' => $group_id,
+            //     'causer_id' => auth()->user()->id,
+            //     'changes' => ''
+            // ];
+            // LogHistory::create($saved_data);
         }
         //we use firstDelete for store LogHistory event
         foreach($updates as $id => $field) {
@@ -94,6 +112,9 @@ class CalculateDatesEvents {
             $stat = new GenerateStat();
             $stat->generate($group_id, $day);
         }
+
+        
+
         // $groupdates = DB::select('SELECT gd.id, gd.date, gd.date_status
         //         FROM group_dates as gd
         //         WHERE gd.group_id = ?

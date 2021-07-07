@@ -4,6 +4,10 @@ namespace App\Observers;
 
 use App\Models\Event;
 use App\Models\LogHistory;
+use App\Models\User;
+use App\Notifications\EventCreatedNotification;
+use App\Notifications\EventDeletedNotification;
+use App\Notifications\EventUpdatedNotification;
 
 class EventObserver
 {
@@ -31,6 +35,24 @@ class EventObserver
 
         $history = new LogHistory($saved_data);
         $event->histories()->save($history);
+
+        if($event->user_id != auth()->user()->id) {
+            $data = [
+                'userName' => auth()->user()->full_name, 
+                'groupName' => $event->groups->name,
+                'date' => $event->day,
+                'newService' => [
+                    'start' => date("Y-m-d H:i:s", $event->start),
+                    'end' => date("Y-m-d H:i:s", $event->end),                        
+                ],
+                'reason' => false 
+            ];
+            
+            $us = User::find($event->user_id);
+            $us->notify(
+                new EventCreatedNotification($data)
+            );
+        }
     }
 
     /**
@@ -70,6 +92,28 @@ class EventObserver
 
             $history = new LogHistory($saved_data);
             $event->histories()->save($history);
+
+            if(isset($changes['start']) || isset($changes['end'])) {
+                $data = [
+                    'userName' => auth()->user()->full_name, 
+                    'groupName' => $event->groups->name,
+                    'date' => $event->day,
+                    'oldService' => [
+                        'start' => date("Y-m-d H:i:s", $event->getOriginal('start')),
+                        'end' => date("Y-m-d H:i:s", $event->getOriginal('start')),
+                    ],
+                    'newService' => [
+                        'start' => date("Y-m-d H:i:s", $event->start),
+                        'end' => date("Y-m-d H:i:s", $event->end),                        
+                    ],
+                    'reason' => session()->has('reason') ? session('reason') : false 
+                ];
+                
+                $us = User::find($event->user_id);
+                $us->notify(
+                    new EventUpdatedNotification($data)
+                );
+            }
         }
     }
 
@@ -90,5 +134,21 @@ class EventObserver
 
         $history = new LogHistory($saved_data);
         $event->histories()->save($history);
+
+        $data = [
+            'userName' => auth()->user()->full_name, 
+            'groupName' => $event->groups->name,
+            'date' => $event->day,
+            'oldService' => [
+                'start' => date("Y-m-d H:i:s", $event->start),
+                'end' => date("Y-m-d H:i:s", $event->end),
+            ],
+            'reason' => session()->has('reason') ? session('reason') : false 
+        ];
+        
+        $us = User::find($event->user_id);
+        $us->notify(
+            new EventDeletedNotification($data)
+        );
     }
 }
