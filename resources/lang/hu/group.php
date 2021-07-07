@@ -184,5 +184,35 @@ return [
         ],
     ],
     'history' => 'Előzmények',
+    'days_info' => 'Ha módosítod a napok idő-intervallumát, akkor az a mai naptól lép életbe. Ha már van valakinek betervezve olyan szolgálata, ami kívül esik az új időponttól, akkor az módosítva vagy törölve lesz attól függően, hogy belefér e az új időtartamba vagy sem. A régi szolgálati napokat és a lent megadott különleges napokat ez nem érinti.',
+    'special_dates' => [
+        'title' => 'Különleges napok',
+        'info' => 'Itt különleges napokat adhatsz meg, amikor valamiért eltérő a szolgálat ideje a fent beállítottól, vagy le is tilthatsz adott napot, hogy aznapra ne lehessen szolgálatot betervezni. Ha aznapra már valaki betervezett szolgálatot, akkor mentés után a rendszer automatikusan ellenőrzi, hogy belefér e a megadott időtartamba. Ha nem, akkor módosítja/törli a szolgálatot.',
+        'date' => 'Dátum',
+        'date_status' => 'Végeztek szolgálatot?',
+        'statuses' => [
+            0 => 'Nem',
+            2 => 'Igen',
+        ],
+        'statuses_short' => [
+            0 => 'Nincs szolgálat',
+            2 => 'Van szolgálat',
+        ],
+        'note' => 'Megjegyzés (A csoport tagjai is látják)',
+        'note_placeholder' => 'Pl. különleges kampány.',
+        'date_start' => 'Szolgálat kezdete',
+        'date_end' => 'Szolgálat vége',
+        'confirmDelete' => [
+            'question' => 'Biztosan törlöd ezt a napot?',
+            'message' => 'Ha törlöd, akkor - az űrlap mentése után - minden erre a napra mentett szolgálat módosítva/törölve lesz, attól függően, hogy miként érinti a módosítás.',
+            'success' => 'Az adott nap törölve lett.',
+            'error' => 'Sikertelen törlés!'
+        ],
+    ],
+    'min' => 'min',
+    'max' => 'max',
+    'service' => 'Szolgálat',
+    'service_publishers' => 'Minimum :min, maximum :max hírnök',
+    'service_time' => 'Minimum :min, maximum :max szolgálat',
     
 ];

@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Events;
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
 use App\Models\Group;
+use App\Models\GroupDate;
 use App\Models\GroupUser;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,7 @@ class EventEdit extends AppComponent
     public $role = null;
     private $pleaseWait = false;
     private $error = false;
+    public $date_data = [];
 
     public function mount($groupId, $date) {
         $check = auth()->user()->userGroups()->whereId($groupId);
@@ -101,7 +103,10 @@ class EventEdit extends AppComponent
         $groupId = $this->groupId;
         $date = $this->date;
 
-        $group = Group::findOrFail($groupId);
+        $group = Group::with(['current_date' => function($q) use ($date) {
+            // $q->select(['group_id', 'date', 'date_start', 'date_end']);
+            $q->where('date', '=', $date);
+        }])->findOrFail($groupId);
         if(in_array($this->role, ['admin', 'roler', 'helper'])) {
             $this->users = $group->users()->get()->toArray();
         }
@@ -125,10 +130,40 @@ class EventEdit extends AppComponent
         
         $this->group_data = $group->toArray();
 
-        $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-        $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+        
 
-        $step = $this->group_data['min_time'] * 60;
+        if($this->group_data['current_date'] === null) {
+            $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
+            $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+            GroupDate::create([
+                'group_id' => $groupId,
+                'date' => $date,
+                'date_start' => date("Y-m-d H:i:s", $start),
+                'date_end' => date("Y-m-d H:i:s", $max),
+                'date_status' => 1,
+                'date_min_publishers' => $this->group_data['min_publishers'],
+                'date_max_publishers' => $this->group_data['max_publishers'],
+                'date_min_time' => $this->group_data['min_time'],
+                'date_max_time' => $this->group_data['max_time']
+            ]);
+            $this->date_data = [
+                'min_publishers' => $this->group_data['min_publishers'],
+                'max_publishers' => $this->group_data['max_publishers'],
+                'min_time' => $this->group_data['min_time'],
+                'max_time' => $this->group_data['max_time']
+            ];
+        } else {
+            $start = strtotime($this->group_data['current_date']['date_start']);
+            $max = strtotime($this->group_data['current_date']['date_end']);
+            $this->date_data = [
+                'min_publishers' => $this->group_data['current_date']['date_min_publishers'],
+                'max_publishers' => $this->group_data['current_date']['date_max_publishers'],
+                'min_time' => $this->group_data['current_date']['date_min_time'],
+                'max_time' => $this->group_data['current_date']['date_max_time']
+            ];
+        }
+
+        $step = $this->date_data['min_time'] * 60;
         $day_table = [];
         $day_selects = [];
         $row = 1;
@@ -141,7 +176,7 @@ class EventEdit extends AppComponent
                 'status' => 'free',
                 'publishers' => 0,
             ];
-            for ($i=1; $i <= $this->group_data['max_publishers']; $i++) { 
+            for ($i=1; $i <= $this->date_data['max_publishers']; $i++) { 
                 $day_table[$key]['cells'][$i] = true;
             }
             
@@ -191,12 +226,12 @@ class EventEdit extends AppComponent
         
         //filter out what not available
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
+            if(count($times) >= $this->date_data['max_publishers'] || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);
                 unset($day_selects['end'][$k + $step]);
-            } elseif(count($times) >= $this->group_data['min_publishers']) {
+            } elseif(count($times) >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
         }        
@@ -222,8 +257,8 @@ class EventEdit extends AppComponent
             return;
         }
 
-        $min_time = $this->state['end'] - ($this->group_data['max_time'] * 60);
-        $step = $this->group_data['min_time'] * 60;
+        $min_time = $this->state['end'] - ($this->date_data['max_time'] * 60);
+        $step = $this->date_data['min_time'] * 60;
         // dd('here', date("Y.m.d H:i", $this->state['start']));  
         
         if(count($this->original_day_data['selects']['start'])) {
@@ -247,8 +282,8 @@ class EventEdit extends AppComponent
             $this->day_data['selects']['end'] = $this->original_day_data['selects']['end'];
             return;
         }
-        $max_time = $this->state['start'] + ($this->group_data['max_time'] * 60);
-        $step = $this->group_data['min_time'] * 60;
+        $max_time = $this->state['start'] + ($this->date_data['max_time'] * 60);
+        $step = $this->date_data['min_time'] * 60;
         if(count($this->original_day_data['selects']['end'])) {
             $this->day_data['selects']['end'] = [];
             foreach($this->original_day_data['selects']['end'] as $key => $value) {
@@ -286,11 +321,11 @@ class EventEdit extends AppComponent
             }  
         }
 
-        $step = $this->group_data['min_time'] * 60;
+        $step = $this->date_data['min_time'] * 60;
         $publishers_ok = true;
         for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
             $slot_key = "'".date("Hi", $i)."'";
-            if($this->day_data['table'][$slot_key]['publishers'] >= $this->group_data['max_publishers']) {
+            if($this->day_data['table'][$slot_key]['publishers'] >= $this->date_data['max_publishers']) {
                 $publishers_ok = false;                
             }
         }

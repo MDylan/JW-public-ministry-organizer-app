@@ -10,6 +10,7 @@ use DateTime;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\Event;
+use App\Models\GroupDate;
 use App\Models\GroupUser;
 use App\Notifications\GroupUserAddedNotification;
 // use Barryvdh\Debugbar;
@@ -48,6 +49,7 @@ class Modal extends AppComponent
     public $error = false;
     public $current_available = false;
     private $role = "";
+    public $date_data = [];
 
     public function mount($groupId = 0) {
         $this->date = null;
@@ -128,7 +130,34 @@ class Modal extends AppComponent
                             $q->where('user_id', auth()->user()->id);
                             $q->take(1);
                         },
+                        'current_date' => function($q) use ($date) {
+                            // $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
+                            $q->where('date', '=', $date);
+                        },
+                        'dates'/* => function($q) use ($date) {
+                            $d = new DateTime($date);
+                            $d->modify('-1 week');
+                            $start = $d->format("Y-m-d");
+                            $d->modify('+2 week');
+                            $end = $d->format("Y-m-d");
+
+                            $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
+                            $q->whereBetween('date', [$start, $end]);
+                            $q->whereIn('date_status', [0,2]);
+                        }*/
                     ])->findOrFail($groupId)->toArray();
+        if(isset($group['current_date'])) {
+            if($group['current_date']['date_status'] == 0) {
+                $this->error = __('event.error.no_service_day')." (".$group['current_date']['note'].")";
+                return;
+            }
+        }
+        $dates = [];
+        if(isset($group['dates'])) {
+            foreach($group['dates'] as $d) {
+                $dates[$d['date_status']][strtotime($d['date'])] = $d;
+            }
+        }
         $this->role = $group['current_user'][0]['pivot']['group_role'];
         //unset this part, it's not public for livewire
         unset($group['current_user']);
@@ -159,35 +188,107 @@ class Modal extends AppComponent
         $this->group_data = $group; //->toArray();
 
         //calculate next end previous day
-        $key = array_search($dayOfWeek, $days_array);
-        $aArray = $days_array;
-        $aKeys = array_keys($aArray); //every element of aKeys is obviously unique
-        $aIndices = array_flip($aKeys); //so array can be flipped without risk
-        $i = $aIndices[$key]; //index of key in aKeys
-        if ($i > 0) $prev = $aArray[$aKeys[$i-1]]; //use previous key in aArray
-        if ($i < count($aKeys)-1) $next = $aArray[$aKeys[$i+1]]; //use next key in aArray
-        if ($prev === false) $prev = end($aArray);
-        if ($next === false) $next = $aArray[array_key_first($aArray)];
-
-        $next_date = new DateTime($date);
-        $next_date->modify("next ".$this->weekdays[$next]);
-        $this->day_data['next_date'] = $next_date->format("Y-m-d");
-        $prev_date = new DateTime($date);
-        $prev_date->modify('last '.$this->weekdays[$prev]);
-        $this->day_data['prev_date'] = $prev_date->format("Y-m-d");
         $now = time();
-
         $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
-        if($next_date->getTimestamp() > $max_time) {
-            $this->day_data['next_date'] = false;
+        $next_date = $this_date = strtotime($date); // new DateTime($date);
+        $next = false;
+        while(!$next) {
+            $next_date = $next_date + (24 * 60 * 60);
+            // echo date("Y-m-d", $next_date)."<br/>";
+            // $next_date->modify("+1 day");
+            // $dayNum = $next_date->format("w");
+            // $unixTime = $next_date->format("U");
+            $dayNum = date("w", $next_date);
+            $unixTime = $next_date;
+
+            if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+                $next = true;
+                $this->day_data['next_date'] = date("Y-m-d", $next_date); // $next_date->format("Y-m-d");
+                if($unixTime > $max_time) {
+                    $this->day_data['next_date'] = false;
+                }
+            } 
         }
-        $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-        $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");        
+        // dd('ok');
+        $prev_date = $this_date; //new DateTime($date);
+        $prev = false;
+        while(!$prev) {
+            $prev_date = $prev_date - (24 * 60 * 60);
+            $dayNum = date("w", $prev_date);
+            $unixTime = $prev_date;
+            // $prev_date->modify("-1 day");
+            // $dayNum = $prev_date->format("w");
+            // $unixTime = $prev_date->format("U");
+
+            if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+                $prev = true;
+                $this->day_data['prev_date'] = date("Y-m-d", $prev_date); // $prev_date->format("Y-m-d");
+            } 
+        }
+
+
+        // $key = array_search($dayOfWeek, $days_array);
+        // $aArray = $days_array;
+        // $aKeys = array_keys($aArray); //every element of aKeys is obviously unique
+        // $aIndices = array_flip($aKeys); //so array can be flipped without risk
+        // $i = $aIndices[$key]; //index of key in aKeys
+        // if ($i > 0) $prev = $aArray[$aKeys[$i-1]]; //use previous key in aArray
+        // if ($i < count($aKeys)-1) $next = $aArray[$aKeys[$i+1]]; //use next key in aArray
+        // if ($prev === false) $prev = end($aArray);
+        // if ($next === false) $next = $aArray[array_key_first($aArray)];
+
+        // $next_date = new DateTime($date);
+        // $next_date->modify("next ".$this->weekdays[$next]);
+        // $this->day_data['next_date'] = $next_date->format("Y-m-d");
+        // $prev_date = new DateTime($date);
+        // $prev_date->modify('last '.$this->weekdays[$prev]);
+        // $this->day_data['prev_date'] = $prev_date->format("Y-m-d");
+        
+
+        // $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
+        // if($next_date->getTimestamp() > $max_time) {
+        //     $this->day_data['next_date'] = false;
+        // }
+        // $this->day_data['prev_date'] = "";
+
+        if($this->group_data['current_date'] === null) {
+            $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
+            $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+            GroupDate::create([
+                'group_id' => $groupId,
+                'date' => $date,
+                'date_start' => date("Y-m-d H:i:s", $start),
+                'date_end' => date("Y-m-d H:i:s", $max),
+                'date_status' => 1,
+                'date_min_publishers' => $this->group_data['min_publishers'],
+                'date_max_publishers' => $this->group_data['max_publishers'],
+                'date_min_time' => $this->group_data['min_time'],
+                'date_max_time' => $this->group_data['max_time']
+            ]);
+            $this->date_data = [
+                'min_publishers' => $this->group_data['min_publishers'],
+                'max_publishers' => $this->group_data['max_publishers'],
+                'min_time' => $this->group_data['min_time'],
+                'max_time' => $this->group_data['max_time']
+            ];
+
+        } else {
+            // dd($this->group_data);
+            $start = strtotime($this->group_data['current_date']['date_start']);
+            $max = strtotime($this->group_data['current_date']['date_end']);
+            $this->date_data = [
+                'min_publishers' => $this->group_data['current_date']['date_min_publishers'],
+                'max_publishers' => $this->group_data['current_date']['date_max_publishers'],
+                'min_time' => $this->group_data['current_date']['date_min_time'],
+                'max_time' => $this->group_data['current_date']['date_max_time']
+            ];
+        }
+
 
         if($now < $max) {
             $this->current_available = true;
         }
-        $step = $this->group_data['min_time'] * 60;
+        $step = $this->date_data['min_time'] * 60;
 
         $day_table = [];
         $day_selects = [];
@@ -209,7 +310,7 @@ class Modal extends AppComponent
                 'time_slot' => date('Y-m-d H:i', $current),
                 'events' => 0
             ];
-            for ($i=1; $i <= $this->group_data['max_publishers']; $i++) { 
+            for ($i=1; $i <= $this->date_data['max_publishers']; $i++) { 
                 $day_table[$key]['cells'][$i] = true;
             }
             
@@ -272,12 +373,12 @@ class Modal extends AppComponent
         // dd($this->role);
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->group_data['max_publishers'] || isset($disabled_slots[$key])) {
+            if(count($times) >= $this->date_data['max_publishers'] || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);
                 unset($day_selects['end'][$k + $step]);
-            } elseif(count($times) >= $this->group_data['min_publishers']) {
+            } elseif(count($times) >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
         }
@@ -291,6 +392,7 @@ class Modal extends AppComponent
     }
 
     public function openModal($date, $groupId = 0) {
+        $this->reset();
         $this->date = $date;
         if($groupId > 0) {
             $this->form_groupId = $groupId;
@@ -329,17 +431,17 @@ class Modal extends AppComponent
 
     public function render()
     {
-        if($this->date !== null) {            
+        if($this->date !== null && !$this->error) {            
             // dd($this->day_data);
-
+            $this->error = false;
             return view('livewire.events.modal', [
                 'group_data' => $this->group_data,
                 'service_days' => $this->service_days,
                 // 'day_events' => $this->day_events,
                 'day_data' => $this->day_data
             ]);
-        }
+        } 
         
-        return view('livewire.default');
+        return view('livewire.events.modal-empty');
     }
 }

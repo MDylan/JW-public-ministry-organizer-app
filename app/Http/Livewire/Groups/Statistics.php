@@ -35,7 +35,10 @@ class Statistics extends AppComponent
 
     public function getMonthListFromDate(Carbon $start)
     {
-        foreach (CarbonPeriod::create($start, '1 month', Carbon::today()) as $month) {
+        $period = $start->monthsUntil(Carbon::today());
+        // dd($period);
+        // foreach (CarbonPeriod::create($start, '1 month', Carbon::today()) as $month) {
+        foreach ($period as $month) {
             $this->months[$month->format('Y-m-01')] = $month->format('Y')." ".__($month->format('F'));
         }        
     }
@@ -51,14 +54,23 @@ class Statistics extends AppComponent
 
     public function render()
     {
-        $this->group = Group::findOrFail($this->groupId);
-        $this->getMonthListFromDate(Carbon::parse($this->group->created_at));
-
-
         $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
         $this->current_month = date('F', $firstDayOfMonth);
         $this->first_day = date("Y-m-d", $firstDayOfMonth);
         $this->last_day = date("Y-m-t", $firstDayOfMonth);
+
+        $this->group = Group::
+                with(['dates' => function($q) {
+                //    $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
+                    $q->whereBetween('date', [$this->first_day, $this->last_day]);
+                    // $q->whereIn('date_status', [0,2]);
+                }])->firstWhere('id', '=', $this->groupId);
+                // dd($this->group);
+        $start = strtotime($this->group->created_at);
+        $this->getMonthListFromDate(Carbon::parse(date("Y-m-01", $start)));
+
+        
+        
 
         $stats = DayStat::where('group_id', $this->group->id)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
@@ -78,10 +90,22 @@ class Statistics extends AppComponent
             60 => 1,
             120 => 2
         ];
+
+        $dates_array = $this->group->dates->toArray();
+        $dates = $date_info = [];
+        // dd($dates);
+        if(isset($dates_array)) {
+            foreach($dates_array as $d) {
+                $key = strtotime($d['date']);
+                $dates[$key] = $d;
+                $date_info[$d['date_status']][$key] = $d;
+            }
+        }
+
         $slots = [];
 
         $day_stats = [];
-
+        // dd($stats);
         //totals
         if(count($stats)) {
             foreach($stats as $stat) {
@@ -94,53 +118,86 @@ class Statistics extends AppComponent
                 if(!isset($day_stats[$key]['empty'])) $day_stats[$key]['empty'] = 0;
                 if(!isset($day_stats[$key]['not_enough'])) $day_stats[$key]['not_enough'] = 0;
                 
+                if(isset($dates[$key])) {
+                    $date_data = [
+                        'min_publishers' => $dates[$key]['date_min_publishers'],
+                        'max_publishers' => $dates[$key]['date_max_publishers'],
+                        'min_time' => $dates[$key]['date_min_time'],
+                        'max_time' => $dates[$key]['date_max_time'],
+                    ];
+                } else {
+                    $date_data = [
+                        'min_publishers' => $this->group->min_publishers,
+                        'max_publishers' => $this->group->max_publishers,
+                        'min_time' => $this->group->min_time,
+                        'max_time' => $this->group->max_time,
+                    ];
+                }
+
                 // echo date("Y-m-d H:i", $ts)."<br/>";
                 //reach min publishers
-                if($stat['events'] >= $this->group->min_publishers) {
-                    $total['service_hour'] += ($hours[$this->group->min_time] * $stat['events']);
-                    $total['ready'] += $hours[$this->group->min_time];
+                if($stat['events'] >= $date_data['min_publishers']) {
+                    $total['service_hour'] += ($hours[$date_data['min_time']] * $stat['events']);
+                    $total['ready'] += $hours[$date_data['min_time']];
                     $slots[$ts]['status'] = "ready";
-                    $day_stats[$key]['service_hour'] += ($hours[$this->group->min_time] * $stat['events']);
-                    $day_stats[$key]['ready'] += $hours[$this->group->min_time];
+                    $day_stats[$key]['service_hour'] += ($hours[$date_data['min_time']] * $stat['events']);
+                    $day_stats[$key]['ready'] += $hours[$date_data['min_time']];
                 }
                 //reach max publishers
-                if($stat['events'] == $this->group->max_publishers) {
-                    $total['max'] += $hours[$this->group->min_time];
+                if($stat['events'] == $date_data['max_publishers']) {
+                    $total['max'] += $hours[$date_data['min_time']];
                     $slots[$ts]['status'] = "max";
-                    $day_stats[$key]['max'] += $hours[$this->group->min_time];
+                    $day_stats[$key]['max'] += $hours[$date_data['min_time']];
                 }
                 //empty
                 if($stat['events'] == 0) {
-                    $total['empty'] += $hours[$this->group->min_time];
+                    $total['empty'] += $hours[$date_data['min_time']];
                     $slots[$ts]['status'] = "empty";
-                    $day_stats[$key]['empty'] += $hours[$this->group->min_time];
+                    $day_stats[$key]['empty'] += $hours[$date_data['min_time']];
                 }
                 //not reach minimum publishers
-                if($stat['events'] >= 0 && $stat['events'] < $this->group->min_publishers)  {
-                    $total['not_enough'] += $hours[$this->group->min_time];
+                if($stat['events'] > 0 && $stat['events'] < $date_data['min_publishers'])  {
+                    $total['not_enough'] += $hours[$date_data['min_time']];
                     $slots[$ts]['status'] = "not_enough";
-                    $day_stats[$key]['not_enough'] += $hours[$this->group->min_time];
+                    $day_stats[$key]['not_enough'] += $hours[$date_data['min_time']];
+
+                    // if($key == strtotime("2021-07-04")) {
+                    //     echo $hours[$date_data['min_time]."<br/>";
+                    // } 
                 }
                 $slots[$ts]['events'] = $stat['events'];
             }
         }
 
+        // dd($day_stats[strtotime("2021-07-04")]);
+
         $days_array = $this->group->days->toArray();
-        $step = $this->group->min_time * 60;
+        // $step = $this->group->min_time * 60;
         $period = CarbonPeriod::create($this->first_day, $this->last_day);
         $days = [];
         foreach($days_array as $day) {
             $days[$day['day_number']] = $day;
         }
+
+
+        // dd($dates);
         // echo "<hr>";
         //total slots
         foreach ($period as $date) {
             $dayOfWeek = $date->format('w');
-            if(isset($days[$dayOfWeek])) {
+            $date_format = $date->format("Y-m-d");
+            $key = $date->format('U');
+            if(isset($days[$dayOfWeek]) || isset($dates[$key]) ) {
                 // echo $date->format("Y-m-d")."<br/>";
-                $start = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['start_time'].":00");
-                $max = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['end_time'].":00");  
-                $key = $date->format('U');
+                if(isset($dates[$key])) {
+                    $start = strtotime($dates[$key]['date_start']);
+                    $max = strtotime($dates[$key]['date_end']);
+                } else {
+                    $start = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['start_time'].":00");
+                    $max = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['end_time'].":00");  
+                }
+                
+                $day_stats[$key]['date'] = $date_format;
 
                 if(!isset($day_stats[$key]['service_hour'])) $day_stats[$key]['service_hour'] = 0;
                 if(!isset($day_stats[$key]['ready'])) $day_stats[$key]['ready'] = 0;
@@ -148,25 +205,54 @@ class Statistics extends AppComponent
                 if(!isset($day_stats[$key]['empty'])) $day_stats[$key]['empty'] = 0;
                 if(!isset($day_stats[$key]['not_enough'])) $day_stats[$key]['not_enough'] = 0;
 
-                for($current=$start;$current < $max;$current+=$step) {
-                    $slots[$current]['slot'] =  ($hours[$this->group->min_time] * 1);
-                    // $key = "'".date("Y-m-d", $current)."'";
-                    if(!isset($day_stats[$key]['min_available_time'])) $day_stats[$key]['min_available_time'] = 0;
-                    if(!isset($day_stats[$key]['max_available_time'])) $day_stats[$key]['max_available_time'] = 0;                    
-                    $day_stats[$key]['min_available_time'] += ($hours[$this->group->min_time] * $this->group->min_publishers);
-                    $day_stats[$key]['max_available_time'] += ($hours[$this->group->min_time] * $this->group->max_publishers);
+                if(!isset($day_stats[$key]['min_available_time'])) $day_stats[$key]['min_available_time'] = 0;
+                if(!isset($day_stats[$key]['max_available_time'])) $day_stats[$key]['max_available_time'] = 0;
 
-                    if(!isset($slots[$current]['status'])) {
-                        $day_stats[$key]['empty'] += $hours[$this->group->min_time];                        
-                    } elseif($slots[$current]['status'] == 'empty') {
-                        $day_stats[$key]['empty'] += $hours[$this->group->min_time];
-                    }
-                    // echo date("Y-m-d H:i", $current)."<br/>";
+                //if it's a disabled date, skip it
+                if( isset($dates[$key]) ) {
+                    if($dates[$key]['date_status'] == 0)
+                        continue;
+
+                    $date_data = [
+                        'min_publishers' => $dates[$key]['date_min_publishers'],
+                        'max_publishers' => $dates[$key]['date_max_publishers'],
+                        'min_time' => $dates[$key]['date_min_time'],
+                        'max_time' => $dates[$key]['date_max_time'],
+                    ];
+
+                } else {
+                    $date_data = [
+                        'min_publishers' => $this->group->min_publishers,
+                        'max_publishers' => $this->group->max_publishers,
+                        'min_time' => $this->group->min_time,
+                        'max_time' => $this->group->max_time,
+                    ];
                 }
 
+                $step = $date_data['min_time'] * 60;
+
+                $needMath = [];
+
+                for($current=$start;$current < $max;$current+=$step) {
+                    $slots[$current]['slot'] =  ($hours[$date_data['min_time']] * 1);
+                    // $key = "'".date("Y-m-d", $current)."'";
+                                        
+                    $day_stats[$key]['min_available_time'] += ($hours[$date_data['min_time']] * $date_data['min_publishers']);
+                    $day_stats[$key]['max_available_time'] += ($hours[$date_data['min_time']] * $date_data['max_publishers']);
+
+                    //if it's not set any slot, it's empty, so need to calculate with it
+                    if(isset($needMath[$current])) {
+                        $day_stats[$key]['empty'] += $hours[$date_data['min_time']];
+                    }
+                    if(!isset($slots[$current]['status'])) {
+                        $needMath[$current] = true;
+                        $day_stats[$key]['empty'] = $hours[$date_data['min_time']];
+                    } 
+                }
             }
         }
         ksort($day_stats);
+        // dd($day_stats);
 
         //Publisher's stats
 
@@ -255,7 +341,7 @@ class Statistics extends AppComponent
             'users_stats' => $users_stats,
             'placements_stats' => $placements_stats,
             'placements_total' => $placements_total,
-            // 'period' => $period
+            'date_info' => $date_info
         ]);
     }
 }

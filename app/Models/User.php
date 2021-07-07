@@ -101,7 +101,7 @@ class User extends Authenticatable implements MustVerifyEmail
                         ->withPivot(['group_role', 'note', 'accepted_at'])
                         ->wherePivotNotNull('accepted_at')
                         ->wherePivotNull('deleted_at')
-                        ->select(['groups.id', 'groups.name', 'groups.min_publishers', 'groups.max_publishers', 'groups.max_extend_days'])
+                        // ->select(['groups.id', 'groups.name', 'groups.min_publishers', 'groups.max_publishers', 'groups.max_extend_days', 'groups.created_at'])
                         ->with('days');
     }
 

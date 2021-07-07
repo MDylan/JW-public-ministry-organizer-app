@@ -2,9 +2,11 @@
 
 namespace App\Http\Livewire\Groups;
 
+use App\Classes\CalculateDatesEvents;
 use App\Http\Livewire\AppComponent;
 use App\Models\User;
 use App\Models\Group;
+use App\Models\GroupDate;
 use App\Models\GroupDay;
 use App\Models\GroupLiterature;
 use App\Notifications\GroupUserAddedNotification;
@@ -36,7 +38,16 @@ class CreateGroupForm extends AppComponent
     public $editedLiteratureId = null;
     public $editedLiteratureRemove = [];
 
-    public $listeners = ['literatureDeleteConfirmed'];
+    public $dateAdd = [];
+    public $dates = [];
+    public $editedDate = null;
+    public $editedDateRemove = [];
+
+    public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
+
+    public function mount() {
+        $this->dateEditCancel();
+    }
 
     /**
      * Hozzáadja a usert a listához
@@ -170,16 +181,97 @@ class CreateGroupForm extends AppComponent
                 }
                 $group->literatures()->saveMany($save);
             }
-            // if(isset($this->literatures['current'])) {
-            //     foreach ($this->literatures['current'] as $id => $language) {
-            //         $this->group->literatures()->whereId($id)->update(['name' => $language]);
-            //     }
-            // }
-            // if(isset($this->literatures['removed'])) {
-            //     foreach ($this->literatures['removed'] as $id => $language) {
-            //         $this->group->literatures()->whereId($id)->delete();
-            //     }
-            // }
+        }
+
+        $deleteAfterCalculate = [];
+        //add or modify special dates
+        if(count($this->dates)) {
+            foreach($this->dates as $date) {
+                if($date['type'] == 'new') {
+                    if($date['date_status'] == 0) {
+                        $start = $end = $date['date'];
+                    } else {
+                        $start = $date['date']." ".$date['date_start'];
+                        $end = $date['date']." ".$date['date_end'];
+                    }
+                    GroupDate::updateOrCreate(
+                        [
+                            'group_id' => $group->id,
+                            'date' => $date['date']
+                        ], 
+                        [
+                            'date_start' => $start,
+                            'date_end' => $end,
+                            'date_status' => $date['date_status'],
+                            'note' => $date['note'],
+                            'date_min_publishers' => $date['date_min_publishers'],
+                            'date_max_publishers' => $date['date_max_publishers'],
+                            'date_min_time' => $date['date_min_time'],
+                            'date_max_time' => $date['date_max_time'],
+                        ]
+                    );
+                    $reGenerateStat[$date['date']] = $date['date'];
+                }
+                if($date['type'] == "changed") {
+                    $start = $date['date']." ".$date['date_start'];
+                    $end = $date['date']." ".$date['date_end'];
+                    GroupDate::whereId($date['id'])->update(
+                        [
+                            'date_start' => $start,
+                            'date_end' => $end,
+                            'date_status' => $date['date_status'],
+                            'note' => $date['note'],
+                            'date_min_publishers' => $date['date_min_publishers'],
+                            'date_max_publishers' => $date['date_max_publishers'],
+                            'date_min_time' => $date['date_min_time'],
+                            'date_max_time' => $date['date_max_time'],
+                        ]
+                    );
+                    $reGenerateStat[$date['date']] = $date['date'];
+                }
+                if($date['type'] == 'removed') {
+                    //update or delete this day, based on if it's a service day or not
+                    $d = new DateTime($date['date']);
+                    $dayOfWeek = $d->format("w");
+                    if(!isset($validatedDays[$dayOfWeek])) {
+                        //it's not a service day, delete after calculate
+                        $deleteAfterCalculate[$date['date']] = $date['date'];
+                        $start = $date['date']." ".$date['date_start'];
+                        $end = $date['date']." ".$date['date_end'];
+                        $status = 0;
+                    } else {
+                        //it's a service day, we must restore original data
+                        $status = 1;
+                        $start = $date['date']." ".$this->days[$dayOfWeek]['start_time'].":00";
+                        $end = $date['date']." ".$this->days[$dayOfWeek]['end_time'].":00";
+                    }
+                    
+                    GroupDate::whereId($date['id'])->update(
+                        [
+                            'date_start' => $start,
+                            'date_end' => $end,
+                            'date_status' => $status,
+                            'note' => null,
+                            'date_min_publishers' => $this->state['min_publishers'],
+                            'date_max_publishers' => $this->state['max_publishers'],
+                            'date_min_time' => $this->state['min_time'],
+                            'date_max_time' => $this->state['max_time'],
+                        ]
+                    );
+                    $reGenerateStat[$date['date']] = $date['date'];
+                }
+            }
+            if(count($reGenerateStat)) {
+                CalculateDatesEvents::generate($group->id, $reGenerateStat);
+                if(count($deleteAfterCalculate)) {
+                    foreach($deleteAfterCalculate as $day) {
+                        GroupDate::where('group_id', '=', $day)
+                                ->where('date', '=', $day)
+                                ->where('date_status', '=', 0)
+                                ->delete();
+                    }
+                }
+            }
         }
 
         Session::flash('message', __('group.groupCreated')); 
@@ -265,10 +357,106 @@ class CreateGroupForm extends AppComponent
         }
     }
 
+    public function dateAdd() {
+        $validatedDate = Validator::make($this->dateAdd, [
+            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'date_status' => 'required|numeric|in:0,2',
+            'note' => 'required|string|min:3|max:255',
+            'date_start' => 'required_if:date_status,2|date_format:H:i|before:date_end',
+            'date_end' => 'required_if:date_status,2|date_format:H:i|after:date_start',
+            'date_min_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|lte:date_max_publishers',
+            'date_max_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|gte:date_min_publishers',
+            'date_min_time' => 'required_if:date_status,2|numeric|in:30,60,120|lte:date_max_time',
+            'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320|gte:date_min_time',
+        ])->validate();
+
+        // $validatedDate['date_start'] = $validatedDate['date']." ".$validatedDate['date_start'];
+        // $validatedDate['date_end'] = $validatedDate['date']." ".$validatedDate['date_end'];
+        $validatedDate['type'] = 'new';
+        $this->dates[$validatedDate['date'].""] = $validatedDate;
+
+        $this->dateEditCancel();
+    }
+
+    public function dateEdit($date /*$type, $id*/) {
+        $this->dateAdd = $this->dates[$date]; //[$type][$id];
+        $this->editedDate = $date; /*[
+            'type' => $type,
+            'id'   => $id,
+        ];*/
+    }
+
+    public function dateEditCancel() {
+        $this->editedDate = null;/* [
+            'type' => null,
+            'id' => null,
+        ];*/
+        $this->dateAdd = [
+            'date' => '',
+            'date_status' => 2,
+            'note' => '',
+            'date_start' => '',
+            'date_end' => '',
+            'date_min_publishers' => $this->state['min_publishers'],
+            'date_max_publishers' => $this->state['max_publishers'],
+            'date_min_time' => $this->state['min_time'],
+            'date_max_time' => $this->state['max_time'],
+        ];
+    }
+
+    public function dateSave() {
+        if($this->editedDate === null) return;
+
+        $validatedDate = Validator::make($this->dateAdd, [
+            'id' => 'sometimes|numeric',
+            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'date_status' => 'required|numeric|in:0,2',
+            'note' => 'required|string|min:3|max:255',
+            'date_start' => 'required_if:date_status,2|date_format:H:i|before:date_end',
+            'date_end' => 'required_if:date_status,2|date_format:H:i|after:date_start',            
+            'date_min_publishers' => 'required|numeric|digits_between:1,10|lte:date_max_publishers',
+            'date_max_publishers' => 'required|numeric|digits_between:1,10|gte:date_min_publishers',
+            'date_min_time' => 'required|numeric|in:30,60,120|lte:date_max_time',
+            'date_max_time' => 'required|numeric|in:60,120,180,240,320|gte:date_min_time',
+        ])->validate();
+
+        // $validatedDate['date_start'] = $validatedDate['date']." ".$validatedDate['date_start'];
+        // $validatedDate['date_end'] = $validatedDate['date']." ".$validatedDate['date_end'];
+
+        //we must update it later, move to changed array
+        $type = $this->dates[$this->editedDate]['type'] == "current" ? "changed" : $this->dates[$this->editedDate]['type'];
+        $validatedDate['type']  = $type;
+        $this->dates[$this->editedDate] = $validatedDate;
+
+        // if($this->editedDate['type'] == "current" ) {
+        //     unset($this->dates["current"][$this->editedDate['id']]);
+        // }
+
+        $this->dateEditCancel();
+    }
+
+    public function dateRemove($date /* $type, $id*/) {
+        if($this->dates[$date]['type'] == "new") {
+            unset($this->dates[$date]);
+            $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
+        } else {
+            $this->editedDateRemove = $date; // ['type' => $type, 'id' => $id];
+            $this->dispatchBrowserEvent('show-special_dates-confirmation', ['date' => $date] /* $this->dates[$type][$id]]['date']*/);
+        }
+    }
+
+    public function dateDeleteConfirmed() {
+        $this->dates[$this->editedDateRemove]['type'] = 'removed';// $this->dates[$this->editedDateRemove['type']][$this->editedDateRemove['id']];
+        // unset($this->dates[$this->editedDateRemove['type']][$this->editedDateRemove['id']]);
+        $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
+    }
+
     public function render()
     {
 
         $group_times = $this->hoursRange( 0, 86400, 1800 );
+        if(count($this->dates))
+            ksort($this->dates);
 
         return view('livewire.groups.create-group-form', [
             'min_time_options' => [30,60,120],

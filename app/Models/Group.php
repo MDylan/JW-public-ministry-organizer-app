@@ -174,6 +174,14 @@ class Group extends Model
         return $this->hasMany(GroupLiterature::class);
     }
 
+    public function dates() {
+        return $this->hasMany(GroupDate::class);
+    }
+
+    public function current_date() {
+        return $this->hasOne(GroupDate::class);
+    }
+
 
     /**
      * Az adott css-t adja vissza, a megjelenítésnél van szerepe

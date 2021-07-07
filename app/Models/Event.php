@@ -79,6 +79,10 @@ class Event extends Model
         return $this->hasMany(EventServiceReport::class);
     }
 
+    public function current_date() {
+        return $this->hasOne(GroupDate::class, 'group_id', 'group_id');
+    }
+
     //módosítja az adatbázisból visszanyert értéket unixtime-ra
     public function getStartAttribute($value) {
         $d = new DateTime( $value );

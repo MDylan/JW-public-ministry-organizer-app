@@ -48,7 +48,9 @@
                                     <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center justify-content-md-end mt-4 mt-md-0">
                                         <nav>
                                             <ul class="pagination justify-content-center m-0">
-                                                <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
+                                                @if ($pagination['prev']['year'] !== false)
+                                                    <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
+                                                @endif
                                                 <li class="page-item disabled">
                                                     <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true"><strong>{{$year}}. {{__("$current_month")}}</strong></a>
                                                 </li>                                  
@@ -115,7 +117,7 @@
                             </table>
                             <script>
                                 function modal(groupId, date) {
-                                    livewire.emitTo('events.modal', 'openModal', date);
+                                    livewire.emitTo('events.modal', 'openModal', date, groupId);
                                 }
                             </script>
                         </div>

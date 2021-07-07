@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.visible.30000ms>
     <div wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl eventModal"> 
             <div class="modal-content">
@@ -9,6 +9,9 @@
                                 <h5>
                                     {{ $group_data['name'] }}
                                 </h5>
+                                @if(isset($group_data['current_date']['note']))
+                                    ({{ $group_data['current_date']['note'] }})
+                                @endif
                             </div>
                             <div class="col-12 col-lg-4 text-center">
                                 <nav>
@@ -56,7 +59,7 @@
                 <div class="modal-body p-0">
                     <div class="tab-content">
                         <div class="tab-pane fade @if ($active_tab == '') show active @endif" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
-                            <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$group_data['max_publishers']}}, 1fr);" aria-labelledby="schedule-heading">
+                            <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['max_publishers']}}, 1fr);" aria-labelledby="schedule-heading">
                                 @if (!empty($day_data['table']))
                                     @foreach ($day_data['table'] as $time => $r)
                                         <div class="time-slot" style="grid-row: {{$r['row']}};">
@@ -86,7 +89,7 @@
                                                 </div>  
                                             @endforeach
                                         @endif
-                                        <div class="grid-row" style="grid-row: {{$r['row']}};grid-column: 1 / {{$group_data['max_publishers'] + 2}};"></div>
+                                        <div class="grid-row" style="grid-row: {{$r['row']}};grid-column: 1 / {{$date_data['max_publishers'] + 2}};"></div>
                                     @endforeach
                                 @endif
                             </div>

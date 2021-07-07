@@ -16,6 +16,7 @@ return [
     'cancel' => 'Mégsem',
     'add' => 'Hozzáadás',
     'save' => 'Mentés',
+    'change' => 'Módosítás',
     'logout' => 'Kilépés',
     'contact' => 'Kapcsolat',
     'terms' => 'Felhasználási feltételek',

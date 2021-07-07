@@ -116,9 +116,17 @@
                                                     style="border-top: 2px solid #000;"                               
                                                 @endif>
                                                     <td class="text-center text-bold">
-                                                        <a href="javascript:void(0);" onclick="modal('{{ date("Y-m-d", $day) }}')">
-                                                            {{ date(__('app.format.date'), $day) }}, {{ __('event.weekdays_short.'.date('w', $day)) }}
-                                                        </a>
+                                                        @if(isset($date_info[0][$day])) 
+                                                            {{ date(__('app.format.date'), $day) }}, {{ __('event.weekdays_short.'.date('w', $day)) }}<br/>
+                                                            <span class="badge badge-danger">{{ $date_info[0][$day]['note'] }}</span>
+                                                        @else
+                                                            <a href="javascript:void(0);" onclick="modal('{{ date("Y-m-d", $day) }}', {{ $groupId }})">
+                                                                {{ date(__('app.format.date'), $day) }}, {{ __('event.weekdays_short.'.date('w', $day)) }}
+                                                            </a>
+                                                            @if(isset($date_info[2][$day])) 
+                                                                <br/><span class="badge badge-success">{{ $date_info[2][$day]['note'] }}</span>
+                                                            @endif
+                                                        @endif
                                                     </td>
                                                     <td class="text-right">{{$stat['ready']}}</td>
                                                     <td class="text-right">{{$stat['empty']}}</td>
@@ -269,8 +277,8 @@
         </div>
     </div>
     <script>
-        function modal(date) {
-            livewire.emitTo('events.modal', 'openModal', date);
+        function modal(date, groupId) {
+            livewire.emitTo('events.modal', 'openModal', date, groupId);
         }
     </script>
     @livewire('events.modal', ['groupId' => $groupId], key('eventsmodal'))

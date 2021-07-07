@@ -41,10 +41,16 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- <tr><td colspan="3">@if(isset($dates[$group['id']])) {{ var_dump($dates[$group['id']]) }} @endif</td></tr> --}}
                                 @foreach ($days as $day)
                                 <tr @if (date("w", $day) == 0) style="border-bottom:2px solid #000;" @endif>
                                     <td class="text-center">
-                                        @if (isset($available_days[$group['id']][date("w", $day)])) 
+                                        
+                                        @if ( ( ($available_days[$group['id']][$day]) 
+                                                // && !isset($dates[$group['id']][0][date("Y-m-d", $day)]) 
+                                              ) 
+                                                // || isset($dates[$group['id']][2][date("Y-m-d", $day)])
+                                            )    
                                         <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
                                             {{ date("m.d", $day) }}, {{ __('event.weekdays_short.'.date("w", $day)) }}
                                         </a>
@@ -53,16 +59,16 @@
                                         @endif                                    
                                     </td>
                                     <td class="p-0"> 
-                                        @if (isset($day_stat[$group['id']][date("Y-m-d", $day)]))
-                                            <div class="dayStat @if (isset($day_stat[$group['id']][date("Y-m-d", $day)]['event'])) userEvent @endif"
-                                                style="height:35px;background: {{$day_stat[$group['id']][date("Y-m-d", $day)]['style'] }}"
+                                        @if ( (isset($day_stat[$group['id']][$day])/* && !isset($dates[$group['id']][0][date("Y-m-d", $day)])*/ ))
+                                            <div class="dayStat @if (isset($day_stat[$group['id']][$day]['event'])) userEvent @endif"
+                                                style="height:35px;background: {{$day_stat[$group['id']][$day]['style'] }}"
                                             ></div>
                                         @endif
                                     </td>
                                     <td class="p-0">                                        
-                                        @if ( isset($events[$group['id']][date("Y-m-d", $day)]) )
+                                        @if ( isset($events[$group['id']][$day]) )
                                             <table class="table table-striped table-hover m-0">
-                                                @foreach ($events[$group['id']][date("Y-m-d", $day)] as $event)
+                                                @foreach ($events[$group['id']][$day] as $event)
                                                     <tr>
                                                         <td class="text-center">
                                                             {{ $event['full_time'] }}

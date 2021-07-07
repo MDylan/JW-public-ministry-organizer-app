@@ -147,7 +147,18 @@ return [
         '*.return_visits' => 'újralátogatások',
         '*.bible_studies' => 'bt bevezetések',
         '*.note' => 'megjegyzés',
-        'date' => 'Dátum',
+        'date' => 'dátum',
+        'note' => 'megjegyzés',
+        'date_status' => 'szolgálat végzése',
+        'date_start' => 'szolgálat kezdete',
+        'date_end' => 'szolgálat vége',
 
     ],
+    'values' => [
+        'date_status' => [
+            0 => 'nem',
+            2 => 'igen'
+        ],
+        'date' => ['today' => 'a mai nap']
+    ]
 ];

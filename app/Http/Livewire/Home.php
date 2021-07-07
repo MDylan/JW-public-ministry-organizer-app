@@ -14,6 +14,7 @@ class Home extends Component
     public $day_stat = [];
     public $events = [];
     public $available_days = [];
+    public $dates = [];
     public $listeners = [
         'refresh' => 'render'
     ];
@@ -27,61 +28,91 @@ class Home extends Component
     }
 
     public function getStat($group_stats) {
+        $default_color = "#cecece";
+        $green_color = "#00ff00";
         foreach($group_stats as $group) {
+
+            $service_days = [];
+            foreach($group["days"] as $day) { 
+                $service_days[$day['day_number']] = true;
+            }
+            //set the defaults based on current settings
+            foreach($this->days as $day) {
+                $dayNum = date("w", $day);
+                if(isset($service_days[$dayNum])) {
+                    //group dates changed and missing add it to array
+                    $this->available_days[$group['id']][$day] = true;
+                    $dates[$day] = ['date_status' => 1];
+                    $this->day_stat[$group['id']][$day]['style'] = $green_color;
+                } else {
+                    $this->available_days[$group['id']][$day] = false;
+                    $this->day_stat[$group['id']][$day]['style'] = $default_color;
+                }
+            }
+            
+            foreach($group["just_events"] as $event) { 
+                $day = strtotime($event['day']);
+                $this->day_stat[$group['id']][$day]['event'] = true;
+                $this->events[$group['id']][$day][] = $event;
+            }
+
+            $dates = [];
+            //load dates info, and enable/disable date if needed
+            if(count($group['dates'])) {
+                foreach($group['dates'] as $date) {
+                    $day = strtotime($date['date']);
+                    if($date['date_status'] == 0) {
+                        //disabled day
+                        $this->available_days[$group['id']][$day] = false;
+                        $this->day_stat[$group['id']][$day]['style'] = $default_color;
+                    } else {
+                        $this->available_days[$group['id']][$day] = true;
+                        $this->day_stat[$group['id']][$day]['style'] = $green_color;
+                    }
+                    $dates[$date['date']] = $date;
+                }
+            }
+            // dd($group['dates']);
+            //loading stats from db
             $colors = [];
             foreach($group["stats"] as $stat) {
-                $color = '#00ff00'; //green
-                if($stat['events'] > 0 && $stat['events'] < $group['min_publishers']) {
+                $day = strtotime($stat['day']);
+                //if it's a disabled day, skip this
+                if(!$this->available_days[$group['id']][$day]) continue;
+                $color = $green_color; //green
+                $min_publishers = isset($dates[$stat['day']]['date_min_publishers']) ? $dates[$stat['day']]['date_min_publishers'] : $group['min_publishers'];
+                $max_publishers = isset($dates[$stat['day']]['date_max_publishers']) ? $dates[$stat['day']]['date_max_publishers'] : $group['max_publishers'];
+                if($stat['events'] > 0 && $stat['events'] < $min_publishers) {
                     $color = '#1259B2'; //blue
                 }
-                if($stat['events'] >= $group['min_publishers']) {
+                if($stat['events'] >= $min_publishers) {
                     $color = '#ffff00'; //yellow
                 } 
-                if($stat['events'] == $group['max_publishers']) {
+                if($stat['events'] == $max_publishers) {
                     $color = '#ff0000'; //red
                 }
-                $colors[$stat['day']][] = $color;
+                $colors[$day][] = $color;
             }
+            //generate color bar for each date
             if(count($colors)) {
                 $total_percent = [];
                 foreach($colors as $day => $values) {
                     $percent = round(100 / count($values), 3);
                     $total_percent[$group['id']][$day] = 0;
                     $pos = 0;
-                    $this->day_stat[$group['id']][$day]['style'] = "linear-gradient(90deg";
+                    $this->day_stat[$group['id']][$day]['style'] = "linear-gradient(to right";
                     foreach($values as $k => $color) {
-                        $this->day_stat[$group['id']][$day]['style'] .= ", ".$color." ".$percent."% ".$pos."%";
+                        // $this->day_stat[$group['id']][$day]['style'] .= ", ".$color." ".$percent."% ".$pos."%";
+
+                        $this->day_stat[$group['id']][$day]['style'] .= ", ".$color." ".$pos."% ".($pos + $percent)."%";
+
                         $pos+=$percent;
                         $total_percent[$group['id']][$day]+=$percent;
                     }
                     $this->day_stat[$group['id']][$day]['style'] .= ");";
                 }
             }
-            foreach($group["just_events"] as $event) { 
-                $this->day_stat[$group['id']][$event['day']]['event'] = true;
-                $this->events[$group['id']][$event['day']][] = $event;
-            }
-            
-            foreach($group["days"] as $day) { 
-                $this->available_days[$group['id']][$day['day_number']] = true;
-            }
-            foreach($this->days as $day) {
-                $day_num = date("w", $day);
-
-                $key = date("Y-m-d", $day);
-                if(!isset($this->day_stat[$group['id']][$key]['style'] )) {
-                    
-                    if(isset($this->available_days[$group['id']][$day_num])) {
-                        $color = "#00ff00;";
-                    } else {
-                        $color = "#cecece";
-                    }
-                    $this->day_stat[$group['id']][$key]['style'] = $color;
-                }
-                // $this->day_stat[$group['id']][$event['day']]['available'] = false;
-            }
         }
-        // dd($this->day_stat, $total_percent);
     }
 
     public function render()
@@ -105,13 +136,21 @@ class Home extends Component
                 $q->where('user_id', '=', Auth::id());
                 $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
             },
-            'days'
+            'days',
+            'dates' => function($q) use($start, $end) {
+                // $q->select(['group_id', 'date', /*'date_start', 'date_end',*/ 'date_status', 'note']);
+                $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                // $q->whereIn('date_status', [0,2]);
+            }
         ])->get()->toArray();
+
+        // dd($dates);
         // dd($stats);
         $this->getStat($stats);
         return view('livewire.home', [
             // 'groups' => $groups->get()
-            'groups' => $stats
+            'groups' => $stats,
+            // 'dates' => $dates,
         ]);
     }
 }

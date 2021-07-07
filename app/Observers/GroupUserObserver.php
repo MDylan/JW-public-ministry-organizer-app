@@ -61,15 +61,18 @@ class GroupUserObserver
      */
     public function deleted(GroupUser $groupUser)
     {
-        $saved_data = [
-            'event' => 'deleted',
-            'group_id' => $groupUser->group_id,
-            'causer_id' => auth()->user()->id,
-            'changes' => ''
-        ];
-
-        $history = new LogHistory($saved_data);
-        $groupUser->histories()->save($history);
+        // dd('id:'.$groupUser->id);
+        if(isset($groupUser->id)) {
+            $saved_data = [
+                // 'model_id' => $groupUser->id,
+                'event' => 'deleted',
+                'group_id' => $groupUser->group_id,
+                'causer_id' => auth()->user()->id,
+                'changes' => ''
+            ];
+            $history = new LogHistory($saved_data);
+            $groupUser->histories()->save($history);
+        }
     }
 
     /**

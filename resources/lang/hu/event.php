@@ -43,7 +43,8 @@ return [
     'please_wait' => 'Kérlek várj...',
     'error' => [
         'invalid_group' => 'Hibás csoport lett kiválasztva, vagy nincs jogosultságod ezt szerkeszteni.',
-        'no_permission' => 'Ehhez nincs jogosultságod.'
+        'no_permission' => 'Ehhez nincs jogosultságod.',
+        'no_service_day' => 'Ezen a napon nem lehetséges a szolgálat.'
     ],
     'date' => 'Dátum',
     'status' => 'Állapot',
