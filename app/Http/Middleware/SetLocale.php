@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 // use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Cache;
 // use DebugBar\DebugBar;
 
 class SetLocale
@@ -73,7 +74,16 @@ class SetLocale
         // \Debugbar::enable();
 
         //share menus content to views
-        View::share('sidemenu', StaticPage::whereIn('status', (Auth::id() ? [0,1,3] : [1,2]))->get());
+        if(Auth()->check()) {
+            $staticpages = Cache::rememberForever('sidemenu_auth', function () {
+                return StaticPage::whereIn('status', [0,1,3])->get();
+            });
+        } else {
+            $staticpages = Cache::rememberForever('sidemenu_guest', function () {
+                return StaticPage::whereIn('status', [1,2])->get();
+            });
+        }
+        View::share('sidemenu', $staticpages);
 
         return $next($request);
     }

@@ -66,7 +66,7 @@ class StaticPageEdit extends AppComponent
             StaticPage::create($validatedData);
             Session::flash('message', __('staticpage.created')); 
         }
-        
+        $this->clearCache();
         redirect()->route('admin.staticpages');
     }
 
@@ -87,7 +87,16 @@ class StaticPageEdit extends AppComponent
         } else {
             Session::flash('message', __('staticpage.confirmDelete.error')); 
         }
+        $this->clearCache();
         redirect()->route('admin.staticpages');
+    }
+
+    /**
+     * Clear sidemenu cache
+     */
+    private function clearCache() {
+        cache()->forget('sidemenu_auth');
+        cache()->forget('sidemenu_guest');
     }
 
     public function render()
