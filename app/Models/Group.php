@@ -22,6 +22,12 @@ class Group extends Model
         'max_publishers',
         'min_time',
         'max_time',
+        'need_approval',
+        'color_default',
+        'color_empty',
+        'color_someone',
+        'color_minimum',
+        'color_maximum',
     ];
 
     // protected static $logFillable = true;

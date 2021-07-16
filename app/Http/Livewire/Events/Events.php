@@ -153,15 +153,15 @@ class Events extends AppComponent
         foreach($stats as $stat) {
             $min_publishers = $specialDates[$stat['day']]['date_min_publishers'];
             $max_publishers = $specialDates[$stat['day']]['date_max_publishers'];
-            $color = '#00ff00'; //green
+            $color = empty($this->cal_group_data['color_empty']) ? '#00ff00' : $this->cal_group_data['color_empty']; //green
             if($stat['events'] > 0 && $stat['events'] < $min_publishers) {
-                $color = '#1259B2'; //blue
+                $color = empty($this->cal_group_data['color_someone']) ? '#1259B2' : $this->cal_group_data['color_someone']; //blue
             }
             if($stat['events'] >= $min_publishers) {
-                $color = '#ffff00'; //yellow
+                $color =  empty($this->cal_group_data['color_minimum']) ? '#ffff00' : $this->cal_group_data['color_minimum']; //yellow
             } 
             if($stat['events'] == $max_publishers) {
-                $color = '#ff0000'; //red
+                $color = empty($this->cal_group_data['color_maximum']) ? '#ff0000' : $this->cal_group_data['color_maximum']; //red
             }
             $colors[$stat['day']][] = $color;
         }
@@ -305,21 +305,23 @@ class Events extends AppComponent
             $timestamp = strtotime($date);
             $available = false;
             $service_day = false;
+            $this->day_stat[$date] = (empty($this->cal_group_data['color_default']) ? "#cecece" : $this->cal_group_data['color_default']).";";
             // $available = ($timestamp >= $today && $timestamp <= $max_day);
             // $service_day = (isset($this->cal_service_days[$weekDays[$dayOfWeek]])) ? true : false;
             if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
-                $this->day_stat[$date] = "color: #00ff00;";
+                $this->day_stat[$date] = (empty($this->cal_group_data['color_empty']) ? "#00ff00" : $this->cal_group_data['color_empty']).";";
             }
 
             if(isset($specialDates[$date])) {
                 if($specialDates[$date]['date_status'] == 0) {
                     $available = false;
                     $service_day = false;
-                    unset($this->day_stat[$date]);
+                    // unset($this->day_stat[$date]);
+                    $this->day_stat[$date] = (empty($this->cal_group_data['color_default']) ? "#cecece" : $this->cal_group_data['color_default']).";";
                 } else {
                     $available = true;
                     $service_day = true;
-                    $this->day_stat[$date] = "color: #00ff00;";
+                    $this->day_stat[$date] = (empty($this->cal_group_data['color_empty']) ? "#00ff00" : $this->cal_group_data['color_empty']).";";
                 }
             } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
                 //create day data if it's not exists
@@ -337,7 +339,7 @@ class Events extends AppComponent
                 
                 $available = true;
                 $service_day = true;
-                $this->day_stat[$date] = "color: #00ff00;";
+                $this->day_stat[$date] = (empty($this->cal_group_data['color_empty']) ? "#00ff00" : $this->cal_group_data['color_empty']).";";
             }
             if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
                 $specialDates[$date] = [

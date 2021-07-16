@@ -39,12 +39,25 @@ class UpdateGroupForm extends AppComponent
     public $editedLiteratureId = null;
     public $editedLiteratureRemove = [];
 
+    public $default_colors = [
+        'color_default' => '#CECECE',
+        'color_empty' => '#00FF00',
+        'color_someone' => '#1259B2',
+        'color_minimum' => '#ffff00',
+        'color_maximum' => '#ff0000',
+    ];
+
     public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
 
     public function mount(Group $group) {
         // dd($group->days);
 
         $this->state = $group->toArray();
+        foreach($this->default_colors as $field => $color) {
+            if(empty($this->state[$field])) {
+                $this->state[$field] = $color;
+            }
+        }
         $days = [];
         // $collection = new Collection();
         foreach($group->days as $day) {
@@ -176,7 +189,7 @@ class UpdateGroupForm extends AppComponent
      * Elmenti a csoport adatait
      */
     public function updateGroup() {
-        // dd($this->users);
+        // dd($this->state);
 
         $this->state['name'] = strip_tags($this->state['name']);
 
@@ -191,13 +204,21 @@ class UpdateGroupForm extends AppComponent
             }
         }
 
+        $pattern = "/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/";
+
         $v = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
             'max_extend_days' => 'required|numeric|digits_between:1,365',
             'min_publishers' => 'required|numeric|digits_between:1,10|lte:max_publishers',
             'max_publishers' => 'required|numeric|digits_between:1,10|gte:min_publishers',
             'min_time' => 'required|numeric|in:30,60,120|lte:max_time',
-            'max_time' => 'required|numeric|in:60,120,180,240,320|gte:min_time',
+            'max_time' => 'required|numeric|in:60,120,180,240,320|gte:min_time',            
+            'need_approval' => 'required|numeric|in:0,1',
+            'color_default' => ['sometimes', 'regex:'.$pattern],
+            'color_empty' => ['sometimes', 'regex:'.$pattern],
+            'color_someone' => ['sometimes', 'regex:'.$pattern],
+            'color_minimum' => ['sometimes', 'regex:'.$pattern],
+            'color_maximum' => ['sometimes', 'regex:'.$pattern],
             'days.*.start_time' => 'required|date_format:H:i|before:days.*.end_time',
             'days.*.end_time' => 'required|date_format:H:i|after:days.*.start_time',
             'days.*.day_number' => 'required',

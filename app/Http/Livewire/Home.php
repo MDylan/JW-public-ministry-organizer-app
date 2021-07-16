@@ -28,10 +28,10 @@ class Home extends Component
     }
 
     public function getStat($group_stats) {
-        $default_color = "#cecece";
-        $green_color = "#00ff00";
+        // dd($group_stats);
         foreach($group_stats as $group) {
-
+            $default_color = empty($group['color_default']) ? "#cecece" : $group['color_default'];
+            $green_color = empty($group['color_empty']) ? "#00ff00" : $group['color_empty'];
             $service_days = [];
             foreach($group["days"] as $day) { 
                 $service_days[$day['day_number']] = true;
@@ -83,13 +83,13 @@ class Home extends Component
                 $min_publishers = isset($dates[$stat['day']]['date_min_publishers']) ? $dates[$stat['day']]['date_min_publishers'] : $group['min_publishers'];
                 $max_publishers = isset($dates[$stat['day']]['date_max_publishers']) ? $dates[$stat['day']]['date_max_publishers'] : $group['max_publishers'];
                 if($stat['events'] > 0 && $stat['events'] < $min_publishers) {
-                    $color = '#1259B2'; //blue
+                    $color = empty($group['color_someone']) ? '#1259B2' : $group['color_someone']; //blue
                 }
                 if($stat['events'] >= $min_publishers) {
-                    $color = '#ffff00'; //yellow
+                    $color = empty($group['color_minimum']) ? '#ffff00' : $group['color_minimum']; //'#ffff00'; //yellow
                 } 
                 if($stat['events'] == $max_publishers) {
-                    $color = '#ff0000'; //red
+                    $color = $color = empty($group['color_maximum']) ? '#ff0000' : $group['color_maximum'];// '#ff0000'; //red
                 }
                 $colors[$day][] = $color;
             }

@@ -46,12 +46,89 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row">
+                                        <div class="row align-items-end">
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="max_extend_days">{{__('group.max_extend_days')}}</label>
                                                     <input type="number" class="form-control @error('max_extend_days') is-invalid @enderror" id="max_extend_days" wire:model.defer="state.max_extend_days" value="" placeholder="{{__('group.max_extend_days_placeholder')}}" />
                                                     @error('max_extend_days')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="need_approval">{{__('group.need_approval')}}</label>
+                                                    <small id="approval_help" class="form-text text-muted">
+                                                        @lang('group.need_approval_help')
+                                                    </small>
+                                                    <select class="form-control @error('need_approval') is-invalid @enderror" id="need_approval" wire:model.defer="state.need_approval" aria-describedby="approval_help">
+                                                        <option value="0">@lang('No')</option>
+                                                        <option value="1">@lang('Yes')</option>
+                                                    </select>
+                                                    @error('need_approval')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <label>@lang('group.calendar_colors')</label>
+                                            </div>
+                                        </div>
+                                        <div class="row align-items-end">
+                                            <div class="col-4">
+                                                <div class="form-group">
+                                                    <label>@lang('group.color_default')</label>
+                                                    <div class="input-group">
+                                                        <input wire:model.defer="state.color_default" data-fallbackColor="{{ $default_colors['color_default'] }}" type="text" class="form-control group-colorpicker" id="color_default" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text"><i class="fas fa-square" @if ($state['color_default']) style="color: {{ $state['color_default'] }};" @endif></i></span>
+                                                        </div>
+                                                    </div>                                                    
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="form-group">
+                                                    <label>@lang('group.color_empty')</label>
+                                                    <div class="input-group">
+                                                        <input wire:model.defer="state.color_empty" data-fallbackColor="{{ $default_colors['color_empty'] }}" type="text" class="form-control group-colorpicker" id="color_empty" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text"><i class="fas fa-square" @if ($state['color_empty']) style="color: {{ $state['color_empty'] }};" @endif></i></span>
+                                                        </div>
+                                                    </div>                                                    
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="form-group">
+                                                    <label>@lang('group.color_someone')</label>
+                                                    <div class="input-group">
+                                                        <input wire:model.defer="state.color_someone" data-fallbackColor="{{ $default_colors['color_someone'] }}" type="text" class="form-control group-colorpicker" id="color_someone" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text"><i class="fas fa-square" @if ($state['color_someone']) style="color: {{ $state['color_someone'] }};" @endif></i></span>
+                                                        </div>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row align-items-end">
+                                            <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>@lang('group.color_minimum')</label>
+                                                    <div class="input-group">
+                                                        <input wire:model.defer="state.color_minimum" data-fallbackColor="{{ $default_colors['color_minimum'] }}" type="text" class="form-control group-colorpicker" id="color_minimum" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text"><i class="fas fa-square" @if ($state['color_minimum']) style="color: {{ $state['color_minimum'] }};" @endif></i></span>
+                                                        </div>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>@lang('group.color_maximum')</label>
+                                                    <div class="input-group">
+                                                        <input wire:model.defer="state.color_maximum" data-fallbackColor="{{ $default_colors['color_maximum'] }}" type="text" class="form-control group-colorpicker" id="color_maximum" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text"><i class="fas fa-square" @if ($state['color_maximum']) style="color: {{ $state['color_maximum'] }};" @endif></i></span>
+                                                        </div>
+                                                    </div> 
                                                 </div>
                                             </div>
                                         </div>
@@ -509,49 +586,70 @@
             </form>
         </div>
     </div>
-</div>
+    @section('header_style')
+        <link rel="stylesheet" href="{{ asset('plugins/bootstrap-colorpicker/css/bootstrap-colorpicker.min.css') }}">
+    @endsection
+    @section('footer_scripts')
+    <script src="{{ asset('plugins/bootstrap-colorpicker/js/bootstrap-colorpicker.min.js') }}"></script>
 
-@section('footer_scripts')
-<script>
-    $('document').ready(function () {
-        $('.day-enable').on('click', function() {            
-            let day = $(this).attr('data-day');
-            let enabled = $(this).is(':checked');
-            $('.timeselect[data-day="'+day+'"]').attr('disabled', !enabled);
+    <script>
+        $('document').ready(function () {
+            $('.day-enable').on('click', function() {            
+                let day = $(this).attr('data-day');
+                let enabled = $(this).is(':checked');
+                $('.timeselect[data-day="'+day+'"]').attr('disabled', !enabled);
+            });
+            $(".group-colorpicker").colorpicker().on('change', function(event) {
+                if(event.color) {
+                    $(this).parent().find('.fa-square').css('color', event.color.toString());
+                } else {
+                    fallback = $(this).data('fallbackcolor');
+                    $(this).val(fallback);
+                    $(this).parent().find('.fa-square').css('color', fallback);
+                }
+            })
         });
-    });
 
-    window.addEventListener('show-literature-confirmation', event => {
-        Swal.fire({
-            title: '@lang('group.literature.confirmDelete.question') ' + event.detail.lang ,
-            text: '@lang('group.literature.confirmDelete.message')',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: '@lang('Yes')',
-            cancelButtonText: '@lang('Cancel')'
-        }).then((result) => {
-        if (result.isConfirmed) {
-            Livewire.emit('literatureDeleteConfirmed');
-        }
-        })
-    });
-    window.addEventListener('show-special_dates-confirmation', event => {
-        Swal.fire({
-            title: '@lang('group.special_dates.confirmDelete.question') ' + event.detail.date,
-            text: '@lang('group.special_dates.confirmDelete.message')',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: '@lang('Yes')',
-            cancelButtonText: '@lang('Cancel')'
-        }).then((result) => {
-        if (result.isConfirmed) {
-            Livewire.emit('dateDeleteConfirmed');
-        }
-        })
-    });
-</script>
-@endsection
+        $('form').submit(function() {
+            @this.set('state.color_default', $("#color_default").val());
+            @this.set('state.color_empty', $("#color_empty").val());
+            @this.set('state.color_someone', $("#color_someone").val());
+            @this.set('state.color_minimum', $("#color_minimum").val());
+            @this.set('state.color_maximum', $("#color_maximum").val());
+        });
+
+        window.addEventListener('show-literature-confirmation', event => {
+            Swal.fire({
+                title: '@lang('group.literature.confirmDelete.question') ' + event.detail.lang ,
+                text: '@lang('group.literature.confirmDelete.message')',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '@lang('Yes')',
+                cancelButtonText: '@lang('Cancel')'
+            }).then((result) => {
+            if (result.isConfirmed) {
+                Livewire.emit('literatureDeleteConfirmed');
+            }
+            })
+        });
+        window.addEventListener('show-special_dates-confirmation', event => {
+            Swal.fire({
+                title: '@lang('group.special_dates.confirmDelete.question') ' + event.detail.date,
+                text: '@lang('group.special_dates.confirmDelete.message')',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '@lang('Yes')',
+                cancelButtonText: '@lang('Cancel')'
+            }).then((result) => {
+            if (result.isConfirmed) {
+                Livewire.emit('dateDeleteConfirmed');
+            }
+            })
+        });
+    </script>
+    @endsection
+</div>
