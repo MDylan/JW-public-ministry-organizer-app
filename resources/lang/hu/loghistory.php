@@ -18,6 +18,7 @@ return [
             'end' => 'Szolgálat vége',
             'accepted_at' => 'Elfogadva',
             'accepted_by' => 'Elfogadta',
+            'status' => 'Állapot',
         ]
     ]
 

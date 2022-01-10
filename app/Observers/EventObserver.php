@@ -7,6 +7,7 @@ use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\EventCreatedNotification;
 use App\Notifications\EventDeletedNotification;
+use App\Notifications\EventStatusChangedNotification;
 use App\Notifications\EventUpdatedNotification;
 
 class EventObserver
@@ -93,14 +94,14 @@ class EventObserver
             $history = new LogHistory($saved_data);
             $event->histories()->save($history);
 
-            if(isset($changes['start']) || isset($changes['end'])) {
+            if(isset($store['new']['start']) || isset($store['new']['end'])) {
                 $data = [
                     'userName' => auth()->user()->full_name, 
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
                     'oldService' => [
                         'start' => date("Y-m-d H:i:s", $event->getOriginal('start')),
-                        'end' => date("Y-m-d H:i:s", $event->getOriginal('start')),
+                        'end' => date("Y-m-d H:i:s", $event->getOriginal('end')),
                     ],
                     'newService' => [
                         'start' => date("Y-m-d H:i:s", $event->start),
@@ -112,6 +113,24 @@ class EventObserver
                 $us = User::find($event->user_id);
                 $us->notify(
                     new EventUpdatedNotification($data)
+                );
+            }
+
+            if(isset($store['new']['status'])) {
+                $data = [
+                    'userName' => auth()->user()->full_name, 
+                    'groupName' => $event->groups->name,
+                    'date' => $event->day,
+                    'newService' => [
+                        'start' => date("Y-m-d H:i:s", $event->start),
+                        'end' => date("Y-m-d H:i:s", $event->end),                        
+                    ],
+                    'status' => $event->status 
+                ];
+                
+                $us = User::find($event->user_id);
+                $us->notify(
+                    new EventStatusChangedNotification($data)
                 );
             }
         }

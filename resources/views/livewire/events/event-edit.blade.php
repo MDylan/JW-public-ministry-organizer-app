@@ -58,6 +58,34 @@
                 @error('end')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
         </div>
+        @if ( $group_data['need_approval'] === 1)
+            
+            @if (in_array($role, ['admin', 'roler', 'helper']))
+                <div class="form-group row">
+                    <label for="approval_check" class="col-md-3 col-form-label">
+                        @lang('event.status')
+                    </label>
+                    <div class="col-md-9">
+                        <select wire:model.defer="state.status" id="" class="form-control @error('status') is-invalid @enderror">
+                            <option value="0">@lang('event.status_0')</option>
+                            <option value="1">@lang('event.status_1')</option>
+                            <option value="2">@lang('event.status_2')</option>
+                           
+                        </select>
+                        @error('status')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                    </div>
+                </div>
+            @endif
+            @if ($state['status'] == 0)            
+                <div class="form-group row">
+                    <div class="col-md-3">
+                    </div>
+                    <div class="col-md-9">
+                        @lang('event.need_approval')
+                    </div>
+                </div>
+            @endif
+        @endif
         @if ($eventId)
             <div class="row">
                 <div class="col-6 col-md-3">

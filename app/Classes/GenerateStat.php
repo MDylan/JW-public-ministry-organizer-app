@@ -118,7 +118,7 @@ class GenerateStat {
             ];
         }
         //események
-        $events = $group->day_events($date)->get()->toArray();
+        $events = $group->day_events_accepted($date)->get()->toArray();
         
         foreach($events as $event) {
             $steps = ($event['end'] - $event['start']) / $step;

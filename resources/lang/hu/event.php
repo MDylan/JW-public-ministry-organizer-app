@@ -26,6 +26,9 @@ return [
     'save_changes' => 'Módosítások mentése',
     'cancel_edit' => 'Mégsem módosítok',
     'delete_event' => 'Szolgálat törlése',
+    'need_approval' => 'Fontos: A tervezett szolgálatot jóvá kell hagynia a csoportszolgának.',
+    'approval_info' => 'Engedélyezés',
+    'approved' => 'Jóváhagyva',
     'eventsBar' => [
         'title' => 'Közelgő szolgálataid',
         'no_events' => 'Nincsenek betervezett szolgálataid'
@@ -48,6 +51,9 @@ return [
     ],
     'date' => 'Dátum',
     'status' => 'Állapot',
+    'status_0' => 'Elbírálás alatt',
+    'status_1' => 'Jóváhagyva',
+    'status_2' => 'Elutasítva',
     'no_last_events' => 'Ebben a hónapban nem végeztél még szolgálatot.',
     'event_time' => 'Szolgálati időszak',
     'service' => [

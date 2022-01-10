@@ -152,6 +152,7 @@ return [
         'date_status' => 'szolgálat végzése',
         'date_start' => 'szolgálat kezdete',
         'date_end' => 'szolgálat vége',
+        'status' => 'állapot',
 
     ],
     'values' => [

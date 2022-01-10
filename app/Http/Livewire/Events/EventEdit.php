@@ -64,6 +64,7 @@ class EventEdit extends AppComponent
         $this->error = false;
         $this->getInfo();        
         $this->formText['title'] = __('event.create_event');
+        $this->state['status'] = ($this->group_data['need_approval'] == 1) ? 0 : 1;
     }
 
     public function editForm($eventId) {
@@ -107,6 +108,7 @@ class EventEdit extends AppComponent
             // $q->select(['group_id', 'date', 'date_start', 'date_end']);
             $q->where('date', '=', $date);
         }])->findOrFail($groupId);
+        // dd($group);
         if(in_array($this->role, ['admin', 'roler', 'helper'])) {
             $this->users = $group->users()->get()->toArray();
         }
@@ -174,9 +176,10 @@ class EventEdit extends AppComponent
                 'hour' => date("H:i", $current),
                 'row' => $row,
                 'status' => 'free',
-                'publishers' => 0,
+                'publishers' => 0,                
+                'accepted' => 0,
             ];
-            for ($i=1; $i <= $this->date_data['max_publishers']; $i++) { 
+            for ($i=1; $i <= config('events.max_columns'); $i++) {
                 $day_table[$key]['cells'][$i] = true;
             }
             
@@ -195,8 +198,10 @@ class EventEdit extends AppComponent
         
         foreach($events as $event) {
             if($this->eventId == $event['id']) {
-                if($saveProcess === false)
+                if($saveProcess === false) {
                     $this->state = $event;
+                    // $this->state['status'] = ($this->group_data['need_approval'] == 1 && is_null($event['accepted_at'])) ? 0 : 1;
+                }
                 continue;
             }
 
@@ -214,41 +219,52 @@ class EventEdit extends AppComponent
             $cell_start = $event['start'];
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
-                $slots[$slot_key][] = true;
+                $slots[$slot_key][] = is_null($event['accepted_at']) ? false : true;
                 unset($day_table[$slot_key]['cells'][$cell]);
-                $day_table[$slot_key]['publishers']++;
+                if($event['status'] == 1) {
+                    $day_table[$slot_key]['publishers']++;
+                    $day_table[$slot_key]['accepted']++;
+                }
                 if($this->state['user_id'] == $event['user_id']) {
                     $disabled_slots[$slot_key] = true;
                 }
                 $cell_start += $step;
             }
         }
-        
+        // dd($slots, $day_selects);
         //filter out what not available
         foreach($slots as $key => $times) {
-            if(count($times) >= $this->date_data['max_publishers'] || isset($disabled_slots[$key])) {
+            if(count($times) >= ($this->group_data['need_approval'] 
+                    ? ($day_table[$key]['accepted'] >= $this->date_data['max_publishers'] 
+                            ? $this->date_data['max_publishers'] 
+                            : config('events.max_columns'))
+                        : $this->date_data['max_publishers']) 
+                    || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);
                 unset($day_selects['end'][$k + $step]);
-            } elseif(count($times) >= $this->date_data['min_publishers']) {
+            } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
         }        
-
+        // dd($temp, $slots, $day_selects, $disabled_slots);
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
     }
 
     public function change_user() {
+        $time = $this->state['start'];
         $this->getInfo();
+        $this->state['start'] = $time;
+        $this->change_end();
     }
 
     public function setStart($time) {
         $this->createForm();
         $this->state['start'] = $time;
-        $this->change_end();
+        $this->change_end();        
     }
 
     public function change_start() {
@@ -310,6 +326,7 @@ class EventEdit extends AppComponent
 
     public function saveEvent() {
         //check if time still ok or not
+        // dd($this->state);
         $this->getRole();
         $this->getInfo(true);
 
@@ -321,11 +338,22 @@ class EventEdit extends AppComponent
             }  
         }
 
+        //check the start/end date 
+        Validator::make($this->state, [
+            'start' => 'required|numeric|lte:end', 
+            'end' => 'required|numeric|gte:start',
+        ])->validate();
+        // dd($this->day_data['table']);
         $step = $this->date_data['min_time'] * 60;
         $publishers_ok = true;
         for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
             $slot_key = "'".date("Hi", $i)."'";
-            if($this->day_data['table'][$slot_key]['publishers'] >= $this->date_data['max_publishers']) {
+            if($this->day_data['table'][$slot_key]['publishers'] >= (
+                $this->group_data['need_approval'] 
+                    ? ($this->day_data['table'][$slot_key]['accepted'] >= $this->date_data['max_publishers'] 
+                        ? $this->date_data['max_publishers'] 
+                        : config('events.max_columns'))
+                    : $this->date_data['max_publishers'])) {
                 $publishers_ok = false;                
             }
         }
@@ -337,25 +365,55 @@ class EventEdit extends AppComponent
             $invalid['end'] = true;
 
         $group = Group::findOrFail($this->groupId);
-
+        
         $data = [
             'day' => $this->day_data['date'],
             'start' => $this->state['start'],
             'end' => $this->state['end'],
             'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
-            // 'accepted_at' => date("Y-m-d H:i:s"),
-            'accepted_by' => Auth::id()
+            'accepted_at' => null,
+            'accepted_by' => null, //$group->need_approval ? null : Auth::id()
+            'status' => 0
         ];
         if($this->editEvent === null) {
-            $data['accepted_at'] = date("Y-m-d H:i:s");
+            //it's a new event, set approval status
+            if($group->need_approval == 0) {
+                $data['accepted_at'] = date("Y-m-d H:i:s");
+                $data['accepted_by'] = Auth::id();
+                $data['status'] = 1;
+            } else {
+                if(in_array($this->role, ['admin', 'roler', 'helper']) 
+                    && $this->state['status']) {
+                        $data['accepted_at'] = date("Y-m-d H:i:s");
+                        $data['accepted_by'] = Auth::id();
+                        $data['status'] = $this->state['status'];
+                } 
+            }
+        } else {
+            //it's an existing event, set approval status
+            if(in_array($this->role, ['admin', 'roler', 'helper']) 
+                && ($this->editEvent['status'] != $this->state['status'])) {
+                    $data['accepted_at'] = date("Y-m-d H:i:s");
+                    $data['accepted_by'] = Auth::id();
+                    $data['status'] = $this->state['status'];
+            }
+            if(in_array($this->role, ['admin', 'roler', 'helper']) 
+                && !is_null($this->editEvent['accepted_by']) 
+                && !$this->state['status']) {
+                    $data['accepted_at'] = null;
+                    $data['accepted_by'] = null;
+                    $data['status'] = 0;
+            }
         }
+        
         $v = Validator::make($data, [
             'user_id' => 'required|exists:App\Models\User,id',
             'start' => 'required|numeric|lte:end', 
             'end' => 'required|numeric|gte:start',
             'day' => 'required|date_format:Y-m-d',
-            'accepted_by' => 'sometimes|required|exists:App\Models\User,id',
-            'accepted_at' => 'sometimes|required|date_format:Y-m-d H:i:s'
+            'accepted_by' => 'nullable|exists:App\Models\User,id',
+            'accepted_at' => 'nullable|date_format:Y-m-d H:i:s',
+            'status' => 'required|in:0,1,2',
         ]);
         
         $v->after(function ($validator) use ($publishers_ok, $invalid) {
@@ -380,7 +438,7 @@ class EventEdit extends AppComponent
         $validatedData['start'] = date("Y-m-d H:i", $validatedData['start']);
         $validatedData['end'] = date("Y-m-d H:i", $validatedData['end']);
         // $validatedData['group_id'] = $this->groupId;
-
+        
         if($this->editEvent !== null) {
             //update event
             $exists = $group->events()->whereId($this->editEvent['id']);
@@ -398,6 +456,8 @@ class EventEdit extends AppComponent
             $event = new Event($validatedData);
             $group->events()->save($event); 
         }
+
+        //IMPORTANT: Check observers too
 
         $this->emitUp('refresh');
         $this->emitTo('partials.events-bar', 'refresh');

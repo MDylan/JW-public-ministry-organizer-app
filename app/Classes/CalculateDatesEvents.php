@@ -30,6 +30,7 @@ class CalculateDatesEvents {
         WHERE e.deleted_at IS NULL
             AND e.group_id = ?
             AND e.day IN (?)
+            AND e.status IN (1)
             ORDER BY e.day, e.start', [$group_id, implode(",", $dates)]);
         // dd($events);
         $deletes = [];

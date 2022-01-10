@@ -59,25 +59,27 @@
                 <div class="modal-body p-0">
                     <div class="tab-content">
                         <div class="tab-pane fade @if ($active_tab == '') show active @endif" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
-                            <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['max_publishers']}}, 1fr);" aria-labelledby="schedule-heading">
+                            <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['peak']}}, 1fr);" aria-labelledby="schedule-heading">
                                 @if (!empty($day_data['table']))
                                     @foreach ($day_data['table'] as $time => $r)
                                         <div class="time-slot" style="grid-row: {{$r['row']}};">
-                                            @if ($r['status'] == 'full') 
+                                            @if ($r['status'] == 'full')
                                                 <button id="ts_{{$r['ts']}}" disabled class="btn btn-outline-danger">{{$r['hour']}}</button>
                                             @elseif ($r['status'] == 'ready')
                                                 <button wire:loading.attr="disabled" id="ts_{{$r['ts']}}" wire:click="setStart({{$r['ts']}})" class="btn btn-warning pb-1">{{$r['hour']}}</button>
                                             @else
                                                 <button wire:loading.attr="disabled" id="ts_{{$r['ts']}}" wire:click="setStart({{$r['ts']}})" class="btn btn-success pb-1">{{$r['hour']}}</button>
-                                            @endif                                    
+                                            @endif
                                         </div>
                                         @if (isset($day_events[$time]))
+                                            {{-- @dd($day_events) --}}
                                             @foreach ($day_events[$time] as $event)
-                                                <div class="session session-2 track-{{($event['cell'])}} @if ($event['user_id'] == auth()->id())
+                                                <div class="session session-2 track-{{($event['cell'])}}@if($event['status'] == 0)-plan @endif 
+                                                @if ($event['user_id'] == auth()->id())
                                                     userEvent
                                                 @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
                                                     <h3 class="session-title">
-                                                        @if ($event['status'] == 'disabled')
+                                                        @if ($event['editable'] == 'disabled')
                                                         <i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}
                                                         @else
                                                         <a href="#" wire:click.prevent="editEvent_modal({{$event['id']}})"><i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}</a>    
@@ -89,7 +91,7 @@
                                                 </div>  
                                             @endforeach
                                         @endif
-                                        <div class="grid-row" style="grid-row: {{$r['row']}};grid-column: 1 / {{$date_data['max_publishers'] + 2}};"></div>
+                                        <div class="grid-row" style="grid-row: {{$r['row']}};grid-column: 1 / {{$date_data['peak'] + 2}};"></div>
                                     @endforeach
                                 @endif
                             </div>

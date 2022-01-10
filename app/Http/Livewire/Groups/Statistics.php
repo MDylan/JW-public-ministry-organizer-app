@@ -290,6 +290,7 @@ class Statistics extends AppComponent
         
         $events = Event::where('group_id', $this->group->id)
                     ->whereBetween('day', [$this->first_day, $this->last_day])
+                    ->whereIn('status', [1])
                     // ->whereNotNull('accepted_at')
                     ->orderBy('start', 'desc')
                     ->with(['serviceReports.literature']) //, 'groups.literatures'

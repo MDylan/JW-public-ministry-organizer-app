@@ -55,5 +55,23 @@ return [
             'line_2' => ':newServiceDate',
             'line_3' => 'Jó szolgálatot! :)',
         ],
+        'status_changed' => [
+            '0' => [
+                'subject' => 'A szolgálatod elbírálás alatt van :date',
+                'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatod elbírálás alatt van. Egy csoportszolga hamarosan eldönti, hogy megfelelő e az időpont, és értesítést fogsz kapni a döntéséről. Kérjük, amíg ez nem történik meg, ne vedd biztosra a szolgálatot.',
+                'line_2' => ':newServiceDate',
+            ],
+            '1' => [
+                'subject' => 'A tervezett szolgálatodat jóváhagyták :date !',
+                'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatot elfogadták. Jó szolgálatot! :)',
+                'line_2' => ':newServiceDate',
+            ],
+            '2' => [
+                'subject' => 'A tervezett szolgálatodat nem fogadták el :date ',
+                'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatot nem fogadták el. Kérjük, hogy keress egy másik időpontot a szolgálatod végzéséhez.',
+                'line_2' => ':newServiceDate',
+            ],
+
+        ]
     ],
 ];

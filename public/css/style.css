@@ -209,9 +209,19 @@
     background-color: #1259B2;
     color: #fff;
   }
+
+  .track-1-plan {
+    background-image: repeating-linear-gradient(45deg, #1259B2, #1259B2 6px, #154360 6px, #154360 20px);
+    color: #fff;
+  }
   
   .track-2 {
     background-color: #687f00;
+    color: #fff;
+  }
+
+  .track-2-plan {
+    background-image: repeating-linear-gradient(45deg, #687f00, #687f00 6px, #3c4900 6px, #3c4900 20px);
     color: #fff;
   }
   
@@ -219,9 +229,19 @@
     background-color: #544D69;
     color: #fff;
   }
+
+  .track-3-plan {
+    background-image: repeating-linear-gradient(45deg, #544D69, #544D69 6px, #352f46 6px, #352f46 20px);
+    color: #fff;
+  }
   
   .track-4 {
     background-color: #c35500;
+    color: #fff;
+  }
+
+  .track-4-plan {
+    background-image: repeating-linear-gradient(45deg, #c35500, #c35500 6px, #632b00 6px, #632b00 20px);
     color: #fff;
   }
   

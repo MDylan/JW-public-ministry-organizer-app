@@ -125,11 +125,21 @@ class Group extends Model
     }
     
     public function day_events($day) {
-        return $this->events()->where('day', '=', $day);
+        return $this->events()
+                    ->where('day', '=', $day)
+                    ->whereIn('status', [0,1]);
+    }
+
+    public function day_events_accepted($day) {
+        return $this->events()
+                    ->where('day', '=', $day)
+                    ->where('status', '=', '1');
     }
 
     public function between_events($start, $end) {
-        return $this->events()->whereBetween('day', [$start, $end]);
+        return $this->events()
+            ->whereBetween('day', [$start, $end])
+            ->whereIn('status', [0,1]);
     }
 
     public function stats() {
