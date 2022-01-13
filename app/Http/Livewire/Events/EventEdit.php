@@ -404,6 +404,9 @@ class EventEdit extends AppComponent
                     $data['accepted_by'] = null;
                     $data['status'] = 0;
             }
+            if($group->need_approval == 0) {
+                $data['status'] = 1;
+            }
         }
         
         $v = Validator::make($data, [
