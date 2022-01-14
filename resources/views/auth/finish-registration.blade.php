@@ -65,8 +65,7 @@
                 <div class="row">
                 <div class="col-sm-8">
                     <div class="icheck-primary">
-                        {!! Form::checkbox('terms', "yes", false, ['id' => 'agreeTerms', 'class' => ( $errors->has('terms') ? ' is-invalid' : '' )]) !!}
-                    
+                    <input id="agreeTerms" class="@error('terms') is-invalid @enderror" name="terms" type="checkbox" value="yes">
                     <label for="agreeTerms">
                         {!! __('user.agreeTerms') !!}
                     </label>
@@ -79,7 +78,7 @@
                 </div>
                 <!-- /.col -->
                 </div>
-                {!! Form::close() !!}
+                </form>
 
         </div>
         <div class="card-footer text-muted">

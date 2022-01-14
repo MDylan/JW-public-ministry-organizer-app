@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Fortify\PasswordValidationRules;
 use App\Models\User;
 use App\Notifications\FinishRegistrationSuccessNotification;
 use Illuminate\Http\Request;
@@ -9,9 +10,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Fortify\Rules\Password;
 
 class FinishRegistration extends Controller
 {
+    use PasswordValidationRules;
+
     static function index($id) {
         $user = User::where('id', '=', $id)
         ->where('role', '=', 'registered')
@@ -41,7 +45,7 @@ class FinishRegistration extends Controller
             'first_name' => ['required', 'string', 'max:50', 'min:2'],
             'last_name' => ['required', 'string', 'max:50', 'min:2'],
             'phone' => ['numeric'],
-            'password' => ['required', 'string', 'confirmed', 'min:8'],
+            'password' => $this->passwordRules(),
             'terms' => ['required']
         ])->validate();
 

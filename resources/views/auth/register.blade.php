@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-6 align-self-center">
+    <div class="col-12 col-lg-8 align-self-center">
     <div class="card card-outline card-primary">
         <div class="card-header text-center">
             <a href="/" class="h1">{{__('app.title')}}</a>
@@ -13,67 +13,60 @@
             @if (config('settings_registration') == 1)
                 <p class="login-box-msg">{{__('user.registerMessage')}}</p>
 
-                {!! Form::open() !!}
-                @foreach ($nameFields as $field => $translate) 
-                <div class="input-group mb-3">
-                    {!! Form::text($field, '', ['class' => 'form-control'. ( $errors->has($field) ? ' is-invalid' : '' ), 'placeholder' => $translate]) !!}
-                    <div class="input-group-append">
-                        <div class="input-group-text">
-                        <span class="fas fa-user"></span>
-                        </div>
-                    </div>
-                    @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                </div>            
+                <form method="POST" action="{{route('register')}}">
+                @csrf
+                <div class="row">
+                    @foreach ($nameFields as $field => $translate) 
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{$field}}">{{$translate}}:</label>
+                                <input name="{{$field}}" type="text" class="form-control @error($field) is-invalid @enderror" id="{{$field}}" value="{{ old($field) }}" placeholder="{{$translate}}" />
+                                @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                            </div>     
+                        </div>       
                 @endforeach
-                <div class="input-group mb-3">
-                    {!! Form::email('email', '', ['class' => 'form-control'. ( $errors->has('email') ? ' is-invalid' : '' ), 'placeholder' => __('user.email')]) !!}
-                    <div class="input-group-append">
-                        <div class="input-group-text">
-                        <span class="fas fa-envelope"></span>
-                        </div>
-                    </div>
-                    @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                 </div>
-                <div class="input-group mb-3">
-                    {!! Form::number('phone', '', [
-                        'class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 
-                        'placeholder' => __('user.phone'),
-                        'aria-describedby' => 'phoneHelpBlock'
-                    ]) !!}
-                    <div class="input-group-append">
-                        <div class="input-group-text">
-                        <span class="fas fa-phone"></span>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="email">@lang('user.email'):</label>
+                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" id="email" value="{{ old('email') }}" placeholder="@lang('user.email')" />
+                            @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                         </div>
                     </div>
-                    <span class="w-100"></span>
-                    <small id="phoneHelpBlock" class="text-muted">
-                        @lang('user.phone_helper') <strong>362012345689</strong>
-                    </small>
-                    @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                </div>   
-                <div class="input-group mb-3">
-                    {!! Form::password('password', ['class' => 'form-control'. ( $errors->has('password') ? ' is-invalid' : '' ), 'placeholder' => __('user.password')]) !!}
-                    <div class="input-group-append">
-                        <div class="input-group-text">
-                        <span class="fas fa-lock"></span>
-                        </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="phone">@lang('user.phone'):</label>
+                            <input name="phone" type="number" class="form-control @error('phone') is-invalid @enderror" id="phone" value="{{ old('phone') }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
+                        <span class="w-100"></span>
+                        <small id="phoneHelpBlock" class="text-muted">
+                            @lang('user.phone_helper') <strong>362012345689</strong>
+                        </small>
+                        @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                     </div>
-                    @error('password')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                    </div>
                 </div>
-                <div class="input-group mb-3">
-                    {!! Form::password('password_confirmation', ['class' => 'form-control'. ( $errors->has('password_confirmation') ? ' is-invalid' : '' ), 'placeholder' => __('user.passwordConfirmation')]) !!}
-                    <div class="input-group-append">
-                        <div class="input-group-text">
-                        <span class="fas fa-lock"></span>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="password">@lang('user.password'):</label>
+                            <input name="password" type="password" class="form-control @error('password') is-invalid @enderror" id="password" value="" placeholder="@lang('user.password')" />
+                            @error('password')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                         </div>
                     </div>
-                    @error('password_confirmation')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="password_confirmation">@lang('user.passwordConfirmation'):</label>
+                            <input name="password_confirmation" type="password" class="form-control @error('password') is-invalid @enderror" id="password_confirmation" value="" placeholder="@lang('user.passwordConfirmation')" />
+                            @error('password_confirmation')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                        </div>
+                    </div>
                 </div>
                 <div class="row">
                 <div class="col-sm-8">
                     <div class="icheck-primary">
-                        {!! Form::checkbox('terms', "yes", false, ['id' => 'agreeTerms', 'class' => ( $errors->has('terms') ? ' is-invalid' : '' )]) !!}
-                    
+                        <input id="agreeTerms" class="@error('terms') is-invalid @enderror" name="terms" type="checkbox" value="yes">
+                  
                     <label for="agreeTerms">
                         {!! __('user.agreeTerms') !!}
                     </label>
@@ -86,7 +79,7 @@
                 </div>
                 <!-- /.col -->
                 </div>
-                {!! Form::close() !!}
+            </form>
             @else
                 <div class="alert alert-info">
                     @lang('app.registration_disabled')
