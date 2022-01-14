@@ -22,7 +22,7 @@
         <div class="content">
             <div class="container-fluid">
             <div class="row">
-                <div class="col-lg-6">
+                <div class="col-lg-7">
 
                 <div class="card card-primary card-outline">
                     <div class="card-header">
@@ -46,13 +46,9 @@
                                 
                             @foreach (trans('user.nameFields') as $field => $translate) 
                             <div class="col-sm-6">
-                                <div class="input-group mb-3">
-                                    {!! Form::text($field, auth()->user()->$field, ['class' => 'form-control'. ( $errors->has($field) ? ' is-invalid' : '' ), 'placeholder' => $translate]) !!}
-                                    <div class="input-group-append">
-                                        <div class="input-group-text">
-                                        <span class="fas fa-user"></span>
-                                        </div>
-                                    </div>
+                                <div class="form-group mb-3">
+                                    <label for="{{$field}}">{{$translate}}:</label>
+                                    <input name="{{$field}}" type="text" class="form-control @error($field) is-invalid @enderror" id="{{$field}}" value="{{ auth()->user()->$field }}" placeholder="{{$translate}}" />
                                     @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 </div>
                             </div>
@@ -60,28 +56,17 @@
                             </div>
                             <div class="row">
                                 <div class="col-sm-6">
-                                <div class="input-group mb-3">
-                                    {!! Form::email('email', auth()->user()->email, ['class' => 'form-control'. ( $errors->has('email') ? ' is-invalid' : '' ), 'placeholder' => __('user.email')]) !!}
-                                    <div class="input-group-append">
-                                        <div class="input-group-text">
-                                        <span class="fas fa-envelope"></span>
-                                        </div>
-                                    </div>
+                                <div class="form-group mb-3">
+                                    <label for="email">@lang('user.email'):</label>
+                                    <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" id="email" value="{{ auth()->user()->email }}" placeholder="@lang('user.email')" />
                                     @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 </div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <div class="input-group mb-3">
-                                        {!! Form::text('phone', auth()->user()->phone, [
-                                            'class' => 'form-control'. ( $errors->has('phone') ? ' is-invalid' : '' ), 
-                                            'placeholder' => __('user.phone'),
-                                            'aria-describedby' => 'phoneHelpBlock'
-                                            ]) !!}
-                                        <div class="input-group-append">
-                                            <div class="input-group-text">
-                                            <span class="fas fa-phone"></span>
-                                            </div>
-                                        </div>
+                                    <div class="form-group mb-3">
+                                        <label for="phone">@lang('user.phone'):</label>
+                                        <input name="phone" type="number" class="form-control @error('phone') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
+                       
                                         <span class="w-100"></span>
                                         <small id="phoneHelpBlock" class="text-muted">
                                             @lang('user.phone_helper') <strong>362012345689</strong>
@@ -97,7 +82,7 @@
 
                 </div>
                 <!-- /.col-md-6 -->
-                <div class="col-lg-6">
+                <div class="col-lg-5">
 
                 <div class="card card-primary card-outline">
                     <div class="card-header">
@@ -114,7 +99,7 @@
                             @method('PUT')
 
                             <div class="form-group row">
-                                <label for="current_password" class="col-md-4 col-form-label text-md-right">{{ __('Current Password') }}</label>
+                                <label for="current_password" class="col-md-4 col-form-label text-md-right">{{ __('Current Password') }}:</label>
 
                                 <div class="col-md-8">
                                     <input id="current_password" type="password" class="form-control @error('current_password', 'updatePassword') is-invalid @enderror" name="current_password" required>
@@ -128,7 +113,7 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
+                                <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}:</label>
 
                                 <div class="col-md-8">
                                     <input id="password" type="password" class="form-control @error('password', 'updatePassword') is-invalid @enderror" name="password" required autocomplete="new-password">
@@ -142,7 +127,7 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="password-confirm" class="col-md-4 col-form-label text-md-right">{{ __('Confirm Password') }}</label>
+                                <label for="password-confirm" class="col-md-4 col-form-label text-md-right">{{ __('Confirm Password') }}:</label>
 
                                 <div class="col-md-8">
                                     <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
