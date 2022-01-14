@@ -85,6 +85,35 @@
                 </li>
             @endcan
           @endif
+
+          <li class="nav-item">
+            <a href="{{route('user.profile')}}" class="nav-link {{ request()->is('user/profile') ? 'active' : '' }}">
+                <i class="nav-icon fa fa-id-card"></i>
+                <p>
+                {{ __('app.profile') }}
+                </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{route('logout')}}" class="nav-link text-warning" onclick="event.preventDefault(); 
+            document.getElementById('logout-form').submit();">
+                <i class="nav-icon fa fa-sign-out-alt"></i>
+                <p>
+                {{ __('app.logout') }}
+                </p>
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                  @csrf
+                </form>
+            </a>
+          </li>
+{{-- 
+          <a href="{{ route('user.profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
+          <a href="{{ route('logout') }}" class="btn btn-default btn-flat float-right"onclick="event.preventDefault(); 
+          document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
+          <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+            @csrf
+          </form> --}}
+
         </ul>
       </nav>
       <!-- /.sidebar-menu -->

@@ -17,30 +17,12 @@
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
       <li class="nav-item dropdown user-menu">
-        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-          <i class="far fa-user"></i>
+        <a href="{{route('user.profile')}}" class="nav-link dropdown-toggle">
+          <i class="far fa-user mr-1"></i>
           <span class="d-none d-md-inline">
             {{ auth()->user()->full_name }}
             </span>
         </a>
-        <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right" style="left: inherit; right: 0px;">
-          <!-- User image -->
-          <li class="user-header bg-primary">
-            <p>
-              {{ auth()->user()->full_name }}
-              <small>{{ __('roles.'.auth()->user()->role) }}</small>
-            </p>
-          </li>
-          <!-- Menu Footer-->
-          <li class="user-footer">
-            <a href="{{ route('user.profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
-            <a href="{{ route('logout') }}" class="btn btn-default btn-flat float-right"onclick="event.preventDefault(); 
-            document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-              @csrf
-            </form>
-          </li>
-        </ul>
       </li>
 
       <!-- Messages Dropdown Menu -->
