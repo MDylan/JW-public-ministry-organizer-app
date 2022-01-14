@@ -75,6 +75,7 @@ class Group extends Model
                         ->select(['users.id', 'users.first_name', 'users.last_name'])
                         ->withPivot('group_role')
                         ->wherePivot('deleted_at', null)
+                        ->whereNotNull('accepted_at')
                         ->using(GroupUser::class);
     }
 
