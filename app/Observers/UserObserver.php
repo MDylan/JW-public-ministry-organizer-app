@@ -24,7 +24,7 @@ class UserObserver
             $this->adminAdded($user);
         }
 
-        $user->notify(new UserRegisteredNotification());
+        // $user->notify(new UserRegisteredNotification());
 
         // event(new UserRegisteredNotification($user));
     }

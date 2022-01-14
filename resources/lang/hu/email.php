@@ -24,6 +24,18 @@ return [
         'line_4' => 'Jelszó: :userPassword',
         'line_5' => 'Kérjük, ezt a jelszót mindenképpen változtasd meg a bejelentkezésedet követően a "Profilom" oldalon.',
     ],
+    'finishRegistration' => [
+        'subject' => 'Meghívtak a(z) :appName oldal felhasználói közé',
+        'line_1' => 'Szeretnénk értesíteni, hogy :groupAdmin meghívott a(z) :appName felhasználói közé!',
+        'line_2' => 'A regisztrációd még nem végleges, :day nap áll rendelkezésedre, hogy a lenti linkre kattintva véglegesítsd a regisztrációt, egyéb esetben a fiókodat automatikusan törölni fogjuk.',
+        'line_3' => 'Felhasználónév: :userMail',
+        'line_4' => 'A regisztráció véglegesítése során tudod megadni a kívánt jelszavadat is.',
+        'line_5' => 'A lenti linket csak a regisztráció véglegesítéséhez tudod használni.',
+        'done' => [
+            'subject' => 'Regisztrációd elkészült!',
+            'line_1' => 'Üdvözlünk az oldal felhasználói között. Mostantól be tudsz lépni a beállított jelszavaddal. A Csoportok menüben tudod elfogadni vagy elutasítani a csoportmeghívásaidat. Az oldal további használatáról a Súgó menüben tájékozódhatsz.'
+        ]
+    ],
     'event' => [
         'deleted' => [
             'subject' => 'A :date napra tervezett szolgálatod törölve lett! (:groupName)',

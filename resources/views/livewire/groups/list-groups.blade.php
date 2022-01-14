@@ -30,7 +30,10 @@
                             {{ __('group.addNew') }}</button>
                         </a>
                     </div>
-                @endcan        
+                @endcan
+                @if(Session::has('status'))
+                    <p class="alert alert-success">{{ Session::get('status') }}</p>
+                @endif
                 <div class="card card-primary card-outline">
                     <div class="card-body">
                         <div class="grid-striped">

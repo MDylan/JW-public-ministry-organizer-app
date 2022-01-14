@@ -129,7 +129,10 @@
                 <p>@lang('app.maintenance_mode')</p>
               </div>
             @endif
-
+            @if(Session::has('status'))
+              <p class="alert alert-success">{{ Session::get('status') }}</p>
+            @endif
+            
             @yield('content')
 
           </div>

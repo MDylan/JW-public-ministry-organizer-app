@@ -9,11 +9,13 @@ use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupDay;
 use App\Models\GroupLiterature;
+use App\Notifications\FinishRegistration;
 use App\Notifications\GroupUserAddedNotification;
-use App\Notifications\LoginData;
+// use App\Notifications\LoginData;
 use DateTime;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -149,11 +151,14 @@ class CreateGroupForm extends AppComponent
                         'email' => $user['email'],
                         'password' => bcrypt($password)
                     ]);
+                    $url = URL::temporarySignedRoute(
+                        'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), ['id' => $u->id]
+                    );
                     $u->notify(
-                        new LoginData([
+                        new FinishRegistration([
                             'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
                             'userMail' => $user['email'],
-                            'userPassword' => $password
+                            'url' => $url
                         ])
                     );
                     return $u;
@@ -165,9 +170,11 @@ class CreateGroupForm extends AppComponent
                     'deleted_at' => null //because maybe we try to reattach logged out user
                 ]);                
                 //értesítem, hogy hozzá lett adva a csoporthoz
-                $us->notify(
-                    new GroupUserAddedNotification($data)
-                );
+                if($us->email_verified_at) {
+                    $us->notify(
+                        new GroupUserAddedNotification($data)
+                    );
+                }
             }
         }
 

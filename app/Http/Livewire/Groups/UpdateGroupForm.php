@@ -11,13 +11,15 @@ use App\Models\GroupDate;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
 use App\Models\GroupLiterature;
+use App\Notifications\FinishRegistration;
 use App\Notifications\GroupUserAddedNotification;
-use App\Notifications\LoginData;
+// use App\Notifications\LoginData;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 
 class UpdateGroupForm extends AppComponent
 {
@@ -313,11 +315,15 @@ class UpdateGroupForm extends AppComponent
                         'email' => $user['email'],
                         'password' => bcrypt($password)
                     ]);
+                    // dd($u);
+                    $url = URL::temporarySignedRoute(
+                        'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), ['id' => $u->id]
+                    );
                     $u->notify(
-                        new LoginData([
+                        new FinishRegistration([
                             'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
                             'userMail' => $user['email'],
-                            'userPassword' => $password
+                            'url' => $url
                         ])
                     );
                     return $u;
@@ -337,9 +343,11 @@ class UpdateGroupForm extends AppComponent
             if(isset($res['attached'])) {
                 foreach($res['attached'] as $user) {
                     $us = User::find($user);
-                    $us->notify(
-                        new GroupUserAddedNotification($data)
-                    );
+                    if($us->email_verified_at) {
+                        $us->notify(
+                            new GroupUserAddedNotification($data)
+                        );
+                    }
                 }                
             }
             if(isset($res['detached'])) {

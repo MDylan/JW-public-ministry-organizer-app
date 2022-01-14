@@ -34,6 +34,16 @@ return [
     'profile_updated' => 'Az adataid sikeresen módosultak.',
     'profile_empty' => 'Kérjük add meg a hiányzó adataidat ahhoz, hogy továbbléphess.',
     'last_login' => 'Legutóbbi belépés',
-    'phone_helper' => 'Csak szám lehet országhívóval az elején, pl:'
+    'phone_helper' => 'Csak szám lehet országhívóval az elején, pl:',
+    'finish' => [
+        'registration' => 'Regisztráció véglegesítése',
+        'helper' => 'Kérjük véglegesítsd a regisztrációdat, a lenti adatok megadásával.',
+        'button' => 'Regisztráció véglegesítése',
+        'cancel' => 'Kérem az email címem törlését a rendszerből',
+        'done' => 'A regisztrációd elkészült! :) Az alábbi oldalon tudod elfogadni vagy elutasítani a csoport meghívásaidat.',
+        'cancelAlert' => 'Biztosan törlöd az email címedet?',
+        'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',
+        
+    ]
 
 ];
