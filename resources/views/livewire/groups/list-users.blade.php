@@ -65,7 +65,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <a href="{{ route('groups') }}" class="btn btn-primary">
+                    <a href="{{ URL::previous() }}" class="btn btn-primary">
                         <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                         @lang('app.back')</a>
                 </div>

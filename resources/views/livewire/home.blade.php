@@ -24,7 +24,9 @@
             {{-- <div class="col-md-6 float-left"> --}}
                 <div class="card card-primary card-outline" wire:ignore.self>
                     <div class="card-header">
-                        <div class="card-title">{{ $group['name'] }}</div>
+                        <div class="card-title">
+                            {{ $group['name'] }}                            
+                        </div>
                         <div class="card-tools" wire:ignore>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                             <i class="fas fa-minus"></i>
@@ -83,9 +85,22 @@
                             </tr>
                         </tbody>
                     </table>
-                    <a wire:click="changeGroup({{$group['id']}})" href="javascript:void(0);" class="btn btn-primary m-3">
-                        <i class="fa fa-calendar mr-1"></i>
-                        @lang('app.jump_to_calendar')</a>
+                        <div class="row m-2">
+                            <div class="col-12">
+                                <a wire:click="changeGroup({{$group['id']}})" href="javascript:void(0);" class="btn btn-primary mr-1 mb-2 mb-md-0">
+                                    <i class="fa fa-calendar mr-1"></i>
+                                    @lang('app.jump_to_calendar')</a>
+                                
+                                    <a href="{{ route('groups.users', ['group' => $group['id']]) }}" class="btn btn-outline-secondary mr-1 mb-2 mb-md-0">
+                                        <i class="fa fa-user-friends mr-1"></i>
+                                        @lang('group.users')
+                                    </a>
+
+                                    <a href="{{ route('groups.news', ['group' => $group['id']]) }}" class="btn btn-info mb-2 mb-md-0">
+                                        <i class="fa fa-file mr-1"></i>
+                                        @lang('group.news')</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             {{-- </div> --}}

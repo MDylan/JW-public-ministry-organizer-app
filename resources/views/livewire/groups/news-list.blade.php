@@ -25,7 +25,7 @@
                 <div class="col-lg-12">
                     <div class="row mb-2">
                         <div class="col-6">
-                            <a href="{{ route('groups') }}" class="btn btn-primary">
+                            <a href="{{ URL::previous() }}" class="btn btn-primary">
                                 <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                                 @lang('app.back')
                             </a>

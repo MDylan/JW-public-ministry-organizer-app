@@ -22,15 +22,6 @@
         <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12">
-                @can ('is-groupcreator')
-                    <div class="d-flex justify-content-end mb-2">
-                        <a href="{{route('groups.create')}}">
-                        <button class="btn btn-primary">
-                            <i class="fa fa-plus-circle mr-1"></i>
-                            {{ __('group.addNew') }}</button>
-                        </a>
-                    </div>
-                @endcan
                 @if(Session::has('status'))
                     <p class="alert alert-success">{{ Session::get('status') }}</p>
                 @endif
@@ -118,6 +109,15 @@
                         {{$groups->links()}}
                     </div>
                 </div>
+                @can ('is-groupcreator')
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{route('groups.create')}}">
+                        <button class="btn btn-primary">
+                            <i class="fa fa-plus-circle mr-1"></i>
+                            {{ __('group.addNew') }}</button>
+                        </a>
+                    </div>
+                @endcan
                 @cannot('is-groupcreator')
                     @if (config('settings_claim_group_creator') == 1)
                         <div class="callout callout-info">
