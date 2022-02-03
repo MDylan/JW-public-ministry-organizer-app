@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
@@ -125,6 +126,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
     public function getFullNameAttribute() {
         return "{$this->last_name} {$this->first_name}";
+    }
+
+    function scopeWhereFullName($query, $value) {
+        $query->where(DB::raw('concat(first_name, " ", last_name)'), 'LIKE', "%{$value}%");
     }
 
     public function canSetEventUser() {

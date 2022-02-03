@@ -22,6 +22,7 @@ use App\Http\Livewire\Groups\NewsEdit;
 use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
+use App\Http\Livewire\Groups\UsersEdit;
 use App\Http\Livewire\Home;
 // use App\Models\GroupNews;
 // use App\Models\StaticPage;

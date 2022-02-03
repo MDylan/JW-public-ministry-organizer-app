@@ -125,6 +125,7 @@ return [
         'first_name' => 'keresztnév',
         'last_name'  => 'vezetéknév',
         'role'      => 'jogosultság',
+        'group_role'      => 'jogosultság',
         'max_extend_days' => 'napok száma',
         'min_publishers' => 'hírnökök száma (legalább)',
         'max_publishers' => 'hírnökök száma (maximum)',
@@ -153,6 +154,7 @@ return [
         'date_start' => 'szolgálat kezdete',
         'date_end' => 'szolgálat vége',
         'status' => 'állapot',
+        'hidden' => 'rejtett értéke'
 
     ],
     'values' => [

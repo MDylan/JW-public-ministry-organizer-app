@@ -53,7 +53,8 @@ class Group extends Model
                         ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at')
                         ->withTimestamps()
                         ->whereNull('deleted_at')
-                        ->using(GroupUser::class);
+                        ->using(GroupUser::class)
+                        ->orderByRaw('last_name, first_name, email');
     }
 
     public function groupUsersAll() {

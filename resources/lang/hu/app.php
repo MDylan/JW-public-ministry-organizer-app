@@ -68,6 +68,6 @@ return [
     'authentication_info' => 'A kért funkcióhoz vagy oldalhoz, meg kell adnod a jelenlegi jelszavadat. Ha megadod, akkor :number órán belül nem fogjuk újra kérni.',
     'authentication_error' => 'A megadott jelszó helytelen.',
     'authentication_success' => 'Sikeres hitelesítés!',
-    'send' => 'Küldés'
-    
+    'send' => 'Küldés',
+    'type_for_search' => 'Kezd el gépelni a kereséshez',
 ];

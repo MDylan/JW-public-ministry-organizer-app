@@ -129,7 +129,7 @@ return [
     'search_placeholder' => 'Minden emailt új sorba írj',
     'note' => 'Megjegyzés',
     'hidden' => 'Rejtett',
-    'hidden_helper' => 'A rejtett felhasználók nem fognak látszódni a csoport tagjai között, csak csoporszolga és a csoportfelvigyázó számára. Csak az események között lesznek láthatóak, ha beterveznek egy szolgálatot.',
+    'hidden_helper' => 'A rejtett felhasználók nem fognak látszódni a csoport tagjai között, csak a csoportszolga és a csoportfelvigyázó számára. Csak az események között lesznek láthatóak, ha beterveznek egy szolgálatot.',
     'note_helper' => 'A felhasználóhoz írt megjegyzést csak a Csoportfelvigyázó és a Csoportszolga látja.',
     'notGroupCreator' => 'Ha csoportokat szeretnél létrehozni, akkor kérjük kérj ehhez jogosultságot az oldal adminisztrátoraitól.',
     'requestButton' => 'Ehhez kattints ide, és töltsd ki az űrlapot.',
@@ -171,6 +171,22 @@ return [
     ],
     'error_no_admin_user' => 'Nem jelöltél ki senkit csoportfelvigyázónak!',
     'error_no_right' => 'Nincs jogosultságod új csoportfelvigyázót kinevezni.',
+    'error_no_right_to_remove_admin' => 'Nem veheted el a csoportfelvigyázó jogosultságát.',
+    'user' => [
+        'saved' => 'A hírnök adatai frissítve lettek.',
+        'confirmDelete' => [
+            'question' => 'Biztosan törlöd :name hírnököt?',
+            'message' => 'Törlés esetén nem fog hozzáférni a csoport naptárához.',
+            'success' => 'A hírnök el lett távolítva a csoportból.',
+            'error' => 'Sikertelen törlés!'
+        ],
+        'add' => [
+            'title' => 'Új hírnök hozzáadása',
+            'info' => 'A hozzáadás gombra kattintva a rendszer azonnal hozzáadja csoporttag jogosultsággal a hírnököt. Emailben értesítve lesz, hogy meghívtad a csoportba, és ha nincs fiókja, akkor a rendszer automatikusan készít neki egyet.',
+            'success' => 'Hozzáadva :number új hírnök!'
+        ],
+        
+    ],
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',
     'waiting_approval' => 'Még nem fogadta el a meghívást.',

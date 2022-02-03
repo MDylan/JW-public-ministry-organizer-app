@@ -67,6 +67,7 @@
   <script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
   <script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
   <script src="{{ asset('js/custom.js') }}"></script>
+  <script src="{{ asset('js/modal.js') }}"></script>
   <script>
     $(document).ready(function() {
       toastr.options = {
@@ -120,6 +121,22 @@
           }
         })
       });
+      window.addEventListener('show-deletion-confirmation', event => {
+        Swal.fire({
+          title: event.detail.title,
+          text: event.detail.text,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: '@lang('Yes')',
+          cancelButtonText: '@lang('Cancel')'
+        }).then((result) => {
+          if (result.isConfirmed) {
+              Livewire.emit(event.detail.emit);
+          }
+        })
+      });
       @if(Session::has('message'))
         toastr.success('{{Session::get('message')}}', '{{__('app.saved')}}');
       @endif
@@ -127,6 +144,10 @@
   </script>  
 
   @yield('footer_scripts')
-  @livewireScripts
+  <!-- Alpine v3 -->
+  {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
+  @livewireScripts  
+  {{-- @livewire('livewire-ui-modal') --}}
+  {{-- @livewire('modal.modal') --}}
 </body>
 </html>
