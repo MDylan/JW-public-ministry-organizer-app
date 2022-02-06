@@ -118,10 +118,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
                 ->with('groups');
     }
 
-    public function feature_events() {
+    public function feature_events($start = false) {
+        if(!$start) $start = date("Y-m-d H:i:s");
         return $this->events()
-                ->where('start', '>=', date("Y-m-d H:i:s"))
-                ->whereIn('status', [1]);;
+                ->where('start', '>=', $start)
+                ->whereIn('status', [1]);
     }
 
     public function getFullNameAttribute() {

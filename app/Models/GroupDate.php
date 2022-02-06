@@ -20,6 +20,7 @@ class GroupDate extends Model
         'date_max_publishers',
         'date_min_time',
         'date_max_time',
+        'run_job'
     ];
 
     public function group() {

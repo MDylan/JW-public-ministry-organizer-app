@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 // use Spatie\Activitylog\Traits\LogsActivity;
@@ -28,6 +29,7 @@ class Group extends Model
         'color_someone',
         'color_minimum',
         'color_maximum',
+        'parent_group_id'
     ];
 
     // protected static $logFillable = true;
@@ -212,5 +214,13 @@ class Group extends Model
             'admin' => 'primary'
         ];
         return $css[$this->pivot->group_role];
+    }
+
+    public function childGroups() {
+        return $this->hasMany(Group::class, 'parent_group_id', 'id');
+    }
+
+    public function parentGroup() {
+        return $this->belongsTo(Group::class, 'parent_group_id', 'id');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Groups;
 
 use App\Classes\GenerateStat;
+use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
@@ -84,15 +85,16 @@ class ListGroups extends AppComponent
      * Meghívás elfogadása
      */
     public function accept($groupId) {
-        $user = Auth()->user(); // User::findOrFail(Auth::id());
-        if($user->userGroups()->sync([$groupId => [ 'accepted_at' => date('Y-m-d H:i:s')] ], false)) {
+        $accept = new GroupUserMoves($groupId, Auth::id());
+        $res = $accept->acceptInvitation();
+        if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.accept_saved')]);
         } else {
             $this->dispatchBrowserEvent('error', ['message' => __('group.accept_error')]);
         }
         $this->emitTo('partials.side-menu', 'refresh');
         $this->emitTo('partials.nav-bar', 'refresh');
-        
+        $user = Auth()->user();
         $user->refresh();
     }
 
@@ -110,8 +112,9 @@ class ListGroups extends AppComponent
      * Elutasította a meghívást, törlöm a kérést.
      */
     public function rejectConfirmed() {
-        $group = Group::findOrFail($this->groupBeeingRejected);
-        $res = $group->groupUsers()->detach(Auth::id());
+        $reject = new GroupUserMoves($this->groupBeeingRejected, Auth::id());
+        $res = $reject->rejectInvitation();
+
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.accept_rejected')]);
         } else {
@@ -151,20 +154,24 @@ class ListGroups extends AppComponent
      * Megerősítette a kilépését
      */
     public function logoutConfirmed() {
-        $group = Group::findOrFail($this->groupBeeingLogout);
-        $events = auth()->user()->feature_events()
-                    ->where('group_id', $this->groupBeeingLogout);
-        //recalculate events
-        $days = [];
-        foreach($events->get()->toArray() as $event) {
-            $days[] = $event['day'];
-        }
-        $events->delete();
-        foreach($days as $day) {
-            $stat = new GenerateStat();
-            $stat->generate($this->groupBeeingLogout, $day);
-        }
-        $res = $group->groupUsers()->detach(Auth::id());
+
+        $logout = new GroupUserMoves($this->groupBeeingLogout, Auth::id());
+        $res = $logout->detach();
+
+        // $group = Group::findOrFail($this->groupBeeingLogout);
+        // $events = auth()->user()->feature_events()
+        //             ->where('group_id', $this->groupBeeingLogout);
+        // //recalculate events
+        // $days = [];
+        // foreach($events->get()->toArray() as $event) {
+        //     $days[] = $event['day'];
+        // }
+        // $events->delete();
+        // foreach($days as $day) {
+        //     $stat = new GenerateStat();
+        //     $stat->generate($this->groupBeeingLogout, $day);
+        // }
+        // $res = $group->groupUsers()->detach(Auth::id());
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
         } else {

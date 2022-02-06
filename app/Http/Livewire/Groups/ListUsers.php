@@ -2,16 +2,23 @@
 
 namespace App\Http\Livewire\Groups;
 
+// use App\Classes\GenerateStat;
+use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
+// use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Group;
+// use App\Models\GroupDate;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Lang;
+// use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Models\User;
 use App\Notifications\FinishRegistration;
+use App\Notifications\GroupParentGroupAttachedNotification;
+use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupUserAddedNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
 class ListUsers extends AppComponent
@@ -31,13 +38,18 @@ class ListUsers extends AppComponent
     ];
 
     public $userIdBeeingRemoved = null;
+    public $detachId = null;
     public $new_users = ""; 
 
-    protected $listeners = [
-        'deleteUser', 
+    public $new_parent_group_id = 0;
+
+    protected $listeners = [         
         'openModal', 
-        'edit', 
-        'createUser'
+        'createUser',
+        'editUser',         
+        'deleteUser',
+        'detachChildGroup',
+        'detachParentGroup'
     ];
 
     public function mount($group) {
@@ -50,15 +62,6 @@ class ListUsers extends AppComponent
     }
 
     /**
-     * Megjeleníti a modalt, amikor a gombra kattintunk
-     */
-    public function addNew() {
-        $this->showEditModal = false;
-        $this->state = [];
-        $this->dispatchBrowserEvent('show-form');
-    }
-
-    /**
      * Elmenti a felhasználó adatait
      */
     public function createUser() {   
@@ -66,7 +69,12 @@ class ListUsers extends AppComponent
         $group = Group::findorFail($this->groupId);
         if($group->editors()->wherePivot('user_id', Auth::id())->count() == 0) {
             abort(403);
-        }        
+        }
+
+        //we cannot add new user, if this is a child group
+        if($group->parent_group_id) {
+            return;
+        }
 
         $email_array = preg_split('/\r\n|[\r\n]/', trim($this->new_users));
         $email = [];
@@ -75,12 +83,6 @@ class ListUsers extends AppComponent
                 $email['email'][] = trim($mail);
             }
         }
-        // dd($email_array);
-        /*
-            kdfgdfg@gmail.com
-            dfgdfgdf@sdfd.com
-            fgnfghidffgdf@free.hu
-        */
 
         $validatedData = Validator::make($email, [
             'email.*' => 'required|email',
@@ -89,11 +91,7 @@ class ListUsers extends AppComponent
         // dd($validatedData);
         if(count($validatedData['email'])) {
             $current_users = $group->groupUsers()->pluck('users.id')->toArray();
-            $data = [
-                'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
-                'groupName' => $group->name
-            ];
-            $user_sync = [];
+
             foreach($validatedData['email'] as $mail) {
                 $us = User::where('email',  $mail)->firstOr(function () use ($mail) {
                     $password = Str::random(10);
@@ -117,42 +115,13 @@ class ListUsers extends AppComponent
                 //skip user, if he is already in the group
                 if(in_array($us->id, $current_users)) continue;
 
-                $user_sync[$us->id] = [
-                    'group_role' => 'member',
-                    'note' => '',
-                    'hidden' => 0,
-                    'deleted_at' => null, //because maybe we try to reattach a removed user
-                    'accepted_at' => null
-                ];
+                $add = new GroupUserMoves($group->id, $us->id);
+                $add->attach();
             }
-            
-            $res = $group->groupUsersAll()->syncWithoutDetaching($user_sync);
-            //az újakat értesítem, hogy hozzá lett adva a csoporthoz
-            if(isset($res['attached'])) {
-                foreach($res['attached'] as $user) {
-                    $us = User::find($user);
-                    if($us->email_verified_at) {
-                        $us->notify(
-                            new GroupUserAddedNotification($data)
-                        );
-                    }
-                }             
-            }
-            if(isset($res['updated'])) {
-                foreach($res['updated'] as $user) {
-                    $us = User::find($user);
-                    if($us->email_verified_at) {
-                        $us->notify(
-                            new GroupUserAddedNotification($data)
-                        );
-                    }
-                }             
-            }
-            // dd($res);
 
             $this->dispatchBrowserEvent('hide-modal', [
                 'id' => 'UserAddModal',
-                'message' => __('group.user.add.success', ['number' => count($res['attached']) + count($res['updated'])]),
+                'message' => __('group.user.add.success', ['number' => count($validatedData['email'])]),
                 'savedMessage' => __('app.saved')
             ]);
         }
@@ -161,7 +130,10 @@ class ListUsers extends AppComponent
 
     }
 
-    public function edit($UserId) {
+    /**
+     * Load user data into edit modal
+     */
+    public function editUser($UserId) {
         // dd($UserId);
         $group = Group::findorFail($this->groupId);
         if($group->editors()->wherePivot('user_id', Auth::id())->count() == 0) {
@@ -260,15 +232,30 @@ class ListUsers extends AppComponent
         if($group->editors()->wherePivot('user_id', Auth::id())->count() == 0) {
             abort(403);
         }
-        if($group->groupUsersAll()->detach($this->userIdBeeingRemoved)) {
-            $this->dispatchBrowserEvent('success', [
-                'message' => __('group.user.confirmDelete.success')
-            ]);
-        } else {
+
+        if($group->parent_group_id > 0) {
             $this->dispatchBrowserEvent('error', [
-                'message' => __('group.user.confirmDelete.error')
+                'message' => __('group.user.confirmDelete.error_this_is_child')
             ]);
+            return;
         }
+
+        $detach = new GroupUserMoves($group->id, $this->userIdBeeingRemoved);
+        $detach->detach();
+
+        $this->dispatchBrowserEvent('success', [
+            'message' => __('group.user.confirmDelete.success')
+        ]);
+
+        // if($group->groupUsersAll()->detach($this->userIdBeeingRemoved)) {
+        //     $this->dispatchBrowserEvent('success', [
+        //         'message' => __('group.user.confirmDelete.success')
+        //     ]);
+        // } else {
+        //     $this->dispatchBrowserEvent('error', [
+        //         'message' => __('group.user.confirmDelete.error')
+        //     ]);
+        // }
         $this->userIdBeeingRemoved = null;
     }
 
@@ -280,26 +267,236 @@ class ListUsers extends AppComponent
         $this->searchTerm = null;
     }
 
+    public function user_admin_groups() {
+        $user_admin_groups = User::find(Auth::id())->userGroupsDeletable()->get(['groups.id', 'groups.name', 'groups.parent_group_id']);
+        // unset($user_admin_groups[$this->groupId]);
+        // dd($user_admin_groups);
+        return $user_admin_groups;
+    }
+
+    public function linkToGroup() {
+        $group = Group::findorFail($this->groupId);
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+        $this->resetErrorBag();
+        $this->resetValidation();
+        
+        //don't choose any group...
+        if($this->new_parent_group_id == 0) {
+            $this->addError('parent_group_id', __('group.link.error_no_selection'));
+        }
+
+        //this is the same group...
+        if($this->new_parent_group_id == $this->groupId) {
+            $this->addError('parent_group_id', __('group.link.error_same_group'));
+        }
+
+        $groups = $this->user_admin_groups();
+        //check if he is admin or not in that group
+        if($groups->where('id', $this->new_parent_group_id)->count() == 0) {
+            $this->addError('parent_group_id', __('group.link.error_not_in_group'));
+        } 
+        if($groups->where('id', $this->new_parent_group_id)->whereNull('parent_group_id')->count() == 0) {
+            $this->addError('parent_group_id', __('group.link.error_this_is_child'));
+        } 
+
+        if($group->childGroups()->count() > 0) {
+            $this->addError('parent_group_id', __('group.link.error_this_is_parent'));
+        }
+
+        $errors = count($this->getErrorBag()->all());
+        if($errors === 0) {
+            $up = $group->update(['parent_group_id' => $this->new_parent_group_id]);
+            if($up) {
+                $new_group = Group::findorFail($this->new_parent_group_id);
+
+                //send notifications to admins
+                $admins = $group->groupAdmins;
+                $data = [
+                    'groupName' => $new_group->name,
+                    'childGroupName' => $group->name,
+                    'userName' => auth()->user()->full_name
+                ];
+                Notification::send($admins, new GroupParentGroupAttachedNotification($data));
+                
+                $new_users = $new_group->groupUsers()->get()->toArray();
+                $user_sync = [];
+                foreach($new_users as $new_user) {
+                    $user_sync[$new_user['id']] = [
+                        // 'group_role' => $new_user['pivot']['group_role'],
+                        'note' => strip_tags(trim($new_user['pivot']['note'])),
+                        'hidden' => $new_user['pivot']['hidden'] == 1 ? 1 : 0,
+                        'deleted_at' => null //because maybe we try to reattach logged out user
+                    ];
+                }
+                $res = $group->groupUsersAll()->sync($user_sync);
+                $data = [
+                    'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                    'groupName' => $new_group->name
+                ];
+                //az újakat értesítem, hogy hozzá lett adva a csoporthoz
+                if(isset($res['attached'])) {
+                    $attached_users = User::whereIn('id', $res['attached'])
+                        ->whereNotNull('email_verified_at')
+                        ->get();
+
+                    Notification::send($attached_users, new GroupUserAddedNotification($data));
+                    // foreach($res['attached'] as $user) {
+                    //     $us = User::find($user);
+                    //     if($us->email_verified_at) {
+                    //         $us->notify(
+                    //             new GroupUserAddedNotification($data)
+                    //         );
+                    //     }
+                    // }                
+                }
+                if(isset($res['updated'])) {
+                    $updated_users = User::whereIn('id', $res['updated'])
+                        ->whereNotNull('email_verified_at')
+                        ->get();
+                    Notification::send($updated_users, new GroupUserAddedNotification($data));            
+                }
+                if(isset($res['detached'])) {
+                    foreach($res['detached'] as $user) {
+                        $m = new GroupUserMoves($group->id, $user);
+                        $m->detach();
+                    }                
+                }
+                // dd($res);
+                $this->dispatchBrowserEvent('hide-modal', [
+                    'id' => 'LinkToModal',
+                    'message' => __('group.link.success'),
+                    'savedMessage' => __('app.saved')
+                ]);
+            } else {
+                $this->dispatchBrowserEvent('error', [
+                    'message' => __('group.link.error')
+                ]);
+            }
+            
+        }
+    }
+
+    public function confirmChildDetach($child_group_id) {
+        $group = Group::findorFail($this->groupId);
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+
+        $selected_group = $group->childGroups()->where('id', $child_group_id)->first();
+        if(!$selected_group->id) abort(403);
+
+        $this->detachId = $selected_group->id;
+
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('group.link.parent.detach.question', ['groupName' => $selected_group->name]),
+            'text' => __('group.link.parent.detach.message'),
+            'emit' => 'detachChildGroup'
+        ]);
+    }
+
+    public function detachChildGroup() {
+        $group = Group::findorFail($this->groupId);
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+
+        $selected_group = $group->childGroups()->where('id', $this->detachId)->first();
+        if(!$selected_group->id) abort(403);
+
+        $group->childGroups()->where('id', $this->detachId)->update(['parent_group_id' => null]);
+        $this->detachId = null;
+        $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'ChildGroupsModal',
+            'message' => __('group.link.parent.detach.success'),
+            'savedMessage' => __('app.saved')
+        ]);
+    }
+
+    public function confirmParentDetach($parent_group_id) {
+        $group = Group::findorFail($this->groupId);
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+        if($group->parent_group_id != $parent_group_id)
+            abort(403);
+
+        $this->detachId = $group->parent_group_id;
+
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('group.link.child.detach.question'),
+            'text' => __('group.link.child.detach.message'),
+            'emit' => 'detachParentGroup'
+        ]);
+    }
+
+    public function detachParentGroup() {
+        $group = Group::findorFail($this->groupId);
+        $parent_group = $group->parentGroup;
+        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
+        $data = [
+            'groupName' => $parent_group_name,
+            'childGroupName' => $group->name,
+            'userName' => auth()->user()->full_name
+        ];
+
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+
+        if($group->parent_group_id != $this->detachId)
+            abort(403);
+
+        $res = $group->update(['parent_group_id' => null]);
+        if($res) {
+            $this->detachId = null;
+
+            //send notifications to admins
+            $admins = $group->groupAdmins;
+            
+            Notification::send($admins, new GroupParentGroupDetachedNotification($data));
+
+            $this->dispatchBrowserEvent('hide-modal', [
+                'id' => 'ParentGroupModal',
+                'message' => __('group.link.child.detach.success'),
+                'savedMessage' => __('app.saved')
+            ]);
+        } else {
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('group.link.child.detach.error')
+            ]);
+        }
+    }
+
     public function render()
     {
-        // dd($this->groupId);
-        $group = Group::findorFail($this->groupId);
-        
+
+        $group = Group::findOrFail($this->groupId);
+        $parent_group = $group->parentGroup;
+        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
+
+        // dd($group->groupAdmins);
+
         $users = $group->groupUsers()
                     ->where(function($query) {
                         $query->where('users.first_name', 'LIKE', '%'.$this->searchTerm.'%');
                         $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
                         $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
                     })
-                    // ->get()
-                    ->paginate(10);
+                    ->paginate(10);        
         // dd($users->toArray());
         return view('livewire.groups.list-users', [
             'editor' => $group->editors()->wherePivot('user_id', Auth::id())->count(),
+            'admin' => $group->groupAdmins()->wherePivot('user_id', Auth::id())->count(),
             'users' => $users,
             'group_name' => $group->name,
             'group_id' => $group->id,
-            'group_roles' => self::$group_roles
+            'current_parent_group_id' => $group->parent_group_id,
+            'parent_group_name' => $parent_group_name,
+            'child_groups' => $group->childGroups()->get(['id', 'name'])->toArray(),
+            'group_roles' => self::$group_roles,
+            'user_admin_groups' => $this->user_admin_groups()
         ]);
     }
 }

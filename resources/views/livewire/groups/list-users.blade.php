@@ -24,14 +24,35 @@
             <div class="row mb-2 justify-content-between">
                 <div class="col-md-6 mb-2 mb-md-0">
                     <div>
-                        <a href="{{ URL::previous() }}" class="btn btn-primary">
+                        <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary mb-2 mb-md-0">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                             @lang('app.back')
                         </a>
-                        @if($editor) 
-                            <a wire:click="$emit('openModal', 'UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary">
+                        @if($editor && !isset($current_parent_group_id)) 
+                            <a wire:click="$emit('openModal', 'UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary mb-2 mb-md-0">
                                 <i class="fa fa-plus mr-1"></i>
                                 @lang('group.user.add.title')</a>
+                        @endif
+                        @if($admin) 
+                            @if (count($child_groups) > 0)
+                                {{-- this is a parent group --}}
+                                <a wire:click="$emit('openModal', 'ChildGroupsModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                    <i class="fa fa-unlink mr-1"></i>
+                                    @lang('group.link.parent.detach.button')</a>
+                            @else
+
+                                @if ($current_parent_group_id > 0)
+                                    {{-- this is a child group --}}
+                                    <a wire:click="$emit('openModal', 'ParentGroupModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                        <i class="fa fa-unlink mr-1"></i>
+                                        @lang('group.link.child.detach.button')</a>
+                                @else
+                                    <a wire:click="$emit('openModal', 'LinkToModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                        <i class="fa fa-link mr-1"></i>
+                                        @lang('group.link.button')</a>
+                                @endif
+                            
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -54,6 +75,12 @@
                     </div>
                 </div>
             </div>
+            @if(count($child_groups) > 0 && $editor) 
+                <div class="alert alert-info text-center">@lang('group.link.parent.help')</div>
+            @endif
+            @if($current_parent_group_id > 0 && $editor) 
+                <div class="alert alert-info text-center">@lang('group.link.child.help', ['groupName' => $parent_group_name])</div>
+            @endif
             <div class="card card-primary card-outline">
                     <div class="grid-striped" wire:loading.class="text-muted">
                         <div class="d-none d-md-block">
@@ -120,12 +147,16 @@
                                 </div>
                                 @if($editor) 
                                     <div class="col-12 col-md-2 text-center my-auto align-middle">
-                                        <button wire:click="$emit('edit', {{$user->id}})" class="btn btn-sm btn-primary mr-1 mb-1">
+                                        
+                                        <button wire:click="$emit('editUser', {{$user->id}})" class="btn btn-sm btn-primary mr-1 mb-1">
+                                            <i class="fa fa-user-edit mr-1"></i>
                                             @lang('app.edit')
-                                        </button>
+                                        </button>                                        
+                                        @if(!$current_parent_group_id)
                                         <a title="@lang('app.delete')" href="" wire:click.prevent="confirmUserRemoval({{$user->id}})" class="btn btn-sm btn-danger mr-1 mb-1">
                                            <i class="fas fa-trash"></i>
                                         </a>
+                                        @endif
                                     </div>
                                 @endif
                             </div> 
@@ -140,7 +171,7 @@
                     </div>
                     <div class="d-flex justify-content-between p-2">
                         <div>
-                        <a href="{{ URL::previous() }}" class="btn btn-primary">
+                        <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                             @lang('app.back')
                         </a>
@@ -310,6 +341,119 @@
                 </x-modal>
             </form>
         @endisset
+
+        @if ($admin)
+            <form autocomplete="off" wire:submit.prevent="linkToGroup">
+                <x-modal modalId="LinkToModal">
+                    <x-slot name="title">
+                        @lang('group.link.button')
+                    </x-slot>
+                
+                    <x-slot name="content">
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="mr-sm-2">@lang('group.link.child.parent_group_name'):</label>
+                                <select wire:model="new_parent_group_id" name="new_parent_group_id" id="" class="form-control">
+                                    <option value="0">@lang('Choose')</option>
+                                    @foreach ($user_admin_groups as $group)
+                                        @if ($group->id == $groupId)
+                                            @continue
+                                        @endif
+                                        <option value="{{ $group->id }}">{{ $group->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="alert alert-info mt-2">
+                                @lang('group.link.help')<br/>
+                                @lang('group.link.danger')
+                            </div>
+                        </div>
+                        @if ($errors->any())
+                            <div class="alert alert-danger">
+                                <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        
+                    </x-slot>
+                
+                    <x-slot name="buttons">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+                        <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                                <i class="fa fa-link mr-1"></i>
+                                {{__('group.link.button')}}</button>
+                    </x-slot>
+                </x-modal>
+            </form>
+            {{-- End of linkToModal --}}
+
+            <x-modal modalId="ChildGroupsModal">
+                <x-slot name="title">
+                    @lang('group.link.parent.detach.button')
+                </x-slot>
+            
+                <x-slot name="content">
+                    <div class="alert alert-info">@lang('group.link.parent.info')</div>
+                    <div class="row text-bold">
+                        <div class="col-8">@lang('group.link.parent.child_group_name')</div>
+                        <div class="col-4 text-center">@lang('group.link.child.detach.button')</div>
+                    </div>
+                    @foreach ($child_groups as $child_group)
+                        <div class="row mb-2">
+                            <div class="col-8">{{ $child_group['name'] }}</div>
+                            <div class="col-4 text-center">
+                                <a wire:click.prevent="confirmChildDetach({{ $child_group['id'] }})" href="" class="btn btn-danger btn-sm">
+                                    <i class="fa fa-unlink mr-1"></i>
+                                    @lang('group.link.child.detach.button')
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </x-slot>
+            
+                <x-slot name="buttons">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+                </x-slot>
+            </x-modal>
+            {{-- End of ChildGroupsModal --}}
+
+            <x-modal modalId="ParentGroupModal">
+                <x-slot name="title">
+                    @lang('group.link.child.detach.button')
+                </x-slot>
+            
+                <x-slot name="content">
+                    <div class="alert alert-info">@lang('group.link.child.info')</div>
+                    <div class="row text-bold">
+                        <div class="col-8">@lang('group.link.child.parent_group_name')</div>
+                        <div class="col-4 text-center">@lang('group.link.child.detach.button')</div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-8">{{ $parent_group_name }}</div>
+                        <div class="col-4 text-center">
+                            <a wire:click.prevent="confirmParentDetach({{ $current_parent_group_id }})" href="" class="btn btn-danger btn-sm">
+                                <i class="fa fa-unlink mr-1"></i>
+                                @lang('group.link.child.detach.button')
+                            </a>
+                        </div>
+                    </div>
+
+                </x-slot>
+            
+                <x-slot name="buttons">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+                </x-slot>
+            </x-modal>
+            {{-- End of ParentGroupModal --}}
+
+        @endif
 
     </div>
 </div>

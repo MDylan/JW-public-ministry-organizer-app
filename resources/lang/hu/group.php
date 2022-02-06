@@ -30,7 +30,7 @@ return [
         'member' => 'Csak a saját adatait kezelheti.',
         'helper' => 'Szerkesztheti mások időpont foglalását is.',
         'roler' => 'Kezelheti a csoport adatait, jogosultságokat oszthat ki (kivéve csoportfelvigyázó jogkört), híreket szerkeszthet és a statisztikákat is látja.',
-        'admin' => 'Bármit csinálhat a csoporttal. Tipp: Egyedül ő képes törölni is a csoportot, ezért ezt a jogosultságot csak korlátozott számban oszd ki. A törlésen kívül minden mást a csoportszolga is el tud végezni.'
+        'admin' => 'Bármit csinálhat a csoporttal. Tipp: Egyedül ő képes törölni is a csoportot és összekötni a csoportot egy másikkal (ahol szintén csoportfelvigyázó joga van), ezért ezt a jogosultságot csak korlátozott számban oszd ki. Ezeken kívül minden mást a csoportszolga is el tud végezni.'
     ],
     'min_publishers' => 'Hírnök száma (legalább)',
     'min_publishers_placeholder' => 'Például: 2',
@@ -178,7 +178,8 @@ return [
             'question' => 'Biztosan törlöd :name hírnököt?',
             'message' => 'Törlés esetén nem fog hozzáférni a csoport naptárához.',
             'success' => 'A hírnök el lett távolítva a csoportból.',
-            'error' => 'Sikertelen törlés!'
+            'error' => 'Sikertelen törlés!',
+            'error_this_is_child' => 'A hírnököt csak a főcsoportban lehet törölni, itt nem.',
         ],
         'add' => [
             'title' => 'Új hírnök hozzáadása',
@@ -186,6 +187,44 @@ return [
             'success' => 'Hozzáadva :number új hírnök!'
         ],
         
+    ],
+    'link' => [
+        'title' => 'Csoportok összekötése',
+        'help' => 'Itt választhatsz egy főcsoportot, ahonnan automatikusan át szeretnéd másolni a hírnököket.',
+        'no_admin_in_other_group' => 'Nem vagy csoportfelvigyázó más csoportokban.',
+        'danger' => 'Figyelem! Az összekapcsolást követően a választott főcsoport hírnökei ide is be lesznek téve. A jogosultságok NEM másolódnak át, azt külön be tudod majd állítani, ahogy szeretnéd. Viszont aki nem szerepel a főcsoportban, az ebből az alcsoportból törölve lesz.',
+        'button' => 'Összekapcsolás',
+        'error_no_selection' => 'Nem választottál csoportot.',
+        'error_not_in_group' => 'A kiválasztott csoportban nem vagy csoportfelvigyázó.',
+        'error_same_group' => 'Magával nem kötheted össze a csoportot! :)',
+        'error_this_is_child' => 'A kiválasztott csoport már egy másik csoporthoz van kapcsolva! Előbb azt meg kell szüntetni.',
+        'error_this_is_parent' => 'Egy másik csoport már össze van kapcsolva a jelenleg szerkesztett csoportoddal. Előbb azt a kapcsolatot szüntesd meg.',
+        'success' => 'Az összekapcsolás sikeres volt!',
+        'error' => 'Hiba az összekapcsolás közben.',
+        'parent' => [
+            'help' => 'Tájékoztatás: A hírnökök más csoporthoz is át vannak másolva.',
+            'info' => 'Ennek a csoportnak a tagjait az alábbi alcsoportokba másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot köztük, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra az alcsoportba senki, akit ezután veszel fel ebbe a csoportba.',
+            'child_group_name' => 'Alcsoport neve',
+            'detach' => [
+                'button' => 'Szétkapcsolás',
+                'question' => 'Valóban lekapcsolod a(z) :groupName csoportot?',
+                'message' => 'Ezt követően a csoport tagjai nem fognak átmásolódni oda.',
+                'success' => 'Sikeres szétkapcsolás!',
+                'error' => 'Hiba a szétkapcsoláskor. Próbáld meg újra.',
+            ]            
+        ],
+        'child' => [
+            'help' => 'Tájékoztatás: A hírnököket a(z) :groupName csoportból másoljuk át. Ott tudsz új hírnököt hozzáadni vagy törölni.',
+            'info' => 'Ennek a csoportnak a tagjait az alábbi főcsoportból másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra ebbe a csoportba senki, akit ezután vesznek fel abba a csoportba.',
+            'parent_group_name' => 'Főcsoport neve',
+            'detach' => [
+                'button' => 'Szétkapcsolás',
+                'question' => 'Valóban szétkapcsolod a két csoportot?',
+                'message' => 'Ezt követően a csoport tagjai nem fognak átmásolódni ide.',
+                'success' => 'Sikeres szétkapcsolás!',
+                'error' => 'Hiba a szétkapcsoláskor. Próbáld meg újra.',
+            ]            
+        ],
     ],
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',

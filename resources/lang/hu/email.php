@@ -47,6 +47,7 @@ return [
         'deletion_reasons' => [
             'unknown' => 'Ismeretlen.',
             'modified_service_time' => 'Ezen a napon módosult a szolgálat ideje, és a tervezett szolgálatod nem fért bele az új szolgálati időbe.',
+            'user_logout' => 'Kiléptél a csoportból, így a kilépésed utáni szolgálataid is törölve lettek.',
         ],
         'modified' => [
             'subject' => 'A :date napra tervezett szolgálatod módosítva lett! (:groupName)',
@@ -85,5 +86,26 @@ return [
             ],
 
         ]
+    ],
+    'ParentGroupAttached' => [
+        'subject' => 'Fontos: Új főcsoport lett beállítva',
+        'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportodhoz új alcsoport lett rendelve.',
+        'line_2' => 'Ezentúl minden hírnök automatikusan átmásolára kerül az alcsoportba.',
+        'line_3' => 'Az alcsoport neve: :childGroupName',
+        'line_4' => 'A módosítást :userName végezte el.',
+        'line_5' => 'Ha változtatni szeretnél ezen a beállításon, akkor kérjük menj a "Hírnökök" menübe és szüntesd meg az összekapcsolást.'
+    ],
+    'ParentGroupDetached' => [
+        'subject' => 'Fontos: A főcsoport beállítás megszűnt',
+        'line_1' => 'Szeretnénk értesíteni, hogy a(z) :childGroupName csoportod le lett kapcsolva az eddigi főcsoportról.',
+        'line_2' => 'Ezentúl nem kerülnek át automatikusan a hírnökök ebbe a csoportba.',
+        'line_3' => 'Az eddigi főcsoport neve: :groupName',
+        'line_4' => 'A módosítást :userName végezte el.',
+        'line_5' => 'Ha változtatni szeretnél ezen a beállításon, akkor kérjük menj a "Hírnökök" menübe és kapcsold össze a két csoportot újra.'
+    ],
+    'GroupUserLogout' => [
+        'subject' => 'Kiléptél a(z) :groupName csoportból',
+        'line_1' => 'Értesítünk, hogy kiléptél a(z) :groupName csoportból. Ezentúl nem fogod látni a csoport naptárát, és a jövőbeli szolgálataid is törölve lettek ebből a csoportból.',
+        'line_2' => 'A kilépésedet :userName kezdeményezte, ha ez nem te vagy, akkor nála érdeklődhetsz ennek okáról.'
     ],
 ];

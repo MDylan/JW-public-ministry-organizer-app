@@ -49,15 +49,14 @@
                                                 <i class="fa fa-file mr-1"></i>
                                                 @lang('group.news')</a>
 
-                                                
                                         @else
-
-                                            @lang('app.invitation')
-                                            <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary">
-                                                <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
-                                            <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger">
-                                                <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
-                                        
+                                            @if (!$group->parent_group_id)
+                                                @lang('app.invitation')
+                                                <button wire:click.prevent="accept({{$group->id}})" type="button" class="btn btn-primary">
+                                                    <i class="fa fa-check mr-1"></i> @lang('app.accept')</button>
+                                                <button wire:click.prevent="rejectModal({{$group->id}})" type="button" class="btn btn-danger">
+                                                    <i class="fa fa-times mr-1"></i> @lang('app.reject')</button>
+                                            @endif
                                         @endif
                                         </div>
                                         <div class="col-md-2 py-2 py-md-0 text-center my-auto">
@@ -80,10 +79,12 @@
                                                             </a>                                                            
                                                             <div class="dropdown-divider"></div>
                                                         @endif
-                                                        <a class="dropdown-item text-danger" href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})">
-                                                            <i class="fa fa-sign-out-alt mr-1" aria-hidden="true"></i>
-                                                            @lang('group.logout.button')
-                                                        </a>
+                                                        @if (!$group->parent_group_id)
+                                                            <a class="dropdown-item text-danger" href="" title="{{ __('group.logout.button') }}" wire:click.prevent="confirmLogoutModal({{$group->id}})">
+                                                                <i class="fa fa-sign-out-alt mr-1" aria-hidden="true"></i>
+                                                                @lang('group.logout.button')
+                                                            </a>
+                                                        @endif
         
                                                         @if(in_array($group->pivot->group_role, ['admin']))
                                                             <a class="dropdown-item text-danger" href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})">
