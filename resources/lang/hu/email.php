@@ -48,6 +48,7 @@ return [
             'unknown' => 'Ismeretlen.',
             'modified_service_time' => 'Ezen a napon módosult a szolgálat ideje, és a tervezett szolgálatod nem fért bele az új szolgálati időbe.',
             'user_logout' => 'Kiléptél a csoportból, így a kilépésed utáni szolgálataid is törölve lettek.',
+            'service_day_deleted' => 'Erre a napra nem lehet már szolgálatot beütemezni, ezért törölve lett mindenki szolgálata.',
         ],
         'modified' => [
             'subject' => 'A :date napra tervezett szolgálatod módosítva lett! (:groupName)',

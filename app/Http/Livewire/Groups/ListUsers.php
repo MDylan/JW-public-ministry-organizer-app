@@ -327,7 +327,9 @@ class ListUsers extends AppComponent
                         // 'group_role' => $new_user['pivot']['group_role'],
                         'note' => strip_tags(trim($new_user['pivot']['note'])),
                         'hidden' => $new_user['pivot']['hidden'] == 1 ? 1 : 0,
-                        'deleted_at' => null //because maybe we try to reattach logged out user
+                        'deleted_at' => null, //because maybe we try to reattach logged out user
+                        //automatically accept invitation if user is already member of the parent group
+                        'accepted_at' => $new_user['pivot']['accepted_at'] ? date("Y-m-d H:i:s") : null
                     ];
                 }
                 $res = $group->groupUsersAll()->sync($user_sync);

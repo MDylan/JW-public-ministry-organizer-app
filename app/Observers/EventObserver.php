@@ -147,7 +147,7 @@ class EventObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $event->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => auth()->user() !== null ? auth()->user()->id : false,
             'changes' => ''
         ];
 
@@ -155,7 +155,7 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            'userName' => auth()->user()->full_name, 
+            'userName' => auth()->user() !== null ? auth()->user()->full_name : false, 
             'groupName' => $event->groups->name,
             'date' => $event->day,
             'oldService' => [

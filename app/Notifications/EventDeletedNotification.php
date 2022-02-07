@@ -53,7 +53,7 @@ class EventDeletedNotification extends Notification implements ShouldQueue
         $e = new DateTime($this->data['oldService']['end']);
         $end = $e->format(__('app.format.time'));
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject(__('email.event.deleted.subject', [
                 'date' => $date,
                 'groupName' => $this->data['groupName']
@@ -69,11 +69,18 @@ class EventDeletedNotification extends Notification implements ShouldQueue
                                 ? __('email.event.deletion_reasons.'.$this->data['reason'])
                                 : __('email.event.deletion_reasons.unknown')
                             ),
-            ]))
-            ->line(__('email.event.deleted.line_4', [
+            ]));
+
+        
+        if($this->data['userName'] !== false) {
+            $message->line(__('email.event.deleted.line_4', [
                 'userName' => $this->data['userName'],
-            ]))
-            ->action(__('Log in'), url('/'));
+            ]));
+        }
+       
+        $message->action(__('Log in'), url('/'));
+
+        return $message;
     }
 
     /**

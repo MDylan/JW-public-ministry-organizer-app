@@ -265,12 +265,15 @@ return [
         'note_placeholder' => 'Pl. különleges kampány.',
         'date_start' => 'Szolgálat kezdete',
         'date_end' => 'Szolgálat vége',
+        'under_edit' => 'Szerkesztés alatt a fenti űrlapon!',
         'confirmDelete' => [
             'question' => 'Biztosan törlöd ezt a napot?',
             'message' => 'Ha törlöd, akkor - az űrlap mentése után - minden erre a napra mentett szolgálat módosítva/törölve lesz, attól függően, hogy miként érinti a módosítás.',
             'success' => 'Az adott nap törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+        'show_past_dates' => 'Mutasd a régi dátumokat',
+        'hide_past_dates' => 'Régi dátumok elrejtése',
     ],
     'min' => 'min',
     'max' => 'max',

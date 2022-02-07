@@ -24,13 +24,14 @@ class CalculateDatesEvents {
             $dates = [$date];
         }
 
-        $events = DB::select('SELECT e.id, e.day, e.start, e.end, gd.date, gd.date_status, gd.date_start, gd.date_end, gd.date_max_publishers, gd.date_min_time
+        $events = DB::select('SELECT e.id, e.day, e.start, e.end, e.status,
+                                        gd.date, gd.date_status, gd.date_start, gd.date_end, gd.date_max_publishers, gd.date_min_time
             FROM events as e
             INNER JOIN group_dates AS gd ON gd.group_id = e.group_id AND gd.date = e.day
         WHERE e.deleted_at IS NULL
             AND e.group_id = ?
             AND e.day IN (?)
-            AND e.status IN (1)
+            AND e.status IN (0,1)
             ORDER BY e.day, e.start', [$group_id, implode(",", $dates)]);
         // dd($events);
         $deletes = [];
@@ -59,6 +60,11 @@ class CalculateDatesEvents {
                 //only the start not good, we update it
                 $updates[$event->id]['end'] = date("Y-m-d H:i:s", $end);
             }
+
+            //if it is not accepted event, we won't count with it
+            //TODO: Maybe need to be a revision later
+            if($event->status == 0) 
+                continue;
 
             //search if we reach max publishers
             $step = $event->date_min_time * 60;

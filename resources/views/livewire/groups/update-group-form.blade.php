@@ -243,6 +243,73 @@
                                     </div>
                             </div>
                         </div> <!-- end of days section -->
+                        
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <div class="card-title">@lang('group.literature.title')</div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                      <i class="fas fa-minus"></i>
+                                    </button>
+                                  </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <input wire:model.defer="state.literatureAdd" type="text" class="form-control" placeholder="@lang('group.literature.language')" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-primary" wire:click="literatureAdd" wire:loading.attr="disabled">
+                                            <i class="fa fa-plus mr-1"></i>
+                                                @lang('Add')                                        
+                                    </div>
+                                </div>
+                                <div class="grid-striped">
+                                @foreach ($literatures as $type => $languages)
+                                    @if($type == "removed") @continue; @endif
+                                    @foreach ($languages as $id => $language)
+                                    <div class="row p-2">
+                                        @if($editedLiteratureType == $type && $editedLiteratureId == $id)
+                                            <div class="col-md-6 my-auto">
+                                                <input wire:model.defer="state.editedLiterature" type="text" class="form-control" value="{{ $language }}" />
+                                            </div>
+                                            <div class="col-md-6 text-right my-auto">
+                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEditSave()" wire:loading.attr="disabled">
+                                                    <i class="fa fa-save mr-1"></i>
+                                                        @lang('Save')
+                                                </button>
+                                                <button type="button" class="btn btn-warning btn-sm" wire:click="literatureEditCancel()" wire:loading.attr="disabled">
+                                                    <i class="fa fa-times mr-1"></i>
+                                                        @lang('Cancel')
+                                                </button>
+                                            </div>   
+                                        @else                                        
+                                            <div class="col-md-6 my-auto">
+                                                {{ $language }}
+                                            </div>
+                                            <div class="col-md-6 text-right my-auto">
+                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEdit('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
+                                                    <i class="fa fa-edit mr-1"></i>
+                                                        @lang('Edit')
+                                                <button type="button" class="btn btn-danger btn-sm" wire:click="literatureRemove('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
+                                                    <i class="fa fa-trash mr-1"></i>
+                                                        @lang('Remove')
+                                            </div>                                        
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                    
+                                @endforeach
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        @lang('group.literature.help')
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- end of literatures section -->
+                    </div> <!-- end of left section -->
+                    <div class="col-lg-6">
                         <div class="card card-primary card-outline">
                             <div class="card-header">
                                 <div class="card-title">@lang('group.special_dates.title')</div>
@@ -378,16 +445,18 @@
                                         </div>
                                         <div class="col-md-4 text-center my-auto">
                                             {{-- {{ $editedDate['type'] }} {{ $editedDate['id'] }} {{ $type }} {{ $id }} --}}
-                                            @if ($editedDate == $date['date'])
+                                            @if ($editedDate == $date['date']) @lang('group.special_dates.under_edit')
                                             @else
-                                                <button type="button" class="btn btn-primary btn-sm w-100 mb-2" wire:click="dateEdit('{{ $date['date'] }}')" wire:loading.attr="disabled">
-                                                    <i class="fa fa-edit mr-1"></i>
-                                                        @lang('Edit')
-                                                </button>
-                                                <button type="button" class="btn btn-danger btn-sm w-100" wire:click="dateRemove('{{ $date['date'] }}')" wire:loading.attr="disabled">
-                                                    <i class="fa fa-trash mr-1"></i>
-                                                        @lang('Remove')
-                                                </button>
+                                                @if(!$carbon_date->isPast()) 
+                                                    <button type="button" class="btn btn-primary btn-sm w-100 mb-2" wire:click="dateEdit('{{ $date['date'] }}')" wire:loading.attr="disabled">
+                                                        <i class="fa fa-edit mr-1"></i>
+                                                            @lang('Edit')
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm w-100" wire:click="dateRemove('{{ $date['date'] }}')" wire:loading.attr="disabled">
+                                                        <i class="fa fa-trash mr-1"></i>
+                                                            @lang('Remove')
+                                                    </button>
+                                                @endif
                                             @endif
                                         </div>                                        
                                     </div>
@@ -402,168 +471,6 @@
                                 </div>
                             </div>
                         </div> <!-- end of spacial dates section -->
-                        <div class="card card-primary card-outline">
-                            <div class="card-header">
-                                <div class="card-title">@lang('group.literature.title')</div>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
-                                      <i class="fas fa-minus"></i>
-                                    </button>
-                                  </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-8">
-                                        <input wire:model.defer="state.literatureAdd" type="text" class="form-control" placeholder="@lang('group.literature.language')" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button type="button" class="btn btn-primary" wire:click="literatureAdd" wire:loading.attr="disabled">
-                                            <i class="fa fa-plus mr-1"></i>
-                                                @lang('Add')                                        
-                                    </div>
-                                </div>
-                                <div class="grid-striped">
-                                @foreach ($literatures as $type => $languages)
-                                    @if($type == "removed") @continue; @endif
-                                    @foreach ($languages as $id => $language)
-                                    <div class="row p-2">
-                                        @if($editedLiteratureType == $type && $editedLiteratureId == $id)
-                                            <div class="col-md-6 my-auto">
-                                                <input wire:model.defer="state.editedLiterature" type="text" class="form-control" value="{{ $language }}" />
-                                            </div>
-                                            <div class="col-md-6 text-right my-auto">
-                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEditSave()" wire:loading.attr="disabled">
-                                                    <i class="fa fa-save mr-1"></i>
-                                                        @lang('Save')
-                                                </button>
-                                                <button type="button" class="btn btn-warning btn-sm" wire:click="literatureEditCancel()" wire:loading.attr="disabled">
-                                                    <i class="fa fa-times mr-1"></i>
-                                                        @lang('Cancel')
-                                                </button>
-                                            </div>   
-                                        @else                                        
-                                            <div class="col-md-6 my-auto">
-                                                {{ $language }}
-                                            </div>
-                                            <div class="col-md-6 text-right my-auto">
-                                                <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEdit('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
-                                                    <i class="fa fa-edit mr-1"></i>
-                                                        @lang('Edit')
-                                                <button type="button" class="btn btn-danger btn-sm" wire:click="literatureRemove('{{$type}}', {{ $id }})" wire:loading.attr="disabled">
-                                                    <i class="fa fa-trash mr-1"></i>
-                                                        @lang('Remove')
-                                            </div>                                        
-                                        @endif
-                                    </div>
-                                    @endforeach
-                                    
-                                @endforeach
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        @lang('group.literature.help')
-                                    </div>
-                                </div>
-                            </div>
-                        </div> <!-- end of literatures section -->
-                    </div> <!-- end of left section -->
-                    <div class="col-lg-6">
-                        <div class="card card-primary card-outline">
-                            <div class="card-header">
-                                <div class="card-title">{{__('group.users')}}</div>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
-                                      <i class="fas fa-minus"></i>
-                                    </button>
-                                  </div>
-                            </div>
-                            <div class="card-body p-0">
-                                    <div class="form-row align-items-center ml-3 mt-2">
-                                        <div class="col-auto">
-                                            <label class="mr-sm-2">{{__('user.email')}}</label>
-                                        </div>
-                                        <div class="col-7 my-1">
-                                            <textarea wire:model.defer="search" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
-                                             cols="30" rows="2"></textarea>
-                                          
-                                      </div>
-                                        <div class="col-auto my-1">
-                                            <button wire:click.prevent="userAdd()" wire:loading.attr="disabled" type="submit" class="btn btn-primary">
-                                                <i class="fa fa-plus mr-1"></i>
-                                                {{__('group.user_add')}}</button>
-                                      </div>
-                                      @error('email')
-                                        <p class="text-danger mt-2">{{$message}}</p>
-                                      @enderror
-                                    </div>
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                        <th>{{__('user.name')}}</th>
-                                        <th>{{__('app.userRole')}}</th>
-                                        <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {{-- {{dd($users)}} --}}
-                                        @foreach ($users as $slug => $user)
-                                            <tr>
-                                                <td class="pb-1 align-middle">
-                                                    <strong>{{$user['full_name']}}</strong> - {{$user['email']}}
-                                                </td>
-                                                <td class="pb-1">
-                                                    <select wire:model.defer="users.{{$slug}}.group_role" name="users['{{$slug}}']['group_role']" class="form-control">
-                                                        @foreach ($group_roles as $role => $translate) 
-                                                            <option value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </td>
-                                                <td class="text-right align-middle pb-1">
-                                                    <div class="btn-group btn-group-sm">
-                                                    <a wire:click.prevent="removeUser('{{$slug}}')" href="#" class="btn btn-danger"><i class="fas fa-trash"></i></a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="3" class="pt-1" style="border-bottom: 1px solid #000;">
-                                                    <div class="row">
-                                                        <div class="col-2 my-auto">
-                                                            <div class="icheck-primary d-inline">
-                                                                <input wire:model.defer="users.{{$slug}}.hidden" type="checkbox" id="user_{{$slug}}" value="1">
-                                                                <label for="user_{{$slug}}">
-                                                                    @lang('group.hidden')
-                                                                </label>
-                                                              </div>
-                                                        </div>
-                                                        <div class="col-2">
-                                                            <label class="my-1 mr-2" for="{{$slug}}_note">{{__('group.note')}}</label>
-                                                        </div>
-                                                        <div class="col-8">
-                                                            <input wire:ignore.self wire:model.defer="users.{{$slug}}.note" 
-                                                            type="text" class="form-control" name="users['{{$slug}}']['note']" id="{{$slug}}_note">
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>  
-                                        @endforeach                                        
-                                    </tbody>
-                                </table>
-                                @error('users')
-                                <p class="text-danger mx-2">{{$message}}</p>
-                                @enderror
-                                <div class="alert alert-into">
-                                    <h6><i class="fa fa-info-circle mr-2"></i>{{__('group.role_head')}}</h6>
-                                    <ul>
-                                        @foreach ($group_roles as $role => $translate) 
-                                            <li><strong>{{ __('group.roles.'.$translate)}}</strong>: {{__('group.role_helper.'.$translate)}}</li>
-                                        @endforeach
-                                    </ul>
-                                    {{__('group.users_helper')}}<br/>
-                                    {{__('group.hidden_helper')}}<br/>
-                                    {{__('group.note_helper')}}<br/>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="row mb-3">
