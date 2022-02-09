@@ -7,6 +7,7 @@ use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 // use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Group;
+use App\Models\GroupUser;
 // use App\Models\GroupDate;
 use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Lang;
@@ -49,7 +50,7 @@ class ListUsers extends AppComponent
         'editUser',         
         'deleteUser',
         'detachChildGroup',
-        'detachParentGroup'
+        'detachParentGroup',
     ];
 
     public function mount($group) {
@@ -471,6 +472,34 @@ class ListUsers extends AppComponent
         }
     }
 
+    /**
+     * Toggle user signs
+     */
+    public function toogleSign($user_id, $icon) {
+        $group = Group::findorFail($this->groupId);
+        if(Auth::id() !== $user_id && $group->editors()->wherePivot('user_id', Auth::id())->count() == 0) {
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('group.signs.error')
+            ]);
+            return false;
+        }
+        $userData = GroupUser::where('group_id', $this->groupId)
+                    ->where('user_id', $user_id);
+
+        $signs = $userData->first('signs')->toArray();
+        // dd($signs);
+        $signs = $signs['signs'];
+        if(isset($signs[$icon])) {
+            $signs[$icon] = !$signs[$icon];
+        } else {
+            $signs[$icon] = true;
+        }
+        $userData->update(['signs' => $signs]);
+        $this->dispatchBrowserEvent('success', [
+            'message' => __('group.signs.success')
+        ]);
+    }
+
     public function render()
     {
 
@@ -478,7 +507,7 @@ class ListUsers extends AppComponent
         $parent_group = $group->parentGroup;
         $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
 
-        // dd($group->groupAdmins);
+        // dd($group->signs);
 
         $users = $group->groupUsers()
                     ->where(function($query) {
@@ -498,6 +527,7 @@ class ListUsers extends AppComponent
             'parent_group_name' => $parent_group_name,
             'child_groups' => $group->childGroups()->get(['id', 'name'])->toArray(),
             'group_roles' => self::$group_roles,
+            'group_signs' => $group->signs,
             'user_admin_groups' => $this->user_admin_groups()
         ]);
     }

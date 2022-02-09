@@ -52,6 +52,17 @@ class UpdateGroupForm extends AppComponent
 
     public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
 
+    public $defaultSigns = [
+        'fa-key',
+        'fa-car',
+        'fa-sign-language',
+        'fa-home',
+        'fa-train',
+        'fa-globe'
+    ];
+
+    public $groupSigns = [];
+
     public function mount(Group $group) {
         // dd($group->days);
 
@@ -225,6 +236,7 @@ class UpdateGroupForm extends AppComponent
             'days.*.start_time' => 'required|date_format:H:i|before:days.*.end_time',
             'days.*.end_time' => 'required|date_format:H:i|after:days.*.start_time',
             'days.*.day_number' => 'required',
+            'signs' => 'sometimes',
         ]);
 
         // $v->after(function ($validator) use ($admins, $current_admins) {
@@ -242,6 +254,8 @@ class UpdateGroupForm extends AppComponent
         //     }
         // });
         $validatedData = $v->validate();
+
+        // dd($validatedData);
 
         $validatedDays = Validator::make($this->days, [
             '*.day_number' => 'required',

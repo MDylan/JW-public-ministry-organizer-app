@@ -29,7 +29,17 @@ class Group extends Model
         'color_someone',
         'color_minimum',
         'color_maximum',
-        'parent_group_id'
+        'parent_group_id',
+        'signs'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'signs' => 'array',
     ];
 
     // protected static $logFillable = true;
@@ -52,7 +62,7 @@ class Group extends Model
 
     public function groupUsers() {
         return $this->belongsToMany(User::class)
-                        ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at')
+                        ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at', 'signs')
                         ->withTimestamps()
                         ->whereNull('deleted_at')
                         ->using(GroupUser::class)
@@ -61,7 +71,7 @@ class Group extends Model
 
     public function groupUsersAll() {
         return $this->belongsToMany(User::class)
-                        ->withPivot('group_role', 'note', 'accepted_at', 'hidden', 'deleted_at')
+                        ->withPivot('group_role', 'note', 'accepted_at', 'hidden', 'deleted_at', 'signs')
                         ->withTimestamps()
                         ->using(GroupUser::class);
     }

@@ -175,10 +175,11 @@
                                     </div>                                    
                                 </div>                                                      
                             </div>
-                        </div><!-- -->
+                        </div>
+                        {{-- end of group datas card --}}                        
                         <div class="card card-primary card-outline">
                             <div class="card-header">
-                                <div class="card-title">{{__('group.days_head')}}</div>
+                                <div class="card-title">@lang('group.signs.title')</div>
                                 <div class="card-tools">
                                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                                       <i class="fas fa-minus"></i>
@@ -186,64 +187,23 @@
                                   </div>
                             </div>
                             <div class="card-body">
-                                    {{-- {{ dd($days) }} --}}
-                                    @foreach ($group_days as $day => $translate) 
-                                        <div class="row alert alert-light p-1">
-                                            <div class="col-lg-3">
-                                                <label>Nap</label>
-                                                <div class="form-group">                                                        
-                                                    <input data-day="{{$day}}" wire:model.defer="days.{{$day}}.day_number" type="checkbox" 
-                                                        class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
-                                                    <label class="form-check-label" for="day_{{$day}}">{{__('group.days.'.$translate)}}</label>
-                                                </div>
+                                <div class="row"><div class="col">@lang('group.signs.info')</div></div>
+                                @foreach ($defaultSigns as $sign)
+                                    <div class="input-group mb-1">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <input wire:model.defer="state.signs.{{$sign}}.checked" type="checkbox" />
                                             </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
-                                                    <select 
-                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.start_time" 
-                                                        name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
-                                                        class="timeselect start_time form-control 
-                                                        @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
-                                                        @foreach ($group_times as $field => $translate) 
-                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
-                                                    <select 
-                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.end_time" 
-                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
-                                                        class="timeselect end_time form-control 
-                                                        @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
-                                                        @foreach ($group_times as $field => $translate) 
-                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div> 
-                                            </div>
-                                            @if ($errors->has('' .$day. '.start_time') || $errors->has('' .$day. '.end_time'))
-                                                <div class="col-lg-12">
-                                                    <small class="text-danger">
-                                                    {{ $errors->first('' .$day. '.start_time') }}
-                                                    {{ $errors->first('' .$day. '.end_time') }}
-                                                    </small>
-                                                </div>
-                                            @endif
-                                        </div>                                                                            
-                                    @endforeach
-                                    <div class="row">
-                                        <div class="col-12">@lang('group.days_info')</div>
+                                            <button class="btn btn-outline-success" style="width:45px;" type="button">
+                                                <i class="fa {{$sign}}"></i>
+                                            </button>
+                                        </div>
+                                        <input type="text" wire:model.defer="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
                                     </div>
+                                @endforeach
                             </div>
-                        </div> <!-- end of days section -->
-                        
+                        </div>
+                        {{-- End of group signs card --}}                        
                         <div class="card card-primary card-outline">
                             <div class="card-header">
                                 <div class="card-title">@lang('group.literature.title')</div>
@@ -310,6 +270,75 @@
                         </div> <!-- end of literatures section -->
                     </div> <!-- end of left section -->
                     <div class="col-lg-6">
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <div class="card-title">{{__('group.days_head')}}</div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                      <i class="fas fa-minus"></i>
+                                    </button>
+                                  </div>
+                            </div>
+                            <div class="card-body">
+                                    {{-- {{ dd($days) }} --}}
+                                    @foreach ($group_days as $day => $translate) 
+                                        <div class="row alert alert-light p-1 mb-2">
+                                            <div class="col-lg-3">
+                                                <label>Nap</label>
+                                                <div class="form-group">                                                        
+                                                    <input data-day="{{$day}}" wire:model.defer="days.{{$day}}.day_number" type="checkbox" 
+                                                        class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
+                                                    <label class="form-check-label" for="day_{{$day}}">{{__('group.days.'.$translate)}}</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
+                                                    <select 
+                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.start_time" 
+                                                        name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
+                                                        class="timeselect start_time form-control 
+                                                        @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
+                                                        @foreach ($group_times as $field => $translate) 
+                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
+                                                    <select 
+                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.end_time" 
+                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
+                                                        class="timeselect end_time form-control 
+                                                        @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
+                                                        @foreach ($group_times as $field => $translate) 
+                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div> 
+                                            </div>
+                                            @if ($errors->has('' .$day. '.start_time') || $errors->has('' .$day. '.end_time'))
+                                                <div class="col-lg-12">
+                                                    <small class="text-danger">
+                                                    {{ $errors->first('' .$day. '.start_time') }}
+                                                    {{ $errors->first('' .$day. '.end_time') }}
+                                                    </small>
+                                                </div>
+                                            @endif
+                                        </div>                                                                            
+                                    @endforeach
+                                    <div class="row">
+                                        <div class="col-12">@lang('group.days_info')</div>
+                                    </div>
+                            </div>
+                        </div> <!-- end of days section -->
+
+
                         <div class="card card-primary card-outline">
                             <div class="card-header">
                                 <div class="card-title">@lang('group.special_dates.title')</div>

@@ -279,5 +279,12 @@ return [
     'service' => 'Szolgálat',
     'service_publishers' => 'Minimum :min, maximum :max hírnök',
     'service_time' => 'Minimum :min, maximum :max szolgálat',
+    'signs' => [
+        'title' => 'Speciális jelek',
+        'info' => 'Az alábbi jeleket választhatják a hírnökök ennél a csoportnál (Nem kötelező használni). Ez segíthet, hogy átlásd, kinek van pl kulcsa a teremhez, vagy autója. A megnevezést testreszabhatod, látni fogják a hírnökök.',
+        'name' => 'Megnevezés',
+        'success' => 'Sikeresen módosult!',
+        'error' => 'Nem vagy jogosult módosítani.'
+    ],
     
 ];

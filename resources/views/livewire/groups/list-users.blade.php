@@ -97,7 +97,7 @@
                             @if ($user->pivot->accepted_at == null && $editor == 0)
                                 @continue                                        
                             @endif
-                            @if ($user->pivot->hidden == 1 && $editor == 0)
+                            @if (($user->pivot->hidden == 1 && $user->id !== Auth::id()) && $editor == 0)
                                 @continue                                        
                             @endif
 
@@ -107,11 +107,36 @@
                                     </div>
                                 <div class="col-8 col-md-2 my-auto align-middle text-left text-bold">
                                     {{ $user->full_name }} 
+                                    <div class="w-100"></div>
+                                    @if($group_signs) 
+                                        @foreach ($group_signs as $icon => $sign)
+                                            @if ($sign['checked'])
+                                                <button 
+                                                    @if($editor || $user->id == Auth::id())
+                                                        wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
+                                                    @endif
+                                                    class="btn btn-sm 
+                                                    @if(isset($user->pivot->signs[$icon])) 
+                                                        @if ($user->pivot->signs[$icon])
+                                                            btn-success 
+                                                        @else
+                                                            btn-outline-dark 
+                                                        @endif                                                        
+                                                    @else btn-outline-dark 
+                                                    @endif 
+                                                    p-1" 
+                                                    title="{{ $sign['name'] }}">
+                                                    <i class="fa {{$icon}} p-1"></i>
+                                                    <div class="d-md-none">{{ $sign['name'] }}</div>
+                                                </button>
+                                            @endif
+                                        @endforeach
+                                    @endif
                                     @if ($user->pivot->hidden == 1)
                                         <span class="badge badge-success"> @lang('group.hidden') </span>
                                     @endif
                                     @if($editor && $user->pivot->note) 
-                                    <div class="w-100"></div><span class="badge badge-info"> {{ $user->pivot->note }} </span>
+                                        <span class="badge badge-info"> {{ $user->pivot->note }} </span>
                                     @endif
                                 </div>
                                     <div class="d-md-none col-4 text-right text-bold">
