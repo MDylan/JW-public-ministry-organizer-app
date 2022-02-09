@@ -79,12 +79,24 @@
                                                     userEvent
                                                 @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
                                                     <h3 class="session-title">
-                                                        @if ($event['editable'] == 'disabled')
-                                                        <i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}
-                                                        @else
-                                                        <a href="#" wire:click.prevent="editEvent_modal({{$event['id']}})"><i class="fa fa-user mr-1"></i> {{ $event['user']['full_name'] }}</a>    
+                                                        @if ($event['editable'] != 'disabled') 
+                                                            <a href="" wire:click.prevent="editEvent_modal({{$event['id']}})">
                                                         @endif
-                                                        
+                                                        @if (is_array($group_data['signs']))
+                                                            @foreach ($group_data['signs'] as $icon => $sign) 
+                                                                @if(isset($group_data['users_signs'][$event['user_id']][$icon]))
+                                                                    @if ($group_data['users_signs'][$event['user_id']][$icon])
+                                                                        <i class="fa {{ $icon }} mr-1" title="{{ $sign['name'] }}"></i>
+                                                                    @endif
+                                                                @endif                                                                
+                                                            @endforeach
+                                                        @else 
+                                                            <i class="fa fa-user mr-1"></i>
+                                                        @endif 
+                                                        {{ $event['user']['full_name'] }}
+                                                        @if ($event['editable'] != 'disabled') 
+                                                            <i class="fa fa-edit ml-1"></i></a>
+                                                        @endif                                                        
                                                     </h3>
                                                     <span class="session-time">{{$event['start_time']}} - {{$event['end_time']}}</span>
                                                     <span class="session-presenter"></span>

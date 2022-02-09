@@ -120,7 +120,8 @@ class Modal extends AppComponent
         $groupId = $this->form_groupId;
         $date = $this->date;
 
-        $group = Group::with(['days', 
+        $group = Group::with([
+                        'days', 
                         'events' => function($q) use ($date) {
                             $q->select(['id', 'group_id', 'user_id', 'day', 'start', 'end', 'accepted_at', 'accepted_by', 'status']);
                             $q->where('day', '=', $date);
@@ -135,6 +136,7 @@ class Modal extends AppComponent
                             // $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
                             $q->where('date', '=', $date);
                         },
+                        'groupUsersAll', //we will unset this later!
                         'dates'/* => function($q) use ($date) {
                             $d = new DateTime($date);
                             $d->modify('-1 week');
@@ -163,6 +165,7 @@ class Modal extends AppComponent
         $this->role = $group['current_user'][0]['pivot']['group_role'];
         //unset this part, it's not public for livewire
         unset($group['current_user']);
+        
         // dd($group);
 
         $this->day_data = [];
@@ -186,9 +189,19 @@ class Modal extends AppComponent
                 ];
             }
         }
+        $user_signs = [];
+        if(is_array($group['group_users_all'])) {
+            foreach($group['group_users_all'] as $user) {
+                if(isset($user['pivot']['signs'])) {
+                    $user_signs[$user['id']] = $user['pivot']['signs'];
+                }
+            }
+        }
+        $group['users_signs'] = $user_signs;
+        unset($group['group_users_all']);
         // dd($this->service_days);
         $this->group_data = $group; //->toArray();
-
+        // dd($this->group_data);
         //calculate next end previous day
         $now = time();
         $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);

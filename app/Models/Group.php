@@ -86,7 +86,7 @@ class Group extends Model
     public function users() {
         return $this->belongsToMany(User::class)
                         ->select(['users.id', 'users.first_name', 'users.last_name'])
-                        ->withPivot('group_role')
+                        ->withPivot('group_role', 'signs')
                         ->wherePivot('deleted_at', null)
                         ->whereNotNull('accepted_at')
                         ->using(GroupUser::class);
@@ -137,7 +137,7 @@ class Group extends Model
                     ->with('user')          //join users table
                     ->with('accept_user');  //join users table
     }
-    
+  
     public function day_events($day) {
         return $this->events()
                     ->where('day', '=', $day)
