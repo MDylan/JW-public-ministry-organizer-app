@@ -16,6 +16,9 @@ class ListUsers extends AppComponent
 
     public $user;
     public $userIdBeeingRemoved = null;
+    public $searchTerm = null;
+    //for search with an url string
+    protected $queryString = ['searchTerm' => ['except' => '']];
 
     /**
      * Megjeleníti a modalt, amikor a gombra kattintunk
@@ -95,13 +98,23 @@ class ListUsers extends AppComponent
         $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('user.userDeleted')]);
     }
 
+    public function updatedSearchTerm() {
+        $this->resetPage();
+    }
+
+    public function clearSearch() {
+        $this->searchTerm = null;
+    }
+
     /**
      * Ez felel az oldal tartalmáért
      */
     public function render()
     {
 
-        $users = User::latest()->paginate(20);
+        $users = User::query()
+            ->where('email', 'like', '%'.$this->searchTerm.'%')
+            ->latest()->paginate(20);
 
         // $old = User::whereNull('email_verified_at')
         //         ->where('created_at', '<', date("Y-m-d H:i:s", strtotime("-1 week")));

@@ -21,13 +21,36 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-9 mb-2 mb-md-0">
+                        <button wire:click.prevent="addNew" class="btn btn-primary">
+                            <i class="fa fa-plus-circle mr-1"></i>
+                            {{ __('user.addNew') }}</button>
+                </div>
+
+                <div class="col-md-3 align-self-end mb-2">            
+                    <div class="d-flex justify-content-end align-items-center border border rounded bg-white pr-2">
+                        <input wire:model="searchTerm" type="text" placeholder="@lang('Search')" class="form-control border-0" />
+                        
+                        <div wire:loading.delay wire:target="searchTerm">
+                            <div class="la-ball-clip-rotate la-dark la-sm">
+                                <div></div>
+                            </div>
+                        </div>
+                        @if (Str::length($searchTerm) > 0)
+                            <div>
+                                <a href="javascript:void(0);" wire:click="clearSearch">
+                                    <i class="fa fa-times-circle p-2"></i>
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+            </div>
         <div class="row">
             <div class="col-lg-12">
-                <div class="d-flex justify-content-end mb-2">
-                    <button wire:click.prevent="addNew" class="btn btn-primary">
-                        <i class="fa fa-plus-circle mr-1"></i>
-                        {{ __('user.addNew') }}</button>
-                </div>
+                
                 
                 <div class="card card-primary card-outline">
                     <div class="card-body">
