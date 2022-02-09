@@ -111,24 +111,29 @@
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
                                             @if ($sign['checked'])
-                                                <button 
-                                                    @if($editor || $user->id == Auth::id())
-                                                        wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
-                                                    @endif
-                                                    class="btn btn-sm 
+                                                @if($editor || $user->id == Auth::id())
+                                                    <button wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
+                                                        class="btn btn-sm 
+                                                        @if(isset($user->pivot->signs[$icon])) 
+                                                            @if ($user->pivot->signs[$icon])
+                                                                btn-success 
+                                                            @else
+                                                                btn-outline-dark 
+                                                            @endif                                                        
+                                                        @else btn-outline-dark 
+                                                        @endif 
+                                                        p-1" 
+                                                        title="{{ $sign['name'] }}">
+                                                        <i class="fa {{$icon}} p-1"></i>
+                                                        <div class="d-md-none">{{ $sign['name'] }}</div>
+                                                    </button>
+                                                @else
                                                     @if(isset($user->pivot->signs[$icon])) 
                                                         @if ($user->pivot->signs[$icon])
-                                                            btn-success 
-                                                        @else
-                                                            btn-outline-dark 
-                                                        @endif                                                        
-                                                    @else btn-outline-dark 
-                                                    @endif 
-                                                    p-1" 
-                                                    title="{{ $sign['name'] }}">
-                                                    <i class="fa {{$icon}} p-1"></i>
-                                                    <div class="d-md-none">{{ $sign['name'] }}</div>
-                                                </button>
+                                                            <i class="fa {{$icon}} p-2 border rounded bg-success"></i>
+                                                        @endif
+                                                    @endif
+                                                @endif
                                             @endif
                                         @endforeach
                                     @endif
