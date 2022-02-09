@@ -112,11 +112,15 @@
                 </div>
                 @can ('is-groupcreator')
                     <div class="d-flex justify-content-end mb-2">
-                        <a href="{{route('groups.create')}}">
+                        {{-- <a href="{{route('groups.create')}}">
                         <button class="btn btn-primary">
                             <i class="fa fa-plus-circle mr-1"></i>
                             {{ __('group.addNew') }}</button>
-                        </a>
+                        </a> --}}
+
+                        <button wire:click="openModal('createGroup')" class="btn btn-primary">
+                            <i class="fa fa-plus-circle mr-1"></i>
+                            {{ __('group.addNew') }}</button>
                     </div>
                 @endcan
                 @cannot('is-groupcreator')
@@ -218,6 +222,47 @@
             </div>
         </div>
     </div>
+
+    @can('is-groupcreator')
+        <form autocomplete="off" wire:submit.prevent="createGroup">
+            <x-modal modalId="createGroup">
+                <x-slot name="title">
+                    @lang('group.addNew')
+                </x-slot>
+            
+                <x-slot name="content">
+                    <div class="alert alert-info">@lang('group.create_info')</div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="groupName">@lang('group.name')</label>
+                            <input wire:model.defer="state.name" type="text" class="form-control" name="groupName" id="groupName">
+                        </div>                        
+                        @error('email')
+                        <p class="text-danger mt-2">{{$message}}</p>
+                        @enderror
+                    </div>
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    
+                </x-slot>
+            
+                <x-slot name="buttons">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+                    <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                            <i class="fa fa-plus mr-1"></i>
+                            {{__('group.addNew')}}</button>
+                </x-slot>
+            </x-modal>
+        </form>
+    @endcan
 
     @section('footer_scripts')
     <script>

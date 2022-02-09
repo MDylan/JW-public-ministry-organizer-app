@@ -7,7 +7,9 @@ use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 
 class ListGroups extends AppComponent
@@ -177,6 +179,39 @@ class ListGroups extends AppComponent
         } else {
             $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
         }
+    }
+
+    public function openModal($modalId) {
+        $this->dispatchBrowserEvent('show-modal', ['id' => $modalId]);
+    }
+
+    public function createGroup() {
+
+        if (! Gate::allows('is-groupcreator')) {
+            abort(403);
+        }
+
+        // dd($this->state);
+
+        $validatedData = Validator::make($this->state, [
+            'name' => 'required|string|max:50|min:2',
+        ])->validate();
+
+        $user = Auth()->user();
+        $group = Group::create($validatedData);
+        $user->userGroups()->save($group, ['group_role' => 'admin', 'accepted_at' => date('Y-m-d H:i:s')]);
+
+        // Session::flash('message', __('group.groupCreated')); 
+        // redirect()->route('groups.edit', ['group' => $group->id]);
+
+        $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'createGroup',
+            'message' => __('group.groupCreated'),
+            'savedMessage' => __('app.saved')
+        ]);
+
+        $this->state = [];
+        auth()->user()->fresh();
     }
 
     public function render()

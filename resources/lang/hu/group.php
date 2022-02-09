@@ -10,6 +10,7 @@ return [
     'notInGroup' => 'Jelenleg még egyetlen csoportnak sem vagy a tagja. Vedd fel a kapcsolatot a gyülekezeted/csoportod felvigyázójával, hogy meg tudjon hívni a helyi csoportba.',
     'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
     'groupCreated' => 'A csoport létrejött!',
+    'create_info' => 'A létrehozás után tudod majd a csoport adatait szerkeszteni. Téged automatikusan hozzá fog adni csoportfelvigyázó jogkörrel. Mindenki mást majd a Hírnökök menüben tudsz hozzáadni.',
     'groupUpdated' => 'A csoport sikeresen módosult!',
     'groupDeleted' => 'A csoport törölve lett!',
     'groupDeleted_log' => 'A csoport törölve lett.',
@@ -203,7 +204,7 @@ return [
         'error' => 'Hiba az összekapcsolás közben.',
         'parent' => [
             'help' => 'Tájékoztatás: A hírnökök más csoporthoz is át vannak másolva.',
-            'info' => 'Ennek a csoportnak a tagjait az alábbi alcsoportokba másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot köztük, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra az alcsoportba senki, akit ezután veszel fel ebbe a csoportba.',
+            'info' => 'Ennek a csoportnak a tagjait az alábbi alcsoportokba másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot köztük, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra az alcsoportba senki, akit felveszel ebbe a csoportba.',
             'child_group_name' => 'Alcsoport neve',
             'detach' => [
                 'button' => 'Szétkapcsolás',
@@ -215,7 +216,7 @@ return [
         ],
         'child' => [
             'help' => 'Tájékoztatás: A hírnököket a(z) :groupName csoportból másoljuk át. Ott tudsz új hírnököt hozzáadni vagy törölni.',
-            'info' => 'Ennek a csoportnak a tagjait az alábbi főcsoportból másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra ebbe a csoportba senki, akit ezután vesznek fel abba a csoportba.',
+            'info' => 'Ennek a csoportnak a tagjait az alábbi főcsoportból másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra ebbe a csoportba senki, akit felvesznek abba a csoportba.',
             'parent_group_name' => 'Főcsoport neve',
             'detach' => [
                 'button' => 'Szétkapcsolás',
@@ -272,8 +273,6 @@ return [
             'success' => 'Az adott nap törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
-        'show_past_dates' => 'Mutasd a régi dátumokat',
-        'hide_past_dates' => 'Régi dátumok elrejtése',
     ],
     'min' => 'min',
     'max' => 'max',

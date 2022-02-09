@@ -114,7 +114,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/groups', ListGroups::class)->name('groups');            
 
             //For special roles
-            Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
+            // Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
 
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');

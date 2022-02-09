@@ -291,7 +291,7 @@
 
         {{-- New user modal --}}
 
-        @isset($editor)
+        @if($editor)
             <form autocomplete="off" wire:submit.prevent="createUser">
                 <x-modal modalId="UserAddModal">
                     <x-slot name="title">
@@ -340,7 +340,7 @@
                     </x-slot>
                 </x-modal>
             </form>
-        @endisset
+        @endif
 
         @if ($admin)
             <form autocomplete="off" wire:submit.prevent="linkToGroup">
