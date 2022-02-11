@@ -85,18 +85,18 @@
                             </tr>
                         </tbody>
                     </table>
-                        <div class="row m-2">
+                        <div class="row ml-2 mt-2 mr-2 mb-0">
                             <div class="col-12">
-                                <a wire:click="changeGroup({{$group['id']}})" href="javascript:void(0);" class="btn btn-primary mr-1 mb-2 mb-md-0">
+                                <a wire:click="changeGroup({{$group['id']}})" href="javascript:void(0);" class="btn btn-primary mr-1 mb-2">
                                     <i class="fa fa-calendar mr-1"></i>
                                     @lang('app.jump_to_calendar')</a>
                                 
-                                    <a href="{{ route('groups.users', ['group' => $group['id']]) }}" class="btn btn-outline-secondary mr-1 mb-2 mb-md-0">
+                                    <a href="{{ route('groups.users', ['group' => $group['id']]) }}" class="btn btn-outline-secondary mr-1 mb-2">
                                         <i class="fa fa-user-friends mr-1"></i>
                                         @lang('group.users')
                                     </a>
 
-                                    <a href="{{ route('groups.news', ['group' => $group['id']]) }}" class="btn btn-info mb-2 mb-md-0">
+                                    <a href="{{ route('groups.news', ['group' => $group['id']]) }}" class="btn btn-info mb-2">
                                         <i class="fa fa-file mr-1"></i>
                                         @lang('group.news')</a>
                             </div>

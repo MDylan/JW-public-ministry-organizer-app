@@ -62,6 +62,16 @@ return [
     'color_someone' => 'Valaki jelentkezett',
     'color_minimum' => 'Minimum létszám elérve',
     'color_maximum' => 'Maximum létszám elérve',
+    'color_explanation' => [
+        'title' => 'A színek magyarázata',
+        'info' => 'A különböző színek segítenek gyorsan átlátnod, hogy adott napon hol van még lehetőség szolgálatra.',
+        'color_default' => 'Ezen a napon nincs szolgálat.',
+        'color_empty' => 'Ebben az idősávban még senki nem jelentkezett szolgálatra.',
+        'color_someone' => 'Valaki jelentkezett, de még nincs meg a minimális létszám.',
+        'color_minimum' => 'A minimális létszámú hírnök megvan, de még lehet jelentkezni.',
+        'color_maximum' => 'Betelt a hírnökök száma.',
+        'your_service' => 'Ezen a napon neked is szolgálatod van.',
+    ],
     'days' => [
         '1' => 'Hétfő',
         '2' => 'Kedd',
@@ -273,6 +283,7 @@ return [
             'success' => 'Az adott nap törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+        'no_special_dates' => 'Nincsenek különleges napok ebben a hónapban.',
     ],
     'min' => 'min',
     'max' => 'max',

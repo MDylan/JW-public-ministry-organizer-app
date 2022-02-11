@@ -124,6 +124,67 @@
                     </div>
                 </div>
             </div>
+            {{-- End of calendar --}}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card card-primary card-outline">
+                        <h5 class="card-header">
+                            @lang('group.special_dates.title')
+                        </h5>
+                        <div class="card-body pt-0">
+                            <ul class="list-group list-group-flush">
+                                @forelse ($specialDatesList as $date)
+                                    @php                                                
+                                        $carbon_date = \Carbon\Carbon::parse($date['date']);
+                                        $carbon_start = \Carbon\Carbon::parse($date['date_start']);
+                                        $carbon_end = \Carbon\Carbon::parse($date['date_end']);
+                                    @endphp
+                                    <li class="list-group-item p-2">
+                                        <strong>{{ $carbon_date->format(__('app.format.date')) }}, {{ __('event.weekdays_short.'.( $carbon_date->format('w'))) }} 
+                                            @if ($date['date_status'] == 2) 
+                                                {{ $carbon_start->format(__('app.format.time')) }} - {{ $carbon_end->format(__('app.format.time')) }}
+                                            @endif
+                                            - {{ $date['note'] }}</strong><br/>                                        
+                                        @if ($date['date_status'] == 2)
+                                            {{ __('group.service_publishers', ['min' => $date['date_min_publishers'], 'max' => $date['date_max_publishers']]) }}
+                                        @else 
+                                            {{ __('group.special_dates.statuses_short.'.$date['date_status']) }}
+                                        @endif
+                                    </li>
+                                @empty
+                                    <li class="list-group-item p-2">@lang('group.special_dates.no_special_dates')</li>
+                                @endforelse
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {{-- End of special dates --}}
+                <div class="col-md-6">
+                    <div class="card card-primary card-outline">
+                        <h5 class="card-header">
+                            @lang('group.color_explanation.title')
+                        </h5>
+                        <div class="card-body pt-0">
+                            <div class="row mt-1">
+                                <div class="col-12">
+                                    @lang('group.color_explanation.info')
+                                </div>
+                            </div>                            
+                            @foreach ($cal_group_data['colors'] as $field => $color)
+                            <div class="row mt-1">
+                                <div class="col-3" style="background: {{ $color }};"></div>
+                                <div class="col-9">{{ __('group.color_explanation.'. $field) }}</div>
+                            </div>
+                            @endforeach
+                            <div class="row mt-1">
+                                <div class="col-3" style="background: #ff8000;"></div>
+                                <div class="col-9">{{ __('group.color_explanation.your_service') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{-- End of color helper --}}
+            </div>
         </div>
     </div>
 

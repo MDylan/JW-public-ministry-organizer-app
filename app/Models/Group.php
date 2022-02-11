@@ -42,6 +42,8 @@ class Group extends Model
         'signs' => 'array',
     ];
 
+    protected $appends = ['colors'];
+
     // protected static $logFillable = true;
     // protected static $logName = 'group';
     // protected static $logOnlyDirty = true;
@@ -232,5 +234,15 @@ class Group extends Model
 
     public function parentGroup() {
         return $this->belongsTo(Group::class, 'parent_group_id', 'id');
+    }
+
+    public function getColorsAttribute() {
+        $colors = config('events.default_colors');
+        foreach($colors as $color => $rgb) {
+            if(!empty($this->$color)) {
+                $colors[$color] = $this->$color;
+            } 
+        }
+        return $colors;
     }
 }

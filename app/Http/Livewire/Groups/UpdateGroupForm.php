@@ -41,14 +41,7 @@ class UpdateGroupForm extends AppComponent
     public $editedLiteratureType = null;
     public $editedLiteratureId = null;
     public $editedLiteratureRemove = [];
-
-    public $default_colors = [
-        'color_default' => '#CECECE',
-        'color_empty' => '#00FF00',
-        'color_someone' => '#1259B2',
-        'color_minimum' => '#ffff00',
-        'color_maximum' => '#ff0000',
-    ];
+    public $default_colors = [];
 
     public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
 
@@ -67,7 +60,8 @@ class UpdateGroupForm extends AppComponent
         // dd($group->days);
 
         $this->state = $group->toArray();
-        foreach($this->default_colors as $field => $color) {
+        $this->default_colors = config('events.default_colors');
+        foreach($group['colors'] as $field => $color) {
             if(empty($this->state[$field])) {
                 $this->state[$field] = $color;
             }
