@@ -22,7 +22,7 @@
     <div class="content">
         <div class="container-fluid">
             <div class="row mb-2 justify-content-between">
-                <div class="col-md-6 mb-2 mb-md-0">
+                <div class="col-md-9 mb-2 mb-md-0">
                     <div>
                         <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary mb-2 mb-md-0">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>

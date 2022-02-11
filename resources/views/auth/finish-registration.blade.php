@@ -50,7 +50,10 @@
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="password">@lang('user.password'):</label>
-                            <input name="password" type="password" class="form-control @error('password') is-invalid @enderror" id="password" value="" placeholder="@lang('user.password')" />
+                            <input name="password" type="password" class="form-control @error('password') is-invalid @enderror" id="password" value="" placeholder="@lang('user.password')" aria-describedby="passwordHelpBlock" />
+                            <small id="passwordHelpBlock" class="form-text text-muted">
+                                @lang('user.password_info')
+                            </small>
                             @error('password')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                         </div>
                     </div>
