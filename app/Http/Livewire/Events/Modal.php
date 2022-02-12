@@ -241,31 +241,6 @@ class Modal extends AppComponent
             } 
         }
 
-
-        // $key = array_search($dayOfWeek, $days_array);
-        // $aArray = $days_array;
-        // $aKeys = array_keys($aArray); //every element of aKeys is obviously unique
-        // $aIndices = array_flip($aKeys); //so array can be flipped without risk
-        // $i = $aIndices[$key]; //index of key in aKeys
-        // if ($i > 0) $prev = $aArray[$aKeys[$i-1]]; //use previous key in aArray
-        // if ($i < count($aKeys)-1) $next = $aArray[$aKeys[$i+1]]; //use next key in aArray
-        // if ($prev === false) $prev = end($aArray);
-        // if ($next === false) $next = $aArray[array_key_first($aArray)];
-
-        // $next_date = new DateTime($date);
-        // $next_date->modify("next ".$this->weekdays[$next]);
-        // $this->day_data['next_date'] = $next_date->format("Y-m-d");
-        // $prev_date = new DateTime($date);
-        // $prev_date->modify('last '.$this->weekdays[$prev]);
-        // $this->day_data['prev_date'] = $prev_date->format("Y-m-d");
-        
-
-        // $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
-        // if($next_date->getTimestamp() > $max_time) {
-        //     $this->day_data['next_date'] = false;
-        // }
-        // $this->day_data['prev_date'] = "";
-
         if($this->group_data['current_date'] === null) {
             $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
             $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
@@ -396,7 +371,7 @@ class Modal extends AppComponent
                     $this->day_stat[$slot_key]['events']++;
                 }                
                 $peak = max($peak, $day_table[$slot_key]['publishers']);
-                if(Auth::id() == $event['user_id']) {
+                if(Auth::id() == $event['user_id'] && !in_array($this->role, ['admin', 'roler', 'helper'])) {
                     $disabled_slots[$slot_key] = true;
                 }
                 $cell_start += $step;
@@ -447,6 +422,7 @@ class Modal extends AppComponent
     }
 
     public function setStart($time) {
+        // dd('most');
         $this->active_tab = 'event';
         $this->emitTo('events.event-edit', 'setStart', $time);
         // $this->state['start'] = $time;

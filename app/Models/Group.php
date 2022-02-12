@@ -91,7 +91,9 @@ class Group extends Model
                         ->withPivot('group_role', 'signs')
                         ->wherePivot('deleted_at', null)
                         ->whereNotNull('accepted_at')
-                        ->using(GroupUser::class);
+                        ->using(GroupUser::class)
+                        ->orderBy('last_name', 'asc')
+                        ->orderBy('first_name', 'asc');
     }
 
     public function groupAdmins() {
@@ -132,6 +134,11 @@ class Group extends Model
     public function justEvents() {
         return $this->hasMany(Event::class)
                     ->orderBy('start');
+    }
+
+    public function eventsNotAccepted() {
+        return $this->justEvents()
+                ->where('status', '=', '0');
     }
 
     public function events() {

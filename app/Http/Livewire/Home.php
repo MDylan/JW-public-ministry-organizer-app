@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\Event;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ class Home extends Component
     public $listeners = [
         'refresh' => 'render'
     ];
+    private $groups = [];
+    public $group_roles = [];
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -30,6 +33,8 @@ class Home extends Component
     public function getStat($group_stats) {
         // dd($group_stats);
         foreach($group_stats as $group) {
+            $this->groups[] = $group['id'];
+            $this->group_roles[$group['id']] = $group['pivot']['group_role'];
             $default_color = $group['colors']['color_default'];
             $green_color =$group['colors']['color_empty'];
             $service_days = [];
@@ -141,15 +146,33 @@ class Home extends Component
                 // $q->select(['group_id', 'date', /*'date_start', 'date_end',*/ 'date_status', 'note']);
                 $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
                 // $q->whereIn('date_status', [0,2]);
-            }
+            },
         ])->get()->toArray();
 
         // dd($dates);
         // dd($stats);
         $this->getStat($stats);
+        
+        $notAcceptedEvents = DB::table('events')
+                                ->groupBy('group_id', 'day')
+                                ->whereNull('deleted_at')
+                                ->whereIn('group_id', $this->groups)
+                                ->where('status', '=', '0')
+                                ->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)])
+                                ->get(['group_id', 'day']);
+                                // ->toArray();
+        $notAccepts = [];
+        if(count($notAcceptedEvents)) {
+            foreach($notAcceptedEvents as $event) {
+                $notAccepts[$event->group_id][$event->day] = true;
+            }
+        }
+        // dd($this->group_roles);
+
         return view('livewire.home', [
             // 'groups' => $groups->get()
             'groups' => $stats,
+            'notAccepts' => $notAccepts
             // 'dates' => $dates,
         ]);
     }

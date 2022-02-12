@@ -51,7 +51,7 @@ return [
     ],
     'date' => 'Dátum',
     'status' => 'Állapot',
-    'status_0' => 'Elbírálás alatt',
+    'status_0' => 'Jóváhagyásra vár!',
     'status_1' => 'Jóváhagyva',
     'status_2' => 'Elutasítva',
     'no_last_events' => 'Ebben a hónapban nem végeztél még szolgálatot.',

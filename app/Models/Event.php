@@ -36,7 +36,9 @@ class Event extends Model
         'end' => 'datetime:Y-m-d H:i',
     ];
 
-    protected $appends = ['full_time', 'day_name', 'service_hour', 'calendar_google', 'calendar_ics'];
+    protected $appends = ['full_time', 'day_name', 'service_hour', 
+        // 'calendar_google', 'calendar_ics'
+    ];
 
     // protected static $recordEvents = ['created', 'updated', 'deleted'];
 

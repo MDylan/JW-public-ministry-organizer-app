@@ -21,7 +21,6 @@
         <div class="container-fluid">
         <div class="card-columns">
             @forelse ($groups as $group)
-            {{-- <div class="col-md-6 float-left"> --}}
                 <div class="card card-primary card-outline" wire:ignore.self>
                     <div class="card-header">
                         <div class="card-title">
@@ -37,34 +36,32 @@
                     <table class="table table-sm m-0">
                         <thead>
                             <tr>
-                                <th class="text-center">@lang('event.date')</th>
-                                <th class="text-center">@lang('event.status')</th>
+                                <th class="text-center" style="width: 130px;">@lang('event.date')</th>
+                                <th class="text-center" style="width: 130px;">@lang('event.status')</th>
                                 <th class="text-center">@lang('event.eventsBar.title')</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- <tr><td colspan="3">@if(isset($dates[$group['id']])) {{ var_dump($dates[$group['id']]) }} @endif</td></tr> --}}
                                 @foreach ($days as $day)
                                 <tr @if (date("w", $day) == 0) style="border-bottom:2px solid #000;" @endif>
-                                    <td class="text-center">
-                                        
-                                        @if ( ( ($available_days[$group['id']][$day]) 
-                                                // && !isset($dates[$group['id']][0][date("Y-m-d", $day)]) 
-                                              ) 
-                                                // || isset($dates[$group['id']][2][date("Y-m-d", $day)])
-                                            )    
-                                        <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
-                                            {{ date("m.d", $day) }}, {{ __('event.weekdays_short.'.date("w", $day)) }}
-                                        </a>
+                                    <td class="text-center position-relative">
+                                        @if($available_days[$group['id']][$day]) 
+                                            <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
+                                                @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
+                                                    @if(isset($notAccepts[$group['id']][date("Y-m-d", $day)]))
+                                                        <i class="fas fa-balance-scale-right mr-1 mt-1 position-absolute" style="margin-left: -26px"></i>
+                                                    @endif
+                                                @endif
+                                                {{ date("m.d", $day) }}, {{ __('event.weekdays_short.'.date("w", $day)) }}
+                                            </a>
                                         @else 
                                             {{ date("m.d", $day) }}, {{ __('event.weekdays_short.'.date("w", $day)) }}
                                         @endif                                    
                                     </td>
                                     <td class="p-0"> 
-                                        @if ( (isset($day_stat[$group['id']][$day])/* && !isset($dates[$group['id']][0][date("Y-m-d", $day)])*/ ))
-                                            <div class="dayStat @if (isset($day_stat[$group['id']][$day]['event'])) userEvent @endif"
-                                                style="height:35px;background: {{$day_stat[$group['id']][$day]['style'] }}"
-                                            ></div>
+                                        @if (isset($day_stat[$group['id']][$day]))
+                                            <div class="dayStat @if (isset($day_stat[$group['id']][$day]['event'])) userEvent @endif "
+                                                style="height:35px;background: {{$day_stat[$group['id']][$day]['style'] }}"></div>
                                         @endif
                                     </td>
                                     <td class="p-0">                                        
@@ -103,9 +100,7 @@
                         </div>
                     </div>
                 </div>
-            {{-- </div> --}}
             @empty
-                {{-- <div class="col-md-12"> --}}
                     <div class="card card-primary card-outline">
                         <div class="card-header">
                         <h5 class="m-0">@lang('app.information')</h5>
@@ -114,12 +109,10 @@
                             <p>@lang('app.no_any_groups')</p>
                         </div>
                     </div>
-                {{-- </div> --}}
             @endforelse
             <!-- /.col-md-6 -->
         </div>
         @if(count($groups) > 0)
-            {{-- <div style="clear:both;"></div> --}}
             <!-- /.row -->
             <script>
                 function modal(groupId, date) {

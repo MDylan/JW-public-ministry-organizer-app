@@ -83,11 +83,12 @@ class EventObserver
                 }
             }
         }
+        $auth = (auth()->user() !== null) ? true : false;
         if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $event->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $auth ? auth()->user()->id : 0,
                 'changes' => json_encode($store)
             ];
 
@@ -96,7 +97,7 @@ class EventObserver
 
             if(isset($store['new']['start']) || isset($store['new']['end'])) {
                 $data = [
-                    'userName' => auth()->user()->full_name, 
+                    'userName' => $auth ? auth()->user()->full_name : "SYSTEM", 
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
                     'oldService' => [
@@ -118,7 +119,7 @@ class EventObserver
 
             if(isset($store['new']['status'])) {
                 $data = [
-                    'userName' => auth()->user()->full_name, 
+                    // 'userName' => auth()->user()->full_name, 
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
                     'newService' => [
@@ -144,10 +145,11 @@ class EventObserver
      */
     public function deleted(Event $event)
     {
+        $auth = (auth()->user() !== null) ? true : false;
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $event->group_id,
-            'causer_id' => auth()->user() !== null ? auth()->user()->id : false,
+            'causer_id' => $auth ? auth()->user()->id : false,
             'changes' => ''
         ];
 
@@ -155,7 +157,7 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            'userName' => auth()->user() !== null ? auth()->user()->full_name : false, 
+            'userName' => $auth ? auth()->user()->full_name : false, 
             'groupName' => $event->groups->name,
             'date' => $event->day,
             'oldService' => [

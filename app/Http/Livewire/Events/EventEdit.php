@@ -264,7 +264,15 @@ class EventEdit extends AppComponent
     public function setStart($time) {
         $this->createForm();
         $this->state['start'] = $time;
-        $this->change_end();        
+        
+        //this time not available for this user...
+        //need when admin/helper want to set a time slot when he is already in service
+        if(!isset($this->day_data['selects']['start'][$time])) {
+            $this->state['user_id'] = 0;
+            $this->change_user();
+        } else {        
+            $this->change_end();
+        }
     }
 
     public function change_start() {

@@ -24,44 +24,42 @@
                 <div class="col-lg-12">
                     <div class="card card-primary card-outline">
                         <div class="card-header px-1">
-                            {{-- <div class="container-md mx-0 pl-0 pr-0"> --}}
-                                <div class="row mx-0">
-                                    <div class="col-12 col-md-6 ">
-                                        @if (count($groups) > 1)
-                                        <form wire:submit.prevent="changeGroup" class="form-inline m-0 justify-content-center justify-content-md-start">
-                                            @csrf
-                                            <div class="input-group">
-                                                <div class="custom-file">
-                                                    <select wire:model.defer="form_groupId" class="form-control" id="inlineForm">
-                                                        @foreach ($groups as $group)
-                                                            <option value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
-                                                        @endforeach
-                                                    </select> 
-                                                </div>
-                                                <div class="input-group-append">
-                                                   <button type="submit" class="btn btn-primary" type="button">@lang('event.switch')</button>
-                                                </div>
-                                              </div>
-                                        </form>
-                                        @endif
-                                    </div>
-                                    <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center justify-content-md-end mt-4 mt-md-0">
-                                        <nav>
-                                            <ul class="pagination justify-content-center m-0">
-                                                @if ($pagination['prev']['year'] !== false)
-                                                    <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
-                                                @endif
-                                                <li class="page-item disabled">
-                                                    <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true"><strong>{{$year}}. {{__("$current_month")}}</strong></a>
-                                                </li>                                  
-                                                <li class="page-item">
-                                                    <a class="page-link" href="{{ route('calendar') }}/{{$pagination['next']['year']}}/{{$pagination['next']['month']}}">@lang('Next')</a>
-                                                </li>
-                                            </ul>
-                                        </nav>
-                                    </div>                                
+                            <div class="row mx-0">
+                                <div class="col-12 col-md-6 ">
+                                    @if (count($groups) > 1)
+                                    <form wire:submit.prevent="changeGroup" class="form-inline m-0 justify-content-center justify-content-md-start">
+                                        @csrf
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                <select wire:model.defer="form_groupId" class="form-control" id="inlineForm">
+                                                    @foreach ($groups as $group)
+                                                        <option value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
+                                                    @endforeach
+                                                </select> 
+                                            </div>
+                                            <div class="input-group-append">
+                                                <button type="submit" class="btn btn-primary" type="button">@lang('event.switch')</button>
+                                            </div>
+                                            </div>
+                                    </form>
+                                    @endif
                                 </div>
-                            {{-- </div>                             --}}
+                                <div class="col-12 col-lg-6 col-md-6 d-flex justify-content-center justify-content-md-end mt-4 mt-md-0">
+                                    <nav>
+                                        <ul class="pagination justify-content-center m-0">
+                                            @if ($pagination['prev']['year'] !== false)
+                                                <li class="page-item"><a class="page-link" href="{{ route('calendar') }}/{{$pagination['prev']['year']}}/{{$pagination['prev']['month']}}">@lang('Previous')</a></li>
+                                            @endif
+                                            <li class="page-item disabled">
+                                                <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true"><strong>{{$year}}. {{__("$current_month")}}</strong></a>
+                                            </li>                                  
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ route('calendar') }}/{{$pagination['next']['year']}}/{{$pagination['next']['month']}}">@lang('Next')</a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>                                
+                            </div>
                         </div>
                         <div class="card-body p-2">
                             <table class="table table-bordered eventsTable">
@@ -101,13 +99,12 @@
                                                 @endif
                                         >
                                         <div class="row justify-content-end">                                            
-                                            {{-- <div class="col-8 m-0 p-0">
-                                                @if (isset($day_stat[$day['fullDate']]))
-                                                    <div class="dayStat @if (isset($userEvents[$day['fullDate']]))userEvent @endif"
-                                                    style="background: {{$day_stat[$day['fullDate']]}}"></div>
+                                            <div class="dayNumber mr-2 noselect">
+                                                @if(isset($notAcceptedEvents[$day['fullDate']]))
+                                                    <i class="fas fa-balance-scale-right mr-1 text-primary" title="@lang('event.status_0')"></i>
                                                 @endif
-                                            </div> --}}
-                                            <div class="dayNumber mr-2 noselect">{{ $day['day'] }}</div>
+                                                {{ $day['day'] }}
+                                            </div>
                                         </div>
                                     </td>
                                     @endforeach
@@ -171,8 +168,8 @@
                                 </div>
                             </div>                            
                             @foreach ($cal_group_data['colors'] as $field => $color)
-                            <div class="row mt-1">
-                                <div class="col-3" style="background: {{ $color }};"></div>
+                            <div class="row mt-2 border-bottom pb-2">
+                                <div class="col-3" style="background: {{ $color }};height:25px;"></div>
                                 <div class="col-9">{{ __('group.color_explanation.'. $field) }}</div>
                             </div>
                             @endforeach

@@ -61,7 +61,7 @@ class EventStatusChangedNotification extends Notification implements ShouldQueue
             ]))
             ->line(__('email.event.status_changed.'.($status).'.line_1', [
                 'groupName' => $this->data['groupName'],
-                'userName' => $this->data['userName'],
+                // 'userName' => $this->data['userName'],
             ]))
             ->line(__('email.event.status_changed.'.($status).'.line_2', [
                 'newServiceDate' => $date.": ".$start." - ".$end,

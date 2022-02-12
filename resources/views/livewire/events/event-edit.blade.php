@@ -69,7 +69,9 @@
                         <select wire:model.defer="state.status" id="" class="form-control @error('status') is-invalid @enderror">
                             <option value="0">@lang('event.status_0')</option>
                             <option value="1">@lang('event.status_1')</option>
-                            <option value="2">@lang('event.status_2')</option>
+                            @if($eventId !== null)
+                                <option value="2">@lang('event.status_2')</option>
+                            @endif
                            
                         </select>
                         @error('status')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

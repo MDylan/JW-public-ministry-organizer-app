@@ -8,10 +8,11 @@
                             <div class="col-12 col-lg-4 mt-2 pb-2 text-center">
                                 <h5>
                                     {{ $group_data['name'] }}
-                                </h5>
+                                
                                 @if(isset($group_data['current_date']['note']))
-                                    ({{ $group_data['current_date']['note'] }})
+                                    <span class="badge badge-info">{{ $group_data['current_date']['note'] }}</span>
                                 @endif
+                            </h5>
                             </div>
                             <div class="col-12 col-lg-4 text-center">
                                 <nav>
@@ -79,6 +80,11 @@
                                                     userEvent
                                                 @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
                                                     <h3 class="session-title">
+                                                        @if($event['status'] == 0)
+                                                            <span class="badge badge-warning">
+                                                                <i class="fas fa-balance-scale-right" title="@lang('event.status_0')"></i>
+                                                            </span>
+                                                        @endif
                                                         @if ($event['editable'] != 'disabled') 
                                                             <a href="" wire:click.prevent="editEvent_modal({{$event['id']}})">
                                                         @endif
@@ -95,7 +101,8 @@
                                                         @endif 
                                                         {{ $event['user']['full_name'] }}
                                                         @if ($event['editable'] != 'disabled') 
-                                                            <i class="fa fa-edit ml-1"></i></a>
+                                                            <i class="fa fa-edit ml-1"></i>
+                                                        </a>
                                                         @endif                                                        
                                                     </h3>
                                                     <span class="session-time">{{$event['start_time']}} - {{$event['end_time']}}</span>
