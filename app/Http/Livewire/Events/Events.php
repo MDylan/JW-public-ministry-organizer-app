@@ -10,8 +10,7 @@ use App\Models\GroupDate;
 // use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
-
+use Illuminate\Support\Facades\DB;
 
 class Events extends AppComponent
 {
@@ -205,11 +204,9 @@ class Events extends AppComponent
         $groups = Auth()->user();// ->groupsAccepted()->get();
         $this->groups = $groups->groupsAcceptedFiltered()
                                 ->with(['dates' => function($q) {
-                                    // $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
                                     $q->whereBetween('date', [$this->first_day, $this->last_day]);
-                                    // $q->whereIn('date_status', [0,2]);
                                 }])
-                ->get()->toArray();
+                                ->get()->toArray();
         // dd($this->groups);
         if(count($this->groups) == 0) {
             return view('livewire.default', [
@@ -402,12 +399,22 @@ class Events extends AppComponent
         foreach($userEvents as $ev) {
             $this->userEvents[$ev['day']] = true;
         }
+
+        $notAcceptedEvents = DB::table('events')
+                                ->groupBy('day')
+                                ->whereNull('deleted_at')
+                                ->where('group_id', '=', $this->cal_group_data['id'])
+                                ->where('status', '=', 0)
+                                ->whereBetween('day', [$this->first_day, $this->last_day])
+                                ->pluck('day', 'day')
+                                ->toArray();
         
         // dd($calendar);
         return view('livewire.events.events', [
             'service_days' => $this->cal_service_days,
             'calendar' => $calendar,
             'specialDatesList' => $specialDatesList,
+            'notAcceptedEvents' => $notAcceptedEvents,
             'group_days' => is_array(trans('group.days')) ? trans('group.days') : range(0,6,1)
         ]);
 
