@@ -2,8 +2,10 @@
 
 namespace App\Http\Livewire\Partials;
 
+// use App\Models\Event;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class NavBar extends Component
@@ -35,9 +37,17 @@ class NavBar extends Component
             ])->get()->toArray();
             // dd($groups);
             $notAccepted = 0;
+            $groupsWithRights = [];
+            $groupNames = [];
             if(count($groups)) {
                 foreach($groups as $group) {
                     if($group['pivot']['accepted_at'] === null) $notAccepted++;
+
+                    if(in_array($group['pivot']['group_role'], ['admin', 'roler']) 
+                        && $group['need_approval'] == 1) {
+                        $groupsWithRights[] = $group['id'];
+                        $groupNames[$group['id']] = $group['name'];
+                    }                    
 
                     $last_read = 0;
                     if(isset($group['news_log']['updated_at'])) {
@@ -60,7 +70,6 @@ class NavBar extends Component
                             $this->total_notifications += $new_news;
                         }
                     }
-
                 }
             }
             // dd($groups);
@@ -72,6 +81,47 @@ class NavBar extends Component
                 ];
                 $this->total_notifications += $notAccepted;
             }
+
+            if(count($groupsWithRights) > 0) {
+                $notAcceptedEvents = DB::table('events')->select(
+                        "group_id",
+                        DB::raw("(count(id)) as total_events"),
+                        DB::raw("DATE_FORMAT(day, '%Y-%m-01') as month")
+                    )
+                    ->whereIn('group_id', $groupsWithRights)
+                    ->where('status', '=', '0')
+                    ->where('day', '>=', date("Y-m-d"))
+                    ->orderBy('group_id', 'asc')
+                    ->orderBy('month', 'asc')
+                    ->groupBy('group_id')
+                    ->groupBy('month')
+                    ->get();
+                // dd($notAcceptedEvents->toArray());
+                if(count($notAcceptedEvents)) {
+                    foreach($notAcceptedEvents as $event) {
+                        $date = Carbon::parse($event->month);
+                        $month = $date->format("m");
+                        $year = $date->format("Y");
+                        $this->notifications[] = [
+                            'route' => route('jumpToCalendar', [
+                                'group' => $event->group_id,
+                                'year' => $year, 
+                                'month' => $month
+                            ]),
+                            'icon' => 'fa fa-balance-scale-right',
+                            'message' => __('app.top_notifies.group_approvals', [
+                                'groupName' => $groupNames[$event->group_id],
+                                'events' => $event->total_events,
+                                'year' => $year,
+                                'month' => $month
+                                
+                            ])
+                        ];
+                        $this->total_notifications++;
+                    }
+                }
+            }
+
             // $groups = auth()->user()->groupsAccepted()
             //             ->with([
             //                 'latest_news',

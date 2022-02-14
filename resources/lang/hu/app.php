@@ -45,6 +45,7 @@ return [
     'top_notifies' => [
         'groups' => ':number új csoportmeghívás',
         'group_news' => ':number új hír',
+        'group_approvals' => ':groupName csoportban :events esemény jóváhagyásra vár (:year/:month)',
     ],
     'new' => 'új',
     'total_notifications' => ':number új értesítés',

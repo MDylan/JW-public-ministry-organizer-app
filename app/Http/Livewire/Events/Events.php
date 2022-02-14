@@ -400,15 +400,17 @@ class Events extends AppComponent
             $this->userEvents[$ev['day']] = true;
         }
 
-        $notAcceptedEvents = DB::table('events')
-                                ->groupBy('day')
-                                ->whereNull('deleted_at')
-                                ->where('group_id', '=', $this->cal_group_data['id'])
-                                ->where('status', '=', 0)
-                                ->whereBetween('day', [$this->first_day, $this->last_day])
-                                ->pluck('day', 'day')
-                                ->toArray();
-        
+        $notAcceptedEvents = [];
+        if(in_array($this->cal_group_data['pivot']['group_role'], ['admin', 'roler', 'helper'])) {
+            $notAcceptedEvents = DB::table('events')
+                                    ->groupBy('day')
+                                    ->whereNull('deleted_at')
+                                    ->where('group_id', '=', $this->cal_group_data['id'])
+                                    ->where('status', '=', 0)
+                                    ->whereBetween('day', [$this->first_day, $this->last_day])
+                                    ->pluck('day', 'day')
+                                    ->toArray();
+        }
         // dd($calendar);
         return view('livewire.events.events', [
             'service_days' => $this->cal_service_days,

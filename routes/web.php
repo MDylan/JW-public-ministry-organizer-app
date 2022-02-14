@@ -5,6 +5,7 @@ use App\Http\Controllers\GroupDelete;
 use App\Http\Controllers\GroupLogout;
 use App\Http\Controllers\GroupNewsDelete;
 use App\Http\Controllers\GroupNewsFileDownloadController;
+use App\Http\Controllers\jumpToCalendarController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
@@ -111,6 +112,7 @@ Route::middleware(['auth'])->group(function () {
             
             Route::get('/lastevents', LastEvents::class)->name('lastevents');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
+            Route::get('/jc/{group}/{year}/{month}', [jumpToCalendarController::class, 'jump'])->name('jumpToCalendar');
             Route::get('/groups', ListGroups::class)->name('groups');            
 
             //For special roles

@@ -45,7 +45,7 @@
     <!-- Control Sidebar -->
     <aside class="control-sidebar control-sidebar-dark">
       <!-- Control sidebar content goes here -->
-      <div class="p-3">
+      <div class="p-2">
         <h5>@lang('event.eventsBar.title')</h5>
         @livewire('partials.events-bar', [], key('eventsBar'))
       </div>
