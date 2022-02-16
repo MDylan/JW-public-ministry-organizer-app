@@ -168,8 +168,10 @@ class EventObserver
         ];
         
         $us = User::find($event->user_id);
-        $us->notify(
-            new EventDeletedNotification($data)
-        );
+        if(!$us->isAnonymized) {
+            $us->notify(
+                new EventDeletedNotification($data)
+            );
+        }
     }
 }

@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-// use Spatie\Activitylog\Traits\LogsActivity;
-// use Spatie\Activitylog\LogOptions;
+use Dialect\Gdpr\Anonymizable;
 
 class Group extends Model
 {
-    use HasFactory, SoftDeletes;//, LogsActivity;
+    use HasFactory, SoftDeletes, Anonymizable;
 
     protected $dates = ['deleted_at'];
 
@@ -44,19 +43,8 @@ class Group extends Model
 
     protected $appends = ['colors'];
 
-    // protected static $logFillable = true;
-    // protected static $logName = 'group';
-    // protected static $logOnlyDirty = true;
-
-    // protected static $recordEvents = ['updated', 'deleted'];
-
-    // public function getActivitylogOptions(): LogOptions
-    // {
-    //     return LogOptions::defaults()->logFillable()->useLogName('group')->logOnlyDirty()->dontSubmitEmptyLogs();
-    //     // ->logOnly(['name', 'value']);
-    //     // Chain fluent methods for configuration options
-    // }
-
+    protected $gdprAnonymizableFields = [];
+    
     public function histories()
     {
         return $this->morphMany(LogHistory::class, 'model');

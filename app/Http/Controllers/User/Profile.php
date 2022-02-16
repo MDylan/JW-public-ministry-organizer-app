@@ -9,7 +9,6 @@ class Profile extends Controller
 {
     public function __invoke()
     {
-        
         return view('user.profile');
     }
 }

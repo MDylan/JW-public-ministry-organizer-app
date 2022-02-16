@@ -70,10 +70,12 @@ class UserLogoutFromGroupProcess implements ShouldQueue
                 $stat->generate($this->group->id, $day);
             }
 
-            foreach($notifies as $notify) {
-                $this->user->notify(
-                    new EventDeletedNotification($notify)
-                );
+            if(!$this->user->isAnonymized) {
+                foreach($notifies as $notify) {
+                    $this->user->notify(
+                        new EventDeletedNotification($notify)
+                    );
+                }
             }
         }
     }

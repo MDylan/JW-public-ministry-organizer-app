@@ -10,10 +10,13 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Support\Facades\DB;
+use Dialect\Gdpr\Portable;
+use Dialect\Gdpr\Anonymizable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable, LogsActivity;
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable;
 
     /**
      * The attributes that are mass assignable.
@@ -28,7 +31,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'password',
         'role',
         'last_login_time',
-        'last_login_ip'
+        'last_login_ip',
+        'last_activity',
+        'accepted_gdpr',
+        'isAnonymized'
     ];
 
     /**
@@ -43,7 +49,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'two_factor_secret',
         'two_factor_recovery_codes',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'accepted_gdpr',
+        'isAnonymized',
+        'events.groups'
     ];
 
     /**
@@ -56,6 +65,39 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     ];
 
     protected $appends = ['full_name'];
+
+    /**
+     * The attributes that should be visible in the downloadable data.
+     *
+     * @var array
+     */
+    protected $gdprHidden  = [
+        'id',
+        'role',
+        'password',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'remember_token',
+        'accepted_gdpr'
+    ];
+
+    /**
+     * The relations to include in the downloadable data.
+     *
+     * @var array
+     */
+    protected $gdprWith = ['eventsOnly', 'groupsAccepted'];
+
+    protected $gdprAnonymizableFields = [
+        'email',
+        'last_name' => 'Anonym',
+        'first_name' => 'Anonym',
+        'phone' => '0',
+        'role' => 'registered',
+        'last_login_ip' => '',
+        'isAnonymized' => 1
+    ];
+
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -110,6 +152,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     public function groupsAcceptedNumber() {
         return $this->userGroups()->wherePivotNotNull('accepted_at')
                     ->count();
+    }
+
+    public function eventsOnly() {
+        return $this->hasMany(Event::class)
+                ->orderBy('start');
     }
 
     public function events() {
@@ -169,6 +216,59 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     public function preferredLocale()
     {
         return $this->language;
+    }
+
+    /**
+    * Using getAnonymized{column} to return anonymizable data
+    */
+    public function getAnonymizedEmail()
+    {
+        // return random_bytes(10);
+        return Str::random(10);
+    }
+
+        /**
+     * Get the GDPR compliant data portability array for the model.
+     *
+     * @return array
+     */
+    public function toPortableArray()
+    {
+        $array = $this->toArray();
+
+        //filter out some other fields
+        $hidden_events_fields = [
+            'id',
+            'group_id',
+            'user_id',
+            'accepted_by',
+            'accepted_at',
+            'start',
+            'end',
+        ];
+
+        if(count($array['events_only'])) {
+            foreach($array['events_only'] as $key => $event) {
+                foreach($hidden_events_fields as $field) {
+                    unset($array['events_only'][$key][$field]);
+                }
+            }
+        }
+        if(count($array['groups_accepted'])) {
+            $groups = [];
+            foreach($array['groups_accepted'] as $group) {
+                $groups[] = [
+                    'name' => $group['name'],
+                    'accepted_at' => $group['pivot']['accepted_at']
+                ];
+            }
+            $array['groups'] = $groups;
+            unset($array['groups_accepted']);
+        }       
+
+        // dd($array);
+
+        return $array;
     }
 
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\deletePersonalDataController;
 use App\Http\Controllers\FinishRegistration;
 use App\Http\Controllers\GroupDelete;
 use App\Http\Controllers\GroupLogout;
@@ -63,19 +64,6 @@ Route::middleware(['signed'])->group(function () {
 });
 
 
-
-/**
- * Run scheduled queue 
- */
-// Route::get('/run-jobs', function() {
-//     $exitCode = Artisan::call('schedule:run');
-
-//     // $exitCode = Artisan::call('schedule:list');
-//     // var_dump($exitCode);
-//     return 'ok: '.$exitCode;
-// });
-
-
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
 
 
@@ -109,10 +97,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('user/profile', Profile::class)->name('user.profile');
 
         Route::middleware(['profileFull'])->group(function () {
+
+            Route::get('/user/asktodelete', [deletePersonalDataController::class, 'asktodelete'])
+                                    ->name('user.askToDelete')->middleware(['password.confirm']);
+            Route::get('/user/deletepersonaldata/{id}', [deletePersonalDataController::class, 'deletePersonalData'])
+                                    ->name('user.deletepersonaldata')->middleware(['signed']);
             
             Route::get('/lastevents', LastEvents::class)->name('lastevents');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
-            Route::get('/jc/{group}/{year}/{month}', [jumpToCalendarController::class, 'jump'])->name('jumpToCalendar');
+            Route::get('/jtc/{group}/{year}/{month}', [jumpToCalendarController::class, 'jump'])->name('jumpToCalendar');
             Route::get('/groups', ListGroups::class)->name('groups');            
 
             //For special roles

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f70dc6bda945e12242e44331c2a9dd0",
+    "content-hash": "c379cf8df25da5f01230da56817bc818",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -375,6 +375,65 @@
                 "source": "https://github.com/DASPRiD/Enum/tree/1.0.3"
             },
             "time": "2020-10-02T16:03:48+00:00"
+        },
+        {
+            "name": "dialect/laravel-gdpr-compliance",
+            "version": "1.4.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dialect-katrineholm/laravel-gdpr-compliance.git",
+                "reference": "af19c3c202b6945c47df0c4e021cd6f9f5e00842"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dialect-katrineholm/laravel-gdpr-compliance/zipball/af19c3c202b6945c47df0c4e021cd6f9f5e00842",
+                "reference": "af19c3c202b6945c47df0c4e021cd6f9f5e00842",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": ">=5.5",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "~3.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Dialect\\Gdpr\\GdprServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Dialect\\Gdpr\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dialect Katrineholm",
+                    "email": "katrineholm@dialect.se"
+                }
+            ],
+            "description": "GDPR compliant data portability and anonymization",
+            "homepage": "https://github.com/dialect-katrineholm/laravel-gdpr-compliance",
+            "keywords": [
+                "article 20",
+                "data portability",
+                "gdpr",
+                "laravel",
+                "user anonymization"
+            ],
+            "support": {
+                "issues": "https://github.com/dialect-katrineholm/laravel-gdpr-compliance/issues",
+                "source": "https://github.com/dialect-katrineholm/laravel-gdpr-compliance/tree/1.4.7"
+            },
+            "time": "2020-01-06T12:31:55+00:00"
         },
         {
             "name": "doctrine/cache",

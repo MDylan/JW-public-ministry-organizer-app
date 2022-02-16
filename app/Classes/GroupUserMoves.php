@@ -124,12 +124,14 @@ class GroupUserMoves {
 
         UserLogoutFromGroupProcess::dispatch($this->group, $this->user, auth()->user()->full_name);
 
-        $this->user->notify(
-            new GroupUserLogoutNotification([
-                'groupName' => $this->group->name, 
-                'userName' => auth()->user()->full_name
-            ])
-        );
+        if(!$this->user->isAnonymized) {
+            $this->user->notify(
+                new GroupUserLogoutNotification([
+                    'groupName' => $this->group->name, 
+                    'userName' => auth()->user()->full_name
+                ])
+            );
+        }
         
         if($this->group->parent_group_id > 0) return;
 

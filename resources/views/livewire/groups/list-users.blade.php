@@ -163,8 +163,8 @@
                                         @lang('user.last_login'):
                                     </div>
                                 <div class="col-8 col-md-2 text-md-center text-left my-auto align-middle">
-                                    @if($user->last_login_time)
-                                    {{  \Carbon\Carbon::parse($user->last_login_time)->format(__('app.format.datetime')) }}
+                                    @if($user->last_activity)
+                                    {{  \Carbon\Carbon::parse($user->last_activity)->format(__('app.format.datetime')) }}
                                     @else
                                     -
                                     @endif

@@ -74,7 +74,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">{{__('Save')}}</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save mr-1"></i>
+                                    {{__('Save')}}
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -82,72 +85,136 @@
                 <!-- /.col-md-6 -->
                 <div class="col-md-6">
 
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                    <h5 class="m-0">{{__('Update Password')}}</h5>
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                        <h5 class="m-0">{{__('Update Password')}}</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (session('status') == "password-updated")
+                                <div class="alert alert-success">
+                                    @lang('user.password_updated')
+                                </div>
+                            @endif
+                            <form method="POST" action="{{ route('user-password.update') }}">
+                                @csrf
+                                @method('PUT')
+
+                                <div class="form-group row">
+                                    <label for="current_password" class="col-md-4 col-form-label text-md-right">{{ __('Current Password') }}:</label>
+
+                                    <div class="col-md-8">
+                                        <input id="current_password" type="password" class="form-control @error('current_password', 'updatePassword') is-invalid @enderror" name="current_password" required>
+
+                                        @error('current_password', 'updatePassword')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="form-group row">
+                                    <label for="password" class="col-md-4 col-form-label text-md-right">@lang('New Password'):</label>
+
+                                    <div class="col-md-8">
+                                        <input id="password" type="password" class="form-control @error('password', 'updatePassword') is-invalid @enderror" name="password" required autocomplete="new-password" aria-describedby="passwordHelpBlock">
+                                        <small id="passwordHelpBlock" class="form-text text-muted">
+                                            @lang('user.password_info')
+                                        </small>
+                                        @error('password', 'updatePassword')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="form-group row">
+                                    <label for="password-confirm" class="col-md-4 col-form-label text-md-right">@lang('Confirm Password'):</label>
+
+                                    <div class="col-md-8">
+                                        <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
+                                    </div>
+                                </div>
+
+                                <div class="form-group row mb-0">
+                                    <div class="col-md-8 offset-md-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-key mr-1"></i>
+                                            {{ __('Update Password') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        @if (session('status') == "password-updated")
-                            <div class="alert alert-success">
-                                @lang('user.password_updated')
-                            </div>
-                        @endif
-                        <form method="POST" action="{{ route('user-password.update') }}">
-                            @csrf
-                            @method('PUT')
-
-                            <div class="form-group row">
-                                <label for="current_password" class="col-md-4 col-form-label text-md-right">{{ __('Current Password') }}:</label>
-
-                                <div class="col-md-8">
-                                    <input id="current_password" type="password" class="form-control @error('current_password', 'updatePassword') is-invalid @enderror" name="current_password" required>
-
-                                    @error('current_password', 'updatePassword')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="password" class="col-md-4 col-form-label text-md-right">@lang('New Password')</label>
-
-                                <div class="col-md-8">
-                                    <input id="password" type="password" class="form-control @error('password', 'updatePassword') is-invalid @enderror" name="password" required autocomplete="new-password" aria-describedby="passwordHelpBlock">
-                                    <small id="passwordHelpBlock" class="form-text text-muted">
-                                        @lang('user.password_info')
-                                    </small>
-                                    @error('password', 'updatePassword')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="password-confirm" class="col-md-4 col-form-label text-md-right">@lang('Confirm Password')</label>
-
-                                <div class="col-md-8">
-                                    <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                                </div>
-                            </div>
-
-                            <div class="form-group row mb-0">
-                                <div class="col-md-8 offset-md-4">
-                                    <button type="submit" class="btn btn-primary">
-                                        {{ __('Update Password') }}
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
                 </div>
                 <!-- /.col-md-6 -->
             </div>
             <!-- /.row -->
+
+            <div class="row">
+                @if (Config::get('settings_gdpr'))
+                    <div class="col-md-6">
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                            <h5 class="m-0">@lang('user.gdpr.my_personal_datas')</h5>
+                            </div>
+                            <div class="card-body">
+                                @lang('user.gdpr.info')
+                                <form action="{{ route('gdpr-download') }}" method="POST">
+                                    @csrf
+                                    <div class="form-group row">
+                                        <label for="password" class="col-md-4 col-form-label text-md-right">@lang('Current Password'):</label>
+
+                                        <div class="col-md-8">
+                                            <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="off">
+                                            @error('password')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="form-group row mb-0">
+                                        <div class="col-md-8 offset-md-4">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fa fa-download mr-1"></i>
+                                                @lang('user.gdpr.download')
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>                                    
+                @endif
+
+                <div class="col-md-6">
+                    <div class="card card-danger card-outline collapsed-card">
+                        <div class="card-header">
+                            <h5 class="card-title">@lang('user.delete.title')</h5>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @lang('user.delete.info')
+                            <div class="alert alert-warning">
+                                @lang('user.delete.alert')
+                            </div>
+                            <a href="{{ route('user.askToDelete') }}" class="btn btn-danger">
+                                <i class="fa fa-trash mr-1"></i>
+                                @lang('user.delete.button')
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             </div><!-- /.container-fluid -->
         </div>
         <!-- /.content -->

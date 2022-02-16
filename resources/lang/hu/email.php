@@ -109,4 +109,10 @@ return [
         'line_1' => 'Értesítünk, hogy kiléptél a(z) :groupName csoportból. Ezentúl nem fogod látni a csoport naptárát, és a jövőbeli szolgálataid is törölve lettek ebből a csoportból.',
         'line_2' => 'A kilépésedet :userName kezdeményezte, ha ez nem te vagy, akkor nála érdeklődhetsz ennek okáról.'
     ],
+    'deletePersonalData' => [
+        'subject' => 'Személyes adataid törlése',
+        'line_1' => 'Kérted, hogy töröljük a személyes adataidat.',
+        'line_2' => 'A lenti hivatkozásra kattintva kérjük erősítsd meg ezt a szándékodat. A gombra kattintással a törlés automatikusan megtörténik.',
+        'line_3' => 'A biztonságod miatt ez a hivatkozás 1 órán át érvényes. Ha nem te kérted az adataid törlését, akkor ne kattints a linkre, és haladéktalanul változtass jelszót az oldalon, mert valaki más tette meg ezt a helyedben.',
+    ],
 ];

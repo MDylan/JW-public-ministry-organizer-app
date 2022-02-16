@@ -42,8 +42,20 @@ return [
         'cancel' => 'Kérem az email címem törlését a rendszerből',
         'done' => 'A regisztrációd elkészült! :) Az alábbi oldalon tudod elfogadni vagy elutasítani a csoport meghívásaidat.',
         'cancelAlert' => 'Biztosan törlöd az email címedet?',
-        'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',
-        
-    ]
+        'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',        
+    ],
+    'gdpr' => [
+        'my_personal_datas' => 'Személyes adataim',
+        'info' => 'A jelenlegi jelszavad megadása után, itt letöltheted a személyes adataidat, amit tárolunk rólad.',
+        'download' => 'Adataim letöltése'
+    ],
+    'delete' => [
+        'title' => 'Adataim törlése',
+        'info' => 'A jelszavad megadása után törölheted személyes adataidat.',
+        'alert' => 'Figyelem, ezt követően a jelenlegi profilod törölve lesz, minden személyes adatod elvész, és a rendszer azonnal kiléptet.',
+        'verify_needed' => 'Adataid törlését meg kell erősítened. Egy emailt küldtünk, és ott rá kell kattintanod a hivatkozásra.',
+        'button' => 'Kérem az adataim törlését',
+        'success' => 'Az adataidat töröltük. Köszönjük, hogy eddig használtad az oldalunkat!'
+    ],
 
 ];

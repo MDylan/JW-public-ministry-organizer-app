@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\GroupDate;
 use App\Models\LogHistory;
 use App\Observers\EventObserver;
+use Carbon\Carbon;
 use DateTime;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
@@ -68,13 +69,14 @@ class CalculateDatesEvents {
 
             //search if we reach max publishers
             $step = $event->date_min_time * 60;
-            $steps = (strtotime($event->date_end) - strtotime($event->date_start)) / $step;
-            $cell_start = strtotime($event->start);
+            $steps = ($event->end - $event->start) / $step;
+            $cell_start = $event->start;
             for($i=0;$i < $steps;$i++) {
                 $slot_key = "'".date("Hi", $cell_start)."'";
                 if(!isset($day_events[$event->day][$slot_key]['events'])) 
                     $day_events[$event->day][$slot_key]['events'] = 0;
                 $day_events[$event->day][$slot_key]['events']++;
+                
                 if($day_events[$event->day][$slot_key]['events'] > $event->date_max_publishers) {
                     $deletes[$event->id] = $event->id;
                 }
@@ -83,13 +85,16 @@ class CalculateDatesEvents {
         }
         //we will notify users about modify/delete reason
         session()->now('reason', 'modified_service_time');
-
+        // dd($day_events, $updates, $deletes); 
         //we use firstDelete for store LogHistory event
         foreach($deletes as $deleteId) {
             Event::firstWhere('id', '=', $deleteId)->delete();
-        }        
+        } 
+              
         foreach($updates as $id => $field) {
-            Event::firstWhere('id', '=', $id)->update($field);
+            if(!isset($deletes[$id])) {
+                Event::firstWhere('id', '=', $id)->update($field);
+            }
         }
 
         //regenerate stat for affected days
@@ -97,34 +102,5 @@ class CalculateDatesEvents {
             $stat = new GenerateStat();
             $stat->generate($group_id, $day);
         }
-
-        
-
-        // $groupdates = DB::select('SELECT gd.id, gd.date, gd.date_status
-        //         FROM group_dates as gd
-        //         WHERE gd.group_id = ?
-        //         AND gd.date >= ?
-        //         AND gd.date_status = 1', [$groupDay->group_id, $date]);
-
-        // foreach($groupdates as $day) {
-
-        //     $d = new DateTime($day->date);
-        //     $dayOfWeek = $d->format("w");
-
-        //     //it's not right day, skip this
-        //     if($dayOfWeek != $groupDay->day_number) continue;
-
-        //     $start = strtotime($day->date." ".$groupDay->start_time);
-        //     $end = strtotime($day->date." ".$groupDay->end_time);
-
-        //     GroupDate::where('id', '=', $day->id)->update([
-        //         'date_start' => date("Y-m-d H:i:s", $start),
-        //         'date_end' => date("Y-m-d H:i:s", $end),
-        //     ]);
-
-        //     $stat = new GenerateStat();
-        //     $stat->generate($groupDay->group_id, $day->date);
-        // }        
-
     }
 }

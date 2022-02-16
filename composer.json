@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.0",
         "astrotomic/laravel-translatable": "^11.9",
+        "dialect/laravel-gdpr-compliance": "^1.4",
         "doctrine/dbal": "^3.1",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",

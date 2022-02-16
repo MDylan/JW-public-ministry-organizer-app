@@ -45,7 +45,8 @@ class AppServiceProvider extends ServiceProvider
         $defaults = [
             'registration'  => true,
             'claim_group_creator' => true,
-            'default_language' => $default_language
+            'gdpr' => false,
+            'default_language' => $default_language,
         ];
         
         $settings = ModelsSettings::all();
@@ -67,14 +68,18 @@ class AppServiceProvider extends ServiceProvider
             }   
         }
         //overwrite default config values from database
-        // dd(Config::get('debugbar.enabled'));
+        // dd($defaults);
+        // dd(Config::get('cookie-consent.enabled'));
         Config::set([
             'available_languages' => $available_languages,
             'translatable.fallback_locale' => $defaults['default_language'],
             'translatable.locales' => $locales, //array_keys($available_languages),
             'app.fallback_locale' => $defaults['default_language'],
+            'cookie-consent.enabled' => $defaults['gdpr'],
+            'gdpr.enabled' => $defaults['gdpr']
             // 'debugbar.enabled'  => isset($defaults['debugbar']) ? $defaults['debugbar'] : false
         ]);
+        // dd(Config::get('cookie-consent.enabled'));
         // dd($locales);
         // dd(auth()->user()->id);
         if(isset($defaults['debugbar'])) {

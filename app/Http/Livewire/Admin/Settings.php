@@ -20,7 +20,8 @@ class Settings extends AppComponent
         'registration'  => true,
         'claim_group_creator' => true,
         'debugbar'  => false,
-        'maintenance' => false
+        'maintenance' => false,
+        'gdpr' => false,
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
