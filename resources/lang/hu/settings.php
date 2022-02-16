@@ -9,6 +9,7 @@ return [
         'default'   => 'Alapértelmezett nyelv',
         'lang_help' => 'A nyelvválasztó legalább 2 elérhető nyelv esetén jelenik meg.<br/>
                         Meglévő nyelv módosításához írd be újra az országkódot és a módosítandó szöveget.
+                        Kijelölhetsz "Fordító" jogkört azon felhasználók számára, akiknek lehetővé szeretnéd tenni az online fordítási lehetőséget.
                         <hr>
                         Mielőtt elérhetővé teszel egy új nyelvet, kérjük győződj meg róla, hogy a nyelvi fájlok elérhetőek a "/resources/lang" mappában. <br/>
                         Ha az adott nyelven nincs lefordítva valami, akkor ettől még használható lesz az oldal, de nem fog megjelenni értelmezhető szöveg a tartalom helyén.<br/>
@@ -30,6 +31,7 @@ return [
             'admin' => 'Csak admin számára látható'
         ],
         'visibility_changed' => 'A nyelv láthatósága megváltozott.',
+        'translator_help' => 'Új nyelvet egy adminisztrátor tud felvenni, és ő tudja beállítani a nyelv láthatóságát is. Ha elkészültél a fordítással akkor neki jelezheted ezt.',
     ],
     'others' => [
         'title' => 'Egyéb beállítások',

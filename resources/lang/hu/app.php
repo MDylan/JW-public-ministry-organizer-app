@@ -10,6 +10,7 @@ return [
     'menu-settings' => 'Beállítások',
     'menu-staticpages' => 'Statikus oldalak',
     'menu-lastevents' => 'Régebbi szolgálataim',
+    'menu-translation' => 'Fordítás',
     'options' => 'Beállítások',
     'edit' => 'Szerkesztés',
     'delete' => 'Törlés',

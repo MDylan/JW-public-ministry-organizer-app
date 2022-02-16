@@ -42,7 +42,7 @@ class SetLocale
                 } else {
                     //only admins can see this language
                     if($user !== null) {
-                        if($user->role == "mainAdmin") {
+                        if(in_array($user->role, ["mainAdmin", "translator"])) {
                             session()->put('language', $new_language);
                             $language = $new_language;
                             //save new language

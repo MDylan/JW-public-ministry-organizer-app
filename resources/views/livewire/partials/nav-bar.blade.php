@@ -59,7 +59,7 @@
           <div class="dropdown-menu dropdown-menu-right p-0" style="left: inherit; right: 0px;">
             <p class="text-center my-1">@lang('app.choose_language')</p>
               @foreach (Config('available_languages') as $code => $value)
-                @if (!$value['visible'] && auth()->user()->role !== "mainAdmin")
+                @if (!$value['visible'] && (auth()->user()->role !== "mainAdmin" && auth()->user()->role !== "translator"))
                   @continue
                 @endif
                 <a href="{{ url()->current() }}?lang={{ $code }}" class="dropdown-item @if ($code == app()->getLocale() ) active @endif">

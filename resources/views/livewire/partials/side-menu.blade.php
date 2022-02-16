@@ -53,7 +53,7 @@
 
               <x-SideStaticPages></x-SideStaticPages> 
               
-              @can('is-admin')              
+              @can('is-translator')              
                 <li class="nav-item nav-admin {{ request()->is('admin/*') ? 'menu-open' : '' }}">
                   <a href="#" class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -63,22 +63,30 @@
                     </p>
                   </a>
                   <ul class="nav nav-treeview">
+                    @can('is-admin') 
+                      <li class="nav-item">
+                        <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
+                          <i class="fas fa-users nav-icon"></i>
+                          <p>{{ __('app.menu-users') }}</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="{{ route('admin.staticpages') }}" class="nav-link {{ request()->is('admin/staticpages*') ? 'active' : '' }}">
+                          <i class="fa fa-file-alt nav-icon"></i>
+                          <p>{{ __('app.menu-staticpages') }}</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->is('admin/settings') ? 'active' : '' }}">
+                          <i class="fas fa-cog nav-icon"></i>
+                          <p>{{ __('app.menu-settings') }}</p>
+                        </a>
+                      </li>
+                    @endcan
                     <li class="nav-item">
-                      <a href="{{ route('admin.users') }}" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
-                        <i class="fas fa-users nav-icon"></i>
-                        <p>{{ __('app.menu-users') }}</p>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a href="{{ route('admin.staticpages') }}" class="nav-link {{ request()->is('admin/staticpages*') ? 'active' : '' }}">
-                        <i class="fa fa-file-alt nav-icon"></i>
-                        <p>{{ __('app.menu-staticpages') }}</p>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->is('admin/settings') ? 'active' : '' }}">
-                        <i class="fas fa-cog nav-icon"></i>
-                        <p>{{ __('app.menu-settings') }}</p>
+                      <a href="{{ route('admin.translate') }}" class="nav-link {{ request()->is('admin/translate') ? 'active' : '' }}">
+                        <i class="fa fa-language nav-icon"></i>
+                        <p>{{ __('app.menu-translation') }}</p>
                       </a>
                     </li>
                   </ul>

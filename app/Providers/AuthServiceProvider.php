@@ -31,16 +31,19 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('is-admin', function(User $user) {
-            // dd('teszt');
             return $user->hasRole('mainAdmin');
-            //return true; //
         });
 
         Gate::define('is-groupcreator', function(User $user) {
-            if($user->hasRole('mainAdmin') || $user->hasRole('groupCreator'))
+            if($user->hasRole('mainAdmin') || $user->hasRole('groupCreator') || $user->hasRole('translator'))
                 return true;
             else return false;
-            //return true; //
+        });
+
+        Gate::define('is-translator', function(User $user) {
+            if($user->hasRole('mainAdmin') || $user->hasRole('translator'))
+                return true;
+            else return false;
         });
     }
 }

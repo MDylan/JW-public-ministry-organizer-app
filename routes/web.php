@@ -13,6 +13,7 @@ use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
+use App\Http\Livewire\Admin\Translation;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Events\LastEvents;
@@ -134,6 +135,10 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/groups/{group}/news/delete/{new}', [GroupNewsDelete::class, 'delete'])->name('groups.news_delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/statistics', Statistics::class)->name('groups.statistics');
                 Route::get('/groups/{group}/history', History::class)->name('groups.history');
+            });
+
+            Route::middleware(['can:is-translator', 'password.confirm'])->group(function () {
+                Route::get('/admin/translate', Translation::class)->name('admin.translate');
             });
         });
     });
