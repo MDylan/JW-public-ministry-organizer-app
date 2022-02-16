@@ -79,7 +79,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link" id="toggle-button" data-widget="control-sidebar" data-slide="true" href="#" role="button">
-          <i class="fas fa-th-large"></i>
+          <i class="fas fa-calendar-check"></i>
         </a>
       </li>
     </ul>

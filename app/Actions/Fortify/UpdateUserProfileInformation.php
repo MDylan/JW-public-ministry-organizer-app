@@ -18,6 +18,11 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     public function update($user, array $input)
     {
+        $input['calendars_keys'] = [];
+        if(isset($input['calendars'])) {
+            $input['calendars_keys'] = array_keys($input['calendars']);
+        }
+
         Validator::make($input, [
             'first_name' => ['required', 'string', 'max:50', 'min:2'],
             'last_name' => ['required', 'string', 'max:50', 'min:2'],
@@ -29,7 +34,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'phone' => ['numeric']
+            'phone' => ['numeric'],
+            'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))]
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
         if ($input['email'] !== $user->email &&
@@ -41,6 +47,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'last_name' => $input['last_name'],
                 'phone' => $input['phone'],
                 'email' => $input['email'],
+                'calendars' => isset($input['calendars']) ? $input['calendars'] : null
             ])->save();
         }
     }

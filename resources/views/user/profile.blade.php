@@ -74,10 +74,31 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-save mr-1"></i>
-                                    {{__('Save')}}
-                                </button>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5>@lang('user.calendars'):</h5>
+                                        @lang('user.calendars_info')
+                                    </div>
+                                </div>
+                                @foreach (config('events.calendars') as $calendar)
+                                    <div class="ml-2 form-check">
+                                        <input class="form-check-input" type="checkbox" name="calendars[{{$calendar}}]" value="1" id="calendar_{{ $calendar }}"
+                                        @if (isset(auth()->user()->calendars[$calendar]) || old('calendars.'.$calendar))
+                                            checked
+                                        @endif>
+                                        <label class="form-check-label" for="calendar_{{ $calendar }}" role="button">
+                                            {{ __('user.calendar.'.$calendar) }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                                @error('calendars_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
+
+                                <div class="d-flex justify-content-center">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-save mr-1"></i>
+                                        {{__('Save')}}
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>

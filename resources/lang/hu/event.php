@@ -67,9 +67,5 @@ return [
         'success' => 'A terjesztéseket elmentettük.',
         'error' => 'Ehhez az eseményhez nem rögzíthetsz terjesztést.',
     ],
-    'google' => 'Google',
-    'ics' => '.ics fájl',
-    
-
 
 ];

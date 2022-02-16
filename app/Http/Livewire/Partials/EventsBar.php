@@ -28,15 +28,22 @@ class EventsBar extends Component
                 DateTime::createFromFormat('U', $event['start']),
                 DateTime::createFromFormat('U', $event['end'])
             );
-            $this->links[$event['id']]['calendar_google'] = $link->google();
-            $this->links[$event['id']]['calendar_ics'] = $link->ics();
+            $system_calendars = config('events.calendars');
+            foreach(auth()->user()->calendars as $calendar => $value) {
+                if(!in_array($calendar, $system_calendars)) continue;
+                $this->links[$event['id']][$calendar] = $link->$calendar();
+            }
         }
     }
 
     public function render()
     {
         $events = Auth()->user()->feature_events->toArray();
-        $this->generateCalendarLinks($events);
+        
+        //if user use any calendars, get the links
+        if(auth()->user()->calendars) {
+            $this->generateCalendarLinks($events);
+        }
 
         return view('livewire.partials.events-bar', [
             'events' => $events

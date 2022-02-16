@@ -15,19 +15,14 @@
                         {{$event['groups']['name']}}
                     </div>
                     @if($event['status'] == 1)
-                        @isset($links[$event['id']]['calendar_google'])
-                            <div class="col-6 mt-2 text-center">
-                                <a class="btn btn-sm btn-primary" target="_blank" href="{{ $links[$event['id']]['calendar_google'] }}">
-                                    <i class="fa fa-calendar-plus mr-1"></i> @lang('event.google')
-                                </a>
-                            </div>
-                        @endisset
-                        @isset($links[$event['id']]['calendar_ics'])
-                            <div class="col-6 mt-2 text-center">
-                                <a class="btn btn-sm btn-primary" target="_blank" href="{{ $links[$event['id']]['calendar_ics'] }}">
-                                    <i class="fa fa-calendar-alt mr-1"></i> @lang('event.ics')
-                                </a>
-                            </div>
+                        @isset($links[$event['id']])
+                        <div class="col-12 text-center">
+                            @foreach ($links[$event['id']] as $calendar => $link)
+                            <a class="btn btn-sm btn-primary mr-1 mb-1" target="_blank" href="{{ $link }}">
+                                <i class="fa fa-calendar-plus mr-1"></i> @lang('user.calendar.'.$calendar)
+                            </a>
+                            @endforeach
+                        </div>
                         @endisset
                     @endif
                 </div>

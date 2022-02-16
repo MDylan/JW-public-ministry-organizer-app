@@ -57,5 +57,14 @@ return [
         'button' => 'Kérem az adataim törlését',
         'success' => 'Az adataidat töröltük. Köszönjük, hogy eddig használtad az oldalunkat!'
     ],
+    'calendars' => 'Naptárak',
+    'calendars_info' => 'Ha bekapcsolod valamelyiket, akkor a jobb oldali esemény sávról gyorsan hozzá tudod adni a naptáradhoz a szolgálatodat.',
+    'calendar' => [
+        'google' => 'Google',
+        'yahoo' => 'Yahoo',
+        'webOutlook' => 'Outlook',
+        'webOffice' => 'Office',
+        'ics' => 'ics fájl'
+    ],
 
 ];

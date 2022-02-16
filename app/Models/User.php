@@ -34,7 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'last_login_ip',
         'last_activity',
         'accepted_gdpr',
-        'isAnonymized'
+        'isAnonymized',
+        'calendars'
     ];
 
     /**
@@ -62,6 +63,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'calendars' => 'array',
     ];
 
     protected $appends = ['full_name'];

@@ -9,4 +9,14 @@ return [
         'color_minimum' => '#ffff00',
         'color_maximum' => '#ff0000',
     ],
+    //calendars used on profile page.
+    //this functions need to be exists in spatie/calendar-links
+    //see: https://github.com/spatie/calendar-links
+    'calendars' => [
+        'google',
+        'yahoo',
+        'webOutlook',
+        'webOffice',
+        'ics'
+    ]
 ];

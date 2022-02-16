@@ -154,8 +154,8 @@ return [
         'date_start' => 'szolgálat kezdete',
         'date_end' => 'szolgálat vége',
         'status' => 'állapot',
-        'hidden' => 'rejtett értéke'
-
+        'hidden' => 'rejtett értéke',
+        'calendars_keys' => 'naptár',
     ],
     'values' => [
         'date_status' => [
