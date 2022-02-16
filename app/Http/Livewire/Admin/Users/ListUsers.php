@@ -20,6 +20,8 @@ class ListUsers extends AppComponent
     //for search with an url string
     protected $queryString = ['searchTerm' => ['except' => '']];
 
+    public $listeners = ['deleteUser'];
+
     /**
      * Megjeleníti a modalt, amikor a gombra kattintunk
      */
@@ -87,15 +89,24 @@ class ListUsers extends AppComponent
     }
 
     public function confirmUserRemoval($userId) {
+        $selected_user = User::where('id', '=', $userId)->first();
+        if(!$selected_user->id) abort(403);
+
         $this->userIdBeeingRemoved = $userId;
-        $this->dispatchBrowserEvent('show-delete-modal');
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('user.deleteUser'),
+            'text' => __('user.areYouSureDelete', ['userName' => $selected_user->full_name]),
+            'emit' => 'deleteUser'
+        ]);
     }
 
-    public function deleteUser() {
-        
+    public function deleteUser() {        
         $user = User::findOrFail($this->userIdBeeingRemoved);
         $user->delete();
-        $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('user.userDeleted')]);
+        //TODO: maybe delete events or check groups privileges
+        $this->dispatchBrowserEvent('success', [
+            'message' =>  __('user.userDeleted')
+        ]);
     }
 
     public function updatedSearchTerm() {
@@ -111,14 +122,13 @@ class ListUsers extends AppComponent
      */
     public function render()
     {
-
         $users = User::query()
-            ->where('email', 'like', '%'.$this->searchTerm.'%')
+            ->where(function($query) {
+                $query->where('users.first_name', 'LIKE', '%'.$this->searchTerm.'%');
+                $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
+                $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
+            })
             ->latest()->paginate(20);
-
-        // $old = User::whereNull('email_verified_at')
-        //         ->where('created_at', '<', date("Y-m-d H:i:s", strtotime("-1 week")));
-        // dd($old->get()->toArray());
 
         return view('livewire.admin.users.list-users', [
             'users' => $users,
@@ -126,8 +136,8 @@ class ListUsers extends AppComponent
             'roles' => [
                 'registered',
                 'activated',
-                'groupMember',
                 'groupCreator',
+                'translator',
                 'mainAdmin'
             ]
         ]);

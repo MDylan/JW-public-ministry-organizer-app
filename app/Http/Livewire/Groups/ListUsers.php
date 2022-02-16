@@ -211,12 +211,13 @@ class ListUsers extends AppComponent
     }
 
     public function confirmUserRemoval($userId) {
-        $this->userIdBeeingRemoved = $userId;
+        
 
         $group = Group::findorFail($this->groupId);
         if($group->editors()->wherePivot('user_id', Auth::id())->count() == 0) {
             abort(403);
         } 
+        $this->userIdBeeingRemoved = $userId;
 
         $selected_user = $group->groupUsers()->where('user_id', $userId)->first();
         if(!$selected_user->id) abort(403);
