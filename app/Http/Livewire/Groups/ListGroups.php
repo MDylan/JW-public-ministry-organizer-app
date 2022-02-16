@@ -22,31 +22,32 @@ class ListGroups extends AppComponent
 
     protected $listeners = [
         'rejectConfirmed' => 'rejectConfirmed',
-        'logoutConfirmed' => 'logoutConfirmed'
+        'logoutConfirmed' => 'logoutConfirmed',
+        'deleteGroup'
     ];
 
     public function confirmGroupRemoval($groupId) {
+
+        $group_check = auth()->user()->userGroupsDeletable()->where('group_id', $groupId)->first();
+        if(!$group_check) {
+            abort('403');
+        }
         $this->groupBeeingRemoved = $groupId;
-        $this->dispatchBrowserEvent('show-delete-modal');
+
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('group.deletegroup'),
+            'text' => __('group.areYouSureDelete', ['groupName' => $group_check->name]),
+            'emit' => 'deleteGroup'
+        ]);
     }
 
-    // public function deleteGroup() {
-    //     redirect()->route('groups.delete', ['group' => $this->groupBeeingRemoved]); 
-    // }
-
-    // //Törli a csoportot, jogosultság ellenőrzéssel együtt
-    // static function deleteGroupDone($group) {   
-    //     // redirect()->route('groups.delete', ['group' => $this->groupBeeingRemoved]);     
-    //     $user = Auth()->user(); 
-    //     $del = $user->userGroupsDeletable()->where('group_id', $group)->delete();
-        
-    //     if($del == 1) {
-    //         $user->userGroupsDeletable()->detach($grup);
-    //         $this->dispatchBrowserEvent('hide-delete-modal', ['message' => __('group.groupDeleted')]);
-    //     } else {
-    //         $this->dispatchBrowserEvent('hide-delete-modal', ['errorMessage' => __('app.notAllowed')]);
-    //     }
-    // }
+    public function deleteGroup() {
+        if($this->groupBeeingRemoved !== null) {
+            return redirect()->route('groups.delete', [
+                'group' => $this->groupBeeingRemoved
+            ]);
+        }
+    }
 
     /**
      * Megjeleníti a modalt, amikor a gombra kattintunk

@@ -8,7 +8,7 @@ return [
     'editGroup' => 'Csoport szerkesztése',
     'deletegroup' => 'Csoport törlése',
     'notInGroup' => 'Jelenleg még egyetlen csoportnak sem vagy a tagja. Vedd fel a kapcsolatot a gyülekezeted/csoportod felvigyázójával, hogy meg tudjon hívni a helyi csoportba.',
-    'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
+    'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot (:groupName)? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
     'groupCreated' => 'A csoport létrejött!',
     'create_info' => 'A létrehozás után tudod majd a csoport adatait szerkeszteni. Téged automatikusan hozzá fog adni csoportfelvigyázó jogkörrel. Mindenki mást majd a Hírnökök menüben tudsz hozzáadni.',
     'groupUpdated' => 'A csoport sikeresen módosult!',

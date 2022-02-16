@@ -81,17 +81,7 @@
       window.addEventListener('show-form', event => {
           $('#form').modal('show');
       });
-      window.addEventListener('show-delete-modal', event => {
-          $('#confirmationModal').modal('show');
-      });
-      window.addEventListener('hide-delete-modal', event => {
-          $('#confirmationModal').modal('hide');
-          if(event.detail.message)
-            toastr.success(event.detail.message, '{{__('app.saved')}}');
-          if(event.detail.errorMessage)
-            toastr.error(event.detail.errorMessage, '{{__('app.errorWhileSaved')}}');
-      });
-      window.addEventListener('success', event => {
+       window.addEventListener('success', event => {
           toastr.success(event.detail.message, '{{__('app.saved')}}');
       });
       window.addEventListener('error', event => {
