@@ -39,7 +39,7 @@
                                             {{ __('group.roles.'.$group->pivot->group_role) }}
                                         </span>
                                     </div>
-                                    <div class="col-md-6 py-2 py-md-0 text-center my-auto">
+                                    <div class="col-md-5 py-2 py-md-0 text-center my-auto">
                                         @if ($group->pivot->accepted_at !== null)
                                             <a class="btn btn-outline-secondary" href="{{ route('groups.users', ['group' => $group->id]) }}">
                                                 <i class="fa fa-user-friends mr-1"></i>
@@ -59,7 +59,7 @@
                                             @endif
                                         @endif
                                         </div>
-                                        <div class="col-md-2 py-2 py-md-0 text-center my-auto">
+                                        <div class="col-md-3 py-2 py-md-0 text-center text-md-right my-auto">
                                             @if ($group->pivot->accepted_at !== null)
                                                 <div class="dropdown">
                                                 <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -112,12 +112,6 @@
                 </div>
                 @can ('is-groupcreator')
                     <div class="d-flex justify-content-end mb-2">
-                        {{-- <a href="{{route('groups.create')}}">
-                        <button class="btn btn-primary">
-                            <i class="fa fa-plus-circle mr-1"></i>
-                            {{ __('group.addNew') }}</button>
-                        </a> --}}
-
                         <button wire:click="openModal('createGroup')" class="btn btn-primary">
                             <i class="fa fa-plus-circle mr-1"></i>
                             {{ __('group.addNew') }}</button>
