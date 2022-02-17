@@ -12,6 +12,9 @@ class VerifyCsrfToken extends Middleware
      * @var array
      */
     protected $except = [
-        //
+        //add some route to disable page expired message
+        //based on this: https://vemto.app/blog/laravel-livewire-how-to-disable-csrf-token-to-embed-a-component-on-iframe
+        'livewire/message/home',
+        'livewire/message/events.events'
     ];
 }
