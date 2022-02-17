@@ -17,7 +17,6 @@ use App\Http\Livewire\Admin\Translation;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Events\LastEvents;
-use App\Http\Livewire\Groups\CreateGroupForm;
 use App\Http\Livewire\Groups\History;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
@@ -25,17 +24,10 @@ use App\Http\Livewire\Groups\NewsEdit;
 use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
-use App\Http\Livewire\Groups\UsersEdit;
 use App\Http\Livewire\Home;
-// use App\Models\GroupNews;
-// use App\Models\StaticPage;
-// use Illuminate\Auth\Notifications\VerifyEmail;
-// use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
-// use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Facades\Redirect;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,7 +41,6 @@ use Illuminate\Support\Facades\Hash;
 */
 
 Route::get('/', function () {
-    // return view('main');
     return StaticPageController::render('home');
 })->middleware(['guest']);
 
@@ -71,9 +62,7 @@ Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@veri
 //Logged in users
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
-    // Route::get('/contact', function () {
-    //     return 'contact page';
-    // })->name('contact');
+
     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
         $result = $request->fulfill();
         return redirect('/home');
@@ -110,8 +99,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/groups', ListGroups::class)->name('groups');            
 
             //For special roles
-            // Route::get('/groups/create', CreateGroupForm::class)->name('groups.create')->middleware(['can:is-groupcreator']);
-
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');
                 Route::get('/admin/settings', Settings::class)->name('admin.settings');
