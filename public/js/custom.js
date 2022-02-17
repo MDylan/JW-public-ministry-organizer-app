@@ -45,3 +45,7 @@ toggleSwitch.addEventListener('change', switchTheme, false);
 $(function () {
     $('[data-toggle="tooltip"]').tooltip()
 })
+
+$(".content-wrapper").click(function() {
+    $("#control_sidebar").ControlSidebar('collapse');
+});

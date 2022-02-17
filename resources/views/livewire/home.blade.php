@@ -79,7 +79,6 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tr>
                         </tbody>
                     </table>
                         <div class="row ml-2 mt-2 mr-2 mb-0">

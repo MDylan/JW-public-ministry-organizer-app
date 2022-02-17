@@ -43,7 +43,7 @@
     <!-- Main Footer -->
     @include('layouts.partials.footer')
     <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
+    <aside class="control-sidebar control-sidebar-dark" id="control_sidebar">
       <!-- Control sidebar content goes here -->
       <div class="p-2">
         <h5>@lang('event.eventsBar.title')</h5>
@@ -51,7 +51,6 @@
       </div>
     </aside>
     <!-- /.control-sidebar -->
-    <div id="sidebar-overlay"></div>
 
   </div>
   <!-- ./wrapper -->
