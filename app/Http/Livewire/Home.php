@@ -11,16 +11,16 @@ use Livewire\Component;
 class Home extends Component
 {
 
-    public $days = [];
-    public $day_stat = [];
-    public $events = [];
-    public $available_days = [];
-    public $dates = [];
+    private $days = [];
+    private $day_stat = [];
+    private $events = [];
+    private $available_days = [];
+    // private $dates = [];
     public $listeners = [
         'refresh' => 'render'
     ];
     private $groups = [];
-    public $group_roles = [];
+    private $group_roles = [];
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -147,9 +147,15 @@ class Home extends Component
                 $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
                 // $q->whereIn('date_status', [0,2]);
             },
+            'posters' => function($q) {
+                $q->where('show_date', '<=', now());
+                $q->where(function ($q) {
+                    $q->where('hide_date', '>', now())
+                        ->orWhereNull('hide_date');
+                });
+            },
         ])->get()->toArray();
 
-        // dd($dates);
         // dd($stats);
         $this->getStat($stats);
         
@@ -170,10 +176,13 @@ class Home extends Component
         // dd($this->group_roles);
 
         return view('livewire.home', [
-            // 'groups' => $groups->get()
             'groups' => $stats,
-            'notAccepts' => $notAccepts
-            // 'dates' => $dates,
+            'notAccepts' => $notAccepts,
+            'days' => $this->days,
+            'day_stat' => $this->day_stat,
+            'events' => $this->events,
+            'available_days' => $this->available_days,
+            'group_roles' => $this->group_roles
         ]);
     }
 }

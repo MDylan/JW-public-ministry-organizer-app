@@ -23,7 +23,7 @@
     <div class="content">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-lg-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
                             <div class="card-title">@lang('settings.languages.title')</div>
@@ -122,7 +122,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-lg-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
                             <div class="card-title">@lang('settings.others.title')</div>                            
@@ -160,6 +160,11 @@
                             <button type="button" class="btn btn-primary" wire:click="run('optimize')">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): optimize:clear
+                            </button>
+                            <div class="w-100 py-2"></div>
+                            <button type="button" class="btn btn-primary" wire:click="run('migrate')">
+                                <i class="fa fa-play mr-1"></i>
+                                @lang('settings.run.optimize'): migrate
                             </button>
                         </div>
                     </div>

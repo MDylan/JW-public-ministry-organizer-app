@@ -19,13 +19,13 @@ class Modal extends AppComponent
 {
 
     // public $group;
-    public $service_days = [];
+    private $service_days = [];
     public $group_data = [];
     public $day_data = [];
-    public $day_events = [];
+    private $day_events = [];
 
     public $form_groupId = 0;
-    public $original_day_data = [];
+    // public $original_day_data = [];
     public $listeners = [
         'openModal', 
         'refresh', 
@@ -34,8 +34,8 @@ class Modal extends AppComponent
     ];
     public $active_tab = '';
     public $date = null;
-    public $event_edit = [];
-    public $all_select = [];
+    // public $event_edit = [];
+    // public $all_select = [];
     private $weekdays = [
         1 => 'monday',
         2 => 'tuesday',
@@ -133,21 +133,17 @@ class Modal extends AppComponent
                             $q->take(1);
                         },
                         'current_date' => function($q) use ($date) {
-                            // $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
                             $q->where('date', '=', $date);
                         },
                         'groupUsersAll', //we will unset this later!
-                        'dates'/* => function($q) use ($date) {
-                            $d = new DateTime($date);
-                            $d->modify('-1 week');
-                            $start = $d->format("Y-m-d");
-                            $d->modify('+2 week');
-                            $end = $d->format("Y-m-d");
-
-                            $q->select(['group_id', 'date', 'date_start', 'date_end', 'date_status', 'note']);
-                            $q->whereBetween('date', [$start, $end]);
-                            $q->whereIn('date_status', [0,2]);
-                        }*/
+                        'dates',
+                        'posters' => function($q) use ($date) {
+                            $q->where('show_date', '<=', $date);
+                            $q->where(function ($q) use ($date) {
+                                $q->where('hide_date', '>', $date)
+                                    ->orWhereNull('hide_date');
+                            });
+                        },
                     ])->findOrFail($groupId)->toArray();
         // dd($group);
         if(isset($group['current_date'])) {
@@ -400,7 +396,7 @@ class Modal extends AppComponent
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->date_data['peak'] = max($peak, $this->date_data['max_publishers']);
-        $this->original_day_data = $this->day_data;
+        // $this->original_day_data = $this->day_data;
         $this->day_events = $day_events;
     }
 
@@ -439,20 +435,21 @@ class Modal extends AppComponent
 
     public function cancelEdit() {
         $this->active_tab = '';
-        $this->event_edit = null;
+        // $this->event_edit = null;
         $this->emitTo('events.event-edit', 'createForm');
     }
 
     public function render()
     {
         if($this->date !== null && !$this->error) {            
-            // dd($this->day_data);
+            // dd($this->group_data);
             $this->error = false;
             return view('livewire.events.modal', [
                 'group_data' => $this->group_data,
                 'service_days' => $this->service_days,
-                // 'day_events' => $this->day_events,
-                'day_data' => $this->day_data
+                'day_events' => $this->day_events,
+                'day_data' => $this->day_data,
+                // 'date_data' => $this->date_data
             ]);
         } 
         

@@ -19,27 +19,27 @@ class Events extends AppComponent
     public $month = 0;
     // public $calendar = [];
     public $pagination = [];
-    public $current_month = "";
-    public $groups = [];
-    public $cal_service_days = [];
-    public $cal_group_data = [];
+    private $current_month = "";
+    private $groups = [];
+    private $cal_service_days = [];
+    private $cal_group_data = [];
     public $form_groupId = 0;
-    public $cal_day_data = [
-        'date' => 0,
-        'dateFormat' => 0,
-        'table' => [],
-        'selects' => [
-            'start' => [],
-            'end' => [],
-        ],
-    ];
-    public $cal_original_day_data = [];
+    // public $cal_day_data = [
+    //     'date' => 0,
+    //     'dateFormat' => 0,
+    //     'table' => [],
+    //     'selects' => [
+    //         'start' => [],
+    //         'end' => [],
+    //     ],
+    // ];
+    // public $cal_original_day_data = [];
     public $listeners = ['openModal', 'refresh' => 'render'];
-    public $cal_active_tab = '';
+    // public $cal_active_tab = '';
     private $first_day = null;
     private $last_day = null;
-    public $day_stat = [];
-    public $userEvents = [];
+    private $day_stat = [];
+    private $userEvents = [];
 
     public function mount(int $year = 0, int $month = 0) {
         if(isset($year)) {
@@ -106,6 +106,7 @@ class Events extends AppComponent
     }
 
     public function changeGroup() {
+        $this->getGroups();
         $key = array_search($this->form_groupId, array_column($this->groups, 'id'));
         // $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $this->form_groupId)->firstOrFail()->toArray();
         // if($group['pivot']['group_id']) {
@@ -186,6 +187,14 @@ class Events extends AppComponent
         // dd($this->day_stat, $total_percent);
     }
 
+    public function getGroups() {
+        $this->groups = Auth()->user()->groupsAcceptedFiltered()
+                                ->with(['dates' => function($q) {
+                                    $q->whereBetween('date', [$this->first_day, $this->last_day]);
+                                }])
+                                ->get()->toArray();
+    }
+
 
     public function render()
     {
@@ -201,12 +210,7 @@ class Events extends AppComponent
         $this->last_day = date("Y-m-t", $firstDayOfMonth);
         
         // $groups =  User::findOrFail(Auth::id());
-        $groups = Auth()->user();// ->groupsAccepted()->get();
-        $this->groups = $groups->groupsAcceptedFiltered()
-                                ->with(['dates' => function($q) {
-                                    $q->whereBetween('date', [$this->first_day, $this->last_day]);
-                                }])
-                                ->get()->toArray();
+        $this->getGroups();
         // dd($this->groups);
         if(count($this->groups) == 0) {
             return view('livewire.default', [
@@ -417,7 +421,12 @@ class Events extends AppComponent
             'calendar' => $calendar,
             'specialDatesList' => $specialDatesList,
             'notAcceptedEvents' => $notAcceptedEvents,
-            'group_days' => is_array(trans('group.days')) ? trans('group.days') : range(0,6,1)
+            'group_days' => is_array(trans('group.days')) ? trans('group.days') : range(0,6,1),
+            'current_month' => $this->current_month,
+            'cal_group_data' => $this->cal_group_data,
+            'day_stat' => $this->day_stat,
+            'userEvents' => $this->userEvents,
+            'groups' => $this->groups
         ]);
 
         // return view('livewire.events.calendar');

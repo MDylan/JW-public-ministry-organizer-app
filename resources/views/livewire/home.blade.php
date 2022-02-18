@@ -33,6 +33,37 @@
                         </div>
                     </div>
                     <div class="card-body p-1">
+                        @if (count($group['posters']) > 0)
+                            <div class="callout callout-success mx-2 mt-2">
+                                <h5 class="border-bottom mb-1 pb-1"> <i class="far fa-file-image mr-1"></i> @lang('group.poster.title')</h5>
+                                <div class="grid-striped">
+                                    @foreach ($group['posters'] as $poster)                            
+                                        <div class="row">
+                                            <div class="col">
+                                                @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
+                                                    <button wire:ignore.self
+                                                        wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }}, {{ $poster['id'] }})"
+                                                        class="btn btn-sm btn-info my-1 mr-1">
+                                                        <i class="far fa-edit"></i>
+                                                    </button>
+                                                @endif
+                                                <strong>
+                                                    {{  \Carbon\Carbon::parse($poster["show_date"])->format(__('app.format.date')) }}
+                                                    - 
+                                                    @if ($poster["hide_date"] !== null)
+                                                        {{  \Carbon\Carbon::parse($poster["hide_date"])->format(__('app.format.date')) }}
+                                                    @else
+                                                        @lang('group.poster.until_revoked')
+                                                    @endif
+                                                </strong>
+                                                {{ $poster['info'] }}                                            
+                                                
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     <table class="table table-sm m-0">
                         <thead>
                             <tr>
@@ -95,6 +126,13 @@
                                     <a href="{{ route('groups.news', ['group' => $group['id']]) }}" class="btn btn-info mb-2">
                                         <i class="fa fa-file mr-1"></i>
                                         @lang('group.news')</a>
+                                    @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
+                                        <a wire:ignore.self href="javascript:void(0);" wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }})" class="btn btn-info mb-2">
+                                            <i class="fa fa-plus mr-1"></i>
+                                            @lang('group.poster.button')</a>
+                                    @endif
+
+                                        
                             </div>
                         </div>
                     </div>
@@ -124,5 +162,6 @@
     <!-- /.content -->
     @if(count($groups) > 0)
         @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))
+        @livewire('groups.poster-edit-modal')
     @endif
 </div>

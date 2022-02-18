@@ -51,6 +51,7 @@
                                 </ul>
                             </div> --}}
                         </div>
+                        
                     </div>
                     
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -58,6 +59,38 @@
                     </button>
                 </div>
                 <div class="modal-body p-0">
+                    @if (count($group_data['posters']) > 0)
+                            {{-- <div class="row"></div> --}}
+                            <div class="callout callout-success mx-2 mt-2">
+                                <h5 class="border-bottom mb-1 pb-1"> <i class="far fa-file-image mr-1"></i> @lang('group.poster.title')</h5>
+
+                                    @foreach ($group_data['posters'] as $poster)                            
+                                        <div class="row">
+                                            <div class="col">
+                                                {{-- @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
+                                                    <button wire:ignore.self
+                                                        wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }}, {{ $poster['id'] }})"
+                                                        class="btn btn-sm btn-info my-1 mr-1">
+                                                        <i class="far fa-edit"></i>
+                                                    </button>
+                                                @endif --}}
+                                                <strong>
+                                                    {{  \Carbon\Carbon::parse($poster["show_date"])->format(__('app.format.date')) }}
+                                                    - 
+                                                    @if ($poster["hide_date"] !== null)
+                                                        {{  \Carbon\Carbon::parse($poster["hide_date"])->format(__('app.format.date')) }}
+                                                    @else
+                                                        @lang('group.poster.until_revoked')
+                                                    @endif
+                                                </strong>
+                                                {{ $poster['info'] }}                                            
+                                                
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                
+                            </div>
+                        @endif
                     <div class="tab-content">
                         <div class="tab-pane fade @if ($active_tab == '') show active @endif" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
                             <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['peak']}}, 1fr);" aria-labelledby="schedule-heading">

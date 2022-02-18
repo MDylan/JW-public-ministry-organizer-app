@@ -240,4 +240,9 @@ class Group extends Model
         }
         return $colors;
     }
+
+    public function posters() {
+        return $this->hasMany(GroupPosters::class)
+                    ->orderBy('show_date', 'asc');
+    }
 }

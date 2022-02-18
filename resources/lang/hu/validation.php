@@ -156,6 +156,9 @@ return [
         'status' => 'állapot',
         'hidden' => 'rejtett értéke',
         'calendars_keys' => 'naptár',
+        'info' => 'információ',
+        'show_date' => 'kezdés dátuma',
+        'hide_date' => 'befejezés dátuma',
     ],
     'values' => [
         'date_status' => [

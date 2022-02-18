@@ -297,5 +297,23 @@ return [
         'success' => 'Sikeresen módosult!',
         'error' => 'Nem vagy jogosult módosítani.'
     ],
+    'poster' => [
+        'button' => 'Plakát',
+        'title' => 'Plakát információk',
+        'info' => 'A plakát információk látszódnak a csoport naptáránál és az adott napot megnyitva, az oldal tetején, azoknál a napoknál amit érint. Így a hírnökök számára aktuális információt tudsz megosztani.',
+        'field_info' => 'Információ',
+        'field_show_date' => 'Mikortól látszódjon?',
+        'show_date_helpBlock' => 'Ekkortól fog látszódni a csoportnál. Kötelező megadni.',
+        'field_hide_date' => 'Meddig látszódjon?',
+        'hide_date_helpBlock' => 'Eddig fog megjelenni. A beállított nap éjféléig látszódik. Ha nem adsz meg semmit, akkor addig fog látszódni, amíg be nem állítasz valamit.',
+        'success' => 'A plakát elmentve!',
+        'until_revoked' => 'visszavonásig',
+        'confirmDelete' => [
+            'question' => 'Biztosan törlöd ezt a plakátot?',
+            'message' => 'Törlés után már nem fog látszódni sehol a tartalma',
+            'success' => 'A plakát törölve lett.',
+            'error' => 'Sikertelen törlés!'
+        ],
+    ],
     
 ];

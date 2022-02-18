@@ -39,7 +39,7 @@ return [
         'claim_group_creator' => 'Csoport létrehozó jogkör igényelhető a Csoportok oldalon.',
         'debugbar'  => 'Debugbar bekapcsolása (Csak tesztelési/hibajavítási céllal kapcsold be! Egyébként biztonsági kockázat!)',
         'maintenance' => 'Karbantartás mód (Csak adminisztrátorok léphetnek be, senki más.)',
-        'gdpr' => 'GDPR bekapcsolása (Akkor kapcsold be, ha az EU-n belül üzemelteted az oldalt). A felhasználók lementhetik az adataikat, és aki 1 éve nem lépett be, az törölve lesz. Előtte e-mail értesítőt kap.',
+        'gdpr' => 'GDPR bekapcsolása (Akkor kapcsold be, ha az EU-n belül üzemelteted az oldalt). A felhasználók lementhetik a személyes adataikat egy .json fájlba.',
     ],
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
     'run' => [

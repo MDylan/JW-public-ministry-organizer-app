@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\Settings as ModelsSettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
+use Exception;
 
 class Settings extends AppComponent
 {
@@ -155,10 +156,27 @@ class Settings extends AppComponent
 
     public function run($command) {
         $commands = [
-            'optimize' => 'optimize:clear'
+            'optimize' => [
+                'command' => 'optimize:clear'
+            ],
+            'migrate' => [
+                'command' => 'migrate',
+                'params' => ['--force'=> true]
+            ],
         ];
         if(isset($commands[$command])) {
-            Artisan::call($commands[$command]);
+
+            try {
+                if(isset($commands[$command]['params'])) {
+                    Artisan::call($commands[$command]['command'], $commands[$command]['params']);
+                } else {
+                    Artisan::call($commands[$command]['command']);
+                }
+            } catch (Exception $e) {
+                return $this->response($e->getMessage(), 'error');
+            }
+
+            // Artisan::call($commands[$command]);
             $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
         }
     }
