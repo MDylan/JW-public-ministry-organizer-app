@@ -1,4 +1,4 @@
-<div wire:poll.visible.30000ms>
+<div @if($polling) wire:poll.visible.30000ms wire:key="events-polling" @endif>
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -115,6 +115,8 @@
                             <script>
                                 function modal(groupId, date) {
                                     livewire.emitTo('events.modal', 'openModal', date, groupId);
+                                    // livewire.emit('openEventsModal', date);
+                                    livewire.emit('pollingOff');
                                 }
                             </script>
                         </div>
@@ -186,6 +188,7 @@
     </div>
 
     @livewire('events.modal', ['groupId' => $cal_group_data['id']], key('eventsmodal'))
-
+    @if ($group_editor)
+        @livewire('groups.poster-edit-modal')    
+    @endif    
 </div>
-

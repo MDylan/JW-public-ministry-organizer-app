@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Events;
 
+use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
 use App\Models\Group;
@@ -117,7 +118,7 @@ class EventEdit extends AppComponent
         $this->service_days = [];
         $d = new DateTime( $date );
         $dayOfWeek = $d->format("w");
-        $this->day_data['date'] = $date;
+        $this->day_data['date'] = $d->format("Y-m-d"); //$date;
         $this->day_data['dateFormat'] = $d->format('Y.m.d');
         
         $days = $group->days()->get()->toArray();
@@ -252,6 +253,7 @@ class EventEdit extends AppComponent
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
+        // dd($this->day_data);
     }
 
     public function change_user() {
@@ -376,7 +378,7 @@ class EventEdit extends AppComponent
             $invalid['end'] = true;
 
         $group = Group::findOrFail($this->groupId);
-        
+        // dd($this->day_data);
         $data = [
             'day' => $this->day_data['date'],
             'start' => $this->state['start'],
@@ -447,12 +449,12 @@ class EventEdit extends AppComponent
                 }
             }
         });
-
+        // dd($v);
         $validatedData = $v->validate();
         $validatedData['start'] = date("Y-m-d H:i", $validatedData['start']);
         $validatedData['end'] = date("Y-m-d H:i", $validatedData['end']);
         // $validatedData['group_id'] = $this->groupId;
-        
+        // dd($validatedData);
         if($this->editEvent !== null) {
             //update event
             $exists = $group->events()->whereId($this->editEvent['id']);
@@ -475,6 +477,10 @@ class EventEdit extends AppComponent
 
         $this->emitUp('refresh');
         $this->emitTo('partials.events-bar', 'refresh');
+
+        $stat = new GenerateStat();
+        $stat->generate($this->groupId, $validatedData['day']);
+
         $this->dispatchBrowserEvent('success', ['message' => __('event.saved')]);
         $this->pleaseWait = true;
     }

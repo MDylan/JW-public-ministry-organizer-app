@@ -9,23 +9,25 @@ $(document).ready(function() {
     });
     window.addEventListener('show-modal', event => {
         id = event.detail.id;
-        setTimeout(() => {
-            $('#'+id).modal('show');
-            console.log('show-modal', id);
-            // this.activeComponent = id;
-            // this.showActiveComponent = true;
-            // this.modalWidth = this.getActiveComponentModalAttribute('maxWidthClass');
-        }, 300);
+        $('#'+id).modal('show');
+        console.log('show-modal', id);
+        // setTimeout(() => {
+        //     $('#'+id).modal('show');
+            
+        //     // this.activeComponent = id;
+        //     // this.showActiveComponent = true;
+        //     // this.modalWidth = this.getActiveComponentModalAttribute('maxWidthClass');
+        // }, 100);
         
 
-        $('#'+id).on('hide.bs.modal', function (e) {
-            Livewire.emit('hideModal', id);
-            console.log('hideModal', id);
+        $('#'+id).one('hide.bs.modal', function (e) {
+            Livewire.emit('hideModal', event.detail.parameters_back);
+            console.log('hideModal', id, event.detail.parameters_back);
         });
 
-        $('#'+id).on('hidden.bs.modal', function (e) {
-            Livewire.emit('hiddenModal', id);
-            console.log('hiddenModal', id);
+        $('#'+id).one('hidden.bs.modal', function (e) {
+            console.log('hiddenModal', id, event.detail.parameters_back);
+            Livewire.emit('hiddenModal', event.detail.parameters_back);            
         });
     });
 });

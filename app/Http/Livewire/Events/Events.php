@@ -34,12 +34,19 @@ class Events extends AppComponent
     //     ],
     // ];
     // public $cal_original_day_data = [];
-    public $listeners = ['openModal', 'refresh' => 'render'];
+    public $listeners = [
+        'openModal', 
+        'refresh' => 'render',
+        'pollingOn',
+        'pollingOff',
+        'openEventsModal'
+    ];
     // public $cal_active_tab = '';
     private $first_day = null;
     private $last_day = null;
     private $day_stat = [];
     private $userEvents = [];
+    public $polling = true;
 
     public function mount(int $year = 0, int $month = 0) {
         if(isset($year)) {
@@ -195,6 +202,19 @@ class Events extends AppComponent
                                 ->get()->toArray();
     }
 
+    public function pollingOn() {
+        $this->polling = true;
+    }
+
+    public function pollingOff() {
+        $this->polling = false;
+    }
+
+    public function openEventsModal($date) {
+        // dd($date);
+        $this->emitTo('events.modal', 'openModal', $date, $this->form_groupId);
+        $this->polling = false;
+    }
 
     public function render()
     {
@@ -426,7 +446,8 @@ class Events extends AppComponent
             'cal_group_data' => $this->cal_group_data,
             'day_stat' => $this->day_stat,
             'userEvents' => $this->userEvents,
-            'groups' => $this->groups
+            'groups' => $this->groups,
+            'group_editor' => in_array($this->cal_group_data['pivot']['group_role'], ['admin', 'roler']) ? true : false
         ]);
 
         // return view('livewire.events.calendar');

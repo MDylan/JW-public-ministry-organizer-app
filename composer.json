@@ -17,7 +17,7 @@
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
-        "livewire/livewire": "^2.4",
+        "livewire/livewire": "^2.10.4",
         "rachidlaasri/laravel-installer": "^4.1",
         "spatie/calendar-links": "^1.6",
         "spatie/laravel-activitylog": "^4.0.0",
@@ -47,7 +47,8 @@
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan vendor:publish --force --tag=livewire:assets --ansi"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

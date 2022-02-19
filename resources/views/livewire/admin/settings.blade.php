@@ -162,6 +162,16 @@
                                 @lang('settings.run.optimize'): optimize:clear
                             </button>
                             <div class="w-100 py-2"></div>
+                            <button type="button" class="btn btn-primary" wire:click="run('cache_clear')">
+                                <i class="fa fa-play mr-1"></i>
+                                @lang('settings.run.optimize'): cache:clear
+                            </button>
+                            <div class="w-100 py-2"></div>
+                            <button type="button" class="btn btn-primary" wire:click="run('view_clear')">
+                                <i class="fa fa-play mr-1"></i>
+                                @lang('settings.run.optimize'): view:clear
+                            </button>
+                            <div class="w-100 py-2"></div>
                             <button type="button" class="btn btn-primary" wire:click="run('migrate')">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): migrate

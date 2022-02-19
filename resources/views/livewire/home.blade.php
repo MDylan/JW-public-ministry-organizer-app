@@ -1,4 +1,4 @@
-<div wire:poll.30000ms>
+<div @if($polling) wire:poll.30000ms wire:key="home-polling" @endif>
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -36,7 +36,6 @@
                         @if (count($group['posters']) > 0)
                             <div class="callout callout-success mx-2 mt-2">
                                 <h5 class="border-bottom mb-1 pb-1"> <i class="far fa-file-image mr-1"></i> @lang('group.poster.title')</h5>
-                                <div class="grid-striped">
                                     @foreach ($group['posters'] as $poster)                            
                                         <div class="row">
                                             <div class="col">
@@ -61,7 +60,6 @@
                                             </div>
                                         </div>
                                     @endforeach
-                                </div>
                             </div>
                         @endif
                     <table class="table table-sm m-0">
@@ -154,6 +152,7 @@
             <script>
                 function modal(groupId, date) {
                     livewire.emitTo('events.modal', 'openModal', date, groupId);
+                    livewire.emit('pollingOff');
                 }
             </script>
         @endif

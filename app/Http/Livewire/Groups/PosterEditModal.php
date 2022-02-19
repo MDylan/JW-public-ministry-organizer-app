@@ -14,10 +14,13 @@ class PosterEditModal extends AppComponent
     public $groupId = 0;
     private $group = [];
     public $posterId = 0;
+    public $fromDate = null;
 
     protected $listeners = [         
         'openModal',
-        'deletePoster'
+        'openModalFromDate',
+        'deletePoster',
+        'hiddenModal'
     ];
 
     public function getGroupData($groupId = false) {
@@ -47,9 +50,25 @@ class PosterEditModal extends AppComponent
             // dd('poster');
             $this->posterId = $posterId;
             $this->getPosterData();
+        } else {
+            if($this->fromDate !== null) {
+                // dd('dateset');
+                $this->state['show_date'] = $this->fromDate;
+            }
         }
-        $this->dispatchBrowserEvent('show-modal', ['id' => 'PosterEditModal']);
-        
+        $this->dispatchBrowserEvent('show-modal', [
+            'id' => 'PosterEditModal',
+            'parameters_back' => [
+                'groupId' => $this->groupId,
+                'fromDate' => $this->fromDate
+            ]
+        ]);        
+    }
+
+    public function openModalFromDate($groupId, $date, $posterId = 0) {
+        $this->dispatchBrowserEvent('hide-modal', ['id' => 'form']);
+        $this->fromDate = $date;
+        $this->openModal($groupId, $posterId);
     }
 
     public function savePoster() {
@@ -74,11 +93,21 @@ class PosterEditModal extends AppComponent
             'id' => 'PosterEditModal',
             'message' => __('group.poster.success'),
             'savedMessage' => __('app.saved')
-        ]);
-
-        $this->reset();
+        ]);        
         $this->emitUp('refresh');
         
+        if($this->fromDate) {
+            $this->emitTo('events.modal', 'openModal', $this->fromDate, $this->groupId);
+        }
+        $this->reset();
+    }
+
+    public function hiddenModal($parameters_back) {
+        // dd($parameters_back);
+        if(isset($parameters_back['fromDate'])) {
+            $this->reset();
+            $this->emitTo('events.modal', 'openModal', $parameters_back['fromDate'], $parameters_back['groupId']);
+        }
     }
 
     public function deletePosterConfirmation() {

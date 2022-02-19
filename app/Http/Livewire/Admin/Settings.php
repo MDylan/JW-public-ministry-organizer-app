@@ -159,6 +159,12 @@ class Settings extends AppComponent
             'optimize' => [
                 'command' => 'optimize:clear'
             ],
+            'cache_clear' => [
+                'command' => 'cache:clear'
+            ],
+            'view_clear' => [
+                'command' => 'view:clear',
+            ],
             'migrate' => [
                 'command' => 'migrate',
                 'params' => ['--force'=> true]

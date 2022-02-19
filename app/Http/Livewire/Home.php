@@ -2,8 +2,8 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\Event;
-use App\Models\Group;
+// use App\Models\Event;
+// use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -17,10 +17,13 @@ class Home extends Component
     private $available_days = [];
     // private $dates = [];
     public $listeners = [
-        'refresh' => 'render'
+        'refresh' => 'render',
+        'pollingOn',
+        'pollingOff'
     ];
     private $groups = [];
     private $group_roles = [];
+    public $polling = true;
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -118,6 +121,14 @@ class Home extends Component
                 }
             }
         }
+    }
+
+    public function pollingOn() {
+        $this->polling = true;
+    }
+
+    public function pollingOff() {
+        $this->polling = false;
     }
 
     public function render()

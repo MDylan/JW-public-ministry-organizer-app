@@ -47,5 +47,7 @@ $(function () {
 })
 
 $(".content-wrapper").click(function() {
-    $("#control_sidebar").ControlSidebar('collapse');
+    if($("#control_sidebar").css( "display" ) == "block") {
+        $("#control_sidebar").ControlSidebar('collapse');
+    }
 });

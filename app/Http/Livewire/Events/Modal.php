@@ -3,16 +3,16 @@
 namespace App\Http\Livewire\Events;
 
 use App\Http\Livewire\AppComponent;
-use App\Models\DayStat;
-use Illuminate\Support\Facades\Validator;
+// use App\Models\DayStat;
+// use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use DateTime;
-use App\Models\User;
+// use App\Models\User;
 use App\Models\Group;
-use App\Models\Event;
+// use App\Models\Event;
 use App\Models\GroupDate;
-use App\Models\GroupUser;
-use App\Notifications\GroupUserAddedNotification;
+// use App\Models\GroupUser;
+// use App\Notifications\GroupUserAddedNotification;
 // use Barryvdh\Debugbar;
 
 class Modal extends AppComponent
@@ -20,8 +20,8 @@ class Modal extends AppComponent
 
     // public $group;
     private $service_days = [];
-    public $group_data = [];
-    public $day_data = [];
+    private $group_data = [];
+    private $day_data = [];
     private $day_events = [];
 
     public $form_groupId = 0;
@@ -30,77 +30,82 @@ class Modal extends AppComponent
         'openModal', 
         'refresh', 
         'cancelEdit',
-        'setGroup' => 'mount'
+        'setGroup' => 'mount',
+        'hiddenModal'
     ];
     public $active_tab = '';
     public $date = null;
     // public $event_edit = [];
     // public $all_select = [];
-    private $weekdays = [
-        1 => 'monday',
-        2 => 'tuesday',
-        3 => 'wednesday',
-        4 => 'thursday',
-        5 => 'friday',
-        6 => 'saturday',
-        0 => 'sunday'
-    ];
+    // private $weekdays = [
+    //     1 => 'monday',
+    //     2 => 'tuesday',
+    //     3 => 'wednesday',
+    //     4 => 'thursday',
+    //     5 => 'friday',
+    //     6 => 'saturday',
+    //     0 => 'sunday'
+    // ];
     private $day_stat = [];
     public $error = false;
     public $current_available = false;
     private $role = "";
-    public $date_data = [];
+    private $date_data = [];
+    public $polling = false;
+    private $editor = false;
 
     public function mount($groupId = 0) {
-        $this->date = null;
-        if($groupId > 0) {
-            $check = auth()->user()->userGroups()->whereId($groupId);
-            if(!$check) {
-                $this->error = __('event.error.invalid_group');
-            } else {
-                $this->form_groupId = $groupId;
-                $this->day_data =  [
-                    'date' => 0,
-                    'dateFormat' => 0,
-                    'table' => [],
-                    'selects' => [
-                        'start' => [],
-                        'end' => [],
-                    ],
-                ];
+        // $this->date = null;
+        // if($groupId > 0) {
+        //     $check = auth()->user()->userGroups()->whereId($groupId);
+        //     if(!$check) {
+        //         $this->error = __('event.error.invalid_group');
+        //     } else {
+        //         $this->form_groupId = $groupId;
+        //         $this->day_data =  [
+        //             'date' => 0,
+        //             'dateFormat' => 0,
+        //             'table' => [],
+        //             'selects' => [
+        //                 'start' => [],
+        //                 'end' => [],
+        //             ],
+        //         ];
 
                 
-                // dd($this->role);
-            }
-        }
+        //         // dd($this->role);
+        //     }
+        // }
     }
 
-    public function getRole() {
-        $info = GroupUser::where('user_id', '=', Auth::id())
-            ->where('group_id', '=', $this->form_groupId)
-            ->select('group_role')
-            ->first()->toArray();
-        $this->role = $info['group_role'];
-    }
+    // public function getRole() {
+    //     $info = GroupUser::where('user_id', '=', Auth::id())
+    //         ->where('group_id', '=', $this->form_groupId)
+    //         ->select('group_role')
+    //         ->first()->toArray();
+    //     $this->role = $info['group_role'];
+    // }
 
     //dont delete, it's a listener
     public function refresh() {
+        // dd('refresh');
         if($this->error !== false) return;
+        $this->active_tab = '';
 
-        $this->getInfo();
+        // $this->getInfo();
 
-        $stat = DayStat::where([
-            'group_id' => $this->form_groupId,
-            'day' => $this->date
-        ]);
-        $stat->delete();
+        // $stat = DayStat::where([
+        //     'group_id' => $this->form_groupId,
+        //     'day' => $this->date
+        // ]);
+        // $stat->delete();
 
-        DayStat::insert(
-            $this->day_stat
-        );
+        // DayStat::insert(
+        //     $this->day_stat
+        // );
 
-        $this->emitUp('refresh');
-        $this->emitTo('events.event-edit', 'createForm');
+        // $this->emitUp('refresh');
+        // $this->emitTo('events.event-edit', 'createForm');
     }
 
     // public function setGroup($groupId) {
@@ -112,12 +117,19 @@ class Modal extends AppComponent
     // }
 
     public function getInfo() {
-        $this->active_tab = '';
+        // $this->active_tab = '';
         // $this->getRole();
         if($this->error !== false) return;
         // $this->setVars();
 
         $groupId = $this->form_groupId;
+
+        $check = auth()->user()->userGroups()->whereId($groupId);
+        if(!$check) {
+            $this->error = __('event.error.invalid_group');
+            return;
+        }
+
         $date = $this->date;
 
         $group = Group::with([
@@ -159,6 +171,7 @@ class Modal extends AppComponent
             }
         }
         $this->role = $group['current_user'][0]['pivot']['group_role'];
+        $this->editor = in_array($this->role, ['admin', 'roler']) ? true : false;
         //unset this part, it's not public for livewire
         unset($group['current_user']);
         
@@ -170,7 +183,7 @@ class Modal extends AppComponent
         $d = new DateTime( $date );
         $dayOfWeek = $d->format("w");
         $this->day_data['date'] = $date;
-        $this->day_data['dateFormat'] = $d->format('Y.m.d.,')." ".__('event.weekdays_short.'.$dayOfWeek);
+        $this->day_data['dateFormat'] = $d->format(__('app.format.date').'.,')." ".__('event.weekdays_short.'.$dayOfWeek);
         
         // $days = $group->days()->get()->toArray();
         $days = $group['days'];
@@ -406,15 +419,28 @@ class Modal extends AppComponent
         if($groupId > 0) {
             $this->form_groupId = $groupId;
         }
-        $this->getInfo();
-        $this->dispatchBrowserEvent('show-form');
+        // $this->getInfo();
+        // $this->dispatchBrowserEvent('show-form');
+        $this->dispatchBrowserEvent('show-modal', [
+            'id' => 'form',
+        ]); 
+        $this->polling = true;
+    }
+
+    public function hiddenModal() {
+        $this->emitUp('pollingOn');
+        $this->polling = false;
+    }
+
+    public function openPosterModal($posterId = 0) {
+        $this->emitTo('groups.poster-edit-modal', 'openModalFromDate', $this->form_groupId, $this->date, $posterId);
     }
 
     public function setDate($date) {
         $this->date = $date;
-        
+        $this->active_tab = '';
         // Debugbar::addMessage('setDate lefutott', 'mylabel');
-        $this->getInfo();
+        // $this->getInfo();
     }
 
     public function setStart($time) {
@@ -439,17 +465,29 @@ class Modal extends AppComponent
         $this->emitTo('events.event-edit', 'createForm');
     }
 
+    // public function polling() {
+    //     $this->emitUp('pollingOff');
+    // }
+
     public function render()
     {
+        if($this->date !== null && $this->form_groupId !== 0) {
+            $this->getInfo();
+        }
+
         if($this->date !== null && !$this->error) {            
             // dd($this->group_data);
             $this->error = false;
+            
+            // $date = Carbon::parse($this->day_data['date']);
+
             return view('livewire.events.modal', [
                 'group_data' => $this->group_data,
                 'service_days' => $this->service_days,
                 'day_events' => $this->day_events,
                 'day_data' => $this->day_data,
-                // 'date_data' => $this->date_data
+                'editor' => $this->editor,
+                'date_data' => $this->date_data
             ]);
         } 
         
