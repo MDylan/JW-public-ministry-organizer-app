@@ -50,7 +50,6 @@
                         </button>
                     </div>
                     <div class="modal-body p-0">
-                        
                         <div class="tab-content">
                             <div class="tab-pane fade @if ($active_tab == '') show active @endif relative" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
 

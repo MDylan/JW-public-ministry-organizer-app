@@ -12,13 +12,14 @@ use Illuminate\Support\Facades\Validator;
 class LastEvents extends AppComponent
 {
 
-    public $eventForm;
+    private $eventForm;
     public $months = [];
     public $year = 0;
     public $month = 0;
     public $current_month = 0;
     public $reports = [];
-    public $eventFormDisabled = false;
+    private $eventFormDisabled = false;
+    public $eventId;
 
     public function mount() {
         if(!isset($this->state['month'])) {
@@ -53,11 +54,9 @@ class LastEvents extends AppComponent
         return false;
     }
 
-    public function editReports($eventId) {
-        $this->showEditModal = false;
-
+    public function getEventInfo($loadForm = false) {
         $event = Auth::user()->events()
-                        ->where('id', $eventId)
+                        ->where('id', $this->eventId)
                         ->whereNotNull('accepted_at')
                         ->with(['serviceReports', 'groups.literatures'])
                         ->has('groups')
@@ -68,6 +67,7 @@ class LastEvents extends AppComponent
                 'title' => __('app.error'),
                 'message' => __('event.service.error'),
             ]);
+            return false;
         } else {
             // dd($event->toArray());
             $groups = Auth()->user()->userGroups->toArray();
@@ -77,18 +77,32 @@ class LastEvents extends AppComponent
             }
 
             $this->eventForm = $event;
-            if(count($event->serviceReports)) {
-                foreach($event->serviceReports as $report)  {
-                    $this->reports[$report->group_literature_id] = $report;
+            if($loadForm) {
+                if(count($event->serviceReports)) {
+                    foreach($event->serviceReports as $report)  {
+                        $this->reports[$report->group_literature_id] = $report;
+                    }
+                } else {
+                    $this->reports = [];
                 }
-            } else {
-                $this->reports = [];
             }
-            $this->dispatchBrowserEvent('show-form');
+            return true;
+        }
+    }
+
+    public function editReports($eventId) {
+        $this->showEditModal = false;
+        $this->eventId = $eventId;
+
+        if($this->getEventInfo(true)) {
+            $this->dispatchBrowserEvent('show-modal', [
+                'id' => 'ReportForm',
+            ]); 
         }
     }
 
     public function saveReport() {
+        $this->getEventInfo();
         if($this->eventFormDisabled) return;
         
         if(count($this->reports)) {
@@ -108,7 +122,11 @@ class LastEvents extends AppComponent
                 );
             }
             $this->reports = [];
-            $this->dispatchBrowserEvent('hide-form', ['message' => __('event.service.success')]);
+
+            $this->dispatchBrowserEvent('hide-modal', [
+                'id' => 'ReportForm',
+                'message' => __('event.service.success')
+            ]); 
         }
     }
 
@@ -141,7 +159,8 @@ class LastEvents extends AppComponent
 
         return view('livewire.events.last-events', [
             'events' => $events,
-            // 'groups' => $groups
+            'eventForm' => $this->eventForm,
+            'eventFormDisabled' => $this->eventFormDisabled,
         ]);
     }
 }

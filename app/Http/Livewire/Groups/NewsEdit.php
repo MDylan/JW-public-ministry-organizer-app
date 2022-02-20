@@ -17,8 +17,10 @@ class NewsEdit extends AppComponent
 {
     use WithFileUploads;
 
-    public $group;
-    public $new_data;
+    private $group;
+    public $newId = false;
+    public $groupId;
+    private $new_data;
     public $files = [];
     public $file_types = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
     public $file_beeingRemoved = null;
@@ -30,26 +32,53 @@ class NewsEdit extends AppComponent
         'deleteFileConfirmed'
     ];
 
-    public function mount(Group $group, $new = false) {
-        $this->group = $group;
+    public function mount($group, $new = false) {
+        $this->groupId = $group;
+        $this->newId = $new;
+        // $this->group = $group;
 
-        if($new) {
-            $this->new_data = $this->group->news()->with('files')->whereId($new)->firstOrFail();
-            $this->state = $this->new_data->toArray();
-            $this->attached_files = $this->state['files']; // $files;
-            if(count($this->state['translations'])) {
-                foreach($this->state['translations'] as $translation) {
-                    $this->state['lang'][$translation['locale']] = [
-                        'title' => $translation['title'],
-                        'content' => $translation['content'],
-                    ];                    
+        $this->getGroup(true);
+
+        // if($new) {            
+        //     $this->new_data = $this->group->news()->with('files')->whereId($new)->firstOrFail();
+        //     $this->state = $this->new_data->toArray();
+        //     $this->attached_files = $this->state['files']; // $files;
+        //     if(count($this->state['translations'])) {
+        //         foreach($this->state['translations'] as $translation) {
+        //             $this->state['lang'][$translation['locale']] = [
+        //                 'title' => $translation['title'],
+        //                 'content' => $translation['content'],
+        //             ];                    
+        //         }
+        //     }
+        // }
+    }
+
+    public function getGroup($loadState = false) {
+        $this->group = Group::findOrFail($this->groupId);
+
+        if($this->newId) {
+            $this->new_data = $this->group->news()->with('files')->whereId($this->newId)->firstOrFail();
+            
+            if($loadState) {
+                $this->state = $this->new_data->toArray();
+                $this->attached_files = $this->state['files']; // $files;
+                if(count($this->state['translations'])) {
+                    foreach($this->state['translations'] as $translation) {
+                        $this->state['lang'][$translation['locale']] = [
+                            'title' => $translation['title'],
+                            'content' => $translation['content'],
+                        ];                    
+                    }
                 }
             }
         }
     }
 
     public function editNews() {
-        // dd($this->state);
+        // dd('x');
+        $this->getGroup();
+        // dd($this->state, $this->group);
         
         // if(isset($this->state['title']))
         //     $this->state['title'] = strip_tags($this->state['title']);
@@ -113,7 +142,8 @@ class NewsEdit extends AppComponent
     }
 
     public function deleteConfirmed() {
-        $group_id = intval($this->group->id);
+        $this->getGroup();
+        $group_id = $this->groupId; // intval($this->group->id);
         if(isset($this->state['id'])) {
             $files = $this->new_data->files()->get()->toArray();
             if(count($files)) {
@@ -176,8 +206,13 @@ class NewsEdit extends AppComponent
 
     public function render()
     {
+        if(!$this->group) {
+            $this->getGroup();
+        }
+
         return view('livewire.groups.news-edit', [
-            // 'group' => $this->group
+            'group' => $this->group,
+            'new_data' => $this->new_data,
             'languages' => config('available_languages')
         ]);
     }

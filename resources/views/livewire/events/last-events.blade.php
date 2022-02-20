@@ -105,7 +105,7 @@
 
 
 <!-- Modal -->
-<div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
+<div class="modal fade" id="ReportForm" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
     <div class="modal-dialog modal-lg reportModal">
         <form autocomplete="off" wire:submit.prevent="saveReport">
             <div class="modal-content">
