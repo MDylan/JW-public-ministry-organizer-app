@@ -47,7 +47,8 @@ return [
     'error' => [
         'invalid_group' => 'Hibás csoport lett kiválasztva, vagy nincs jogosultságod ezt szerkeszteni.',
         'no_permission' => 'Ehhez nincs jogosultságod.',
-        'no_service_day' => 'Ezen a napon nem lehetséges a szolgálat.'
+        'no_service_day' => 'Ezen a napon nem lehetséges a szolgálat.',
+        'publisher_busy' => 'Ekkor már végzel szolgálatot egy másik csoportban. (:start - :end)',
     ],
     'date' => 'Dátum',
     'status' => 'Állapot',

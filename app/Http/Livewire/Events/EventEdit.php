@@ -8,8 +8,10 @@ use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupUser;
+use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class EventEdit extends AppComponent
@@ -432,7 +434,7 @@ class EventEdit extends AppComponent
             'status' => 'required|in:0,1,2',
         ]);
         
-        $v->after(function ($validator) use ($publishers_ok, $invalid) {
+        $v->after(function ($validator) use ($publishers_ok, $invalid, $data) {
             if ($publishers_ok === false) {
                 $validator->errors()->add(
                     'start', __('event.reach_max_publisher')
@@ -447,6 +449,23 @@ class EventEdit extends AppComponent
                         $field, __('event.invalid_value')
                     );                    
                 }
+            }
+            $busy = DB::table('events')
+                                    ->whereNull('deleted_at')
+                                    ->where('status', '!=', 2)
+                                    ->where('user_id', '=', $data['user_id'])
+                                    ->where('group_id', '!=', $this->groupId)
+                                    ->where('start', '<', date("Y-m-d H:i", $data['end']))
+                                    ->where('end', '>', date("Y-m-d H:i", $data['start']))
+                                    ->first();
+            // dd($busy->start);
+            if($busy !== null) {
+                $validator->errors()->add(
+                    'busy', __('event.error.publisher_busy', [
+                        'start' => Carbon::parse($busy->start)->format(__('app.format.datetime')),
+                        'end' => Carbon::parse($busy->end)->format(__('app.format.datetime')),
+                    ])
+                );
             }
         });
         // dd($v);

@@ -89,7 +89,7 @@
             @endif
         @endif
 
-        @if ($errors->any())
+        @error('busy')
             <div class="alert alert-danger">
                 <ul>
                     @foreach ($errors->all() as $error)
@@ -97,7 +97,7 @@
                     @endforeach
                 </ul>
             </div>
-        @endif
+        @enderror
 
         @if ($eventId)
             <div class="row">
