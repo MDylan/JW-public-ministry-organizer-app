@@ -231,6 +231,7 @@ class UpdateGroupForm extends AppComponent
             'days.*.end_time' => 'required|date_format:H:i|after:days.*.start_time',
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
+            'languages' => 'sometimes',
         ]);
 
         // $v->after(function ($validator) use ($admins, $current_admins) {
@@ -260,7 +261,7 @@ class UpdateGroupForm extends AppComponent
 
         // dd($validatedDays);
 
-        $user = Auth()->user(); // User::find(Auth::id());
+        // $user = Auth()->user(); // User::find(Auth::id());
         // $group = Group::findOrFail($this->group_id);
         $this->group->update($validatedData);
         // dd('itt');

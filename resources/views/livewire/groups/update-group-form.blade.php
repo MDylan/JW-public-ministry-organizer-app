@@ -172,6 +172,29 @@
                                                 </div>  
                                             </div>
                                         </div>
+                                        @if (count(Config('available_languages')) > 1)
+                                        <div class="row alert alert-light">
+                                            <div class="col-12">
+                                                <label for="group_languages">{{__('group.group_languages')}}</label>
+                                                <div class="p-1">@lang('group.group_languages_info')</div>
+                                                @foreach (Config('available_languages') as $code => $value)
+                                                    @if (!$value['visible'] && (auth()->user()->role !== "mainAdmin" && auth()->user()->role !== "translator"))
+                                                        @continue
+                                                    @endif
+
+                                                    <div class="form-check">
+                                                        <input wire:model.defer="state.languages.{{$code}}" value="1" type="checkbox" id="language_{{ $code }}" />
+                                                        <label class="form-check-label" for="language_{{ $code }}">
+                                                            {{ $value['name'] }}
+                                                        </label>
+                                                    </div>
+
+                                                @endforeach
+                                                @error('group_languages')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>                                    
                                 </div>                                                      
                             </div>

@@ -29,7 +29,8 @@ class Group extends Model
         'color_minimum',
         'color_maximum',
         'parent_group_id',
-        'signs'
+        'signs',
+        'languages'
     ];
 
     /**
@@ -39,6 +40,7 @@ class Group extends Model
      */
     protected $casts = [
         'signs' => 'array',
+        'languages' => 'array',
     ];
 
     protected $appends = ['colors'];

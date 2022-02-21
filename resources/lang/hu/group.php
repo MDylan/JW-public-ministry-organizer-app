@@ -38,6 +38,8 @@ return [
     'max_publishers' => 'Hírnök száma (maximum)',
     'max_publishers_placeholder' => 'Például: 4',
     'min_time' => 'Legkevesebb eltölthető idő',
+    'group_languages' => 'A csoport nyelvei',
+    'group_languages_info' => 'A híreket ezeken a nyelveken adhatod meg. A felhasználó felületet nem érinti. Ha nem adsz meg semmit, akkor mindegyik nyelv elérhető marad.',
     'min_time_options' => [
         30 => 'Fél óra',
         60 => '1 óra',

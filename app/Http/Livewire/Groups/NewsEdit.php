@@ -26,6 +26,7 @@ class NewsEdit extends AppComponent
     public $file_beeingRemoved = null;
     public $removed_files = [];
     public $attached_files = [];
+    private $languages = [];
 
     public $listeners = [
         'deleteConfirmed',
@@ -35,27 +36,25 @@ class NewsEdit extends AppComponent
     public function mount($group, $new = false) {
         $this->groupId = $group;
         $this->newId = $new;
-        // $this->group = $group;
-
         $this->getGroup(true);
-
-        // if($new) {            
-        //     $this->new_data = $this->group->news()->with('files')->whereId($new)->firstOrFail();
-        //     $this->state = $this->new_data->toArray();
-        //     $this->attached_files = $this->state['files']; // $files;
-        //     if(count($this->state['translations'])) {
-        //         foreach($this->state['translations'] as $translation) {
-        //             $this->state['lang'][$translation['locale']] = [
-        //                 'title' => $translation['title'],
-        //                 'content' => $translation['content'],
-        //             ];                    
-        //         }
-        //     }
-        // }
     }
 
     public function getGroup($loadState = false) {
         $this->group = Group::findOrFail($this->groupId);
+
+        $all_languages = config('available_languages');
+        if(count($this->group->languages)) {
+            foreach($this->group->languages as $code => $value) {
+                if($value) {
+                    $this->languages[$code] = $all_languages[$code];
+                }
+            } 
+            if(count($this->languages) == 0) {
+                $this->languages = $all_languages;
+            }
+        } else {
+            $this->languages = $all_languages;
+        }
 
         if($this->newId) {
             $this->new_data = $this->group->news()->with('files')->whereId($this->newId)->firstOrFail();
@@ -76,18 +75,11 @@ class NewsEdit extends AppComponent
     }
 
     public function editNews() {
-        // dd('x');
         $this->getGroup();
-        // dd($this->state, $this->group);
-        
-        // if(isset($this->state['title']))
-        //     $this->state['title'] = strip_tags($this->state['title']);
 
         $validatedData = Validator::make($this->state, [
-            // 'title' => 'required|string|max:50|min:2',
             'date' => 'required|date_format:Y-m-d',
             'status' => 'numeric|in:0,1',
-            // 'content' => 'required',
         ])->validate();
 
         $validatedData['user_id'] = Auth::id();
@@ -96,8 +88,6 @@ class NewsEdit extends AppComponent
                 $validatedData[$code] = $fields;
             }
         }
-
-        // dd($validatedData);
 
         if(isset($this->state['id'])) {
             $this->new_data->update($validatedData);
@@ -174,7 +164,6 @@ class NewsEdit extends AppComponent
                     'files.*.mimes' => __('news.file.wrong_type'),
                     'files.*.max' => __('news.file.wrong_size'),
                 ], 
-                // [ 'files.*' => 'Fajlnev' ]
             );
 
             foreach( $this->files as $file ) {
@@ -213,7 +202,7 @@ class NewsEdit extends AppComponent
         return view('livewire.groups.news-edit', [
             'group' => $this->group,
             'new_data' => $this->new_data,
-            'languages' => config('available_languages')
+            'languages' => $this->languages
         ]);
     }
 }

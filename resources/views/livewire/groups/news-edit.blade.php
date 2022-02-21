@@ -118,12 +118,6 @@
                                             x-on:livewire-upload-progress="progress = $event.detail.progress">
                                             <input wire:model="files" type="file" class="custom-file-input" id="customFile" aria-describedby="filesHelpText" multiple>
                                             <label data-browse="@lang('news.file.browse')" class="custom-file-label" for="customFile">@lang('news.file.choose')</label>
-                                            {{-- <div x-show="isUploading" class="progress progress-sm rounded mt-2">
-                                                <div class="progress-bar bg-primary progress-bar-striped" role="progressbar" aria-valuenow="40" 
-                                                aria-valuemin="0" aria-valuemax="100" x-bind:style="`width: ${progress}%`">
-                                                <span class="sr-only">40% Complete (success)</span>
-                                                </div>
-                                            </div> --}}
                                             <div x-show="isUploading">
                                                 <progress class="w-100" max="100" x-bind:value="progress"></progress>
                                             </div>
@@ -196,7 +190,6 @@
                         }).then((result) => {
                         if (result.isConfirmed) {
                                 window.location.replace('{{ route('groups.news_delete', ['group' => $group->id, 'new' => $state['id']]) }}');
-                            // Livewire.emit('deleteConfirmed');
                         }
                         })
                     });
@@ -232,7 +225,6 @@
                         ['para', ['ul', 'ol', 'paragraph']],
                         ['table', ['table']],
                         ['insert', ['link']],
-                        ['view', ['codeview']]
                         ],
                         callbacks: {
                             //save into livewire model when leave texteditor
@@ -240,8 +232,6 @@
                                 code = $(this).summernote('code');
                                 lang = $(this).data('lang');
                                 @this.set('state.lang.'+ lang +'.content', code);
-                                // code = $(this).summernote('code');
-                                // @this.set('state.content', code);
                             }
                         }
                 });
