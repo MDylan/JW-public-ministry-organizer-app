@@ -56,7 +56,12 @@ return [
     'information' => 'Tájékoztatás',
     'no_any_groups' => 'Jelenleg még nem tartozol egyetlen szolgálati csoporthoz sem. Ha csatlakozol egyhez, akkor itt fog megjelenni egy áttekintés a közelgő szolgálataidról.',
     'back' => 'Vissza az előző oldalra',
-    'dark_theme' => 'Sötét téma',
+    'theme' => [
+        'dark' => 'Sötét téma',
+        'light' => 'Világos téma',
+        'system' => 'Automatikus téma',
+    ],
+    // 'dark_theme' => 'Sötét téma',
     'show' => 'Megtekintés',
     'choose_language' => 'Nyelv választás',
     'language_changed' => 'A nyelv megváltozott',

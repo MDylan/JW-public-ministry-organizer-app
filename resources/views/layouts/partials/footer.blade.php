@@ -1,7 +1,7 @@
 <footer class="main-footer text-sm">
     <div class="w-100">
-        <div class="row">
-            <div class="col-md-10 pt-1">
+        <div class="d-flex flex-sm-row flex-column justify-content-between align-items-center">
+            <div class="p-1">
                 <div class="footer-menu">
                     @foreach ($sidemenu as $menu) 
                         @if ($menu->position !== 'bottom')
@@ -14,10 +14,16 @@
                     @endforeach
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="custom-control custom-switch theme-switch pt-1" style="float:right;">        
-                    <input type="checkbox" class="custom-control-input" id="customSwitch1"> @lang('app.dark_theme')
-                    <label class="custom-control-label" for="customSwitch1" style="float:left;"></label>                
+            <div class="p-1">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text"><i class="fas fa-adjust"></i></div>
+                    </div>
+                    <select id="theme_selector" class="form-control">
+                        <option value="system">@lang('app.theme.system')</option>
+                        <option value="light">@lang('app.theme.light')</option>
+                        <option value="dark">@lang('app.theme.dark')</option>
+                    </select>
                 </div>
             </div>
         </div>

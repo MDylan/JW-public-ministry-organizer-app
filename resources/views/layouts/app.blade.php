@@ -61,8 +61,8 @@
   <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
   <script src="{{ asset('plugins/toastr/toastr.min.js') }}"></script>
   <script src="{{ asset('plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
-  <script src="{{ asset('js/custom.js') }}"></script>
-  <script src="{{ asset('js/modal.js') }}"></script>
+  <script src="{{ asset('js/custom.js') }}?ver={{ filemtime(public_path('js/custom.js')) }}"></script>
+  <script src="{{ asset('js/modal.js') }}?ver={{ filemtime(public_path('js/modal.js')) }}"></script>
   <script>
     $(document).ready(function() {
       toastr.options = {
