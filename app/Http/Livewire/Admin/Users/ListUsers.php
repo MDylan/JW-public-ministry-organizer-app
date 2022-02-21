@@ -37,7 +37,7 @@ class ListUsers extends AppComponent
     public function createUser() {
         
         $validatedData = Validator::make($this->state, [
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email:filter|unique:users',
             'first_name' => 'required|string|max:50|min:2',
             'last_name' => 'required|string|max:50|min:2',
             'phone' => 'nullable|numeric|digits_between:9,11',

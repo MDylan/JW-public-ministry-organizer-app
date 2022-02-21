@@ -195,6 +195,8 @@ return [
         'add' => [
             'title' => 'Új hírnök hozzáadása',
             'info' => 'A hozzáadás gombra kattintva a rendszer azonnal hozzáadja csoporttag jogosultsággal a hírnököt. Emailben értesítve lesz, hogy meghívtad a csoportba, és ha nincs fiókja, akkor a rendszer automatikusan készít neki egyet.',
+            'email_language' => 'Az email értesítő ezen a nyelven menjen (ha nincs még fiókja):',
+            'email_language_error' => 'A kiválasztott nyelv nem érhető el.',
             'success' => 'Hozzáadva :number új hírnök!'
         ],
         

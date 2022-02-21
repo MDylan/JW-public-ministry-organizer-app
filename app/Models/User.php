@@ -35,7 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'last_activity',
         'accepted_gdpr',
         'isAnonymized',
-        'calendars'
+        'calendars',
+        'language'
     ];
 
     /**

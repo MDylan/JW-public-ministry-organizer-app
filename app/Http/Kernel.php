@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\SetGuestLanguage;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\setUserLastActivity;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -40,7 +41,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             SetLocale::class,
-            setUserLastActivity::class
+            setUserLastActivity::class,
         ],
 
         'api' => [
@@ -69,5 +70,6 @@ class Kernel extends HttpKernel
         'groupAdmin' => \App\Http\Middleware\GroupAdmin::class,
         'groupMember' => \App\Http\Middleware\GroupMember::class,
         'profileFull' => \App\Http\Middleware\ProfileFull::class,
+        'setGuestLanguage' => \App\Http\Middleware\SetGuestLanguage::class,
     ];
 }

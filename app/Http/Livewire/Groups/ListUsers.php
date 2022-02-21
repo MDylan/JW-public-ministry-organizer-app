@@ -40,7 +40,8 @@ class ListUsers extends AppComponent
 
     public $userIdBeeingRemoved = null;
     public $detachId = null;
-    public $new_users = ""; 
+    public $new_users = "";
+    public $email_language = "";
 
     public $new_parent_group_id = 0;
 
@@ -55,6 +56,7 @@ class ListUsers extends AppComponent
 
     public function mount($group) {
         $this->groupId = $group;
+        $this->email_language = config('settings_default_language');
     }
 
     public function openModal($modalId = 'UserModal') {
@@ -85,9 +87,20 @@ class ListUsers extends AppComponent
             }
         }
 
-        $validatedData = Validator::make($email, [
-            'email.*' => 'required|email',
-        ])->validate();
+        $v = Validator::make($email, [
+            'email.*' => 'required|email:filter',
+        ]); //->validate();
+
+        $v->after(function ($validator) {            
+            $langs = config('available_languages');
+            if(!isset($langs[$this->email_language])) {
+                $validator->errors()->add(
+                    'email_language', __('group.user.add.email_language_error')
+                );
+            }
+        });
+        
+        $validatedData = $v->validate();
 
         // dd($validatedData);
         if(count($validatedData['email'])) {
@@ -98,15 +111,18 @@ class ListUsers extends AppComponent
                     $password = Str::random(10);
                     $u = User::create([
                         'email' => $mail,
-                        'password' => bcrypt($password)
+                        'password' => bcrypt($password),
+                        'language' => $this->email_language
                     ]);
                     // dd($u);
                     $url = URL::temporarySignedRoute(
-                        'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), ['id' => $u->id]
+                        'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), [
+                            'id' => $u->id
+                        ]
                     );
                     $u->notify(
                         new FinishRegistration([
-                            'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                            'groupAdmin' => auth()->user()->full_name, 
                             'userMail' => $mail,
                             'url' => $url
                         ])

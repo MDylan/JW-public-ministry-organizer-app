@@ -30,7 +30,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'email' => [
                 'required',
                 'string',
-                'email',
+                'email:filter',
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],

@@ -341,24 +341,31 @@
                                         {{__('group.user.add.info')}}
                                     </div>
                                 </div> 
-                                <textarea wire:model.defer="new_users" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
-                                 cols="30" rows="4"></textarea>                              
+                                <div class="form-group">
+                                    <textarea wire:model.defer="new_users" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
+                                    cols="30" rows="4"></textarea>
+                                    @error('email.*')
+                                        <p class="text-danger mt-2">{{$message}}</p>
+                                    @enderror
+                                </div>
+                                @if (count(Config('available_languages')) > 1)
+                                    <div class="form-group">
+                                        <label for="email_language">@lang('group.user.add.email_language')</label>
+                                        <select wire:model.defer="email_language" class="form-control" id="email_language">
+                                            @foreach (Config('available_languages') as $code => $value)
+                                            @if (!$value['visible'] && (auth()->user()->role !== "mainAdmin" && auth()->user()->role !== "translator"))
+                                              @continue
+                                            @endif
+                                            <option value="{{ $code }}">{{ $value['name'] }}</option>
+                                          @endforeach
+                                        </select>
+                                        @error('email_language')
+                                            <p class="text-danger mt-2">{{$message}}</p>
+                                        @enderror
+                                    </div>
+                                @endif
                             </div>
-                            
-                          @error('email')
-                            <p class="text-danger mt-2">{{$message}}</p>
-                          @enderror
                         </div>
-                        @if ($errors->any())
-                            <div class="alert alert-danger">
-                                <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-                        
                     </x-slot>
                 
                     <x-slot name="buttons">

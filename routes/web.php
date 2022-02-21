@@ -48,7 +48,8 @@ Route::get('/', function () {
 Route::get('/page/{slug}', [StaticPageController::class, 'render'])->name('static_page');
 Route::middleware(['signed'])->group(function () {
     Route::get('/finish-registration/{id}', [FinishRegistration::class, 'index'])
-        ->name('finish_registration');
+        ->name('finish_registration')
+        ->middleware('setGuestLanguage');
     Route::post('/finish-registration/{id}', [FinishRegistration::class, 'register'])
         ->name('finish_registration_register');
     Route::get('/finish-registration/{id}/cancel', [FinishRegistration::class, 'cancel'])

@@ -20,6 +20,8 @@ class FinishRegistration extends Controller
         $user = User::where('id', '=', $id)
         ->where('role', '=', 'registered')
         ->firstOrFail();
+
+        // session('language', $user->language);
         
         $nameFields = is_array(trans('user.nameFields')) 
             ? trans('user.nameFields') 
