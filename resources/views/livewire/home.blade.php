@@ -87,7 +87,7 @@
                                             {{ date("m.d", $day) }}, {{ __('event.weekdays_short.'.date("w", $day)) }}
                                         @endif                                    
                                     </td>
-                                    <td class="p-0"> 
+                                    <td class="p-0" @if($available_days[$group['id']][$day]) onclick="modal({{ $group['id'] }}, '{{ date("Y-m-d", $day) }}')" @endif> 
                                         @if (isset($day_stat[$group['id']][$day]))
                                             <div class="dayStat @if (isset($day_stat[$group['id']][$day]['event'])) userEvent @endif "
                                                 style="height:35px;background: {{$day_stat[$group['id']][$day]['style'] }}"></div>
