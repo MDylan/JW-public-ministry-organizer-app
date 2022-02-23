@@ -11,6 +11,8 @@ use DateTime;
 use App\Models\Group;
 // use App\Models\Event;
 use App\Models\GroupDate;
+use Carbon\Carbon;
+
 // use App\Models\GroupUser;
 // use App\Notifications\GroupUserAddedNotification;
 // use Barryvdh\Debugbar;
@@ -53,6 +55,7 @@ class Modal extends AppComponent
     private $date_data = [];
     public $polling = false;
     private $editor = false;
+    public $show_content = false;
 
     public function mount($groupId = 0) {
         // $this->date = null;
@@ -152,12 +155,12 @@ class Modal extends AppComponent
                         'posters' => function($q) use ($date) {
                             $q->where('show_date', '<=', $date);
                             $q->where(function ($q) use ($date) {
-                                $q->where('hide_date', '>', $date)
+                                $q->where('hide_date', '>=', $date)
                                     ->orWhereNull('hide_date');
                             });
                         },
                     ])->findOrFail($groupId)->toArray();
-        // dd($group);
+        // dd(Carbon::parse($date)->addDay()->format("Y-m-d"));
         if(isset($group['current_date'])) {
             if($group['current_date']['date_status'] == 0) {
                 $this->error = __('event.error.no_service_day')." (".$group['current_date']['note'].")";
@@ -423,13 +426,16 @@ class Modal extends AppComponent
         // $this->dispatchBrowserEvent('show-form');
         $this->dispatchBrowserEvent('show-modal', [
             'id' => 'form',
+            'livewire' => 'events.modal',
         ]); 
-        $this->polling = true;
+        
+        $this->polling_check();
+        $this->show_content = true;
     }
 
     public function hiddenModal() {
-        $this->emitUp('pollingOn');
         $this->polling = false;
+        $this->show_content = false;
     }
 
     public function openPosterModal($posterId = 0) {
@@ -439,6 +445,8 @@ class Modal extends AppComponent
     public function setDate($date) {
         $this->date = $date;
         $this->active_tab = '';
+        $this->polling_check();
+        
         // Debugbar::addMessage('setDate lefutott', 'mylabel');
         // $this->getInfo();
     }
@@ -465,9 +473,10 @@ class Modal extends AppComponent
         $this->emitTo('events.event-edit', 'createForm');
     }
 
-    // public function polling() {
-    //     $this->emitUp('pollingOff');
-    // }
+    public function polling_check() {
+        $this->polling = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? true : false;
+        // dd($this->polling);
+    }
 
     public function render()
     {

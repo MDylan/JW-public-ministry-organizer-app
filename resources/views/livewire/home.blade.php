@@ -152,7 +152,7 @@
             <script>
                 function modal(groupId, date) {
                     livewire.emitTo('events.modal', 'openModal', date, groupId);
-                    livewire.emit('pollingOff');
+                    // livewire.emit('pollingOff');
                 }
             </script>
         @endif
@@ -160,7 +160,6 @@
     </div>
     <!-- /.content -->
     @if(count($groups) > 0)
-        @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))
         @livewire('groups.poster-edit-modal')
     @endif
 </div>

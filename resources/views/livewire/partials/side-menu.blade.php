@@ -1,5 +1,4 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
     <a href="/" class="brand-link">
       <span class="brand-text font-weight-light ml-1">
         <img src="{{ asset('favicon.png') }} " alt="@lang('app.title')" class="brand-image img-circle elevation-3" style="opacity: .8">
@@ -49,7 +48,6 @@
                     </p>
                 </a>
               </li>
-
 
               <x-SideStaticPages></x-SideStaticPages> 
               
@@ -114,14 +112,6 @@
                 </form>
             </a>
           </li>
-{{-- 
-          <a href="{{ route('user.profile') }}" class="btn btn-default btn-flat">{{__('app.profile')}}</a>
-          <a href="{{ route('logout') }}" class="btn btn-default btn-flat float-right"onclick="event.preventDefault(); 
-          document.getElementById('logout-form').submit();">{{__('app.logout')}}</a>
-          <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-            @csrf
-          </form> --}}
-
         </ul>
       </nav>
       <!-- /.sidebar-menu -->

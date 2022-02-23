@@ -1,5 +1,5 @@
 <div @if($polling) wire:poll.30000ms wire:key="modal-polling" @endif>
-    @if($polling)
+    @if($show_content)
         <div wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
             @php
                 $date = \Carbon\Carbon::parse($day_data['date']);

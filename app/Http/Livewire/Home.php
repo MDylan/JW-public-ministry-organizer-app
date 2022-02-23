@@ -23,7 +23,7 @@ class Home extends Component
     ];
     private $groups = [];
     private $group_roles = [];
-    public $polling = true;
+    public $polling = false;
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -159,9 +159,9 @@ class Home extends Component
                 // $q->whereIn('date_status', [0,2]);
             },
             'posters' => function($q) {
-                $q->where('show_date', '<=', now());
+                $q->where('show_date', '<=', date("Y-m-d"));
                 $q->where(function ($q) {
-                    $q->where('hide_date', '>', now())
+                    $q->where('hide_date', '>=', date("Y-m-d"))
                         ->orWhereNull('hide_date');
                 });
             },

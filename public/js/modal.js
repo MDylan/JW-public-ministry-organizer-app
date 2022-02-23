@@ -5,7 +5,7 @@ $(document).ready(function() {
         if(event.detail.message) {
             toastr.success(event.detail.message, event.detail.savedMessage);
         }
-        console.log('hide-modal', id);
+        console.log('hide-modal 2', id);
     });
     window.addEventListener('show-modal', event => {
         id = event.detail.id;
@@ -21,13 +21,17 @@ $(document).ready(function() {
         
 
         $('#'+id).one('hide.bs.modal', function (e) {
-            Livewire.emit('hideModal', event.detail.parameters_back);
-            console.log('hideModal', id, event.detail.parameters_back);
+            if(event.detail.livewire) {
+                Livewire.emitTo(event.detail.livewire, 'hideModal', event.detail.parameters_back);
+                console.log('hidemodal livewire_event', event.detail.livewire, id, event.detail.parameters_back);
+            }
         });
 
         $('#'+id).one('hidden.bs.modal', function (e) {
-            console.log('hiddenModal', id, event.detail.parameters_back);
-            Livewire.emit('hiddenModal', event.detail.parameters_back);            
+            if(event.detail.livewire) {
+                Livewire.emitTo(event.detail.livewire, 'hiddenModal', event.detail.parameters_back);        
+                console.log('hiddenmodal livewire_event', event.detail.livewire, id, event.detail.parameters_back);
+            }
         });
     });
 });

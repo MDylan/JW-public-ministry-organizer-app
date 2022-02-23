@@ -281,5 +281,4 @@
             livewire.emitTo('events.modal', 'openModal', date, groupId);
         }
     </script>
-    @livewire('events.modal', ['groupId' => $groupId], key('eventsmodal'))
 </div>

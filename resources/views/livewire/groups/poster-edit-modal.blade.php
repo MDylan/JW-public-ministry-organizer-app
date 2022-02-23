@@ -6,6 +6,9 @@
             </x-slot>
         
             <x-slot name="content">
+                @if(isset($group->name))
+                    <h5>{{ $group->name }}</h5>
+                @endif
                 <div class="alert alert-info">
                     @lang('group.poster.info')
                 </div>

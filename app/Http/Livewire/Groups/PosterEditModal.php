@@ -58,11 +58,12 @@ class PosterEditModal extends AppComponent
         }
         $this->dispatchBrowserEvent('show-modal', [
             'id' => 'PosterEditModal',
+            'livewire' => 'groups.poster-edit-modal',
             'parameters_back' => [
                 'groupId' => $this->groupId,
                 'fromDate' => $this->fromDate
             ]
-        ]);        
+        ]);
     }
 
     public function openModalFromDate($groupId, $date, $posterId = 0) {
@@ -95,24 +96,16 @@ class PosterEditModal extends AppComponent
             'savedMessage' => __('app.saved')
         ]);        
         $this->emitUp('refresh');
-        
-        if($this->fromDate) {
-            $this->emitTo('events.modal', 'openModal', $this->fromDate, $this->groupId);
-        }
         $this->reset();
     }
 
     public function hiddenModal($parameters_back) {
-        // dd($parameters_back);
         if(isset($parameters_back['fromDate'])) {
-            $this->reset();
             $this->emitTo('events.modal', 'openModal', $parameters_back['fromDate'], $parameters_back['groupId']);
         }
     }
 
     public function deletePosterConfirmation() {
-        // 
-
         $this->dispatchBrowserEvent('show-deletion-confirmation', [
             'title' => __('group.poster.confirmDelete.question'),
             'text' => __('group.poster.confirmDelete.message'),
@@ -133,7 +126,7 @@ class PosterEditModal extends AppComponent
                 'savedMessage' => __('app.saved')
             ]);
             $this->reset();
-            $this->emitUp('refresh');
+            $this->emitUp('pollingOn');
         } else {
             $this->dispatchBrowserEvent('error', [
                 'message' => __('group.poster.confirmDelete.error')
@@ -143,6 +136,8 @@ class PosterEditModal extends AppComponent
 
     public function render()
     {
-        return view('livewire.groups.poster-edit-modal');
+        return view('livewire.groups.poster-edit-modal', [
+            'group' => $this->group
+        ]);
     }
 }
