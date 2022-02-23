@@ -356,6 +356,8 @@ class Modal extends AppComponent
                 
                 // $table[$key]['available'] = count($slots[$key]);
             }
+
+            $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
             
             $day_events[$key][$event['id']] = $event;
             $day_events[$key][$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
@@ -364,7 +366,7 @@ class Modal extends AppComponent
             $day_events[$key][$event['id']]['row'] = $row;
             $day_events[$key][$event['id']]['start_time'] = date("H:i", $event['start']);
             $day_events[$key][$event['id']]['end_time'] = date("H:i", $event['end']);
-            $day_events[$key][$event['id']]['editable'] = $event['start'] < $now ? 'disabled' : '';
+            $day_events[$key][$event['id']]['editable'] = $past ? 'disabled' : '';
             $day_events[$key][$event['id']]['status'] = $event['status'];
             if(!in_array($this->role, ['admin', 'roler', 'helper']) 
                 && $event['user_id'] !== Auth::id()
