@@ -159,11 +159,11 @@ class Settings extends AppComponent
 
     private function check_update() {
 
-        $updater = new UpdaterManager();
+        // $updater = new UpdaterManager();
 
         // Check if new version is available
-        if($updater->source()->isNewVersionAvailable()) {
-            return true;
+        // if($updater->source()->isNewVersionAvailable()) {
+            // return true;
             // // Get the current installed version
             // echo $updater->source()->getVersionInstalled();
     
@@ -176,10 +176,10 @@ class Settings extends AppComponent
             // // Run the update process
             // $updater->source()->update($release);
             
-        } else {
+        // } else {
             // echo "No new version available.";
-            return false;
-        }
+        //     return false;
+        // }
     
     }
 
