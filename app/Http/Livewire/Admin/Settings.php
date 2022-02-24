@@ -7,6 +7,7 @@ use App\Models\Settings as ModelsSettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use Codedge\Updater\UpdaterManager;
 
 class Settings extends AppComponent
 {
@@ -152,6 +153,34 @@ class Settings extends AppComponent
         if(!isset($this->settings['default_language'])) {
             $this->settings['default_language'] = config('app.locale');
         }
+        // $update = $this->check_update();
+        
+    }
+
+    private function check_update() {
+
+        $updater = new UpdaterManager();
+
+        // Check if new version is available
+        if($updater->source()->isNewVersionAvailable()) {
+            return true;
+            // // Get the current installed version
+            // echo $updater->source()->getVersionInstalled();
+    
+            // // Get the new version available
+            // $versionAvailable = $updater->source()->getVersionAvailable();
+    
+            // // Create a release
+            // $release = $updater->source()->fetch($versionAvailable);
+    
+            // // Run the update process
+            // $updater->source()->update($release);
+            
+        } else {
+            // echo "No new version available.";
+            return false;
+        }
+    
     }
 
     public function run($command) {

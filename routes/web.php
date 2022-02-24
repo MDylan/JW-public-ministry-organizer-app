@@ -106,6 +106,29 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
                 Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
+
+                Route::get('/admin/update', function (\Codedge\Updater\UpdaterManager $updater) {
+
+                    // Check if new version is available
+                    if($updater->source()->isNewVersionAvailable()) {
+                
+                        // Get the current installed version
+                        echo $updater->source()->getVersionInstalled();
+                
+                        // // Get the new version available
+                        // $versionAvailable = $updater->source()->getVersionAvailable();
+                
+                        // // Create a release
+                        // $release = $updater->source()->fetch($versionAvailable);
+                
+                        // // Run the update process
+                        // $updater->source()->update($release);
+                        
+                    } else {
+                        echo "No new version available.";
+                    }
+                
+                });
             });
 
             Route::middleware(['groupMember'])->group(function () {                

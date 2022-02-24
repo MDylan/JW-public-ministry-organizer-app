@@ -1,0 +1,72 @@
+{
+    "name": "codedge/laravel-selfupdater",
+    "description": "Providing an auto-updating functionality for your self-hosted Laravel application.",
+    "license": "MIT",
+    "keywords": [
+        "self-update",
+        "self update",
+        "auto-update",
+        "auto update",
+        "update",
+        "laravel",
+        "laravel application",
+        "self-hosted laravel application"
+    ],
+    "authors": [
+        {
+            "name": "Holger Lösken",
+            "email": "holger.loesken@codedge.de",
+            "homepage": "https://codedge.de",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/codedge/laravel-selfupdater/issues",
+        "source": "https://github.com/codedge/laravel-selfupdater"
+    },
+    "require": {
+        "php": "^7.4 || ^8.0 || ^8.1",
+        "ext-json": "*",
+        "ext-zip": "*",
+        "guzzlehttp/guzzle": "^7.4.1",
+        "laravel/framework": "^8.83.1 || ^9.0"
+    },
+    "require-dev": {
+        "dg/bypass-finals": "^1.3",
+        "mikey179/vfsstream": "^1.6",
+        "mockery/mockery": "^1.5",
+        "orchestra/testbench": "^6.24.1",
+        "phpunit/phpunit": "^9.5.14"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Codedge\\Updater\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Codedge\\Updater\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "aliases": {
+                "Updater": "Codedge\\Updater\\UpdaterFacade"
+            },
+            "providers": [
+                "Codedge\\Updater\\UpdaterServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "./vendor/bin/phpunit"
+    }
+}
