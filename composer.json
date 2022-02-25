@@ -7,7 +7,6 @@
     "require": {
         "php": "^8.0",
         "astrotomic/laravel-translatable": "^11.9",
-        "codedge/laravel-selfupdater": "^3.3",
         "dialect/laravel-gdpr-compliance": "^1.4",
         "doctrine/dbal": "^3.1",
         "fideloper/proxy": "^4.4",

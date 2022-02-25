@@ -21,9 +21,9 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         '2c102faa651ef8ea5874edb585946bce' => __DIR__ . '/..' . '/swiftmailer/swiftmailer/lib/swift_required.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '23c18046f52bef3eea034657bafda50f' => __DIR__ . '/..' . '/symfony/polyfill-php81/bootstrap.php',
         'a1105708a18b76903365ca1c4aa61b02' => __DIR__ . '/..' . '/symfony/translation/Resources/functions.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '538ca81a9a966a6716601ecf48f4eaef' => __DIR__ . '/..' . '/opis/closure/functions.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
@@ -41,7 +41,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'f18cc91337d49233e5754e93f3ed9ec3' => __DIR__ . '/..' . '/laravelcollective/html/src/helpers.php',
         'd7354eb4c8441fbf08eec280b61c7c73' => __DIR__ . '/..' . '/rachidlaasri/laravel-installer/src/Helpers/functions.php',
         '72b1e3f4a2af9b30b3f137b3ec2057fc' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/helpers.php',
-        '0ffc8691f0c8cd24043c8b774d483f9e' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -194,7 +193,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         array (
             'Cron\\' => 5,
             'Collective\\Html\\' => 16,
-            'Codedge\\Updater\\' => 16,
             'Carbon\\' => 7,
         ),
         'B' => 
@@ -600,10 +598,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         array (
             0 => __DIR__ . '/..' . '/laravelcollective/html/src',
         ),
-        'Codedge\\Updater\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src',
-        ),
         'Carbon\\' => 
         array (
             0 => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon',
@@ -964,30 +958,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Carbon\\Translator' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/Translator.php',
         'Carbon\\TranslatorImmutable' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/TranslatorImmutable.php',
         'Carbon\\TranslatorStrongTypeInterface' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/TranslatorStrongTypeInterface.php',
-        'Codedge\\Updater\\Commands\\CheckForUpdate' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Commands/CheckForUpdate.php',
-        'Codedge\\Updater\\Contracts\\SourceRepositoryTypeContract' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Contracts/SourceRepositoryTypeContract.php',
-        'Codedge\\Updater\\Contracts\\UpdaterContract' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Contracts/UpdaterContract.php',
-        'Codedge\\Updater\\Events\\UpdateAvailable' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Events/UpdateAvailable.php',
-        'Codedge\\Updater\\Events\\UpdateFailed' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Events/UpdateFailed.php',
-        'Codedge\\Updater\\Events\\UpdateSucceeded' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Events/UpdateSucceeded.php',
-        'Codedge\\Updater\\Models\\Release' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Models/Release.php',
-        'Codedge\\Updater\\Models\\UpdateExecutor' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Models/UpdateExecutor.php',
-        'Codedge\\Updater\\Notifications\\BaseNotification' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/BaseNotification.php',
-        'Codedge\\Updater\\Notifications\\EventHandler' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/EventHandler.php',
-        'Codedge\\Updater\\Notifications\\Notifiable' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/Notifiable.php',
-        'Codedge\\Updater\\Notifications\\Notifications\\UpdateAvailable' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/Notifications/UpdateAvailable.php',
-        'Codedge\\Updater\\Notifications\\Notifications\\UpdateFailed' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/Notifications/UpdateFailed.php',
-        'Codedge\\Updater\\Notifications\\Notifications\\UpdateSucceeded' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Notifications/Notifications/UpdateSucceeded.php',
-        'Codedge\\Updater\\SourceRepository' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/SourceRepository.php',
-        'Codedge\\Updater\\SourceRepositoryTypes\\GithubRepositoryType' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/SourceRepositoryTypes/GithubRepositoryType.php',
-        'Codedge\\Updater\\SourceRepositoryTypes\\GithubRepositoryTypes\\GithubBranchType' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/SourceRepositoryTypes/GithubRepositoryTypes/GithubBranchType.php',
-        'Codedge\\Updater\\SourceRepositoryTypes\\GithubRepositoryTypes\\GithubTagType' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/SourceRepositoryTypes/GithubRepositoryTypes/GithubTagType.php',
-        'Codedge\\Updater\\SourceRepositoryTypes\\HttpRepositoryType' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/SourceRepositoryTypes/HttpRepositoryType.php',
-        'Codedge\\Updater\\Traits\\SupportPrivateAccessToken' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Traits/SupportPrivateAccessToken.php',
-        'Codedge\\Updater\\Traits\\UseVersionFile' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/Traits/UseVersionFile.php',
-        'Codedge\\Updater\\UpdaterFacade' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/UpdaterFacade.php',
-        'Codedge\\Updater\\UpdaterManager' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/UpdaterManager.php',
-        'Codedge\\Updater\\UpdaterServiceProvider' => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src/UpdaterServiceProvider.php',
         'Collective\\Html\\Componentable' => __DIR__ . '/..' . '/laravelcollective/html/src/Componentable.php',
         'Collective\\Html\\Eloquent\\FormAccessible' => __DIR__ . '/..' . '/laravelcollective/html/src/Eloquent/FormAccessible.php',
         'Collective\\Html\\FormBuilder' => __DIR__ . '/..' . '/laravelcollective/html/src/FormBuilder.php',

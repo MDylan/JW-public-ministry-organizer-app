@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '0d0c134da58b2c58f39a6383224dcde9a5f4ba3b',
+    'reference' => 'cdf571190f9567019fd722b559e130a0eaafdb48',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -69,15 +69,6 @@ private static $installed = array (
       array (
       ),
       'reference' => 'ca57d18f028f84f777b2168cd1911b0dee2343ae',
-    ),
-    'codedge/laravel-selfupdater' => 
-    array (
-      'pretty_version' => '3.3',
-      'version' => '3.3.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'd686e62496974301efa281a5fbbc4640f3c1b0df',
     ),
     'cordoval/hamcrest-php' => 
     array (
@@ -576,7 +567,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '0d0c134da58b2c58f39a6383224dcde9a5f4ba3b',
+      'reference' => 'cdf571190f9567019fd722b559e130a0eaafdb48',
     ),
     'laravel/sail' => 
     array (
