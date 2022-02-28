@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => 'cdf571190f9567019fd722b559e130a0eaafdb48',
+    'reference' => 'a2a87822f70498ccfc6041def99b584b45c2719c',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -544,7 +544,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => 'cdf571190f9567019fd722b559e130a0eaafdb48',
+      'reference' => 'a2a87822f70498ccfc6041def99b584b45c2719c',
     ),
     'laravel/sail' => 
     array (
@@ -736,6 +736,15 @@
       array (
       ),
       'reference' => '9229e15f2e6ba772f0c55dd6986c563b937170a8',
+    ),
+    'pcinaglia/laraupdater' => 
+    array (
+      'pretty_version' => '1.0.2',
+      'version' => '1.0.2.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'd19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd',
     ),
     'phar-io/manifest' => 
     array (

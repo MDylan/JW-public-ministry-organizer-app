@@ -4085,6 +4085,65 @@
             "install-path": "../paragonie/constant_time_encoding"
         },
         {
+            "name": "pcinaglia/laraupdater",
+            "version": "1.0.2",
+            "version_normalized": "1.0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pietrocinaglia/laraupdater.git",
+                "reference": "d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pietrocinaglia/laraupdater/zipball/d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd",
+                "reference": "d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "time": "2018-12-03T12:08:48+00:00",
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "pcinaglia\\laraupdater\\LaraUpdaterServiceProvider"
+                    ]
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "pcinaglia\\laraupdater\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Pietro Cinaglia",
+                    "homepage": "http://linkedin.com/in/pietrocinaglia",
+                    "role": "Developer; Software Engineer."
+                }
+            ],
+            "description": "LaraUpdater allows your Laravel Application to auto-update itself.",
+            "homepage": "https://github.com/pietrocinaglia/laraupdater",
+            "keywords": [
+                "backup-restore",
+                "laravel",
+                "self-updater",
+                "update-checker",
+                "update-installer"
+            ],
+            "support": {
+                "issues": "https://github.com/pietrocinaglia/laraupdater/issues",
+                "source": "https://github.com/pietrocinaglia/laraupdater/tree/master"
+            },
+            "install-path": "../pcinaglia/laraupdater"
+        },
+        {
             "name": "phar-io/manifest",
             "version": "2.0.3",
             "version_normalized": "2.0.3.0",

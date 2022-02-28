@@ -32,6 +32,9 @@
           <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
         </div>
       @endif
+      @can('is-admin')
+        <x-updateNotification></x-updateNotification>
+      @endcan
       {{ $slot }}
     </div>
     @include('cookie-consent::index')

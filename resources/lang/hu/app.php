@@ -77,4 +77,7 @@ return [
     'authentication_success' => 'Sikeres hitelesítés!',
     'send' => 'Küldés',
     'type_for_search' => 'Kezd el gépelni a kereséshez',
+    'update_description' => 'A frissítés leírása:',
+    'urgent' => 'FONTOS!',
+    'update_info' => 'Frissítés előtt kérlek győződj meg róla, hogy készült biztonsági másolat a fájlokról és az adatbázisról. A frissítés a gombra kattintva azonnal elindul, és az oldal karbantartás üzemmódba kapcsol. A frissítés után ismét elérhető lesz.',
 ];

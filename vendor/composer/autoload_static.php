@@ -51,6 +51,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'p' => 
         array (
             'phpDocumentor\\Reflection\\' => 25,
+            'pcinaglia\\laraupdater\\' => 22,
         ),
         'W' => 
         array (
@@ -218,6 +219,10 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
             0 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
             1 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
             2 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+        ),
+        'pcinaglia\\laraupdater\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/pcinaglia/laraupdater/src',
         ),
         'Whoops\\' => 
         array (
@@ -6447,6 +6452,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Whoops\\Util\\Misc' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/Misc.php',
         'Whoops\\Util\\SystemFacade' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/SystemFacade.php',
         'Whoops\\Util\\TemplateHelper' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Util/TemplateHelper.php',
+        'pcinaglia\\laraupdater\\LaraUpdaterServiceProvider' => __DIR__ . '/..' . '/pcinaglia/laraupdater/src/LaraUpdaterServiceProvider.php',
         'phpDocumentor\\Reflection\\DocBlock' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlock.php',
         'phpDocumentor\\Reflection\\DocBlockFactory' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlockFactory.php',
         'phpDocumentor\\Reflection\\DocBlockFactoryInterface' => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src/DocBlockFactoryInterface.php',
