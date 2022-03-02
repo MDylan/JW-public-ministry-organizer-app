@@ -15,16 +15,25 @@
                 </div>
             </div>
             <div class="p-1">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                      <div class="input-group-text"><i class="fas fa-adjust"></i></div>
+                <form class="form-inline">                        
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                        <div class="input-group-text"><i class="fas fa-adjust"></i></div>
+                        </div>
+                        <select id="theme_selector" class="form-control">
+                            <option value="system">@lang('app.theme.system')</option>
+                            <option value="light">@lang('app.theme.light')</option>
+                            <option value="dark">@lang('app.theme.dark')</option>
+                        </select>
                     </div>
-                    <select id="theme_selector" class="form-control">
-                        <option value="system">@lang('app.theme.system')</option>
-                        <option value="light">@lang('app.theme.light')</option>
-                        <option value="dark">@lang('app.theme.dark')</option>
-                    </select>
-                </div>
+                    <label class="form-check-label text-center">
+                        @can('is-admin')
+                            <a href="{{ config('events.github_url') }}" target="_blank" class="btn btn-sm btn-success m-2 p-1">
+                                v. {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }}
+                            </a>
+                        @endcan
+                    </label>
+                </form>                    
             </div>
         </div>
     </div>

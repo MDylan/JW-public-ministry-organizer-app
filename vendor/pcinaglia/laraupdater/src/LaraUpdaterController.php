@@ -51,7 +51,7 @@ class LaraUpdaterController extends Controller
             exit;
         }
 
-        try{
+        try {
             $this->tmp_backup_dir = base_path().'/backup_'.date('Ymd');
 
             echo '<p>'.trans("laraupdater.UPDATE_FOUND").': '.$lastVersionInfo['version'].' <i>('.trans("laraupdater.current_version").': '.$this->getCurrentVersion().')</i></p>';
@@ -84,7 +84,7 @@ class LaraUpdaterController extends Controller
             }else
                 throw new \Exception(trans("laraupdater.Error_during_download."));
 
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             echo '<p>'.trans("laraupdater.ERROR_DURING_UPDATE_(!!check_the_update_archive!!)");
 
             $this->restore();
@@ -171,6 +171,9 @@ class LaraUpdaterController extends Controller
     private function download($update_name)
     {
         try{
+            if(!file_exists(base_path().config('laraupdater.tmp_path'))) {
+                File::makeDirectory(base_path().config('laraupdater.tmp_path'), 0750);
+            }
             $filename_tmp = base_path().config('laraupdater.tmp_path').'/'.$update_name;
 
             if ( !is_file( $filename_tmp ) ) {
@@ -204,9 +207,10 @@ class LaraUpdaterController extends Controller
     public function check()
     {
         $lastVersionInfo = $this->getLastVersion();
-        if( version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), ">") )
-            return $lastVersionInfo['version'];
-
+        if(is_array($lastVersionInfo)) {
+            if( version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), ">") )
+                return $lastVersionInfo['version'];
+        }
         return '';
     }
 

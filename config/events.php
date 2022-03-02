@@ -18,5 +18,6 @@ return [
         'webOutlook',
         'webOffice',
         'ics'
-    ]
+    ],
+    'github_url' => 'https://github.com/MDylan/JW-public-ministry-organizer-app'
 ];

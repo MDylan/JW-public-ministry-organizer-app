@@ -5,7 +5,10 @@
                 <h5 class="card-title text-primary">
                     <i class="far fa-arrow-alt-circle-up mr-1"></i>
                     {{ __('laraupdater.Update_Available') }}
-                    <span class="badge badge-pill badge-primary ml-1">{{ $version }}</span>
+                    <span class="badge badge-pill badge-primary ml-1">
+                        {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }}
+                        <i class="fas fa-angle-double-right mx-2"></i>
+                        {{ $version }}</span>
                 </h5>
                 <div class="card-tools">
                     <button type="button" class="btn btn-sm btn-primary" data-card-widget="collapse" title="Collapse">

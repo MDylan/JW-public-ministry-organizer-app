@@ -28,6 +28,11 @@
 		* Generally, ADMIN have user_id=1; set FALSE to disable this check (not recommended)
 		*/
 		'allow_users_id' => false,
+				
+		 /*
+		*  Laravel migrate settings
+		*/
+		'migrate' => true,
 		/*
 		* Set the update check time period, to prevent update server overload.
 		* Set the number in minutes
