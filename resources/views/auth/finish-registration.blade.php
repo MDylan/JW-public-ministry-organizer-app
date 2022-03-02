@@ -16,15 +16,13 @@
                 <form method="POST" action="{{route('finish_registration_register', ['id' => $id])}}?expires={{ app('request')->input('expires') }}&signature={{ app('request')->input('signature') }}" accept-charset="UTF-8">
                 @csrf
                 <div class="row">
-                    @foreach ($nameFields as $field => $translate) 
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="{{$field}}">{{$translate}}:</label>
-                                <input name="{{$field}}" type="text" class="form-control @error($field) is-invalid @enderror" id="{{$field}}" value="{{ old($field) }}" placeholder="{{$translate}}" />
-                                @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                            </div>     
-                        </div>       
-                @endforeach
+                    <div class="col-md-12">
+                        <div class="form-group mb-3">
+                            <label for="name">@lang('Full name')</label>
+                            <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ old('name') }}" placeholder="@lang('Full name')" />
+                            @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                        </div>     
+                    </div>       
                 </div>
                 <div class="row">
                     <div class="col-md-6">
@@ -37,12 +35,12 @@
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="phone">@lang('user.phone'):</label>
-                            <input name="phone" type="number" class="form-control @error('phone') is-invalid @enderror" id="phone" value="{{ old('phone') }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
+                            <input name="phone_number" type="number" class="form-control @error('phone_number') is-invalid @enderror" id="phone" value="{{ old('phone_number') }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
                         <span class="w-100"></span>
                         <small id="phoneHelpBlock" class="text-muted">
                             @lang('user.phone_helper') <strong>362012345689</strong>
                         </small>
-                        @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                        @error('phone_number')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                     </div>
                     </div>
                 </div>

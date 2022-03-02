@@ -759,6 +759,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\View\\Components\\Footer' => __DIR__ . '/../..' . '/app/View/Components/Footer.php',
         'App\\View\\Components\\Modal' => __DIR__ . '/../..' . '/app/View/Components/Modal.php',
         'App\\View\\Components\\SideStaticPages' => __DIR__ . '/../..' . '/app/View/Components/SideStaticPages.php',
+        'App\\View\\Components\\UpdateNotification' => __DIR__ . '/../..' . '/app/View/Components/UpdateNotification.php',
         'Astrotomic\\Translatable\\Contracts\\Translatable' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Contracts/Translatable.php',
         'Astrotomic\\Translatable\\Exception\\LocalesNotDefinedException' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Exception/LocalesNotDefinedException.php',
         'Astrotomic\\Translatable\\Locales' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Locales.php',

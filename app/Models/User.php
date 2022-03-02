@@ -24,10 +24,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      * @var array
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
+        // 'first_name',
+        // 'last_name',
         'email',
-        'phone',
+        // 'phone',
         'password',
         'role',
         'last_login_time',
@@ -36,7 +36,9 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'accepted_gdpr',
         'isAnonymized',
         'calendars',
-        'language'
+        'language',
+        'name',
+        'phone_number'
     ];
 
     /**
@@ -65,9 +67,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     protected $casts = [
         'email_verified_at' => 'datetime',
         'calendars' => 'array',
+        'phone_number' => 'encrypted'
     ];
 
-    protected $appends = ['full_name'];
+    // protected $appends = ['full_name'];
 
     /**
      * The attributes that should be visible in the downloadable data.
@@ -93,8 +96,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
     protected $gdprAnonymizableFields = [
         'email',
-        'last_name' => 'Anonym',
-        'first_name' => 'Anonym',
+        'name' => 'Anonym',
         'phone' => '0',
         'role' => 'registered',
         'last_login_ip' => '',
@@ -175,13 +177,15 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
                 ->whereIn('status', [0,1]);
     }
 
-    public function getFullNameAttribute() {
-        return "{$this->last_name} {$this->first_name}";
-    }
+    // public function getFullNameAttribute() {
+    //     // return "{$this->last_name} {$this->first_name}";
+    //     return $this->name;
+    // }
 
-    function scopeWhereFullName($query, $value) {
-        $query->where(DB::raw('concat(first_name, " ", last_name)'), 'LIKE', "%{$value}%");
-    }
+    // function scopeWhereFullName($query, $value) {
+    //     // $query->where(DB::raw('concat(first_name, " ", last_name)'), 'LIKE', "%{$value}%");
+    //     $query->where('name', 'LIKE', "%{$value}%");
+    // }
 
     public function canSetEventUser() {
         return $this->belongsToMany(Group::class)

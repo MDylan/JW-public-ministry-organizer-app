@@ -58,7 +58,7 @@ class Group extends Model
                         ->withTimestamps()
                         ->whereNull('deleted_at')
                         ->using(GroupUser::class)
-                        ->orderByRaw('last_name, first_name, email');
+                        ->orderByRaw('name, email');
     }
 
     public function groupUsersAll() {
@@ -77,13 +77,12 @@ class Group extends Model
 
     public function users() {
         return $this->belongsToMany(User::class)
-                        ->select(['users.id', 'users.first_name', 'users.last_name'])
+                        ->select(['users.id', 'users.name'])
                         ->withPivot('group_role', 'signs')
                         ->wherePivot('deleted_at', null)
                         ->whereNotNull('accepted_at')
                         ->using(GroupUser::class)
-                        ->orderBy('last_name', 'asc')
-                        ->orderBy('first_name', 'asc');
+                        ->orderBy('name', 'asc');
     }
 
     public function groupAdmins() {

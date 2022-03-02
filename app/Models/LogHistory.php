@@ -33,7 +33,7 @@ class LogHistory extends Model
 
     public function user() {
         return $this->belongsTo(User::class, 'causer_id')
-                ->select(['id', 'first_name', 'last_name']);
+                ->select(['id', 'name']);
     }
 
     public function getModelNameAttribute() {

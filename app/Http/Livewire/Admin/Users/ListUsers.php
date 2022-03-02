@@ -38,9 +38,8 @@ class ListUsers extends AppComponent
         
         $validatedData = Validator::make($this->state, [
             'email' => 'required|email:filter|unique:users',
-            'first_name' => 'required|string|max:50|min:2',
-            'last_name' => 'required|string|max:50|min:2',
-            'phone' => 'nullable|numeric|digits_between:9,11',
+            'name' => 'required|string|max:50|min:2',
+            'phone_number' => 'nullable|numeric|digits_between:9,11',
             'role' => [
                 'required',
                 Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
@@ -69,9 +68,8 @@ class ListUsers extends AppComponent
 
         $validatedData = Validator::make($this->state, [
             'email' => 'required|email|unique:users,email,'.$this->user->id,
-            'first_name' => 'required|string|max:50|min:2',
-            'last_name' => 'required|string|max:50|min:2',
-            'phone' => 'nullable|numeric|digits_between:9,11', 
+            'name' => 'required|string|max:50|min:2',
+            'phone_number' => 'nullable|numeric|digits_between:9,11', 
             'role' => [
                 'required',
                 Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
@@ -95,7 +93,7 @@ class ListUsers extends AppComponent
         $this->userIdBeeingRemoved = $userId;
         $this->dispatchBrowserEvent('show-deletion-confirmation', [
             'title' => __('user.deleteUser'),
-            'text' => __('user.areYouSureDelete', ['userName' => $selected_user->full_name]),
+            'text' => __('user.areYouSureDelete', ['userName' => $selected_user->name]),
             'emit' => 'deleteUser'
         ]);
     }
@@ -124,15 +122,14 @@ class ListUsers extends AppComponent
     {
         $users = User::query()
             ->where(function($query) {
-                $query->where('users.first_name', 'LIKE', '%'.$this->searchTerm.'%');
-                $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
+                $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
+                // $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
                 $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
             })
             ->latest()->paginate(20);
 
         return view('livewire.admin.users.list-users', [
             'users' => $users,
-            'userFields' => is_array(trans('user.nameFields')) ? trans('user.nameFields') : ['first_name', 'last_name'],
             'roles' => [
                 'registered',
                 'activated',

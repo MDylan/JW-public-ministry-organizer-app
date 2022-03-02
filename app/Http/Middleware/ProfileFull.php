@@ -19,9 +19,8 @@ class ProfileFull
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
-        if($user->first_name === null 
-        || $user->last_name === null 
-        || $user->phone === null) {
+        if($user->name === null 
+        || $user->phone_number === null) {
             Session::flash('profile_message', __('user.profile_empty')); 
             return redirect()->route('user.profile');
         } else {

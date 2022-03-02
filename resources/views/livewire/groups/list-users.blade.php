@@ -106,7 +106,7 @@
                                         @lang('user.name'):
                                     </div>
                                 <div class="col-8 col-md-2 my-auto align-middle text-left text-bold">
-                                    {{ $user->full_name }} 
+                                    {{ $user->name }} 
                                     <div class="w-100"></div>
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
@@ -226,7 +226,7 @@
                                 @lang('Full name'): 
                             </div>
                             <div class="col-8">
-                                {{ $selected_user['full_name'] }}
+                                {{ $selected_user['name'] }}
                             </div>
                         </div>
                         <div class="row mb-2">

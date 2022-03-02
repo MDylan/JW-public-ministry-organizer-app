@@ -24,8 +24,7 @@ class CreateNewUser implements CreatesNewUsers
     {
         if(config('settings_registration') == 1) {
             Validator::make($input, [
-                'first_name' => ['required', 'string', 'max:50', 'min:2'],
-                'last_name' => ['required', 'string', 'max:50', 'min:2'],
+                'name' => ['required', 'string', 'max:50', 'min:2'],
                 'email' => [
                     'required',
                     'string',
@@ -33,16 +32,15 @@ class CreateNewUser implements CreatesNewUsers
                     'max:255',
                     Rule::unique(User::class),
                 ],
-                'phone' => ['numeric'],
+                'phone_number' => ['numeric'],
                 'password' => $this->passwordRules(),
                 'terms' => ['required']
             ])->validate();
 
             $user = User::create([
-                'first_name' => $input['first_name'],
-                'last_name' => $input['last_name'],
+                'name' => $input['name'],
                 'email' => $input['email'],
-                'phone' => $input['phone'],
+                'phone_number' => $input['phone_number'],
                 'password' => Hash::make($input['password']),
             ]);        
             // event(new Registered($user));

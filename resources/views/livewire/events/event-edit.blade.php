@@ -14,13 +14,13 @@
                         <option value="0">@lang('event.choose_publisher')</option>
                         @if (!empty($users))
                             @foreach ($users as $user)
-                                <option value="{{$user['id']}}">{{ $user['full_name'] }}</option>
+                                <option value="{{$user['id']}}">{{ $user['name'] }}</option>
                             @endforeach
                         @endif
                     </select>
                     @error('user_id')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror    
                     @else
-                        {{ $editEvent['user']['full_name'] }}
+                        {{ $editEvent['user']['name'] }}
                     @endif
                 
                 </div>
@@ -136,7 +136,7 @@
                         <div class="row mx-2 mb-sm-2">
                             <div class="col-md-4">
                                 {{ __('loghistory.events.'.$history['event'], [ 
-                                    'userName' => $history['user']['full_name'],
+                                    'userName' => $history['user']['name'],
                                     'date' => $history['created_at_format']
                                 ]) }}
                             </div>

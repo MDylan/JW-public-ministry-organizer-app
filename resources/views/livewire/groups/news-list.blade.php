@@ -88,7 +88,7 @@
                                                     @endforeach
                                                 </div>
                                                 <div class="col-md-4 justify-content-end text-right">
-                                                    <span class="text-left mb-0">{{  $new->user->full_name }}</span>
+                                                    <span class="text-left mb-0">{{  $new->user->name }}</span>
                                                     @if ($editor)
                                                     <a class="ml-2 btn btn-primary btn-sm" href="{{ route('groups.news_edit', ['group' => $group->id, 'new' => $new->id]) }}">
                                                         @lang('Edit')

@@ -70,7 +70,7 @@ class ListGroups extends AppComponent
         ])->validate();
 
         Mail::send('emails.groupCreatorRequest', [
-            'name' => auth()->user()->last_name.' '.auth()->user()->first_name,
+            'name' => auth()->user()->name,
             'email' => auth()->user()->email,
             'phone' => $validatedData['phone'],
             'congregation' => strip_tags($validatedData['congregation']),

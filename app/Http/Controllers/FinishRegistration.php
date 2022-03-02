@@ -23,18 +23,11 @@ class FinishRegistration extends Controller
 
         // session('language', $user->language);
         
-        $nameFields = is_array(trans('user.nameFields')) 
-            ? trans('user.nameFields') 
-            : [
-                'first_name' => 'first_name',
-                'last_name' => 'last_name'                
-            ];
         $cancelUrl = URL::temporarySignedRoute(
             'finish_registration_cancel', now()->addMinutes(60), ['id' => $user->id]
         );
         
         return view('auth.finish-registration', [
-            'nameFields' => $nameFields, 
             'user' => $user,
             'id' => $user->id,
             'cancelUrl' => $cancelUrl
@@ -44,9 +37,8 @@ class FinishRegistration extends Controller
     public function register($id, Request $request) {
 
         Validator::make($request->all(), [
-            'first_name' => ['required', 'string', 'max:50', 'min:2'],
-            'last_name' => ['required', 'string', 'max:50', 'min:2'],
-            'phone' => ['numeric'],
+            'name' => ['required', 'string', 'max:50', 'min:2'],
+            'phone_number' => ['numeric'],
             'password' => $this->passwordRules(),
             'terms' => ['required']
         ])->validate();
@@ -54,9 +46,8 @@ class FinishRegistration extends Controller
         User::where('id', '=', $id)
         ->where('role', '=', 'registered')
         ->update([
-                'first_name' =>  $request->input('first_name'),
-                'last_name' =>  $request->input('last_name'),
-                'phone' =>  $request->input('phone'),
+                'name' =>  $request->input('name'),
+                'phone_number' =>  $request->input('phone_number'),
                 'password' => Hash::make( $request->input('password')),
                 'role' => 'activated',
                 'email_verified_at' => now()

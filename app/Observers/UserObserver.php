@@ -87,8 +87,8 @@ class UserObserver
         $cc = [];
         if(count($otherAdmins) > 0) {
             $data = [
-                'newAdmin'=> $user->last_name.' '.$user->first_name, 
-                'adminBy' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                'newAdmin'=> $user->name, 
+                'adminBy' => auth()->user()->name, 
             ];
             foreach($otherAdmins as $admin) {
                 $admin->notify(new NewAdminNotification($data));

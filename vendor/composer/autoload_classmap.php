@@ -125,6 +125,7 @@ return array(
     'App\\View\\Components\\Footer' => $baseDir . '/app/View/Components/Footer.php',
     'App\\View\\Components\\Modal' => $baseDir . '/app/View/Components/Modal.php',
     'App\\View\\Components\\SideStaticPages' => $baseDir . '/app/View/Components/SideStaticPages.php',
+    'App\\View\\Components\\UpdateNotification' => $baseDir . '/app/View/Components/UpdateNotification.php',
     'Astrotomic\\Translatable\\Contracts\\Translatable' => $vendorDir . '/astrotomic/laravel-translatable/src/Translatable/Contracts/Translatable.php',
     'Astrotomic\\Translatable\\Exception\\LocalesNotDefinedException' => $vendorDir . '/astrotomic/laravel-translatable/src/Translatable/Exception/LocalesNotDefinedException.php',
     'Astrotomic\\Translatable\\Locales' => $vendorDir . '/astrotomic/laravel-translatable/src/Translatable/Locales.php',

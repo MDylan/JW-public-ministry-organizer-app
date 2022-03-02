@@ -11,11 +11,6 @@ return [
     'register' => 'Regisztráció',
     'registerMessage' => 'Új fiók létrehozása',
     'name' => 'Név',
-    'nameFields' => [
-        //itt a mezők sorrendje felel a megjelenítésért is!
-        'last_name' => 'Vezetéknév',
-        'first_name' => 'Keresztnév',
-    ],
     'password' => 'Jelszó',
     'passwordConfirmation' => 'Jelszó megerősítése',
     'password_info' => 'Minimum 8 karakter, kis és nagybetű valamint szám is kötelező.',

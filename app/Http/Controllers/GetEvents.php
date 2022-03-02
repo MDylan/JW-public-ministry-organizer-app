@@ -34,7 +34,7 @@ class GetEvents extends Controller
         foreach($events as $event) {
             $array[] = [
                 'id' => $event['id'],
-                'title' => $event['user']['full_name'],
+                'title' => $event['user']['name'],
                 'start' => date("Y-m-d H:i", $event['start']),
                 'end' => date("Y-m-d H:i", $event['end']),
                 'className' => '', //class

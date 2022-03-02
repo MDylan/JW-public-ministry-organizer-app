@@ -122,7 +122,7 @@ class ListUsers extends AppComponent
                     );
                     $u->notify(
                         new FinishRegistration([
-                            'groupAdmin' => auth()->user()->full_name, 
+                            'groupAdmin' => auth()->user()->name, 
                             'userMail' => $mail,
                             'url' => $url
                         ])
@@ -161,7 +161,7 @@ class ListUsers extends AppComponent
         // dd($user);
         $this->selected_user = [
             'id' => $user->id,
-            'full_name' => $user->full_name,
+            'name' => $user->name,
             'email' => $user->email,
         ];
         $this->state = [
@@ -221,7 +221,7 @@ class ListUsers extends AppComponent
 
         $this->dispatchBrowserEvent('hide-modal', [
             'id' => 'UserModal',
-            'message' => __('group.user.saved').' ('.$selected_user->full_name.')',
+            'message' => __('group.user.saved').' ('.$selected_user->name.')',
             'savedMessage' => __('app.saved')
         ]);
     }
@@ -239,7 +239,7 @@ class ListUsers extends AppComponent
         if(!$selected_user->id) abort(403);
 
         $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.user.confirmDelete.question', ['name' => $selected_user->full_name]),
+            'title' => __('group.user.confirmDelete.question', ['name' => $selected_user->name]),
             'text' => __('group.user.confirmDelete.message'),
             'emit' => 'deleteUser'
         ]);
@@ -334,7 +334,7 @@ class ListUsers extends AppComponent
                 $data = [
                     'groupName' => $new_group->name,
                     'childGroupName' => $group->name,
-                    'userName' => auth()->user()->full_name
+                    'userName' => auth()->user()->name
                 ];
                 Notification::send($admins, new GroupParentGroupAttachedNotification($data));
                 
@@ -352,7 +352,7 @@ class ListUsers extends AppComponent
                 }
                 $res = $group->groupUsersAll()->sync($user_sync);
                 $data = [
-                    'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+                    'groupAdmin' => auth()->user()->name, 
                     'groupName' => $new_group->name
                 ];
                 //az újakat értesítem, hogy hozzá lett adva a csoporthoz
@@ -458,7 +458,7 @@ class ListUsers extends AppComponent
         $data = [
             'groupName' => $parent_group_name,
             'childGroupName' => $group->name,
-            'userName' => auth()->user()->full_name
+            'userName' => auth()->user()->name
         ];
 
         if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
@@ -528,8 +528,8 @@ class ListUsers extends AppComponent
 
         $users = $group->groupUsers()
                     ->where(function($query) {
-                        $query->where('users.first_name', 'LIKE', '%'.$this->searchTerm.'%');
-                        $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
+                        $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
+                        // $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
                         $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
                     })
                     ->paginate(10);        

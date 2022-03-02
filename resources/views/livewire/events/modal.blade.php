@@ -123,7 +123,7 @@
                                                             @else 
                                                                 <i class="fa fa-user mr-1"></i>
                                                             @endif 
-                                                            {{ $event['user']['full_name'] }}
+                                                            {{ $event['user']['name'] }}
                                                             @if ($event['editable'] != 'disabled') 
                                                                 <i class="fa fa-edit ml-1"></i>
                                                             </a>

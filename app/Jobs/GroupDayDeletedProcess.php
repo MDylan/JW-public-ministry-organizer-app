@@ -99,7 +99,7 @@ class GroupDayDeletedProcess implements ShouldQueue
             $deletes[$event->id] = $event->id;
 
             $notifies[$event->user_id][] = [
-                'userName' => $causer_user->full_name, 
+                'userName' => $causer_user->name, 
                 'groupName' => $group->name,
                 'date' => $event->day,
                 'oldService' => [

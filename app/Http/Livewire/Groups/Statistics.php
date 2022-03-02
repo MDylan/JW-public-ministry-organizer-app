@@ -268,7 +268,7 @@ class Statistics extends AppComponent
         $users = $this->group->groupUsersAll;
         foreach($users as $user) {
             $users_stats[$user->id] = [
-                'name' => $user->full_name,
+                'name' => $user->name,
                 'events' => 0,
                 'hours' => 0,
                 'days' => []

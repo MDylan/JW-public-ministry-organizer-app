@@ -24,9 +24,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         }
 
         Validator::make($input, [
-            'first_name' => ['required', 'string', 'max:50', 'min:2'],
-            'last_name' => ['required', 'string', 'max:50', 'min:2'],
-
+            'name' => ['required', 'string', 'max:50', 'min:2'],
             'email' => [
                 'required',
                 'string',
@@ -34,7 +32,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'phone' => ['numeric'],
+            'phone_number' => ['numeric'],
             'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))]
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
@@ -43,9 +41,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             $this->updateVerifiedUser($user, $input);
         } else {
             $user->forceFill([
-                'first_name' => $input['first_name'],
-                'last_name' => $input['last_name'],
-                'phone' => $input['phone'],
+                'name' => $input['name'],
+                'phone_number' => $input['phone_number'],
                 'email' => $input['email'],
                 'calendars' => isset($input['calendars']) ? $input['calendars'] : null
             ])->save();
@@ -62,9 +59,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
     protected function updateVerifiedUser($user, array $input)
     {
         $user->forceFill([
-            'first_name' => $input['first_name'],
-            'last_name' => $input['last_name'],
-            'phone' => $input['phone'],
+            'name' => $input['name'],
+            'phone_number' => $input['phone_number'],
             'email' => $input['email'],
             'email_verified_at' => null,
         ])->save();

@@ -121,9 +121,7 @@ return [
     'attributes'           => [
         'name'     => 'név',
         'password' => 'jelszó',
-        'phone'    => 'telefonszám',
-        'first_name' => 'keresztnév',
-        'last_name'  => 'vezetéknév',
+        'phone_number'    => 'telefonszám',
         'role'      => 'jogosultság',
         'group_role'      => 'jogosultság',
         'max_extend_days' => 'napok száma',

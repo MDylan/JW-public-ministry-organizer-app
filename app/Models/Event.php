@@ -49,12 +49,12 @@ class Event extends Model
 
     public function user() {
         return $this->belongsTo(User::class)
-                        ->addselect(['id', 'first_name', 'last_name']);
+                        ->addselect(['id', 'name']);
     }
 
     public function accept_user() {
         return $this->belongsTo(User::class, 'accepted_by')
-                        ->addselect(['id', 'first_name', 'last_name']);;
+                        ->addselect(['id', 'name']);
     }
 
     public function serviceReports() {

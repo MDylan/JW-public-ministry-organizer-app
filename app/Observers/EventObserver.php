@@ -39,7 +39,7 @@ class EventObserver
 
         if($event->user_id != auth()->user()->id) {
             $data = [
-                'userName' => auth()->user()->full_name, 
+                'userName' => auth()->user()->name, 
                 'groupName' => $event->groups->name,
                 'date' => $event->day,
                 'newService' => [
@@ -97,7 +97,7 @@ class EventObserver
 
             if(isset($store['new']['start']) || isset($store['new']['end'])) {
                 $data = [
-                    'userName' => $auth ? auth()->user()->full_name : "SYSTEM", 
+                    'userName' => $auth ? auth()->user()->name : "SYSTEM", 
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
                     'oldService' => [
@@ -119,7 +119,6 @@ class EventObserver
 
             if(isset($store['new']['status'])) {
                 $data = [
-                    // 'userName' => auth()->user()->full_name, 
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
                     'newService' => [
@@ -157,7 +156,7 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            'userName' => $auth ? auth()->user()->full_name : false, 
+            'userName' => $auth ? auth()->user()->name : false, 
             'groupName' => $event->groups->name,
             'date' => $event->day,
             'oldService' => [

@@ -112,7 +112,7 @@ class UpdateGroupForm extends AppComponent
                     'group_role' => $user->pivot->group_role,
                     'note' => $user->pivot->note,
                     'user_id' => $user->id,
-                    'full_name' => $user->full_name,
+                    'name' => $user->name,
                     'hidden' => $user->pivot->hidden == 1 ? true : false,
                     'deleted_at' => null
                 ];
@@ -158,7 +158,7 @@ class UpdateGroupForm extends AppComponent
                     'group_role' => 'member',
                     'note' => '',
                     'user_id' => false,
-                    'full_name' => '?',
+                    'name' => '?',
                     'hidden' => false,
                     'deleted_at' => null
                 ];

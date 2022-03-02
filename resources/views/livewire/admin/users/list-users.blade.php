@@ -70,7 +70,7 @@
                                     @lang('user.name'):
                                 </div>
                             <div class="col-8 col-md-2 my-auto align-middle text-left text-bold">
-                                #{{ $user->id }} - {{ $user->full_name }} 
+                                #{{ $user->id }} - {{ $user->name }} 
                             </div>
                                 <div class="d-md-none col-4 text-right text-bold">
                                     @lang('user.email'):
@@ -157,15 +157,13 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        @foreach ($userFields as $field => $translate) 
-                            <div class="form-group row">
-                                <label for="Input{{ $field }}" class="col-sm-4 col-form-label text-right">{{ $translate }}:</label>
-                                <div class="col-sm-8">
-                                    <input type="text" wire:model.defer="state.{{$field}}" name="{{$field}}" class="form-control @error($field) is-invalid @enderror" id="Input{{$field}}" placeholder="{{ $translate }}">
-                                    @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                </div>
+                        <div class="form-group row">
+                            <label for="name" class="col-sm-4 col-form-label text-right">@lang('Full name')</label>
+                            <div class="col-sm-8">
+                                <input type="text" wire:model.defer="state.name" name="name" class="form-control @error('name') is-invalid @enderror" id="name" placeholder="@lang('Full name')">
+                                @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                             </div>
-                        @endforeach
+                        </div>
                         
                         <div class="form-group row">
                             <label for="InputEmail" class="col-sm-4 col-form-label text-right">@lang('Email')</label>
@@ -177,8 +175,8 @@
                         <div class="form-group row">
                             <label for="InputPhone" class="col-sm-4 col-form-label text-right">@lang('user.phone')</label>
                             <div class="col-sm-8">
-                                <input type="text" wire:model.defer="state.phone" name="phone" class="form-control @error('phone') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
-                                @error('phone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                <input type="text" wire:model.defer="state.phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
+                                @error('phone_number')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 <small id="phoneHelpBlock" class="form-text text-muted">
                                     {{__('app.justNumber')}}
                                 </small>

@@ -43,15 +43,13 @@
                                 @method("PUT")
                                 <div class="row">
                                     
-                                @foreach (trans('user.nameFields') as $field => $translate) 
-                                <div class="col-sm-6">
+                                <div class="col-sm-12">
                                     <div class="form-group mb-3">
-                                        <label for="{{$field}}">{{$translate}}:</label>
-                                        <input name="{{$field}}" type="text" class="form-control @error($field) is-invalid @enderror" id="{{$field}}" value="{{ auth()->user()->$field }}" placeholder="{{$translate}}" />
-                                        @error($field)<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                        <label for="name">@lang('Full name')</label>
+                                        <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ auth()->user()->name }}" placeholder="@lang('Full name')" />
+                                        @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                     </div>
                                 </div>
-                                @endforeach
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-6">
@@ -64,7 +62,7 @@
                                     <div class="col-sm-6">
                                         <div class="form-group mb-3">
                                             <label for="phone">@lang('user.phone'):</label>
-                                            <input name="phone" type="number" class="form-control @error('phone') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
+                                            <input name="phone_number" type="number" class="form-control @error('phone_number') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone_number }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
                         
                                             <span class="w-100"></span>
                                             <small id="phoneHelpBlock" class="text-muted">

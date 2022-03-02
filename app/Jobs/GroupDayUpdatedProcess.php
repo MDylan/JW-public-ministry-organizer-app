@@ -110,7 +110,7 @@ class GroupDayUpdatedProcess implements ShouldQueue
                 $deletes[$event->id] = $event->id;
                 $updateDays[$event->day] = $event->day;
                 $notifies[$event->user_id]['deletes'][] = [
-                    'userName' => $causer_user->full_name, 
+                    'userName' => $causer_user->name, 
                     'groupName' => $group->name,
                     'date' => $event->day,
                     'oldService' => [
@@ -125,7 +125,7 @@ class GroupDayUpdatedProcess implements ShouldQueue
                 $updateDays[$event->day] = $event->day;
 
                 $notifies[$event->user_id]['updates'][] = [
-                    'userName' => $causer_user->full_name, 
+                    'userName' => $causer_user->name, 
                     'groupName' => $group->name,
                     'date' => $event->day,
                     'oldService' => [
@@ -145,7 +145,7 @@ class GroupDayUpdatedProcess implements ShouldQueue
                 $updateDays[$event->day] = $event->day;
 
                 $notifies[$event->user_id]['updates'][] = [
-                    'userName' => $causer_user->full_name, 
+                    'userName' => $causer_user->name, 
                     'groupName' => $group->name,
                     'date' => $event->day,
                     'oldService' => [

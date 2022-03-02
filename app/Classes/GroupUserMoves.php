@@ -34,7 +34,7 @@ class GroupUserMoves {
         ];
 
         $data = [
-            'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
+            'groupAdmin' => auth()->user()->name, 
             'groupName' => $this->group->name
         ];
         $res = $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
@@ -122,13 +122,13 @@ class GroupUserMoves {
         ];
         $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
 
-        UserLogoutFromGroupProcess::dispatch($this->group, $this->user, auth()->user()->full_name);
+        UserLogoutFromGroupProcess::dispatch($this->group, $this->user, auth()->user()->name);
 
         if(!$this->user->isAnonymized) {
             $this->user->notify(
                 new GroupUserLogoutNotification([
                     'groupName' => $this->group->name, 
-                    'userName' => auth()->user()->full_name
+                    'userName' => auth()->user()->name
                 ])
             );
         }

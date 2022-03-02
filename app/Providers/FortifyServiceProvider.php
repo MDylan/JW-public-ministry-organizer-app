@@ -47,13 +47,7 @@ class FortifyServiceProvider extends ServiceProvider
             return view('auth.login');
         });
         Fortify::registerView(function () {
-            $nameFields = is_array(trans('user.nameFields')) 
-            ? trans('user.nameFields') 
-            : [
-                'first_name' => 'first_name',
-                'last_name' => 'last_name'                
-            ];
-            return view('auth.register', ['nameFields' => $nameFields]); 
+            return view('auth.register'); 
         });
         Fortify::requestPasswordResetLinkView(function () {
             return view('auth.forgot-password');
