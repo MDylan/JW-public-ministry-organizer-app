@@ -19,5 +19,6 @@ return [
         'webOffice',
         'ics'
     ],
-    'github_url' => 'https://github.com/MDylan/JW-public-ministry-organizer-app'
+    'github_url' => 'https://github.com/MDylan/JW-public-ministry-organizer-app',
+    'use_recaptcha' => env('USE_RECAPTCHA', false),
 ];

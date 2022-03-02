@@ -127,17 +127,32 @@
                         <div class="card-header">
                             <div class="card-title">@lang('settings.others.title')</div>                            
                         </div>
-                        <div class="card-body" wire:ignore>
-                            @foreach ($this->others as $key => $value)
-                                <div class="row mb-1">
-                                    <div class="col-md-2 pt-1 d-flex justify-content-end">
-                                        <input type="checkbox" data-key="{{ $key }}" @if($state['others'][$key] == 1) checked="" @endif data-bootstrap-switch="" data-off-color="danger" data-on-color="success">
+                        <div class="card-body">
+                            <div wire:ignore>
+                                @foreach ($this->others as $key => $value)
+                                    <div class="row mb-1">
+                                        <div class="col-md-2 pt-1 d-flex justify-content-end">
+                                            <input type="checkbox" data-key="{{ $key }}" @if($state['others'][$key] == 1) checked="" @endif data-bootstrap-switch="" data-off-color="danger" data-on-color="success">
+                                        </div>
+                                        <div class="col-md-10 pt-1">
+                                            {{ __('settings.others.'.$key) }}
+                                        </div>
                                     </div>
-                                    <div class="col-md-10 pt-1">
-                                        {{ __('settings.others.'.$key) }}
+                                @endforeach
+                            </div>
+                            @if($state['others']['use_recaptcha'])
+                                <div class="alert alert-secondary">
+                                    <a href="https://g.co/recaptcha/v3" target="_blank">Google reCaptcha <i class="fas fa-external-link-alt"></i></a>
+                                    <div class="form-group">
+                                        <label for="site_key">SITE KEY:</label>
+                                        <input wire:model.ignore="state.recaptcha.site_key" type="text" class="form-control" id="site_key">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="secret_key">SECRET KEY:</label>
+                                        <input  wire:model.ignore="state.recaptcha.secret_key" type="text" class="form-control" id="secret_key">
                                     </div>
                                 </div>
-                            @endforeach
+                            @endif
                         </div>
                         <div class="card-footer">
                             <button type="button" class="btn btn-primary" wire:click="saveOthers">

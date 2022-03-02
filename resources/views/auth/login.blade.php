@@ -19,6 +19,9 @@
             <form action="{{route('login')}}" method="POST">
                 @csrf
                 <x-honey/>
+                @if (env('USE_RECAPTCHA', false))
+                    <x-honey-recaptcha/> 
+                @endif
             <div class="input-group mb-3">
                 <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" placeholder="Email">
                 <div class="input-group-append">

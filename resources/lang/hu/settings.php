@@ -40,11 +40,15 @@ return [
         'debugbar'  => 'Debugbar bekapcsolása (Csak tesztelési/hibajavítási céllal kapcsold be! Egyébként biztonsági kockázat!)',
         'maintenance' => 'Karbantartás mód (Csak adminisztrátorok léphetnek be, senki más.)',
         'gdpr' => 'GDPR bekapcsolása (Akkor kapcsold be, ha az EU-n belül üzemelteted az oldalt). A felhasználók lementhetik a személyes adataikat egy .json fájlba.',
+        'use_recaptcha' => 'reCaptcha használata (spam védelem). Bekapcsolásával jelentősen megerősítheted az oldal robotok elleni védelmét. Google recaptchat fog használni a belépésnél és a regisztrációnál az oldal.'
     ],
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
     'run' => [
         'title'    => 'Artisan parancsok futtatása',
         'optimize' => 'Parancs futtatása',
         'success'  => 'A parancs lefutott!',
-    ]
+    ],
+    'recaptcha' => [
+        'info' => 'Bekapcsolásával jelentősen megerősítheted az oldal robotok elleni védelmét. Google recaptchat fog használni a belépésnél és a regisztrációnál az oldal.',
+    ],
 ];

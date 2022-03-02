@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Classes\setEnvironment;
 use App\Http\Livewire\AppComponent;
 use App\Models\Settings as ModelsSettings;
 use Illuminate\Support\Facades\Artisan;
@@ -23,6 +24,7 @@ class Settings extends AppComponent
         'debugbar'  => false,
         'maintenance' => false,
         'gdpr' => false,
+        'use_recaptcha' => false
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
@@ -40,6 +42,9 @@ class Settings extends AppComponent
                 $this->state['others'][$key] = $this->settings[$key];
             }
         }
+
+        $this->state['recaptcha']['site_key'] = env('RECAPTCHA_SITE_KEY', '');
+        $this->state['recaptcha']['secret_key'] = env('RECAPTCHA_SECRET_KEY', '');
     }
 
     private function getLanguages() {
@@ -140,6 +145,23 @@ class Settings extends AppComponent
                     ['value' => $value]
                 ); 
             }
+
+            if($this->state['others']['use_recaptcha']) {
+                if(strlen(trim($this->state['recaptcha']['site_key'])) > 0
+                    && strlen(trim($this->state['recaptcha']['secret_key'])) > 0
+                ) {
+                    setEnvironment::setEnvironmentValue([
+                        'USE_RECAPTCHA' => "true",
+                        'RECAPTCHA_SITE_KEY' => '"'.trim($this->state['recaptcha']['site_key']).'"',
+                        'RECAPTCHA_SECRET_KEY' => '"'.trim($this->state['recaptcha']['secret_key']).'"'
+                    ]);
+                } else {
+                    setEnvironment::setEnvironmentValue(['USE_RECAPTCHA' => "false"]);
+                }
+            } else {
+                setEnvironment::setEnvironmentValue(['USE_RECAPTCHA' => "false"]);
+            }
+
             $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
         }
     }
@@ -186,6 +208,36 @@ class Settings extends AppComponent
             $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
         }
     }
+
+    // private function setEnvironmentValue(array $values)
+    // {
+    
+    //     $envFile = app()->environmentFilePath();
+    //     $str = file_get_contents($envFile);
+    
+    //     if (count($values) > 0) {
+    //         foreach ($values as $envKey => $envValue) {
+    
+    //             $str .= "\n"; // In case the searched variable is in the last line without \n
+    //             $keyPosition = strpos($str, "{$envKey}=");
+    //             $endOfLinePosition = strpos($str, "\n", $keyPosition);
+    //             $oldLine = substr($str, $keyPosition, $endOfLinePosition - $keyPosition);
+    
+    //             // If key does not exist, add it
+    //             if (!$keyPosition || !$endOfLinePosition || !$oldLine) {
+    //                 $str .= "{$envKey}={$envValue}\n";
+    //             } else {
+    //                 $str = str_replace($oldLine, "{$envKey}={$envValue}", $str);
+    //             }
+    
+    //         }
+    //     }
+    
+    //     $str = substr($str, 0, -1);
+    //     if (!file_put_contents($envFile, $str)) return false;
+    //     return true;
+    
+    // }
 
     public function render()
     {

@@ -36,7 +36,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         ->middleware(array_filter([
             'guest:'.config('fortify.guard'),
             $limiter ? 'throttle:'.$limiter : null,
-            'honey' , 'honey-recaptcha'
+            'honey', 'checkRecaptcha'
         ]));
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -55,7 +55,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         }
 
         Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+            ->middleware(['guest:'.config('fortify.guard'), 'honey', 'checkRecaptcha'])
             ->name('password.email');
 
         Route::post('/reset-password', [NewPasswordController::class, 'store'])
@@ -72,7 +72,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         }
 
         Route::post('/register', [RegisteredUserController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')]);
+            ->middleware(['guest:'.config('fortify.guard'), 'honey', 'checkRecaptcha' ]);
     }
 
     // Email Verification...

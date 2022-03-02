@@ -163,7 +163,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-        App\Providers\FortifyServiceProvider::class,
+        
        // Collective\Html\HtmlServiceProvider::class,
 
         /*
@@ -181,6 +181,7 @@ return [
         App\Providers\BladeComponentServiceProvider::class,
         Barryvdh\Debugbar\ServiceProvider::class,
         pcinaglia\laraupdater\LaraUpdaterServiceProvider::class,
+        App\Providers\FortifyServiceProvider::class,
     ],
 
     /*

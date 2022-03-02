@@ -19,7 +19,10 @@
 
                 <form method="POST" action="{{ route('password.email') }}">
                     @csrf
-
+                    <x-honey/>
+                    @if (env('USE_RECAPTCHA', false))
+                        <x-honey-recaptcha/> 
+                    @endif
                     <div class="form-group row">
                         <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
 

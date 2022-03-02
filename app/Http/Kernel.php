@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'groupMember' => \App\Http\Middleware\GroupMember::class,
         'profileFull' => \App\Http\Middleware\ProfileFull::class,
         'setGuestLanguage' => \App\Http\Middleware\SetGuestLanguage::class,
+        'checkRecaptcha' => \App\Http\Middleware\CheckRecaptcha::class,
     ];
 }

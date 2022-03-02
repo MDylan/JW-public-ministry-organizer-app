@@ -15,6 +15,10 @@
 
                 <form method="POST" action="{{route('register')}}">
                 @csrf
+                <x-honey/>
+                @if (env('USE_RECAPTCHA', false))
+                    <x-honey-recaptcha/> 
+                @endif
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group mb-3">
