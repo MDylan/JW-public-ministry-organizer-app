@@ -132,3 +132,5 @@ Route::middleware(['auth'])->group(function () {
     });
 	//Test line
 });
+
+require_once __DIR__ . '/fortify.php';
