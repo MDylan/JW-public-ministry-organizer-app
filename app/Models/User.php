@@ -9,14 +9,16 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
-use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\DB;
 use Dialect\Gdpr\Portable;
 use Dialect\Gdpr\Anonymizable;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable;
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -38,7 +40,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'calendars',
         'language',
         'name',
-        'phone_number'
+        'phone_number',
+        'email_verified_at'
     ];
 
     /**
@@ -276,6 +279,21 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         // dd($array);
 
         return $array;
+    }
+
+    public function confirmTwoFactorAuth($code)
+    {
+        $codeIsValid = app(TwoFactorAuthenticationProvider::class)
+            ->verify(decrypt($this->two_factor_secret), $code);
+
+        if ($codeIsValid) {
+            $this->two_factor_confirmed = true;
+            $this->save();
+
+            return true;
+        }
+
+        return false;
     }
 
 }

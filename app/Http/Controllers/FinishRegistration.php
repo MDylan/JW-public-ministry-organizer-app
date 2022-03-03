@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\FinishRegistrationSuccessNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
@@ -43,15 +44,17 @@ class FinishRegistration extends Controller
             'terms' => ['required']
         ])->validate();
 
-        User::where('id', '=', $id)
+        $user = User::where('id', '=', $id)
         ->where('role', '=', 'registered')
-        ->update([
+        ->first();
+        
+        $user->fill([
                 'name' =>  $request->input('name'),
-                'phone_number' =>  $request->input('phone_number'),
+                'phone_number' => $request->input('phone_number'),
                 'password' => Hash::make( $request->input('password')),
                 'role' => 'activated',
                 'email_verified_at' => now()
-        ]);
+        ])->save();
 
         $user = User::findOrFail($id);
         $credentials = [

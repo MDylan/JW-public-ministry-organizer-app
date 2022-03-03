@@ -61,5 +61,22 @@ return [
         'webOffice' => 'Office',
         'ics' => 'ics fájl'
     ],
+    'two_factor' => [
+        'title' => 'Kétlépcsős azonosítás (2FA) beállítása',
+        'help' => 'A kétlépcsős azonosítás (más néven kétfaktoros hitelesítés) egy plusz biztonsági szinttel látja el fiókodat, arra az esetre, ha ellopják a jelszavadat. A kétlépcsős azonosítás beállítása után két dolgot kell használod, amikor bejelentkezel a fiókodba: A jelszavadat és egy eszközt, pl a telefonodat.',
+        'enabled' => 'A kétlépcsős azonosítás engedélyezve lett!',
+        'scan' => 'Szkenneld be a lenti QR kódot az eszközöd hitelesítő alkalmazásával, hogy be tudj lépni az oldalra legközelebb. Ha nem ismersz ilyen alkalmazást, lent találsz javaslatokat',
+        'disabled' => 'A kétlépcsős azonosítás ki lett kapcsolva.',
+        'store_it' => 'Kérlek mentsd el a lenti visszaállítási kódokat BIZTONSÁGOS helyre. Ha valamiért nem férsz hozzá a telefonodhoz, akkor ezek használatával tudni majd belépni.',
+        'status_enabled' => 'A kétlépcsős azonosítás (2FA) jelenleg be van kapcsolva.',
+        'status_disabled' => 'A kétlépcsős azonosítás (2FA) jelenleg ki van kapcsolva.',
+        'button_disable' => 'Kétlépcsős azonosítás kikapcsolása',
+        'add_code' => 'Add meg a hitelesítő kódot',
+        'add_recovery' => 'Kérlek add meg az egyik visszaállítási kódodat.',
+        'recommended_apps' => 'Javasolt alkalmazások',
+        'recovery_codes' => 'Visszaállítási kódok',
+        'error' => 'Hibás azonosítási kód!',
+        'please_confirm' => 'Kérjük add meg a hitelesítő alkalmazásban lévő kódot, ezzel visszaigazolod, hogy megfelelően beállítottad a kétlépcsős azonosítást. Amíg ezt nem teszed meg, a kétlépcsős azonosítás nem fog működni.',
+    ]
 
 ];

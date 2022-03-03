@@ -72,7 +72,7 @@ class LaraUpdaterController extends Controller
             if($status){
                  if( config('laraupdater.migrate')==true ) {
                     try {
-                        Artisan::call('migrate');
+                        Artisan::call('migrate --force');
                     }catch(Exception $e) {
                         throw new \Exception(trans("laraupdater.Error_during_download."));
                     }

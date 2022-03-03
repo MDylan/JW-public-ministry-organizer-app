@@ -53,7 +53,7 @@ return [
     'checks' => [
         UserIsBlockedSpammerCheck::class,
         PresentButEmptyCheck::class,
-        MinimumTimePassedCheck::class,
+        // MinimumTimePassedCheck::class,
         JavascriptInputFilledCheck::class,
     ],
 

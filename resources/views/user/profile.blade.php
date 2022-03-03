@@ -165,6 +165,9 @@
                                     </div>
                                 </div>
                             </form>
+                            <a href="{{ route('user.twofactorsettings') }}" class="btn btn-success mt-3">
+                                @lang('user.two_factor.title')
+                            </a>
                         </div>
                     </div>
                 </div>

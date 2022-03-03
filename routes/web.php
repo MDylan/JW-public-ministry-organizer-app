@@ -10,6 +10,7 @@ use App\Http\Controllers\jumpToCalendarController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
+use App\Http\Controllers\User\TwoFactorSettings;
 use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
@@ -87,7 +88,12 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['verified'])->group(function () {
         Route::get('user/profile', Profile::class)->name('user.profile');
 
+
         Route::middleware(['profileFull'])->group(function () {
+
+            Route::get('user/twofactorsettings', TwoFactorSettings::class)
+                        ->name('user.twofactorsettings')->middleware(['password.confirm']);
+            Route::post('/user/2fa-confirm', [TwoFactorSettings::class, 'confirm'])->name('two-factor.confirm');
 
             Route::get('/user/asktodelete', [deletePersonalDataController::class, 'asktodelete'])
                                     ->name('user.askToDelete')->middleware(['password.confirm']);
@@ -97,7 +103,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/lastevents', LastEvents::class)->name('lastevents');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
             Route::get('/jtc/{group}/{year}/{month}', [jumpToCalendarController::class, 'jump'])->name('jumpToCalendar');
-            Route::get('/groups', ListGroups::class)->name('groups');            
+            Route::get('/groups', ListGroups::class)->name('groups'); 
 
             //For special roles
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
@@ -132,4 +138,4 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require_once __DIR__ . '/fortify.php';
+// require_once __DIR__ . '/fortify.php';
