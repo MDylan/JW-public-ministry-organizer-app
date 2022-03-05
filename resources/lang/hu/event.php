@@ -48,8 +48,9 @@ return [
         'invalid_group' => 'Hibás csoport lett kiválasztva, vagy nincs jogosultságod ezt szerkeszteni.',
         'no_permission' => 'Ehhez nincs jogosultságod.',
         'no_service_day' => 'Ezen a napon nem lehetséges a szolgálat.',
-        'publisher_busy' => 'Ekkor már végzel szolgálatot egy másik csoportban. (:start - :end)',
+        'publisher_busy' => 'Ekkor már szolgálatban vagy egy másik csoportban. (:start - :end)',
     ],
+    'paralel_events' => 'A megadott időpontokban már az alábbi csoportban is jelentkeztél szolgálatra. Ha ezt jóváhagyják akkor a másik jelentkezés automatikusan elutasításra kerül, és fordítva.',
     'date' => 'Dátum',
     'status' => 'Állapot',
     'status_0' => 'Jóváhagyásra vár!',
@@ -68,5 +69,8 @@ return [
         'success' => 'A terjesztéseket elmentettük.',
         'error' => 'Ehhez az eseményhez nem rögzíthetsz terjesztést.',
     ],
-
+    'comment' => [
+        'label' => 'Megjegyzés',
+        'helper' => 'Megjegyzés a szolgálatodhoz. Mindenki látja, kérjük fogalmazz röviden.'
+    ]
 ];

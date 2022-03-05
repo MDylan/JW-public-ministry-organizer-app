@@ -646,7 +646,9 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
 
     public static $classMap = array (
         'App\\Actions\\Fortify\\CreateNewUser' => __DIR__ . '/../..' . '/app/Actions/Fortify/CreateNewUser.php',
+        'App\\Actions\\Fortify\\DisableTwoFactorAuthentication' => __DIR__ . '/../..' . '/app/Actions/Fortify/DisableTwoFactorAuthentication.php',
         'App\\Actions\\Fortify\\PasswordValidationRules' => __DIR__ . '/../..' . '/app/Actions/Fortify/PasswordValidationRules.php',
+        'App\\Actions\\Fortify\\RedirectIfTwoFactorConfirmed' => __DIR__ . '/../..' . '/app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php',
         'App\\Actions\\Fortify\\ResetUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/ResetUserPassword.php',
         'App\\Actions\\Fortify\\UpdateUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/UpdateUserPassword.php',
         'App\\Actions\\Fortify\\UpdateUserProfileInformation' => __DIR__ . '/../..' . '/app/Actions/Fortify/UpdateUserProfileInformation.php',
@@ -736,6 +738,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Models\\StaticPageTranslation' => __DIR__ . '/../..' . '/app/Models/StaticPageTranslation.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Notifications\\EventCreatedNotification' => __DIR__ . '/../..' . '/app/Notifications/EventCreatedNotification.php',
+        'App\\Notifications\\EventDeletedAdminsNotification' => __DIR__ . '/../..' . '/app/Notifications/EventDeletedAdminsNotification.php',
         'App\\Notifications\\EventDeletedNotification' => __DIR__ . '/../..' . '/app/Notifications/EventDeletedNotification.php',
         'App\\Notifications\\EventStatusChangedNotification' => __DIR__ . '/../..' . '/app/Notifications/EventStatusChangedNotification.php',
         'App\\Notifications\\EventUpdatedNotification' => __DIR__ . '/../..' . '/app/Notifications/EventUpdatedNotification.php',

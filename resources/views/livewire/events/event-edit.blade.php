@@ -47,7 +47,7 @@
                 @lang('event.service_end')
             </label>
             <div class="col-md-9">
-                <select wire:model.defer="state.end"  wire:change="change_start" id="" class="form-control @error('end') is-invalid @enderror"">
+                <select wire:model.defer="state.end" wire:change="change_start" id="" class="form-control @error('end') is-invalid @enderror"">
                     <option value="0">@lang('event.choose_time')</option>
                     @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['end'] as $time => $option)
@@ -58,6 +58,33 @@
                 @error('end')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
             </div>
         </div>
+        <div class="form-group row">
+            <label for="end" class="col-md-3 col-form-label">
+                @lang('event.comment.label')
+            </label>
+            <div class="col-md-9">
+                <input wire:model.defer="state.comment" aria-describedby="commentHelpBlock" type="text" class="form-control @error('comment') is-invalid @enderror" />
+                @error('comment')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                <small id="commentHelpBlock" class="form-text text-muted">
+                    @lang('event.comment.helper')
+                </small>
+            </div>
+        </div>
+        @if (count($other_events) > 0) 
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-9">
+                    <div class="alert alert-light">
+                        <i class="fas fa-info mr-1"></i> @lang('event.paralel_events')<br/>
+                        @foreach ($other_events as $other)
+                            <b>{{ $other->name }}</b>
+                                {{ \Carbon\Carbon::parse($other->start)->format(__('app.format.time')) }} - 
+                                {{ \Carbon\Carbon::parse($other->end)->format(__('app.format.time')) }}<br/>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
         @if ( $group_data['need_approval'] === 1)
             
             @if (in_array($role, ['admin', 'roler', 'helper']))

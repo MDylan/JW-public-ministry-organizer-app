@@ -22,7 +22,8 @@ class Event extends Model
         'accepted_by',
         'accepted_at',
         'group_id',
-        'status'
+        'status',
+        'comment'
     ];
 
     protected $casts = [

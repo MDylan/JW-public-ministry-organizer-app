@@ -307,7 +307,7 @@
                                     @foreach ($group_days as $day => $translate) 
                                         <div class="row alert alert-light p-1 mb-2">
                                             <div class="col-lg-3">
-                                                <label>Nap</label>
+                                                <label>@lang('statistics.day')</label>
                                                 <div class="form-group">                                                        
                                                     <input data-day="{{$day}}" wire:model.defer="days.{{$day}}.day_number" type="checkbox" 
                                                         class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">

@@ -36,6 +36,7 @@ class EventEdit extends AppComponent
     private $pleaseWait = false;
     private $error = false;
     public $date_data = [];
+    public $other_events = [];
 
     public function mount($groupId, $date) {
         $check = auth()->user()->userGroups()->whereId($groupId);
@@ -182,7 +183,7 @@ class EventEdit extends AppComponent
                 'publishers' => 0,                
                 'accepted' => 0,
             ];
-            for ($i=1; $i <= config('events.max_columns'); $i++) {
+            for ($i=1; $i <= ($this->date_data['max_publishers'] + config('events.max_columns')); $i++) {
                 $day_table[$key]['cells'][$i] = true;
             }
             
@@ -240,7 +241,7 @@ class EventEdit extends AppComponent
             if(count($times) >= ($this->group_data['need_approval'] 
                     ? ($day_table[$key]['accepted'] >= $this->date_data['max_publishers'] 
                             ? $this->date_data['max_publishers'] 
-                            : config('events.max_columns'))
+                            : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
@@ -306,6 +307,7 @@ class EventEdit extends AppComponent
                 }
             }
         }
+        $this->getUserOtherEvents();
     }
 
     public function change_end() {
@@ -330,6 +332,8 @@ class EventEdit extends AppComponent
         if(count($this->day_data['selects']['end']) == 1) {
             $this->state['end'] = array_key_last($this->day_data['selects']['end']);
         }
+        $this->getUserOtherEvents();
+        // dd(date("Y-m-d H:i", $this->state['start']), date("Y-m-d H:i", $this->state['end']));
     }
 
     public function cancelEdit() {
@@ -344,6 +348,7 @@ class EventEdit extends AppComponent
         // dd($this->state);
         $this->getRole();
         $this->getInfo(true);
+        $this->getUserOtherEvents();
 
         if($this->editEvent !== null) {
             if(!in_array($this->role, ['admin', 'roler', 'helper']) 
@@ -367,7 +372,7 @@ class EventEdit extends AppComponent
                 $this->group_data['need_approval'] 
                     ? ($this->day_data['table'][$slot_key]['accepted'] >= $this->date_data['max_publishers'] 
                         ? $this->date_data['max_publishers'] 
-                        : config('events.max_columns'))
+                        : ($this->date_data['max_publishers'] + config('events.max_columns')))
                     : $this->date_data['max_publishers'])) {
                 $publishers_ok = false;                
             }
@@ -388,7 +393,8 @@ class EventEdit extends AppComponent
             'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
             'accepted_at' => null,
             'accepted_by' => null, //$group->need_approval ? null : Auth::id()
-            'status' => 0
+            'status' => 0,
+            'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
         ];
         if($this->editEvent === null) {
             //it's a new event, set approval status
@@ -432,6 +438,7 @@ class EventEdit extends AppComponent
             'accepted_by' => 'nullable|exists:App\Models\User,id',
             'accepted_at' => 'nullable|date_format:Y-m-d H:i:s',
             'status' => 'required|in:0,1,2',
+            'comment' => 'sometimes|max:80',
         ]);
         
         $v->after(function ($validator) use ($publishers_ok, $invalid, $data) {
@@ -451,13 +458,13 @@ class EventEdit extends AppComponent
                 }
             }
             $busy = DB::table('events')
-                                    ->whereNull('deleted_at')
-                                    ->where('status', '!=', 2)
-                                    ->where('user_id', '=', $data['user_id'])
-                                    ->where('group_id', '!=', $this->groupId)
-                                    ->where('start', '<', date("Y-m-d H:i", $data['end']))
-                                    ->where('end', '>', date("Y-m-d H:i", $data['start']))
-                                    ->first();
+                        ->whereNull('deleted_at')
+                        ->where('status', '=', 1)
+                        ->where('user_id', '=', $data['user_id'])
+                        ->where('group_id', '!=', $this->groupId)
+                        ->where('start', '<', date("Y-m-d H:i", $data['end']))
+                        ->where('end', '>', date("Y-m-d H:i", $data['start']))
+                        ->first();
             // dd($busy->start);
             if($busy !== null) {
                 $validator->errors()->add(
@@ -480,11 +487,24 @@ class EventEdit extends AppComponent
             if($exists !== null) {
                 $event = Event::findOrFail($this->editEvent['id']);
                 $event->update($validatedData);
+
+                if($validatedData['status'] == 1 && $this->editEvent['status'] == 0) {
+                    //accept this event, delete in other groups
+                    Event::where('status', '=', 0)
+                        ->where('user_id', '=', $data['user_id'])
+                        ->where('group_id', '!=', $this->groupId)
+                        ->where('start', '<', date("Y-m-d H:i", $data['end']))
+                        ->where('end', '>', date("Y-m-d H:i", $data['start']))
+                        ->update(['status' => 2]);
+                    //     ->get();
+                    // foreach($others as $other) {
+                    //     $other->status = 2;
+                    //     $other->save();
+                    // }
+                }
             }
 
-            // $group->events()->whereId($this->editEvent['id'])->update(
-            //     $validatedData
-            // );
+
             $this->cancelEdit();
         } else {
             //save new event
@@ -513,12 +533,42 @@ class EventEdit extends AppComponent
         $res = $event->delete();
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('event.confirmDelete.success')]);
+            $stat = new GenerateStat();
+            $stat->generate($event->group_id, $event['day']);
         } else {
             $this->dispatchBrowserEvent('error', ['message' => __('event.confirmDelete.error')]);
         }
         $this->emitTo('partials.events-bar', 'refresh');
         $this->emitUp('refresh');
         $this->pleaseWait = true;
+    }
+
+    public function getUserOtherEvents() {
+        $this->other_events = [];
+        // return;
+        if($this->state['user_id'] != 0) {
+            if(!isset($this->state['start']) || !isset($this->state['end'])) return;
+            
+            $start = date("Y-m-d H:i", $this->state['start']);
+            $end = date("Y-m-d H:i", $this->state['end']);
+            // dd('na', $start, $end, $this->state['user_id']);
+            $this->other_events = DB::table('events')
+                ->join('groups', 'events.group_id', '=', 'groups.id')
+                ->select('events.start', 'events.end', 'groups.name')
+                ->whereNull('events.deleted_at')
+                ->whereIn('events.status', [0,1])
+                ->where('events.user_id', '=', $this->state['user_id'])
+                ->where('events.group_id', '!=', $this->groupId)
+                ->where('events.start', '<', $end)
+                ->where('events.end', '>', $start)
+                ->get()
+                ->toArray();
+                // ->toSql();
+                
+                // ->toArray();
+            // dd($this->other_events, 'na');
+            // dd($this->other_events, $start, $end, $this->state['user_id'], $this->groupId);
+        }
     }
 
     public function render()

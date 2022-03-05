@@ -81,6 +81,9 @@
   .eventModal {
     max-width: 660px;
   }
+  .events-list {
+    overflow-x: scroll;
+  }
 }
 .card-columns {
   @include media-breakpoint-only(lg) {
@@ -190,6 +193,7 @@
   .session-title a {
     color: #fff;
     text-decoration-style: dotted;
+    overflow-wrap: break-word;
     
     &:hover {
       font-style: italic;
@@ -245,6 +249,44 @@
     background-image: repeating-linear-gradient(45deg, #c35500, #c35500 6px, #632b00 6px, #632b00 20px);
     color: #fff;
   }
+
+
+  .track-5 {
+    background-color: #a500a5;
+    color: #fff;
+  }
+  .track-5-plan {
+    background-image: repeating-linear-gradient(45deg, #a500a5, #a500a5 6px, #632b00 6px, #632b00 20px);
+    color: #fff;
+  }
+
+  .track-6 {
+    background-color: #cd2727;
+    color: #fff;
+  }
+  .track-6-plan {
+    background-image: repeating-linear-gradient(45deg, #cd2727, #cd2727 6px, #632b00 6px, #632b00 20px);
+    color: #fff;
+  }
+  
+  .track-7 {
+    background-color: #c7ab00;
+    color: #fff;
+  }
+  .track-7-plan {
+    background-image: repeating-linear-gradient(45deg, #ad9d3b, #ad9d3b 6px, #806e00 6px, #806e00 20px);
+    color: #fff;
+  }
+  
+  .track-8 {
+    background-color: #49a300;
+    color: #fff;
+  }
+  .track-8-plan {
+    background-image: repeating-linear-gradient(45deg, #49a300, #49a300 6px, #2d6500 6px, #2d6500 20px);
+    color: #fff;
+  }
+  
   
   .track-all {
     display: flex;
@@ -302,7 +344,8 @@
   }
 }
 .brand-link .brand-image {
-  margin-left: 10px !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
 }
 
 .noselect {
@@ -456,10 +499,9 @@
      }
  }
 
-/* .modal-dialog {
-    overflow-y: initial !important;
+.hidden_child {
+  display: none;
 }
-.modal-body {
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-} */
+.crop_child {
+  max-height: 26px;
+}

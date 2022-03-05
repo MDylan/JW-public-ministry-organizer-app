@@ -418,8 +418,11 @@ class Events extends AppComponent
         $this->userEvents = [];
         $userEvents = Event::where([
             'group_id' => $this->cal_group_data['id'],
-            'user_id' => Auth::id()
-        ])->whereBetween('day', [$this->first_day, $this->last_day])->get()->toArray();
+            'user_id' => Auth::id(),
+        ])
+        ->whereIn('status', [0,1])
+        ->whereBetween('day', [$this->first_day, $this->last_day])
+        ->get()->toArray();
         foreach($userEvents as $ev) {
             $this->userEvents[$ev['day']] = true;
         }

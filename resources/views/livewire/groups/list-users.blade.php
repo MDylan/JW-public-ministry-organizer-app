@@ -111,7 +111,9 @@
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
                                             @if ($sign['checked'])
-                                                @if($editor || $user->id == Auth::id())
+                                                @if($editor
+                                                //  || $user->id == Auth::id()
+                                                 )
                                                     <button wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
                                                         class="btn btn-sm 
                                                         @if(isset($user->pivot->signs[$icon])) 
@@ -123,9 +125,9 @@
                                                         @else btn-outline-dark 
                                                         @endif 
                                                         p-1" 
-                                                        title="{{ $sign['name'] }}">
+                                                        @if(isset($sign['name'])) title="{{ $sign['name'] }}@endif ">
                                                         <i class="fa {{$icon}} p-1"></i>
-                                                        <div class="d-md-none">{{ $sign['name'] }}</div>
+                                                        <div class="d-md-none">@if(isset($sign['name'])){{ $sign['name'] }}@endif</div>
                                                     </button>
                                                 @else
                                                     @if(isset($user->pivot->signs[$icon])) 
@@ -157,7 +159,7 @@
                                         @lang('user.phone'):
                                     </div>
                                 <div class="col-8 col-md-2 text-left text-md-center my-auto align-middle">
-                                    <a href="tel:+{{ $user->phone }}">{{ $user->phone }}</a>
+                                    <a href="tel:+{{ $user->phone_number }}">{{ $user->phone_number }}</a>
                                 </div>
                                     <div class="d-md-none col-4 text-right text-bold">
                                         @lang('user.last_login'):
@@ -199,15 +201,15 @@
                         </div>
                         @endforelse
                     </div>
-                    <div class="d-flex justify-content-between p-2">
-                        <div>
+                    <div class="d-flex flex-sm-row flex-column justify-content-between align-items-center">
+                        <div class="mb-md-0 mb-2 ml-2">
                         <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                             @lang('app.back')
                         </a>
                         </div>
-                        <div>
-                            {{$users->links()}}
+                        <div class="mr-2">
+                            {{$users->onEachSide(2)->links()}}
                         </div>
                     </div>
             </div>

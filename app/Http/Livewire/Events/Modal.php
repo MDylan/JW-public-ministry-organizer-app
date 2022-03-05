@@ -138,7 +138,7 @@ class Modal extends AppComponent
         $group = Group::with([
                         'days', 
                         'events' => function($q) use ($date) {
-                            $q->select(['id', 'group_id', 'user_id', 'day', 'start', 'end', 'accepted_at', 'accepted_by', 'status']);
+                            $q->select(['id', 'group_id', 'user_id', 'day', 'start', 'end', 'accepted_at', 'accepted_by', 'status', 'comment']);
                             $q->where('day', '=', $date);
                             $q->whereIn('status', [0,1]);
                         },
@@ -160,6 +160,7 @@ class Modal extends AppComponent
                             });
                         },
                     ])->findOrFail($groupId)->toArray();
+        // dd($group);
         // dd(Carbon::parse($date)->addDay()->format("Y-m-d"));
         if(isset($group['current_date'])) {
             if($group['current_date']['date_status'] == 0) {
@@ -202,14 +203,20 @@ class Modal extends AppComponent
             }
         }
         $user_signs = [];
+        $user_phones = [];
         if(is_array($group['group_users_all'])) {
             foreach($group['group_users_all'] as $user) {
                 if(isset($user['pivot']['signs'])) {
                     $user_signs[$user['id']] = $user['pivot']['signs'];
                 }
+                if($user['phone_number']) {
+                    $user_phones[$user['id']] = $user['phone_number'];
+                }
             }
         }
+        // dd($user_phones);
         $group['users_signs'] = $user_signs;
+        $group['users_phones'] = $user_phones;
         unset($group['group_users_all']);
         // dd($this->service_days);
         $this->group_data = $group; //->toArray();
@@ -297,7 +304,7 @@ class Modal extends AppComponent
         $day_table = [];
         $day_selects = [];
         $day_events = [];
-        
+        $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $row = 1;
         $peak = 0;
         for($current=$start;$current < $max;$current+=$step) {
@@ -306,7 +313,7 @@ class Modal extends AppComponent
                 'ts' => $current,
                 'hour' => date("H:i", $current),
                 'row' => $row,
-                'status' => ($current < $now) ? 'full' : 'free',
+                'status' => ($current < $now || $past) ? 'full' : 'free',
                 'publishers' => 0,
                 'accepted' => 0,
             ];
@@ -317,7 +324,7 @@ class Modal extends AppComponent
                 'events' => 0
             ];
             // for ($i=1; $i <= $this->date_data['max_publishers']; $i++) { 
-            for ($i=1; $i <= config('events.max_columns'); $i++) { 
+            for ($i=1; $i <= ($this->date_data['max_publishers'] + config('events.max_columns')); $i++) { 
                 $day_table[$key]['cells'][$i] = true;
             }
             
@@ -334,16 +341,19 @@ class Modal extends AppComponent
         // $events = $group->day_events($date)->get()->toArray();
         $events = $group['events'];
                 
-        $disabled_slots = $slots = [];
+        $disabled_slots = $slots = [];        
         
         foreach($events as $event) {
-            $steps = ($event['end'] - $event['start']) / $step;
+            $steps = ceil(($event['end'] - $event['start']) / $step);
             if(!isset($day_table["'".date('Hi', $event['start'])."'"])) continue;
             $row = $day_table["'".date('Hi', $event['start'])."'"]['row'];
             $key = "'".date('Hi', $event['start'])."'";
             // $cell = 2;
             $cell = 1;
             if(isset($slots[$key])) {
+                // if(count($day_table[$key]['cells']) == 0) {
+                //     dd($key, $day_table[$key]);
+                // }
                 // $cell = count($slots[$key]) + 2;
                 // if(!isset($day_table[$key]['cells'])) {
                 //     $day_table[$key]['cells'][1] = true;
@@ -355,9 +365,7 @@ class Modal extends AppComponent
                 // $cell = $day_table[$key]['publishers'] + 2;
                 
                 // $table[$key]['available'] = count($slots[$key]);
-            }
-
-            $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
+            }            
             
             $day_events[$key][$event['id']] = $event;
             $day_events[$key][$event['id']]['time'] = date("H:i", $event['start'])." - ".date("H:i", $event['end']);
@@ -368,6 +376,7 @@ class Modal extends AppComponent
             $day_events[$key][$event['id']]['end_time'] = date("H:i", $event['end']);
             $day_events[$key][$event['id']]['editable'] = $past ? 'disabled' : '';
             $day_events[$key][$event['id']]['status'] = $event['status'];
+            $day_events[$key][$event['id']]['comment'] = $event['comment'];
             if(!in_array($this->role, ['admin', 'roler', 'helper']) 
                 && $event['user_id'] !== Auth::id()
                 ) {
@@ -397,7 +406,7 @@ class Modal extends AppComponent
             if(count($times) >= ($this->group_data['need_approval'] 
                         ? ($day_table[$key]['accepted'] >= $this->date_data['max_publishers'] 
                             ? $this->date_data['max_publishers'] 
-                            : config('events.max_columns'))
+                            : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
@@ -489,7 +498,7 @@ class Modal extends AppComponent
         if($this->date !== null && !$this->error) {            
             // dd($this->group_data);
             $this->error = false;
-            
+            // dd($this->day_events);
             // $date = Carbon::parse($this->day_data['date']);
 
             return view('livewire.events.modal', [

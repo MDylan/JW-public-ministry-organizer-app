@@ -77,11 +77,12 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
 
     // Email Verification...
     if (Features::enabled(Features::emailVerification())) {
-        if ($enableViews) {
-            Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
-                ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
-                ->name('verification.notice');
-        }
+        // disabled, it's generate problem
+        // if ($enableViews) {        //     
+        //     Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
+        //         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+        //         ->name('verification.notice');
+        // }
 
         Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
             ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'signed', 'throttle:'.$verificationLimiter])
@@ -107,11 +108,11 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
     }
 
     // Password Confirmation...
-    if ($enableViews) {
-        Route::get('/user/confirm-password', [ConfirmablePasswordController::class, 'show'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
-            ->name('password.confirm');
-    }
+    // if ($enableViews) {
+    //     Route::get('/user/confirm-password', [ConfirmablePasswordController::class, 'show'])
+    //         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+    //         ->name('password.confirm');
+    // }
 
     Route::get('/user/confirmed-password-status', [ConfirmedPasswordStatusController::class, 'show'])
         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])

@@ -3,12 +3,15 @@
 namespace App\Observers;
 
 use App\Models\Event;
+use App\Models\Group;
 use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\EventCreatedNotification;
+use App\Notifications\EventDeletedAdminsNotification;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventStatusChangedNotification;
 use App\Notifications\EventUpdatedNotification;
+use Illuminate\Support\Facades\Notification;
 
 class EventObserver
 {
@@ -172,5 +175,21 @@ class EventObserver
                 new EventDeletedNotification($data)
             );
         }
+        if($event->status == 1) {
+            $group_id = $event->group_id;
+            $group_editors = Group::find($group_id)
+                ->editors()
+                ->get()
+                ->toArray();
+            $editors = [];
+            foreach($group_editors as $editor) {
+                $editors[$editor['id']] = $editor['id'];
+            }
+            $admins = User::whereIn('id', $editors)
+                        ->get();
+            // dd($admins->get());
+            Notification::send($admins, new EventDeletedAdminsNotification($data));
+        }
+
     }
 }

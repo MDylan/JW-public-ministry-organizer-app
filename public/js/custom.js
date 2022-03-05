@@ -71,3 +71,13 @@ $(".content-wrapper").click(function() {
         $("#control_sidebar").ControlSidebar('collapse');
     }
 });
+
+function showChild(t, cl) {
+    $(t).children("."+cl).show();
+    $(t).addClass('mt-1');
+}
+
+function showFullChild(t, cl) {
+    $(t).children("."+cl).removeClass('overflow-hidden');
+    $(t).children("."+cl).removeClass('crop_child');
+}

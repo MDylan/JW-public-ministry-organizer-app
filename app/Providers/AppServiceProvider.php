@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 // use Laravel\Fortify\Fortify;
+use Illuminate\Pagination\Paginator;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -90,7 +91,6 @@ class AppServiceProvider extends ServiceProvider
         foreach($defaults as $key => $value) {
             Config::set(['settings_'.$key => $value]);
         }
-        
         /**
          * Set Static menus into view
         */

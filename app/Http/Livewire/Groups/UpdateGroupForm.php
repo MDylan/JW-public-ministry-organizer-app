@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Groups;
 use App\Classes\CalculateDatesEvents;
 use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDate;
@@ -16,6 +17,7 @@ use App\Notifications\GroupUserAddedNotification;
 // use App\Notifications\LoginData;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
@@ -51,7 +53,11 @@ class UpdateGroupForm extends AppComponent
         'fa-sign-language',
         'fa-home',
         'fa-train',
-        'fa-globe'
+        'fa-globe',
+        'fa-flag',
+        'fa-hat-cowboy',
+        'fa-underline',
+        'fa-font'
     ];
 
     public $groupSigns = [];
@@ -76,7 +82,7 @@ class UpdateGroupForm extends AppComponent
             //     'end_time' => $day->end_time,
             // ]);
             $days[$day->day_number] = [
-                'day_number' => $day->day_number,
+                'day_number' => ''.$day->day_number.'',
                 'start_time' => $day->start_time,
                 'end_time' => $day->end_time,
             ];
@@ -220,7 +226,7 @@ class UpdateGroupForm extends AppComponent
             'min_publishers' => 'required|numeric|digits_between:1,10|lte:max_publishers',
             'max_publishers' => 'required|numeric|digits_between:1,10|gte:min_publishers',
             'min_time' => 'required|numeric|in:30,60,120|lte:max_time',
-            'max_time' => 'required|numeric|in:60,120,180,240,320|gte:min_time',            
+            'max_time' => 'required|numeric|in:60,120,180,240,320,360,420,480|gte:min_time',            
             'need_approval' => 'required|numeric|in:0,1',
             'color_default' => ['sometimes', 'regex:'.$pattern],
             'color_empty' => ['sometimes', 'regex:'.$pattern],
@@ -233,6 +239,8 @@ class UpdateGroupForm extends AppComponent
             'signs' => 'sometimes',
             'languages' => 'sometimes',
         ]);
+
+        
 
         // $v->after(function ($validator) use ($admins, $current_admins) {
         //     if ($admins == 0) {
@@ -263,7 +271,75 @@ class UpdateGroupForm extends AppComponent
 
         // $user = Auth()->user(); // User::find(Auth::id());
         // $group = Group::findOrFail($this->group_id);
+
+        $change_check = [
+            'max_publishers',
+            'min_publishers',
+            'min_time',
+            'max_time',
+            'need_approval'
+        ];
+        $must_refresh = false;
+        foreach($change_check as $field) {
+            if($validatedData[$field] != $this->group->{$field}) {
+                $must_refresh = true;
+            }
+        }
+        // $updateFeatureEvents = false;
+        // if($validatedData['need_approval'] == 0 && $this->group->need_approval == 1) {
+        //     //this time user's events need to be approved, now not, so we need to accept all feature events
+        //     $updateFeatureEvents = true;
+        // }
+
         $this->group->update($validatedData);
+
+        $reGenerateStat = [];
+
+        if($must_refresh) {
+            $refresh_dates = GroupDate::where('group_id', '=', $this->group->id)
+                                ->where('date', '>=', date("Y-m-d"))
+                                ->where('date_status', '=', 1)
+                                ->get();
+            foreach($refresh_dates as $rdate) {
+                $d = new DateTime($rdate->date);
+                $dayOfWeek = $d->format("w");
+                $status = 1;
+                $start = $rdate->date." ".$this->days[$dayOfWeek]['start_time'].":00";
+                $end = $rdate->date." ".$this->days[$dayOfWeek]['end_time'].":00";
+            
+                GroupDate::whereId($rdate->id)->update(
+                    [
+                        'date_start' => $start,
+                        'date_end' => $end,
+                        'date_status' => $status,
+                        'note' => null,
+                        'date_min_publishers' => $this->state['min_publishers'],
+                        'date_max_publishers' => $this->state['max_publishers'],
+                        'date_min_time' => $this->state['min_time'],
+                        'date_max_time' => $this->state['max_time'],
+                    ]
+                );
+                $reGenerateStat[$rdate->date] = $rdate->date;
+            }
+        }        
+        // dd($updateFeatureEvents, $reGenerateStat);
+
+        // if($updateFeatureEvents) {
+        //     $notAcceptedEvents = DB::table('events')->select(
+        //                 "day",
+        //                 DB::raw("(count(id)) as total_events")
+        //             )
+        //             ->where('group_id', '=', $this->group->id)
+        //             ->where('status', '=', '0')
+        //             ->where('day', '>=', date("Y-m-d"))
+        //             ->orderBy('day', 'asc')
+        //             ->groupBy('day')
+        //             ->get();
+        //     dd($notAcceptedEvents->toArray());
+        // }
+
+        
+
         // dd('itt');
         // $this->group->days()->delete();
         // dd($validatedDays);
@@ -271,12 +347,16 @@ class UpdateGroupForm extends AppComponent
             // $day_sync = [];
             foreach($validatedDays as $d => $day) {
                 // dd($day);
-                if(!isset($day['day_number'])) continue;
-                if($day['day_number'] == false) {
+                if(!isset($day['day_number'])) {
+                    continue;
+                }
+                
+                if($day['day_number'] === false) {
                     $del = GroupDay::where('group_id', $this->group->id)
                     ->where('day_number', $d)
                     ->first();
-                    $del->delete();
+                    if($del)
+                        $del->delete();
                 } else {
                     GroupDay::updateOrCreate(
                         [
@@ -298,95 +378,6 @@ class UpdateGroupForm extends AppComponent
             // dd($day_sync);      
             // $this->group->days()->saveMany($day_sync);
         }
-
-        //eltávolítom azokat, akik törölve lettek
-        // if(count($this->users_old)) {
-        //     foreach($this->users_old as $slug => $olduser) {
-        //         if(!isset($this->users[$slug])) {
-        //             $this->group->groupUsers()->detach($olduser['user_id']);
-        //         }
-        //     }
-        // }
-
-        //hozzáadjuk az új felhasználókat
-        // if(count($this->users) > 0) {
-        //     $data = [
-        //         'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
-        //         'groupName' => $this->state['name']
-        //     ];
-        //     $user_sync = [];
-        //     foreach($this->users as $slug => $user) {
-        //         // $password = Str::random(10);
-        //         // $us = User::firstOrCreate(
-        //         //     ['email' => $user['email']],
-        //         //     ['password' => bcrypt($password)]
-        //         // );
-        //         $us = User::where('email', $user['email'])->firstOr(function () use ($user) {
-        //             $password = Str::random(10);
-        //             $u = User::create([
-        //                 'email' => $user['email'],
-        //                 'password' => bcrypt($password)
-        //             ]);
-        //             // dd($u);
-        //             $url = URL::temporarySignedRoute(
-        //                 'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), ['id' => $u->id]
-        //             );
-        //             $u->notify(
-        //                 new FinishRegistration([
-        //                     'groupAdmin' => auth()->user()->last_name.' '.auth()->user()->first_name, 
-        //                     'userMail' => $user['email'],
-        //                     'url' => $url
-        //                 ])
-        //             );
-        //             return $u;
-        //         });
-        //         $user_sync[$us->id] = [
-        //             'group_role' => $user['group_role'],
-        //             'note' => strip_tags(trim($user['note'])),
-        //             'hidden' => $user['hidden'] == 1 ? 1 : 0,
-        //             'deleted_at' => null //because maybe we try to reattach logged out user
-        //         ];
-        //     }
-            
-        //     $res = $this->group->groupUsersAll()->sync($user_sync);
-        //     // dd($user_sync);
-        //     // dd($res);
-        //     //az újakat értesítem, hogy hozzá lett adva a csoporthoz
-        //     if(isset($res['attached'])) {
-        //         foreach($res['attached'] as $user) {
-        //             $us = User::find($user);
-        //             if($us->email_verified_at) {
-        //                 $us->notify(
-        //                     new GroupUserAddedNotification($data)
-        //                 );
-        //             }
-        //         }                
-        //     }
-        //     if(isset($res['detached'])) {
-        //         foreach($res['detached'] as $user) {
-        //             // dd($user);
-        //             $us = User::find($user);
-        //             if($us) {
-        //                 $events = $us->feature_events()
-        //                     ->where('group_id', $this->group->id);
-        //                 if($events) {
-        //                     $days = [];
-        //                     foreach($events->get()->toArray() as $event) {
-        //                         $days[] = $event['day'];
-        //                     }
-        //                     $events->delete();
-        //                     foreach($days as $day) {
-        //                         $stat = new GenerateStat();
-        //                         $stat->generate($this->group->id, $day);
-        //                     }
-        //                 }
-        //             }
-        //         }                
-        //     }
-        // } else {
-        //     //nincs egy user sem, törlöm aki eddig volt
-        //     $this->group->groupUsers()->sync([]);
-        // }
 
         if(count($this->literatures)) {
             if(isset($this->literatures['new'])) {
@@ -491,15 +482,15 @@ class UpdateGroupForm extends AppComponent
                     $reGenerateStat[$date['date']] = $date['date'];
                 }
             }
-            if(count($reGenerateStat)) {
-                CalculateDatesEvents::generate($this->group->id, $reGenerateStat);
-                if(count($deleteAfterCalculate)) {
-                    foreach($deleteAfterCalculate as $day) {
-                        GroupDate::where('group_id', '=', $day)
-                                ->where('date', '=', $day)
-                                ->where('date_status', '=', 0)
-                                ->delete();
-                    }
+        }
+        if(count($reGenerateStat)) {
+            CalculateDatesEvents::generate($this->group->id, $reGenerateStat);
+            if(count($deleteAfterCalculate)) {
+                foreach($deleteAfterCalculate as $day) {
+                    GroupDate::where('group_id', '=', $this->group->id)
+                            ->where('date', '=', $day)
+                            ->where('date_status', '=', 0)
+                            ->delete();
                 }
             }
         }
@@ -698,14 +689,14 @@ class UpdateGroupForm extends AppComponent
 
     public function render()
     {
-
         $group_times = $this->hoursRange( 0, 86400, 1800 );
+        // dd($group_times);
         if(count($this->dates))
             ksort($this->dates);
 
         return view('livewire.groups.update-group-form', [
             'min_time_options' => [30,60,120],
-            'max_time_options' => [60, 120, 180, 240, 320],
+            'max_time_options' => [60, 120, 180, 240, 320, 360, 420, 480],
             'group_days' => range(0,6,1),
             'group_times' => $group_times,
             'group_roles' => [

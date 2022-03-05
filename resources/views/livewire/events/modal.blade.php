@@ -29,7 +29,7 @@
                                     <nav>
                                         <ul class="pagination justify-content-center">
                                             <li class="page-item">
-                                                <a class="page-link" href="#" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
+                                                <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
                                             <li class="page-item disabled">
                                                 <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true">
                                                     <b>{{$day_data['dateFormat']}}</b>
@@ -37,7 +37,7 @@
                                             </li>
                                             @if ($day_data['next_date'] !== false)
                                                 <li class="page-item">
-                                                    <a class="page-link" href="#" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
+                                                    <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
                                                 </li>
                                             @endif
                                         </ul>
@@ -51,7 +51,7 @@
                     </div>
                     <div class="modal-body p-0">
                         <div class="tab-content">
-                            <div class="tab-pane fade @if ($active_tab == '') show active @endif relative" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
+                            <div class="tab-pane fade @if ($active_tab == '') show active @endif relative events-list" id="custom-tabs-home" role="tabpanel" aria-labelledby="custom-tabs-home-tab">
 
                                 @if (count($group_data['posters']) > 0)
                                     <div class="callout callout-success mx-2 mt-2">
@@ -83,7 +83,7 @@
                                         @endforeach                                
                                     </div>
                                 @endif
-
+                                {{-- {{ var_dump($day_events) }} --}}
                                 <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['peak']}}, 1fr);" aria-labelledby="schedule-heading">
                                     @if (!empty($day_data['table']))
                                         @foreach ($day_data['table'] as $time => $r)
@@ -112,22 +112,35 @@
                                                             @if ($event['editable'] != 'disabled') 
                                                                 <a href="" wire:click.prevent="editEvent_modal({{$event['id']}})">
                                                             @endif
-                                                            @if (is_array($group_data['signs']))
-                                                                @foreach ($group_data['signs'] as $icon => $sign) 
-                                                                    @if(isset($group_data['users_signs'][$event['user_id']][$icon]))
-                                                                        @if ($group_data['users_signs'][$event['user_id']][$icon])
-                                                                            <i class="fa {{ $icon }} mr-1" title="{{ $sign['name'] }}"></i>
-                                                                        @endif
-                                                                    @endif                                                                
-                                                                @endforeach
-                                                            @else 
-                                                                <i class="fa fa-user mr-1"></i>
-                                                            @endif 
-                                                            {{ $event['user']['name'] }}
+                                                                @if (is_array($group_data['signs']))
+                                                                    @foreach ($group_data['signs'] as $icon => $sign) 
+                                                                        @if(isset($group_data['users_signs'][$event['user_id']][$icon]))
+                                                                            @if ($group_data['users_signs'][$event['user_id']][$icon])
+                                                                                <i class="fa {{ $icon }} mr-1" title="@if(isset($sign['name'])) {{ $sign['name'] }} @endif"></i>
+                                                                            @endif
+                                                                        @endif                                                                
+                                                                    @endforeach
+                                                                @else 
+                                                                    <i class="fa fa-user mr-1"></i>
+                                                                @endif 
+                                                                {{ $event['user']['name'] }}
                                                             @if ($event['editable'] != 'disabled') 
                                                                 <i class="fa fa-edit ml-1"></i>
                                                             </a>
-                                                            @endif                                                        
+                                                            @endif
+                                                            <button wire:ignore class="btn btn-sm btn-info px-1 py-0" onclick="showChild(this, 'hidden_child');">
+                                                                <i class="fas fa-phone"></i>
+                                                                <span class="ml-1 hidden_child">
+                                                                    {{ $group_data['users_phones'][$event['user']['id']] }}
+                                                                </span>
+                                                            </button>
+                                                            @if (isset($event['comment']))
+                                                                <button wire:ignore class="btn btn-sm btn-info px-1 py-0" onclick="showFullChild(this, 'cr');">
+                                                                    <div class="cr crop_child overflow-hidden">
+                                                                        <i class="far fa-comment-dots mr-1"></i>{{ $event['comment'] }}
+                                                                    </div>
+                                                                </button>
+                                                            @endif  
                                                         </h3>
                                                         <span class="session-time">{{$event['start_time']}} - {{$event['end_time']}}</span>
                                                         <span class="session-presenter"></span>

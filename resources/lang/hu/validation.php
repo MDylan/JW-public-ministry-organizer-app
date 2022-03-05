@@ -157,6 +157,7 @@ return [
         'info' => 'információ',
         'show_date' => 'kezdés dátuma',
         'hide_date' => 'befejezés dátuma',
+        'comment' => 'megjegyzés',
     ],
     'values' => [
         'date_status' => [

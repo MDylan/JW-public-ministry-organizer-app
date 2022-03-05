@@ -7,7 +7,9 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'App\\Actions\\Fortify\\CreateNewUser' => $baseDir . '/app/Actions/Fortify/CreateNewUser.php',
+    'App\\Actions\\Fortify\\DisableTwoFactorAuthentication' => $baseDir . '/app/Actions/Fortify/DisableTwoFactorAuthentication.php',
     'App\\Actions\\Fortify\\PasswordValidationRules' => $baseDir . '/app/Actions/Fortify/PasswordValidationRules.php',
+    'App\\Actions\\Fortify\\RedirectIfTwoFactorConfirmed' => $baseDir . '/app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php',
     'App\\Actions\\Fortify\\ResetUserPassword' => $baseDir . '/app/Actions/Fortify/ResetUserPassword.php',
     'App\\Actions\\Fortify\\UpdateUserPassword' => $baseDir . '/app/Actions/Fortify/UpdateUserPassword.php',
     'App\\Actions\\Fortify\\UpdateUserProfileInformation' => $baseDir . '/app/Actions/Fortify/UpdateUserProfileInformation.php',
@@ -97,6 +99,7 @@ return array(
     'App\\Models\\StaticPageTranslation' => $baseDir . '/app/Models/StaticPageTranslation.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Notifications\\EventCreatedNotification' => $baseDir . '/app/Notifications/EventCreatedNotification.php',
+    'App\\Notifications\\EventDeletedAdminsNotification' => $baseDir . '/app/Notifications/EventDeletedAdminsNotification.php',
     'App\\Notifications\\EventDeletedNotification' => $baseDir . '/app/Notifications/EventDeletedNotification.php',
     'App\\Notifications\\EventStatusChangedNotification' => $baseDir . '/app/Notifications/EventStatusChangedNotification.php',
     'App\\Notifications\\EventUpdatedNotification' => $baseDir . '/app/Notifications/EventUpdatedNotification.php',

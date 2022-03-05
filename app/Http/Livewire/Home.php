@@ -150,6 +150,7 @@ class Home extends Component
             },
             'justEvents' => function($q) use($start, $end) {
                 $q->where('user_id', '=', Auth::id());
+                $q->whereIn('status', [0,1]);
                 $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
             },
             'days',

@@ -52,7 +52,7 @@ class FinishRegistration extends Notification implements ShouldQueue
                 'appName' => Lang::get('app.title')
             ]))
             ->line(Lang::get('email.finishRegistration.line_2', [
-                'day' => 7
+                'day' => 2
             ]))
             ->line(Lang::get('email.finishRegistration.line_3', [
                 'userMail' => $this->data['userMail']

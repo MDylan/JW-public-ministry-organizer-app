@@ -4,7 +4,7 @@ return [
     'dear' => 'Kedves',
     'registerWelcome' => 'Elkészült a regisztrációd a :url oldalon. Kérjük, hogy aktiváld a regisztrációdat azzal, hogy az alábbi hivatkozásra kattintasz.',
     'registerFail' => 'Amennyiben nem te kérted ezt a regisztrációt, regisztrációdat automatikusan törölni fogjuk 48 óra múlva.',
-    'signature' => 'Üdvözlettel a Közterület Szervező oldal készítői',
+    'signature' => 'Üdvözlettel a Segélyszolgálat Szervező oldal készítői',
     'newadmin' => [
         'subject' => 'Új adminisztrátor lett kinevezve',
         'line_1' => 'Ez egy automatikus értesítés arról, hogy :newAdmin ki lett nevezve az oldalad adminisztrátornak.',
@@ -40,6 +40,13 @@ return [
         'deleted' => [
             'subject' => 'A :date napra tervezett szolgálatod törölve lett! (:groupName)',
             'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálatod törölve lett:',
+            'line_2' => ':oldServiceDate',
+            'line_3' => 'A törlés oka: :reason',
+            'line_4' => 'A törlést :userName kezdeményezte, ő tud bővebb felvilágosítással szolgálni.',
+        ],
+        'deleted_to_admin' => [
+            'subject' => 'A :date napra tervezett szolgálat törölve lett! (:groupName)',
+            'line_1' => 'Szeretnénk értesíteni, hogy a(z) :groupName csoportban az alábbi szolgálat törölve lett:',
             'line_2' => ':oldServiceDate',
             'line_3' => 'A törlés oka: :reason',
             'line_4' => 'A törlést :userName kezdeményezte, ő tud bővebb felvilágosítással szolgálni.',

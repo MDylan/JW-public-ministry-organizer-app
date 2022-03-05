@@ -27,7 +27,9 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        
+        // based on: 
+        // https://laracasts.com/discuss/channels/laravel/use-middleware-on-fortify-login-and-register-routes
+        Fortify::ignoreRoutes();
     }
 
     /**
@@ -37,7 +39,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Fortify::ignoreRoutes();
 
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
@@ -86,5 +87,22 @@ class FortifyServiceProvider extends ServiceProvider
             \App\Actions\Fortify\DisableTwoFactorAuthentication::class
         );
         
+        $this->configureRoutes();
+    }
+
+        /**
+     * Configure the routes offered by the application.
+     *
+     * @return void
+     */
+    protected function configureRoutes()
+    {
+        Route::group([
+            'namespace' => 'Laravel\Fortify\Http\Controllers',
+            'domain' => config('fortify.domain', null),
+            'prefix' => config('fortify.prefix'),
+        ], function () {
+            $this->loadRoutesFrom(base_path('routes/fortify.php'));
+        });  
     }
 }
