@@ -99,7 +99,7 @@
                                             @if (isset($day_events[$time]))
                                                 {{-- @dd($day_events) --}}
                                                 @foreach ($day_events[$time] as $event)
-                                                    <div class="session session-2 track-{{($event['cell'])}}@if($event['status'] == 0)-plan @endif 
+                                                    <div id="e_{{ $event['id'] }}" class="session session-2 track-{{($event['cell'])}}@if($event['status'] == 0)-plan @endif 
                                                     @if ($event['user_id'] == auth()->id())
                                                         userEvent
                                                     @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
