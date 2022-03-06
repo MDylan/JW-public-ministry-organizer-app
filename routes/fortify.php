@@ -36,7 +36,8 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         ->middleware(array_filter([
             'guest:'.config('fortify.guard'),
             $limiter ? 'throttle:'.$limiter : null,
-            'honey', 'checkRecaptcha'
+            //'honey', 
+            'checkRecaptcha'
         ]));
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])

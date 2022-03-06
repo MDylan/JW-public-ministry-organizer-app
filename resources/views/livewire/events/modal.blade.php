@@ -128,14 +128,14 @@
                                                                 <i class="fa fa-edit ml-1"></i>
                                                             </a>
                                                             @endif
-                                                            <button wire:ignore class="btn btn-sm btn-info px-1 py-0" onclick="showChild(this, 'hidden_child');">
+                                                            <button wire:ignore id="phone_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">
                                                                     {{ $group_data['users_phones'][$event['user']['id']] }}
                                                                 </span>
                                                             </button>
                                                             @if (isset($event['comment']))
-                                                                <button wire:ignore class="btn btn-sm btn-info px-1 py-0" onclick="showFullChild(this, 'cr');">
+                                                                <button wire:ignore id="comment_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showFullChild(this, 'cr');">
                                                                     <div class="cr crop_child overflow-hidden">
                                                                         <i class="far fa-comment-dots mr-1"></i>{{ $event['comment'] }}
                                                                     </div>
