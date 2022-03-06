@@ -234,6 +234,7 @@ return [
         'child' => [
             'help' => 'Tájékoztatás: A hírnököket a(z) :groupName csoportból másoljuk át. Ott tudsz új hírnököt hozzáadni vagy törölni.',
             'info' => 'Ennek a csoportnak a tagjait az alábbi főcsoportból másolja át automatikusan a rendszer. Ha megszűnteted a kapcsolatot, a csoportok tagjai nem fognak törlődni sehol, viszont ezentúl nem kerül átmásolásra ebbe a csoportba senki, akit felvesznek abba a csoportba.',
+            'copy_data' => 'Beállíthatod, hogy a hírnököknek mely adatát másolja még át a főcsoportból. A mentés után automatikusan megtörténik az átmásolás és innentől itt nem fogod tudni módosítani ezeket a mezőket.',
             'parent_group_name' => 'Főcsoport neve',
             'detach' => [
                 'button' => 'Szétkapcsolás',

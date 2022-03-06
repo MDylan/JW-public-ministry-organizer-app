@@ -111,7 +111,7 @@
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
                                             @if ($sign['checked'])
-                                                @if($editor
+                                                @if($editor && !$copy_fields['signs']
                                                 //  || $user->id == Auth::id()
                                                  )
                                                     <button wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
@@ -460,36 +460,52 @@
                 </x-slot>
             </x-modal>
             {{-- End of ChildGroupsModal --}}
-
-            <x-modal modalId="ParentGroupModal">
-                <x-slot name="title">
-                    @lang('group.link.child.detach.button')
-                </x-slot>
-            
-                <x-slot name="content">
-                    <div class="alert alert-info">@lang('group.link.child.info')</div>
-                    <div class="row text-bold">
-                        <div class="col-8">@lang('group.link.child.parent_group_name')</div>
-                        <div class="col-4 text-center">@lang('group.link.child.detach.button')</div>
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-8">{{ $parent_group_name }}</div>
-                        <div class="col-4 text-center">
-                            <a wire:click.prevent="confirmParentDetach({{ $current_parent_group_id }})" href="" class="btn btn-danger btn-sm">
-                                <i class="fa fa-unlink mr-1"></i>
-                                @lang('group.link.child.detach.button')
-                            </a>
+            <form autocomplete="off" wire:submit.prevent="setCopyInfo">
+                <x-modal modalId="ParentGroupModal">
+                    <x-slot name="title">
+                        @lang('group.link.child.detach.button')
+                    </x-slot>
+                
+                    <x-slot name="content">
+                        <div class="alert alert-info">@lang('group.link.child.info')</div>
+                        <div class="row text-bold">
+                            <div class="col-8">@lang('group.link.child.parent_group_name')</div>
+                            <div class="col-4 text-center">@lang('group.link.child.detach.button')</div>
                         </div>
-                    </div>
 
-                </x-slot>
-            
-                <x-slot name="buttons">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
-                </x-slot>
-            </x-modal>
+                        <div class="row mb-2">
+                            <div class="col-8">{{ $parent_group_name }}</div>
+                            <div class="col-4 text-center">
+                                <a wire:click.prevent="confirmParentDetach({{ $current_parent_group_id }})" href="" class="btn btn-danger btn-sm">
+                                    <i class="fa fa-unlink mr-1"></i>
+                                    @lang('group.link.child.detach.button')
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light">@lang('group.link.child.copy_data')
+                            @foreach ($copy_datas as $field => $translate)
+                                <div class="ml-2 form-check">
+                                    <input wire:model.defer="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
+                                    <label class="form-check-label" for="calendar_{{ $field }}" role="button">
+                                        {{ $translate }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </x-slot>
+                
+                    <x-slot name="buttons">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save mr-1"></i>
+                            @lang('app.saveChanges')
+                        </button>
+                    </x-slot>
+                </x-modal>
+            </form>
             {{-- End of ParentGroupModal --}}
 
         @endif

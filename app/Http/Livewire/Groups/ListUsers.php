@@ -54,7 +54,11 @@ class ListUsers extends AppComponent
         'deleteUser',
         'detachChildGroup',
         'detachParentGroup',
+        'setCopyInfo'
     ];
+
+    private $copy_datas = [];
+    public $copy_fields = [];
 
     public function mount($group) {
         $this->groupId = $group;
@@ -525,6 +529,25 @@ class ListUsers extends AppComponent
             $signs[$icon] = true;
         }
         $userData->update(['signs' => $signs]);
+
+        //copy to childs if accept it
+        $childs = Group::where('parent_group_id', '=', $this->groupId)
+                        ->get(['id', 'copy_from_parent']);
+        if(count($childs)) {
+            $copy_to = [];
+            foreach($childs as $child) {
+                if(isset($child->copy_from_parent['signs'])) {
+                    if($child->copy_from_parent['signs'])
+                        $copy_to[] = $child->id;
+                }
+            }
+            if(count($copy_to)) {
+                GroupUser::whereIn('group_id', $copy_to)
+                    ->where('user_id', $user_id)
+                    ->update(['signs' => $signs]);
+            }
+        }
+
         $this->dispatchBrowserEvent('success', [
             'message' => __('group.signs.success')
         ]);
@@ -533,6 +556,16 @@ class ListUsers extends AppComponent
     private function getGroupInfo() {
         $this->group = Group::findOrFail($this->groupId);
         $this->getRole();
+        $this->setCopyDataList();
+        $copy_from_parent = $this->group->copy_from_parent;
+        foreach($this->copy_datas as $field => $tr) {
+            if(isset($copy_from_parent[$field])) {
+                $this->copy_fields[$field] = $copy_from_parent[$field];
+            } else {
+                $this->copy_fields[$field] = false;
+            }
+        }
+        // $this->copy_fields = $this->group->copy_from_parent;
     }
 
     private function isNotEditor() {
@@ -562,6 +595,59 @@ class ListUsers extends AppComponent
             if($role == $this->role) break;
         }
         return $available;
+    }
+
+    private function setCopyDataList() {
+        $this->copy_datas = [
+            'signs' => __('group.signs.title')
+        ];
+    }
+
+    public function setCopyInfo() {
+        $group = Group::findOrFail($this->groupId);
+        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+            abort(403);
+        }
+        $this->setCopyDataList();
+
+        $copy_from_parent = [];
+        foreach($this->copy_datas as $field => $tr) {
+            if(isset($this->copy_fields[$field])) {
+                $copy_from_parent[$field] = $this->copy_fields[$field];
+            }
+        }
+        $group->copy_from_parent = $copy_from_parent;
+        
+
+        $parent = Group::where('id', '=', $group->parent_group_id)
+                    ->first();
+        if($copy_from_parent['signs'] == true) {
+            $group->signs = $parent->signs;
+
+            $parent_users = $parent->groupUsersAll;
+            $p_users = [];
+            foreach($parent_users as $user) {
+                $p_users[$user->id] = $user->pivot->signs;
+            }
+
+            $group_users = GroupUser::where('group_id', '=', $this->groupId)
+                        ->get();
+            foreach($group_users as $user) {
+                if(!isset( $p_users[$user->user_id])) {
+                    continue;
+                }
+                $user->signs = $p_users[$user->user_id];
+                $user->save();
+            }
+        }
+
+        $group->save();
+
+        $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'ParentGroupModal',
+            'message' => __('app.saved'),
+            'savedMessage' => __('app.saved')
+        ]);
     }
 
     public function render()
@@ -596,7 +682,8 @@ class ListUsers extends AppComponent
             'group_roles' => self::$group_roles, //available because highher roles are available for users, check on save
             'group_signs' => $this->group->signs,
             'user_admin_groups' => $this->user_admin_groups(),
-            'user_role' => $this->role
+            'user_role' => $this->role,
+            'copy_datas' => $this->copy_datas
         ]);
     }
 }

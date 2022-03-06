@@ -41,6 +41,7 @@ class Group extends Model
     protected $casts = [
         'signs' => 'array',
         'languages' => 'array',
+        'copy_from_parent' => 'array',
     ];
 
     protected $appends = ['colors'];
