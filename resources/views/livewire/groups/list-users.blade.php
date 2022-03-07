@@ -228,7 +228,24 @@
                                 @lang('Full name'): 
                             </div>
                             <div class="col-8">
-                                {{ $selected_user['name'] }}
+                                <input wire:model.defer="state.user.name" wire:ignore
+                                    type="text" class="form-control" name="name" id="" aria-describedby="name_help">
+                                <small id="name_help" class="form-text text-muted">
+                                   @lang('app.user_will_be_notified')
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 text-bold text-right">
+                                @lang('user.phone'): 
+                            </div>
+                            <div class="col-8">
+                                <input wire:model.defer="state.user.phone_number" wire:ignore
+                                    type="number" class="form-control" name="phone_number" id="" aria-describedby="phone_help">
+                                <small id="phone_help" class="form-text text-muted">
+                                   @lang('app.user_will_be_notified')
+                                   @lang('user.phone_helper') <strong>362012345689</strong>
+                                </small>
                             </div>
                         </div>
                         <div class="row mb-2">
@@ -239,7 +256,7 @@
                             <div class="col-4 text-bold text-right">@lang('app.role'):</div>
                             <div class="col-8">
                                 <div class="input-group">
-                                    <select wire:model="state.group_role" wire:ignore.self name="group_role" class="form-control">
+                                    <select wire:model.defer="state.group_role" wire:ignore.self name="group_role" class="form-control">
                                         @foreach ($group_roles as $role => $translate) 
                                             <option value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
                                         @endforeach
@@ -265,7 +282,7 @@
                             <div class="col-4 text-bold text-right">@lang('group.note'):</div>
                             <div class="col-8">
                                 <div class="input-group">
-                                    <input wire:model="state.note" wire:ignore
+                                    <input wire:model.defer="state.note" wire:ignore
                                     type="text" class="form-control" name="note" id="">
                                     <div class="input-group-append">
                                         <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseNote" role="button" aria-expanded="false" aria-controls="collapseNote">
@@ -283,7 +300,7 @@
                         <div class="row mb-2">
                             <div class="col-4"></div>
                             <div class="col-8">
-                                <input wire:model="state.hidden" name="hidden" wire:ignore.self type="checkbox" id="user" value="1">
+                                <input wire:model.defer="state.hidden" name="hidden" wire:ignore.self type="checkbox" id="user" value="1">
                                     <label for="user">
                                         @lang('group.hidden') 
                                         <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseHidden" role="button" aria-expanded="false" aria-controls="collapseHidden">

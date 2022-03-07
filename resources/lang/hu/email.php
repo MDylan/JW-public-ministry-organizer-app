@@ -122,4 +122,11 @@ return [
         'line_2' => 'A lenti hivatkozásra kattintva kérjük erősítsd meg ezt a szándékodat. A gombra kattintással a törlés automatikusan megtörténik.',
         'line_3' => 'A biztonságod miatt ez a hivatkozás 1 órán át érvényes. Ha nem te kérted az adataid törlését, akkor ne kattints a linkre, és haladéktalanul változtass jelszót az oldalon, mert valaki más tette meg ezt a helyedben.',
     ],
+    'profileChanged' => [
+        'subject' => 'A személyes adataidon módosítottunk',
+        'line_1' => 'Szeretnénk értesíteni, hogy :userName módosította a nevedet vagy a telefonszámodat az oldalunkon.',
+        'line_2' => 'Régi adataid:',
+        'line_3' => 'Új adataid:',
+        'line_4' => 'Ha úgy látod, hogy az új adataid nem megfelelőek, akkor belépés után a Profilom menüben tudod javítani őket.',
+    ],
 ];

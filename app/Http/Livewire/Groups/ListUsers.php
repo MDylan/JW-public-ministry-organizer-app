@@ -2,15 +2,11 @@
 
 namespace App\Http\Livewire\Groups;
 
-// use App\Classes\GenerateStat;
 use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
-// use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Group;
 use App\Models\GroupUser;
-// use App\Models\GroupDate;
 use Illuminate\Support\Facades\Auth;
-// use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -19,6 +15,7 @@ use App\Notifications\FinishRegistration;
 use App\Notifications\GroupParentGroupAttachedNotification;
 use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupUserAddedNotification;
+use App\Notifications\UserProfileChangedNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
@@ -172,13 +169,20 @@ class ListUsers extends AppComponent
         // dd($user);
         $this->selected_user = [
             'id' => $user->id,
-            'name' => $user->name,
+            'user' => [
+                'name' => $user->name,
+                'phone_number' => $user->phone_number,
+            ],
             'email' => $user->email,
         ];
         $this->state = [
             'group_role' => $user->pivot->group_role,
             'note' => $user->pivot->note,
-            'hidden' => $user->pivot->hidden
+            'hidden' => $user->pivot->hidden,
+            'user' => [
+                'name' => $user->name,
+                'phone_number' => $user->phone_number,
+            ],
         ];
 
         $this->dispatchBrowserEvent('show-modal', ['id' => 'UserModal']);
@@ -235,6 +239,35 @@ class ListUsers extends AppComponent
         $user_sync[$this->selected_user['id']] = $validatedData;
 
         $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
+
+        if($selected_user->name !== $this->state['user']['name'] 
+            || $selected_user->phone_number !== $this->state['user']['phone_number']) 
+        {
+            $userValidatedData = Validator::make($this->state['user'], [
+                'name' => 'required|string|max:50|min:2',
+                'phone_number' => 'nullable|numeric|digits_between:9,11', 
+            ])->validate();
+    
+            
+            $user = User::find($this->selected_user['id']);
+            $user->update($userValidatedData);
+
+            $data = [
+                'old' => [
+                    'name' => $selected_user->name,
+                    'phone_number' => $selected_user->phone_number
+                ],
+                'new' => [
+                    'name' => $userValidatedData['name'],
+                    'phone_number' => $userValidatedData['phone_number']
+                ],
+                'userName' => auth()->user()->name
+            ];
+
+            $user->notify(
+                new UserProfileChangedNotification($data)
+            );
+        }
 
         $this->dispatchBrowserEvent('hide-modal', [
             'id' => 'UserModal',
