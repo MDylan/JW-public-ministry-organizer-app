@@ -357,45 +357,60 @@ class EventEdit extends AppComponent
                     return;
             }  
         }
-
-        //check the start/end date 
-        Validator::make($this->state, [
-            'start' => 'required|numeric|lte:end', 
-            'end' => 'required|numeric|gte:start',
-        ])->validate();
-        // dd($this->day_data['table']);
-        $step = $this->date_data['min_time'] * 60;
         $publishers_ok = true;
-        for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
-            $slot_key = "'".date("Hi", $i)."'";
-            if($this->day_data['table'][$slot_key]['publishers'] >= (
-                $this->group_data['need_approval'] 
-                    ? ($this->day_data['table'][$slot_key]['accepted'] >= $this->date_data['max_publishers'] 
-                        ? $this->date_data['max_publishers'] 
-                        : ($this->date_data['max_publishers'] + config('events.max_columns')))
-                    : $this->date_data['max_publishers'])) {
-                $publishers_ok = false;                
-            }
-        }
-        //check valid time, maybe user modified it in browser
         $invalid = [];
-        if(!isset($this->day_data['selects']['start'][$this->state['start']]))
-            $invalid['start'] = true;
-        if(!isset($this->day_data['selects']['end'][$this->state['end']]))
-            $invalid['end'] = true;
+        if($this->state['status'] != 2 || $this->editEvent === null) {
+            //we check fields only when needed
+            //check the start/end date 
+            Validator::make($this->state, [
+                'start' => 'required|numeric|lte:end', 
+                'end' => 'required|numeric|gte:start',
+            ])->validate();
+            // dd($this->day_data['table']);
+            $step = $this->date_data['min_time'] * 60;            
+            for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
+                $slot_key = "'".date("Hi", $i)."'";
+                if($this->day_data['table'][$slot_key]['publishers'] >= (
+                    $this->group_data['need_approval'] 
+                        ? ($this->day_data['table'][$slot_key]['accepted'] >= $this->date_data['max_publishers'] 
+                            ? $this->date_data['max_publishers'] 
+                            : ($this->date_data['max_publishers'] + config('events.max_columns')))
+                        : $this->date_data['max_publishers'])) {
+                    $publishers_ok = false;                
+                }
+            }
+            //check valid time, maybe user modified it in browser            
+            if(!isset($this->day_data['selects']['start'][$this->state['start']]))
+                $invalid['start'] = true;
+            if(!isset($this->day_data['selects']['end'][$this->state['end']]))
+                $invalid['end'] = true;
 
+            // $group = Group::findOrFail($this->groupId);
+            // dd($this->day_data);
+            $data = [
+                'day' => $this->day_data['date'],
+                'start' => $this->state['start'],
+                'end' => $this->state['end'],
+                'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
+                'accepted_at' => null,
+                'accepted_by' => null, //$group->need_approval ? null : Auth::id()
+                'status' => 0,
+                'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
+            ];
+        } else {
+            //this set, if we edit an existing event and deny it. 
+             $data = [
+                'day' => $this->day_data['date'],
+                'start' => $this->editEvent['start'],
+                'end' => $this->editEvent['end'],
+                'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
+                'accepted_at' => null,
+                'accepted_by' => null,
+                'status' => 2,
+                'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
+            ];
+        }
         $group = Group::findOrFail($this->groupId);
-        // dd($this->day_data);
-        $data = [
-            'day' => $this->day_data['date'],
-            'start' => $this->state['start'],
-            'end' => $this->state['end'],
-            'user_id' => $this->editEvent !== null ? $this->editEvent['user_id'] : $this->state['user_id'],
-            'accepted_at' => null,
-            'accepted_by' => null, //$group->need_approval ? null : Auth::id()
-            'status' => 0,
-            'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
-        ];
         if($this->editEvent === null) {
             //it's a new event, set approval status
             if($group->need_approval == 0) {
