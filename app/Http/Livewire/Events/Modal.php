@@ -415,7 +415,7 @@ class Modal extends AppComponent
                 unset($day_selects['start'][$k]);
                 unset($day_selects['end'][$k + $step]);
             } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
-                $day_table[$key]['status'] = 'ready';
+                $day_table[$key]['status'] = $now > $day_table[$key]['ts'] ? 'full' : 'ready';
             } 
         }
         
