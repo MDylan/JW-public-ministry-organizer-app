@@ -37,6 +37,7 @@ class EventEdit extends AppComponent
     private $error = false;
     public $date_data = [];
     public $other_events = [];
+    public $user_statistics = [];
 
     public function mount($groupId, $date) {
         $check = auth()->user()->userGroups()->whereId($groupId);
@@ -48,6 +49,7 @@ class EventEdit extends AppComponent
             $this->state = [];
             $this->users = [];
             $this->error = false;
+            $this->user_statistics = [];
             $this->getRole();
             $this->createForm();
         }
@@ -73,6 +75,7 @@ class EventEdit extends AppComponent
 
     public function editForm($eventId) {
         $this->eventId = $eventId;
+        // $this->user_statistics = [];
         // $groupId = $this->groupId;
         // $date = $this->date;
         $this->getRole();
@@ -256,7 +259,36 @@ class EventEdit extends AppComponent
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
-        // dd($this->day_data);
+
+        $this->user_statistics = [];
+        if(in_array($this->role, ['admin', 'roler'])) {
+            $date = strtotime($this->date);
+            $date_back = date("Y-m-d", $date - (15 * 24 * 60 * 60));
+            $date_future = date("Y-m-d", $date + (15 * 24 * 60 * 60));
+
+            $stats = DB::table('events')
+                            ->join('groups', 'events.group_id', '=', 'groups.id')
+                            ->select('events.start', 'events.end', 'groups.name', 'events.status')
+                            ->whereNull('events.deleted_at')
+                            ->where('events.user_id', '=', $this->state['user_id'])
+                            ->where(function($query) {
+                                $query->where('groups.id', '=', $this->groupId);
+                                $query->orWhere('groups.parent_group_id', '=', $this->groupId);
+                                if($this->group_data['parent_group_id']) {
+                                    $query->orWhere('groups.id', '=', $this->group_data['parent_group_id']);
+                                }
+                            })
+                            ->whereBetween('events.day', [
+                                $date_back,
+                                $date_future
+                            ])
+                            ->orderByDesc('events.day')
+                            ->orderByDesc('events.start')
+                            ->orderByDesc('events.group_id')
+                            ->get()
+                            ->toArray();
+            $this->user_statistics = json_decode(json_encode($stats), true);
+        }
     }
 
     public function change_user() {
@@ -341,6 +373,7 @@ class EventEdit extends AppComponent
         $this->editEvent = null;
         $this->state = null;
         $this->state['user_id'] = Auth::id();
+        $this->user_statistics = [];
     }
 
     public function saveEvent() {
@@ -348,7 +381,7 @@ class EventEdit extends AppComponent
         // dd($this->state);
         $this->getRole();
         $this->getInfo(true);
-        $this->getUserOtherEvents();
+        // $this->getUserOtherEvents();
 
         if($this->editEvent !== null) {
             if(!in_array($this->role, ['admin', 'roler', 'helper']) 
@@ -540,6 +573,7 @@ class EventEdit extends AppComponent
     }
 
     public function confirmEventDelete() {
+        // $this->getUserOtherEvents();
         $this->dispatchBrowserEvent('show-eventDelete-confirmation');
     }
 
@@ -567,7 +601,7 @@ class EventEdit extends AppComponent
             $start = date("Y-m-d H:i", $this->state['start']);
             $end = date("Y-m-d H:i", $this->state['end']);
             // dd('na', $start, $end, $this->state['user_id']);
-            $this->other_events = DB::table('events')
+            $others = DB::table('events')
                 ->join('groups', 'events.group_id', '=', 'groups.id')
                 ->select('events.start', 'events.end', 'groups.name')
                 ->whereNull('events.deleted_at')
@@ -578,6 +612,8 @@ class EventEdit extends AppComponent
                 ->where('events.end', '>', $start)
                 ->get()
                 ->toArray();
+
+            $this->other_events = json_decode(json_encode($others), true);
                 // ->toSql();
                 
                 // ->toArray();

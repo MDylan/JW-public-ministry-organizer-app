@@ -94,6 +94,7 @@ class Modal extends AppComponent
         // dd('refresh');
         if($this->error !== false) return;
         $this->active_tab = '';
+        $this->polling = true;
 
         // $this->getInfo();
 
@@ -465,13 +466,14 @@ class Modal extends AppComponent
     public function setStart($time) {
         // dd('most');
         $this->active_tab = 'event';
+        $this->polling = false;
         $this->emitTo('events.event-edit', 'setStart', $time);
         // $this->state['start'] = $time;
         // $this->change_end();
     }
 
     public function editEvent_modal($id) {
-
+        $this->polling = false;
         $this->active_tab = 'event';
         $this->emitTo('events.event-edit', 'editForm', $id);
 
@@ -480,6 +482,7 @@ class Modal extends AppComponent
 
     public function cancelEdit() {
         $this->active_tab = '';
+        $this->polling = true;
         // $this->event_edit = null;
         $this->emitTo('events.event-edit', 'createForm');
     }

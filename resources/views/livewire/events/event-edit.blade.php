@@ -77,9 +77,9 @@
                     <div class="alert alert-light">
                         <i class="fas fa-info mr-1"></i> @lang('event.paralel_events')<br/>
                         @foreach ($other_events as $other)
-                            <b>{{ $other->name }}</b>
-                                {{ \Carbon\Carbon::parse($other->start)->format(__('app.format.time')) }} - 
-                                {{ \Carbon\Carbon::parse($other->end)->format(__('app.format.time')) }}<br/>
+                            <b>{{ $other['name'] }}</b>
+                                {{ \Carbon\Carbon::parse($other['start'])->format(__('app.format.time')) }} - 
+                                {{ \Carbon\Carbon::parse($other['end'])->format(__('app.format.time')) }}<br/>
                         @endforeach
                     </div>
                 </div>
@@ -87,7 +87,7 @@
         @endif
         @if ( $group_data['need_approval'] === 1)
             
-            @if (in_array($role, ['admin', 'roler', 'helper']))
+            @if (in_array($role, ['admin', 'roler']))
                 <div class="form-group row">
                     <label for="approval_check" class="col-md-3 col-form-label">
                         @lang('event.status')
@@ -102,8 +102,38 @@
                            
                         </select>
                         @error('status')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+
+                        @if(count($user_statistics))
+                            <div class="alert alert-light mt-2">
+                                <b><i class="fas fa-hourglass-half mr-1"></i> @lang('loghistory.history_button'):</b><br/>
+                                @foreach ($user_statistics as $stat)
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 text-left text-md-right">
+                                            <b>{{ $stat['name'] }}</b>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            @if ($stat['status'] == 0)
+                                                <span class="badge badge-warning mr-1" style="width: 24px;">
+                                                    <i class="fas fa-balance-scale-right" title="@lang('event.status_0')"></i>
+                                                </span>
+                                            @elseif($stat['status'] == 1)
+                                                <span class="badge badge-success mr-1" style="width: 24px;">
+                                                    <i class="far fa-check-circle" title="@lang('event.status_1')"></i>
+                                                </span>
+                                            @else
+                                                <span class="badge badge-danger mr-1" style="width: 24px;">
+                                                    <i class="fas fa-times" title="@lang('event.status_2')"></i>
+                                                </span>
+                                            @endif
+                                            {{ \Carbon\Carbon::parse($stat['start'])->format(__('app.format.datetime')) }} 
+                                            - {{ \Carbon\Carbon::parse($stat['end'])->format(__('app.format.time')) }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
-                </div>
+                </div>                
             @endif
             @if ($state['status'] == 0)            
                 <div class="form-group row">
