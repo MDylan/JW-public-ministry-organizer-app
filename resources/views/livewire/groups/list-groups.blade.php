@@ -35,7 +35,16 @@
                                         {{ $group->id }}. 
                                         @endcan                                            
                                         <strong>{{ $group->name }}</strong><br/>
-                                        <span class="ml-2 badge badge-{{ $group->group_role }}">
+                                        @if($group->parent_group_id)
+                                        <span class="ml-2 badge badge-secondary">
+                                            @lang('group.sub-group')
+                                        </span>
+                                        @else
+                                        <span class="ml-2 badge badge-dark">
+                                            @lang('group.main-group')
+                                        </span>
+                                        @endif                                        
+                                        <span class="ml-1 badge badge-{{ $group->group_role }}">
                                             {{ __('group.roles.'.$group->pivot->group_role) }}
                                         </span>
                                     </div>

@@ -2,15 +2,16 @@
 
 namespace App\Http\Livewire\Groups;
 
-use App\Classes\GenerateStat;
+// use App\Classes\GenerateStat;
 use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Session;
+// use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ListGroups extends AppComponent
 {

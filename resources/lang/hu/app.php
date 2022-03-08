@@ -81,4 +81,5 @@ return [
     'urgent' => 'FONTOS!',
     'update_info' => 'Frissítés előtt kérlek győződj meg róla, hogy készült biztonsági másolat a fájlokról és az adatbázisról. A frissítés a gombra kattintva azonnal elindul, és az oldal karbantartás üzemmódba kapcsol. A frissítés után ismét elérhető lesz.',
     'user_will_be_notified' => 'A felhasználó értesítve lesz róla, ha megváltoztatod.',
+    'total' => 'Összesen',
 ];

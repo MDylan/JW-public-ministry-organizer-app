@@ -245,6 +245,9 @@ return [
             ]            
         ],
     ],
+    'main-group' => 'Főcsoport',
+    'sub-group' => 'Alcsoport',
+    'sub-group-alert' => 'Ezt itt nem módosíthatod, mert beállítottad, hogy ezt a paramétert a főcsoportból (:groupName) vegye át. Ott tudsz rajta módosítani.',
     'news' => 'Csoport hírek',
     'news_add' => 'Hír létrehozása',
     'waiting_approval' => 'Még nem fogadta el a meghívást.',
@@ -302,6 +305,7 @@ return [
         'title' => 'Speciális jelek',
         'info' => 'Az alábbi jeleket választhatják a hírnökök ennél a csoportnál (Nem kötelező használni). Ez segíthet, hogy átlásd, kinek van pl kulcsa a teremhez, vagy autója. A megnevezést testreszabhatod, látni fogják a hírnökök.',
         'name' => 'Megnevezés',
+        'change' => 'Módosíthatja a hírnök?',
         'success' => 'Sikeresen módosult!',
         'error' => 'Nem vagy jogosult módosítani.'
     ],

@@ -550,6 +550,16 @@ class ListUsers extends AppComponent
             ]);
             return false;
         }
+        if(Auth::id() == $user_id && $this->isNotHelper()) {
+            $group_signs = $this->group->signs;
+            $change_self = (($group_signs[$icon]['change_self'] ?? null) == true);
+            if(!$change_self) {
+                $this->dispatchBrowserEvent('error', [
+                    'message' => __('group.signs.error')
+                ]);
+                return false;
+            }
+        }
         $userData = GroupUser::where('group_id', $this->groupId)
                     ->where('user_id', $user_id);
 

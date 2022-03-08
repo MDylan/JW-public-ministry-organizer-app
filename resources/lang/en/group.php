@@ -226,10 +226,10 @@ Except these actions, everything else can be performed by the group servant as w
   ),
   'roles_css' => 
   array (
-    'admin' => 'Primary',
-    'helper' => 'Info',
-    'member' => 'Secondary',
-    'roler' => 'Success',
+    'admin' => 'primary',
+    'helper' => 'info',
+    'member' => 'secondary',
+    'roler' => 'success',
   ),
   'search_placeholder' => 'Write all email addresses in separate rows.',
   'service' => 'Service',

@@ -3,31 +3,22 @@
 namespace App\Http\Livewire\Groups;
 
 use App\Classes\CalculateDatesEvents;
-use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
-use App\Models\Event;
-use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupDate;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
 use App\Models\GroupLiterature;
-use App\Notifications\FinishRegistration;
-use App\Notifications\GroupUserAddedNotification;
-// use App\Notifications\LoginData;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\URL;
 
 class UpdateGroupForm extends AppComponent
 {
 
     public $users = [];
-    public $users_old = []; //eredeti userek
+    public $users_old = []; //original users
     public $search = "";
     public $group;
     public $days = [];
@@ -44,6 +35,7 @@ class UpdateGroupForm extends AppComponent
     public $editedLiteratureId = null;
     public $editedLiteratureRemove = [];
     public $default_colors = [];
+    public $parent_group = [];
 
     public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
 
@@ -131,6 +123,10 @@ class UpdateGroupForm extends AppComponent
         $this->users_old = $this->users;        
         
         $this->group = $group;
+
+        if($group->parent_group_id) {
+            $this->parent_group = Group::findOrFail($group->parent_group_id)->toArray();
+        }
     }
 
     /**
@@ -240,22 +236,6 @@ class UpdateGroupForm extends AppComponent
             'languages' => 'sometimes',
         ]);
 
-        
-
-        // $v->after(function ($validator) use ($admins, $current_admins) {
-        //     if ($admins == 0) {
-        //         $validator->errors()->add(
-        //             'users', __('group.error_no_admin_user')
-        //         );
-        //     }
-        //     $current_user = $this->group->groupUsers()->where('user_id', Auth::id())->first(); //->toArray();
-
-        //     if($current_admins != $this->admins && $current_user->pivot->group_role != 'admin') {
-        //         $validator->errors()->add(
-        //             'users', __('group.error_no_right')
-        //         );
-        //     }
-        // });
         $validatedData = $v->validate();
 
         // dd($validatedData);
@@ -264,13 +244,9 @@ class UpdateGroupForm extends AppComponent
             '*.day_number' => 'required',
             '*.start_time' => 'required|date_format:H:i|before:*.end_time',
             '*.end_time' => 'required|date_format:H:i|after:*.start_time',
-            // '*.day_number' => 'required',
         ])->validate();
 
         // dd($validatedDays);
-
-        // $user = Auth()->user(); // User::find(Auth::id());
-        // $group = Group::findOrFail($this->group_id);
 
         $change_check = [
             'max_publishers',
@@ -285,13 +261,20 @@ class UpdateGroupForm extends AppComponent
                 $must_refresh = true;
             }
         }
-        // $updateFeatureEvents = false;
-        // if($validatedData['need_approval'] == 0 && $this->group->need_approval == 1) {
-        //     //this time user's events need to be approved, now not, so we need to accept all feature events
-        //     $updateFeatureEvents = true;
-        // }
 
         $this->group->update($validatedData);
+
+        $childs = Group::where('parent_group_id', '=', $this->group->id)->get();
+        foreach($childs as $child) {
+            $modify = false;
+            if(($child->copy_from_parent['signs'] ?? null) == true) {
+                $child->signs = $validatedData['signs'];
+                $modify = true;
+            }
+            if($modify) {
+                $child->save();
+            }
+        }
 
         $reGenerateStat = [];
 
@@ -322,35 +305,12 @@ class UpdateGroupForm extends AppComponent
                 $reGenerateStat[$rdate->date] = $rdate->date;
             }
         }        
-        // dd($updateFeatureEvents, $reGenerateStat);
-
-        // if($updateFeatureEvents) {
-        //     $notAcceptedEvents = DB::table('events')->select(
-        //                 "day",
-        //                 DB::raw("(count(id)) as total_events")
-        //             )
-        //             ->where('group_id', '=', $this->group->id)
-        //             ->where('status', '=', '0')
-        //             ->where('day', '>=', date("Y-m-d"))
-        //             ->orderBy('day', 'asc')
-        //             ->groupBy('day')
-        //             ->get();
-        //     dd($notAcceptedEvents->toArray());
-        // }
-
-        
-
-        // dd('itt');
-        // $this->group->days()->delete();
         // dd($validatedDays);
         if(isset($validatedDays)) {
-            // $day_sync = [];
             foreach($validatedDays as $d => $day) {
-                // dd($day);
                 if(!isset($day['day_number'])) {
                     continue;
-                }
-                
+                }                
                 if($day['day_number'] === false) {
                     $del = GroupDay::where('group_id', $this->group->id)
                     ->where('day_number', $d)
@@ -369,14 +329,7 @@ class UpdateGroupForm extends AppComponent
                         ]
                     );
                 }
-                // $day_sync[] = new GroupDay([
-                //     'day_number' => $day['day_number'],
-                //     'start_time' => $day['start_time'],
-                //     'end_time' => $day['end_time']
-                // ]);                
             }      
-            // dd($day_sync);      
-            // $this->group->days()->saveMany($day_sync);
         }
 
         if(count($this->literatures)) {
@@ -494,20 +447,9 @@ class UpdateGroupForm extends AppComponent
                 }
             }
         }
-
-
-
-        // foreach($reGenerateStat as $day) {
-        //     $stat = new GenerateStat();
-        //     $stat->generate($this->group->id, $day);
-        // }
-
         $this->group->refresh();
-
         Session::flash('message', __('group.groupUpdated')); 
         redirect()->route('groups');
-
-        // $this->dispatchBrowserEvent('success', ['message' => __('group.groupUpdated')]);
         
     }
 
@@ -588,7 +530,6 @@ class UpdateGroupForm extends AppComponent
     }
 
     public function dateAdd() {
-        // dd($this->dateAdd);
         $validatedDate = Validator::make($this->dateAdd, [
             'date' => 'required|date_format:Y-m-d|after_or_equal:today',
             'date_status' => 'required|numeric|in:0,2',
@@ -600,21 +541,15 @@ class UpdateGroupForm extends AppComponent
             'date_min_time' => 'required_if:date_status,2|numeric|in:30,60,120|lte:date_max_time',
             'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320|gte:date_min_time',
         ])->validate();
-
-        // $validatedDate['date_start'] = $validatedDate['date']." ".$validatedDate['date_start'];
-        // $validatedDate['date_end'] = $validatedDate['date']." ".$validatedDate['date_end'];
         $validatedDate['type'] = 'new';
         $this->dates[$validatedDate['date'].""] = $validatedDate;
 
         $this->dateEditCancel();
     }
 
-    public function dateEdit($date /*$type, $id*/) {
-        $this->dateAdd = $this->dates[$date]; //[$type][$id];
-        $this->editedDate = $date; /*[
-            'type' => $type,
-            'id'   => $id,
-        ];*/
+    public function dateEdit($date) {
+        $this->dateAdd = $this->dates[$date]; 
+        $this->editedDate = $date; 
     }
 
     public function dateEditCancel() {
@@ -656,18 +591,10 @@ class UpdateGroupForm extends AppComponent
             'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320|gte:date_min_time',
         ])->validate();
 
-        // $validatedDate['date_start'] = $validatedDate['date']." ".$validatedDate['date_start'];
-        // $validatedDate['date_end'] = $validatedDate['date']." ".$validatedDate['date_end'];
-
         //we must update it later, move to changed array
         $type = $this->dates[$this->editedDate]['type'] == "current" ? "changed" : $this->dates[$this->editedDate]['type'];
         $validatedDate['type']  = $type;
         $this->dates[$this->editedDate] = $validatedDate;
-
-        // if($this->editedDate['type'] == "current" ) {
-        //     unset($this->dates["current"][$this->editedDate['id']]);
-        // }
-
         $this->dateEditCancel();
     }
 
@@ -676,21 +603,19 @@ class UpdateGroupForm extends AppComponent
             unset($this->dates[$date]);
             $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
         } else {
-            $this->editedDateRemove = $date; // ['type' => $type, 'id' => $id];
-            $this->dispatchBrowserEvent('show-special_dates-confirmation', ['date' => $date] /* $this->dates[$type][$id]]['date']*/);
+            $this->editedDateRemove = $date; 
+            $this->dispatchBrowserEvent('show-special_dates-confirmation', ['date' => $date]);
         }
     }
 
     public function dateDeleteConfirmed() {
-        $this->dates[$this->editedDateRemove]['type'] = 'removed';// $this->dates[$this->editedDateRemove['type']][$this->editedDateRemove['id']];
-        // unset($this->dates[$this->editedDateRemove['type']][$this->editedDateRemove['id']]);
+        $this->dates[$this->editedDateRemove]['type'] = 'removed';
         $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
     }
 
     public function render()
     {
         $group_times = $this->hoursRange( 0, 86400, 1800 );
-        // dd($group_times);
         if(count($this->dates))
             ksort($this->dates);
 

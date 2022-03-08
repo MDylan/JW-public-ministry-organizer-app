@@ -211,7 +211,12 @@
                             </div>
                             <div class="card-body">
                                 <div class="row"><div class="col">@lang('group.signs.info')</div></div>
-                                @foreach ($defaultSigns as $sign)
+                                @if (($group->copy_from_parent['signs'] ?? null) == true)
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info mr-1"></i> @lang('group.sub-group-alert', ['groupName' => $parent_group['name']])
+                                    </div>
+                                @else
+                                    @foreach ($defaultSigns as $sign)
                                     <div class="input-group mb-1">
                                         <div class="input-group-prepend">
                                             <div class="input-group-text">
@@ -222,8 +227,16 @@
                                             </button>
                                         </div>
                                         <input type="text" wire:model.defer="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">@lang('group.signs.change')</span>
+                                            <select wire:model.defer="state.signs.{{$sign}}.change_self" class="form-control">
+                                                <option value="0">@lang('No')</option>
+                                                <option value="1">@lang('Yes')</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                @endforeach
+                                    @endforeach
+                                @endif                                
                             </div>
                         </div>
                         {{-- End of group signs card --}}                        

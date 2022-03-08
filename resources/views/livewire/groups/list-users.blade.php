@@ -101,7 +101,7 @@
                                 @continue                                        
                             @endif
 
-                            <div class="row py-2 mx-0 mb-1">
+                            <div class="row py-2 mx-0 mb-1 @if(auth()->user()->id == $user->id) userEvent @endif">
                                     <div class="d-md-none col-4 text-right text-bold">
                                         @lang('user.name'):
                                     </div>
@@ -112,7 +112,7 @@
                                         @foreach ($group_signs as $icon => $sign)
                                             @if ($sign['checked'])
                                                 @if($editor && !$copy_fields['signs']
-                                                //  || $user->id == Auth::id()
+                                                  || ($user->id == Auth::id() && ($sign['change_self'] ?? null) == true)
                                                  )
                                                     <button wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
                                                         class="btn btn-sm 
@@ -200,16 +200,21 @@
                             </div>
                         </div>
                         @endforelse
+                        <div class="row mx-2">
+                            <div class="col-md-12 align-items-center">
+                                <b>@lang('app.total'): {{ $users->total() }}</b>
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex flex-sm-row flex-column justify-content-between align-items-center">
+                    <div class="d-flex flex-md-row flex-column justify-content-between align-items-center">
                         <div class="mb-md-0 mb-2 ml-2">
                         <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                             @lang('app.back')
                         </a>
                         </div>
-                        <div class="mr-2">
-                            {{$users->onEachSide(2)->links()}}
+                        <div class="mr-2 pt-3">
+                            {{$users->onEachSide(1)->links()}}
                         </div>
                     </div>
             </div>
