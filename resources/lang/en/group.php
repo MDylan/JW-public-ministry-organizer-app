@@ -27,13 +27,13 @@ return array (
   'create_info' => 'You will be able to edit the group data after the group has been created. You will be added automatically to the group and you will be granted with group overseer authorization. You will be able to add new members in the "Publishers" menu.',
   'days' => 
   array (
+    0 => 'Sunday',
     1 => 'Monday',
     2 => 'Tuesday',
     3 => 'Wednesday',
     4 => 'Thursday',
     5 => 'Friday',
     6 => 'Saturday',
-    0 => 'Sunday'
   ),
   'days_head' => 'Service days',
   'days_info' => 'If you modify the time intervals of the day, the modification will be valid from today. If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days listed below will not be affected.',
@@ -43,6 +43,12 @@ return array (
   'error_no_admin_user' => 'You have not assigned anybody to be the group overseer!',
   'error_no_right' => 'You have no authorization to assign a new group overseer.',
   'error_no_right_to_remove_admin' => 'You are not permitted to cancel his group overseer authorization.',
+  'filter' => 
+  array (
+    'myself' => 'Myself',
+    'off_all' => 'Clear all filters',
+    'title' => 'Filter',
+  ),
   'groupCreated' => 'Group has been created!',
   'groupDeleted' => 'The group has been deleted!',
   'groupDeleted_log' => 'The group has been deleted.',
@@ -226,10 +232,10 @@ Except these actions, everything else can be performed by the group servant as w
   ),
   'roles_css' => 
   array (
-    'admin' => 'primary',
-    'helper' => 'info',
-    'member' => 'secondary',
-    'roler' => 'success',
+    'admin' => 'Primary',
+    'helper' => 'Info',
+    'member' => 'Secondary',
+    'roler' => 'Success',
   ),
   'search_placeholder' => 'Write all email addresses in separate rows.',
   'service' => 'Service',

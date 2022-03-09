@@ -48,6 +48,7 @@ return array (
   'loginWithUser' => 'I already have an account, I want to log in.',
   'lostPassword' => 'I have forgotten my password',
   'name' => 'Name',
+  'online' => 'Online at the moment',
   'password' => 'Password',
   'passwordConfirmation' => 'Confirm password',
   'password_info' => 'Min. 8 characters. It is mandatory to include lowercase and uppercase letters and at least one number.',
