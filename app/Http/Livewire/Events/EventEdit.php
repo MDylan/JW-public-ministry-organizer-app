@@ -212,7 +212,7 @@ class EventEdit extends AppComponent
                 continue;
             }
 
-            $steps = ($event['end'] - $event['start']) / $step;     
+            $steps = ceil(($event['end'] - $event['start']) / $step);     
             
             if(!isset($day_table["'".date('Hi', $event['start'])."'"])) continue;
 
@@ -238,7 +238,7 @@ class EventEdit extends AppComponent
                 $cell_start += $step;
             }
         }
-        // dd($slots, $day_selects);
+        // dd($day_table, $slots, $day_selects, $disabled_slots);
         //filter out what not available
         foreach($slots as $key => $times) {
             if(count($times) >= ($this->group_data['need_approval'] 
@@ -250,12 +250,16 @@ class EventEdit extends AppComponent
                 $day_table[$key]['status'] = 'full';
                 $k = $day_table[$key]['ts'];
                 unset($day_selects['start'][$k]);
+                if(!isset($day_selects['end'][$k + $step]) && ($k + $step) > $max) {
+                    //if somehow last time slot not the same exactly to the end
+                    unset($day_selects['end'][$max]);
+                }
                 unset($day_selects['end'][$k + $step]);
             } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
         }        
-        // dd($temp, $slots, $day_selects, $disabled_slots);
+        // dd($slots, $day_selects, $disabled_slots);
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
         $this->original_day_data = $this->day_data;
