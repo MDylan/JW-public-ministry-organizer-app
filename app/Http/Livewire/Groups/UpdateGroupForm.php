@@ -49,7 +49,10 @@ class UpdateGroupForm extends AppComponent
         'fa-flag',
         'fa-hat-cowboy',
         'fa-underline',
-        'fa-font'
+        'fa-font',
+        'fa-moon',
+        'fa-female',
+        'fa-male'
     ];
 
     public $groupSigns = [];

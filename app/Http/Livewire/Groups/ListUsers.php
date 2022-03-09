@@ -25,8 +25,11 @@ class ListUsers extends AppComponent
     public $state;
     public $selected_user;
     public $searchTerm = null;
+    public $filter = [];
     //for search with an url string
-    protected $queryString = ['searchTerm' => ['except' => '']];
+    protected $queryString = [
+        'searchTerm' => ['except' => '']
+    ];
     private $group = null;
     private $role = null;
 
@@ -328,6 +331,40 @@ class ListUsers extends AppComponent
 
     public function updatedSearchTerm() {
         $this->resetPage();
+    }
+
+    public function filterMyself() {
+        $this->filter['myself'] = !($this->filter['myself'] ?? false);
+        if(($this->filter['myself'] ?? null) == true) {
+            $this->filter['signs'] = [];
+        }
+        $this->filter['online'] = false;
+        $this->resetPage();
+    }
+
+    public function filterIcon($icon) {
+        $this->getGroupInfo();
+        if(($this->filter['myself'] ?? null) == true) {
+            $this->filter['myself'] = false;
+        }
+        $group_signs = $this->group->signs;
+        if(($group_signs[$icon]['checked'] ?? null) == true) {
+            $this->filter['signs'][$icon] = !($this->filter['signs'][$icon] ?? false);
+        }
+        // dd($this->filter);
+        $this->resetPage();
+    }
+
+    public function filterOff() {
+        $this->filter = [];
+        $this->resetPage();
+    }
+
+    public function filterOnline() {
+        $this->filter['online'] = !($this->filter['online'] ?? false);
+        if(($this->filter['myself'] ?? null) == true) {
+            $this->filter['myself'] = false;
+        }
     }
 
     public function clearSearch() {
@@ -703,15 +740,31 @@ class ListUsers extends AppComponent
 
         $users = $this->group->groupUsers()
                     ->where(function($query) {
-                        $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
-                        $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
+                        if(strlen($this->searchTerm) > 0) {
+                            $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
+                            $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
+                        }
+                        if(($this->filter['online'] ?? null) == true) {
+                            $query->whereBetween('users.last_activity', [now()->subMinute(5), now()]);
+                        }
                     })
                     ->where(function($query) use ($editor) {
                         if(!$editor) {
                             $query->whereNotNull('group_user.accepted_at');
                         }
+                        if(($this->filter['myself'] ?? null) == true) {
+                            $query->where('group_user.user_id', '=', auth()->user()->id);
+                        }
+                        if(count($this->filter['signs'] ?? []) > 0) {
+                            foreach($this->filter['signs'] as $icon => $value) {
+                                if(!$value) continue;
+                                $field = 'signs->'.$icon;
+                                $query->whereJsonContains($field, $value);
+                            }
+                        }
                     })
-                    ->paginate(10);        
+                    ->paginate(10);
+        // dd($this->filter);
         // dd($users->toArray());
         return view('livewire.groups.list-users', [
             'editor' => $editor,
@@ -722,7 +775,7 @@ class ListUsers extends AppComponent
             'current_parent_group_id' => $this->group->parent_group_id,
             'parent_group_name' => $parent_group_name,
             'child_groups' => $this->group->childGroups()->get(['id', 'name'])->toArray(),
-            'group_roles' => self::$group_roles, //available because highher roles are available for users, check on save
+            'group_roles' => self::$group_roles, //available because higher roles are available for users, check on save
             'group_signs' => $this->group->signs,
             'user_admin_groups' => $this->user_admin_groups(),
             'user_role' => $this->role,

@@ -82,6 +82,54 @@
                 <div class="alert alert-info text-center">@lang('group.link.child.help', ['groupName' => $parent_group_name])</div>
             @endif
             <div class="card card-primary card-outline">
+                <div class="row p-2">
+                    <div class="col-12">
+                        <div class="form-inline">
+                            <div class="input-group mb-2 mr-sm-2">
+                                <label>@lang('group.filter.title')</label>: 
+                            </div>
+                            <div class="form-check mb-2 mr-sm-2">
+                                <button wire:click="filterMyself"
+                                                class="btn btn-sm p-1 mr-1 
+                                                @if (($filter['myself'] ?? null) == true)
+                                                    btn-success
+                                                @else btn-outline-secondary
+                                                @endif">
+                                                <i class="fas fa-portrait mr-1"></i> @lang('group.filter.myself')
+                                            </button>
+                                @if($group_signs) 
+                                    @foreach ($group_signs as $icon => $sign)
+                                        @if ($sign['checked'])
+                                            <button wire:click="filterIcon('{{ $icon }}')"
+                                                class="btn btn-sm p-1 mr-1 
+                                                @if (($filter['signs'][$icon] ?? null) == true)
+                                                    btn-success
+                                                @else btn-outline-secondary
+                                                @endif" 
+                                                @if(isset($sign['name'])) title="{{ $sign['name'] }}@endif ">
+                                                <i class="fa {{$icon}} p-1"></i>
+                                                <div class="d-md-none">@if(isset($sign['name'])){{ $sign['name'] }}@endif</div>
+                                            </button>
+                                        @endif
+                                    @endforeach
+                                @endif
+                                <button wire:click="filterOnline" class="btn btn-sm p-1 mr-1 @if (($filter['online'] ?? null) == true)
+                                        btn-success
+                                    @else btn-outline-secondary
+                                    @endif">
+                                    <i class="fas fa-street-view mr-1"></i>
+                                    @lang('user.online')
+                                </button>
+                                <button wire:click="filterOff" class="btn btn-sm p-1 mr-1 btn-info">
+                                    <i class="fas fa-times mr"></i> 
+                                    @lang('group.filter.off_all')
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-primary card-outline">
                     <div class="grid-striped" wire:loading.class="text-muted">
                         <div class="d-none d-md-block">
                             <div class="row py-2 mx-0">
@@ -89,8 +137,7 @@
                                 <div class="@if($editor) col-2 @else col-4 @endif text-left text-bold">@lang('user.email')</div>
                                 <div class="col-2 text-center text-bold">@lang('user.phone')</div>
                                 <div class="col-2 text-center text-bold">@lang('user.last_login')</div>
-                                <div class="col-2 text-center text-bold">@lang('app.role')</div>
-                                
+                                <div class="col-2 text-center text-bold">@lang('app.role')</div>                                
                             </div>
                         </div>
                         @forelse ($users as $user)
@@ -106,13 +153,16 @@
                                         @lang('user.name'):
                                     </div>
                                 <div class="col-8 col-md-2 my-auto align-middle text-left text-bold">
+                                    @can('is-admin')
+                                        #{{ $user->id }} 
+                                    @endcan
                                     {{ $user->name }} 
                                     <div class="w-100"></div>
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
                                             @if ($sign['checked'])
                                                 @if($editor && !$copy_fields['signs']
-                                                  || ($user->id == Auth::id() && ($sign['change_self'] ?? null) == true)
+                                                  || ($user->id == Auth::id() && ($sign['change_self'] ?? null) == true && !$copy_fields['signs'])
                                                  )
                                                     <button wire:click.prevent="toogleSign({{$user->id}}, '{{ $icon }}')" 
                                                         class="btn btn-sm 

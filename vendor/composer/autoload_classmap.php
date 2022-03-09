@@ -111,6 +111,7 @@ return array(
     'App\\Notifications\\GroupUserLogoutNotification' => $baseDir . '/app/Notifications/GroupUserLogoutNotification.php',
     'App\\Notifications\\LoginData' => $baseDir . '/app/Notifications/LoginData.php',
     'App\\Notifications\\NewAdminNotification' => $baseDir . '/app/Notifications/NewAdminNotification.php',
+    'App\\Notifications\\UserProfileChangedNotification' => $baseDir . '/app/Notifications/UserProfileChangedNotification.php',
     'App\\Notifications\\UserRegisteredNotification' => $baseDir . '/app/Notifications/UserRegisteredNotification.php',
     'App\\Notifications\\deletePersonalDataNotification' => $baseDir . '/app/Notifications/deletePersonalDataNotification.php',
     'App\\Observers\\EventObserver' => $baseDir . '/app/Observers/EventObserver.php',

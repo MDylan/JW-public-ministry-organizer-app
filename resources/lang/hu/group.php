@@ -327,5 +327,9 @@ return [
             'error' => 'Sikertelen törlés!'
         ],
     ],
-    
+    'filter' => [
+        'title' => 'Szűrés',
+        'myself' => 'Magamra',
+        'off_all' => 'Minden szűrő ki',
+    ]
 ];

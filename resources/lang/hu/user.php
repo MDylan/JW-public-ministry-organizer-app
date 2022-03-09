@@ -77,6 +77,7 @@ return [
         'recovery_codes' => 'Visszaállítási kódok',
         'error' => 'Hibás azonosítási kód!',
         'please_confirm' => 'Kérjük add meg a hitelesítő alkalmazásban lévő kódot, ezzel visszaigazolod, hogy megfelelően beállítottad a kétlépcsős azonosítást. Amíg ezt nem teszed meg, a kétlépcsős azonosítás nem fog működni.',
-    ]
+    ],
+    'online' => 'Épp online',
 
 ];
