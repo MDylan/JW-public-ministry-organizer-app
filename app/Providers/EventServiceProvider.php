@@ -60,7 +60,7 @@ class EventServiceProvider extends ServiceProvider
         Event::observe(EventObserver::class);
         Group::observe(GroupObserver::class);
         GroupUser::observe(GroupUserObserver::class);
-        GroupDay::observe(GroupDayObserver::class);
+        // GroupDay::observe(GroupDayObserver::class);
         GroupLiterature::observe(GroupLiteratureObserver::class);
         GroupNews::observe(GroupNewsObserver::class);
         GroupNewsTranslation::observe(GroupNewsTranslationObserver::class);

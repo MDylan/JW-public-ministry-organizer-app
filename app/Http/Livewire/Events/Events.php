@@ -7,6 +7,9 @@ use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
+use App\Models\GroupDayDisabledSlots;
+use Carbon\Carbon;
+use DateTime;
 // use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -153,13 +156,32 @@ class Events extends AppComponent
 
     public function getStat($specialDates) {
         $groupId = session('groupId');
+
+        $disabled_slots = [];
+        $d_slots = GroupDayDisabledSlots::where('group_id', '=', $groupId)
+            ->orderBy('day_number', 'asc')
+            ->orderBy('slot', 'asc')
+            ->get()->toArray();
+        foreach($d_slots as $slot) {
+            $disabled_slots[$slot['day_number']][$slot['slot']] = $slot['slot'];
+        }
+
         $stats = DayStat::where('group_id', $groupId)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
                             ->orderBy('time_slot')
                             ->get()
                             ->toArray();
-        $colors = [];
+        $colors = $dayOfWeeks = [];
+        // dd($stats);
         foreach($stats as $stat) {
+            if(!isset($dayOfWeeks[$stat['day']])) {
+                $d = new DateTime( $stat['day'] );
+                $dayOfWeek = $d->format("w");
+                $dayOfWeeks[$stat['day']] = $dayOfWeek;
+            } else {
+                $dayOfWeek = $dayOfWeeks[$stat['day']];
+            }
+
             $min_publishers = $specialDates[$stat['day']]['date_min_publishers'];
             $max_publishers = $specialDates[$stat['day']]['date_max_publishers'];
             $color = $this->cal_group_data['colors']['color_empty']; //green
@@ -171,6 +193,10 @@ class Events extends AppComponent
             } 
             if($stat['events'] == $max_publishers) {
                 $color = $this->cal_group_data['colors']['color_maximum']; //red
+            }
+            $slot_key = Carbon::parse($stat['time_slot'])->format("H:i");
+            if(($disabled_slots[$dayOfWeek][$slot_key] ?? false)) {
+                $color = $this->cal_group_data['colors']['color_default'];
             }
             $colors[$stat['day']][] = $color;
         }
@@ -352,11 +378,15 @@ class Events extends AppComponent
                 }
             } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
                 //create day data if it's not exists
+                $end_date = $date;
+                if(strtotime($this->cal_service_days[$weekDays[$dayOfWeek]]['end_time']) == strtotime("00:00")) {
+                    $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+                }
                 GroupDate::create([
                     'group_id' => $groupId,
                     'date' => $date,
                     'date_start' => $date." ".$this->cal_service_days[$weekDays[$dayOfWeek]]['start_time'].":00",
-                    'date_end' => $date." ".$this->cal_service_days[$weekDays[$dayOfWeek]]['end_time'].":00",
+                    'date_end' => $end_date." ".$this->cal_service_days[$weekDays[$dayOfWeek]]['end_time'].":00",
                     'date_status' => 1,
                     'date_min_publishers' => $this->cal_group_data['min_publishers'],
                     'date_max_publishers' => $this->cal_group_data['max_publishers'],
@@ -413,6 +443,7 @@ class Events extends AppComponent
                 'service_day' => false,
             ];
         }  
+
         // dd($specialDates);
         $this->getStat($specialDates);
         $this->userEvents = [];

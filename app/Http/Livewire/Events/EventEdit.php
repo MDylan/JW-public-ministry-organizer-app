@@ -2,11 +2,13 @@
 
 namespace App\Http\Livewire\Events;
 
+use App\Classes\GenerateSlots;
 use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
+use App\Models\GroupDayDisabledSlots;
 use App\Models\GroupUser;
 use Carbon\Carbon;
 use DateTime;
@@ -139,11 +141,13 @@ class EventEdit extends AppComponent
         
         $this->group_data = $group->toArray();
 
-        
-
         if($this->group_data['current_date'] === null) {
             $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-            $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+            $end_date = $date;
+            if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
+                $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            }
+            $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
             GroupDate::create([
                 'group_id' => $groupId,
                 'date' => $date,
@@ -176,7 +180,11 @@ class EventEdit extends AppComponent
         $day_table = [];
         $day_selects = [];
         $row = 1;
-        for($current=$start;$current < $max;$current+=$step) {
+        // dd($date->format("Y-m-d"), date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $step);
+        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max, $step);
+        // dd($slots_array);
+        foreach($slots_array as $current) {
+        // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
                 'ts' => $current,
@@ -200,8 +208,21 @@ class EventEdit extends AppComponent
         //other events
         $events = $group->day_events($date)->get()->toArray();
                 
-        $slots = [];
-        $disabled_slots = [];
+        $slots = $disabled_slots = [];
+        //get disabled time slot for this day
+        if($group['current_date']['date_status'] == 1) {
+            $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->groupId)
+                ->where('day_number', '=', $dayOfWeek)
+                ->orderBy('slot', 'asc')
+                ->get()
+                ->toArray();
+            foreach($disableds as $sl) {
+                $ts = strtotime($date->format("Y-m-d")." ".$sl['slot']);
+                $slot_key = "'".date("Hi", $ts)."'";
+                $disabled_slots[$slot_key] = true;
+                $slots[$slot_key][] = true;
+            }
+        }
         
         foreach($events as $event) {
             if($this->eventId == $event['id']) {

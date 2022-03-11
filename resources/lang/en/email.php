@@ -77,7 +77,7 @@ return array (
     ),
     'modify_reasons' => 
     array (
-      'modified_service_time' => 'The time of the service on this day has been modified, and your planned service did not fit into the new service time.',
+      'modified_service_time' => 'The time of the service on this day has been modified.',
       'unknown' => 'Unknown',
     ),
     'status_changed' => 

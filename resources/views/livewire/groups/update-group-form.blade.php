@@ -152,7 +152,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="min_time">{{__('group.min_time')}}</label>
-                                                    <select name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror" wire:model.defer="state.min_time">
+                                                    <select wire:model="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
                                                         @foreach ($min_time_options as $field => $translate) 
                                                             <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                         @endforeach
@@ -317,6 +317,7 @@
                             </div>
                             <div class="card-body">
                                     {{-- {{ dd($days) }} --}}
+                                    {{-- {{ var_dump($disabled_slots) }} --}}
                                     @foreach ($group_days as $day => $translate) 
                                         <div class="row alert alert-light p-1 mb-2">
                                             <div class="col-lg-3">
@@ -332,12 +333,13 @@
                                                     <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
                                                     <select 
                                                     @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.start_time" 
+                                                     data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.start_time" 
                                                         name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
                                                         class="timeselect start_time form-control 
                                                         @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
-                                                        @foreach ($group_times as $field => $translate) 
-                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+
+                                                        @foreach ($day_selects[$day]['start'] as $time)
+                                                            <option value="{{$time}}">{{ $time }}</option>
                                                         @endforeach
                                                     </select>
                                                 </div>
@@ -347,12 +349,13 @@
                                                     <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
                                                     <select 
                                                     @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model.defer="days.{{$day}}.end_time" 
+                                                     data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.end_time" 
                                                         name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
                                                         class="timeselect end_time form-control 
                                                         @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
-                                                        @foreach ($group_times as $field => $translate) 
-                                                            <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+
+                                                        @foreach ($day_selects[$day]['end'] as $time)
+                                                            <option value="{{$time}}">{{ $time }}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -366,7 +369,29 @@
                                                     </small>
                                                 </div>
                                             @endif
-                                        </div>                                                                            
+                                            <div class="col-lg-12">
+                                                <label for="disabled_slots_{{$day}}">
+                                                    <i class="fas fa-ban mr-1"></i>
+                                                    @lang('group.disabled_time_slots'):</label>
+                                                @if  (count($disabled_slots[$day] ?? []) > 0)
+                                                    <span class="ml-2 badge badge-warning">@lang('app.total'): {{ count(array_filter($disabled_slots[$day] ?? [])) }}</span>
+                                                @endif
+                                                <br/>
+                                                @lang('group.disabled_time_slots_info')
+                                                {{-- @if(isset($disabled_slots[$day])) {{ var_dump($disabled_slots[$day]) }} @endif --}}
+                                                <div class="w-100 border  @if  (count(array_filter($disabled_slots[$day] ?? [])) > 0) border-warning @else border-secondary @endif rounded" style="height:100px;overflow-y:auto;">
+                                                    @foreach ($disabled_selects[$day] as $key => $time)
+                                                    <div class="ml-2 form-check">
+                                                        <input wire:model="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}"
+                                                        >
+                                                        <label class="form-check-label" for="disabled_{{ $day }}_{{ $time }}" role="button">
+                                                            {{ $time }}
+                                                        </label>
+                                                    </div>
+                                                     @endforeach
+                                                </div>
+                                            </div>
+                                        </div>                                                                          
                                     @endforeach
                                     <div class="row">
                                         <div class="col-12">@lang('group.days_info')</div>
@@ -428,7 +453,7 @@
                                         <div class="col">
                                             <div class="form-group">
                                                 <label for="dateAdd_min_time">{{__('group.min_time')}}</label>
-                                                <select @if($dateAdd['date_status'] != 2) disabled @endif class="form-control @error('date_min_time') is-invalid @enderror" wire:model.defer="dateAdd.date_min_time" id="dateAdd_min_time">
+                                                <select wire:model.defer="dateAdd.date_min_time" @if($dateAdd['date_status'] != 2) disabled @endif class="form-control @error('date_min_time') is-invalid @enderror" id="dateAdd_min_time">
                                                     @foreach ($min_time_options as $field => $translate) 
                                                         <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                     @endforeach

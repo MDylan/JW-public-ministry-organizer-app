@@ -4,6 +4,10 @@ namespace App\Http\Livewire;
 
 // use App\Models\Event;
 // use App\Models\Group;
+
+use App\Models\GroupDayDisabledSlots;
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -15,6 +19,7 @@ class Home extends Component
     private $day_stat = [];
     private $events = [];
     private $available_days = [];
+    private $disabled_slots = [];
     // private $dates = [];
     public $listeners = [
         'refresh' => 'render',
@@ -35,6 +40,8 @@ class Home extends Component
 
     public function getStat($group_stats) {
         // dd($group_stats);
+        $daysOfWeeks = [];
+
         foreach($group_stats as $group) {
             $this->groups[] = $group['id'];
             $this->group_roles[$group['id']] = $group['pivot']['group_role'];
@@ -80,13 +87,21 @@ class Home extends Component
                     $dates[$date['date']] = $date;
                 }
             }
-            // dd($group['dates']);
+            // dd($group['stats']);
             //loading stats from db
             $colors = [];
             foreach($group["stats"] as $stat) {
                 $day = strtotime($stat['day']);
                 //if it's a disabled day, skip this
                 if(!$this->available_days[$group['id']][$day]) continue;
+
+                if(!isset($dayOfWeeks[$stat['day']])) {
+                    $d = new DateTime( $stat['day'] );
+                    $dayOfWeek = $d->format("w");
+                    $dayOfWeeks[$stat['day']] = $dayOfWeek;
+                } else {
+                    $dayOfWeek = $dayOfWeeks[$stat['day']];
+                }
                 $color = $green_color; //green
                 $min_publishers = isset($dates[$stat['day']]['date_min_publishers']) ? $dates[$stat['day']]['date_min_publishers'] : $group['min_publishers'];
                 $max_publishers = isset($dates[$stat['day']]['date_max_publishers']) ? $dates[$stat['day']]['date_max_publishers'] : $group['max_publishers'];
@@ -97,7 +112,11 @@ class Home extends Component
                     $color = $group['colors']['color_minimum']; //'#ffff00'; //yellow
                 } 
                 if($stat['events'] == $max_publishers) {
-                    $color = $color = $group['colors']['color_maximum'];// '#ff0000'; //red
+                    $color = $group['colors']['color_maximum'];// '#ff0000'; //red
+                }
+                $slot_key = Carbon::parse($stat['time_slot'])->format("H:i");
+                if(($this->disabled_slots[$stat['group_id']][$dayOfWeek][$slot_key] ?? false)) {
+                    $color = $default_color;
                 }
                 $colors[$day][] = $color;
             }
@@ -169,6 +188,22 @@ class Home extends Component
         ])->get()->toArray();
 
         // dd($stats);
+        $ids = [];
+        foreach($stats as $stat) {
+            $ids[] = $stat['id'];
+        }
+
+        $this->disabled_slots = [];
+        $d_slots = GroupDayDisabledSlots::whereIn('group_id', $ids)
+            ->orderBy('group_id', 'asc')
+            ->orderBy('day_number', 'asc')
+            ->orderBy('slot', 'asc')
+            ->get()->toArray();
+        foreach($d_slots as $slot) {
+            $this->disabled_slots[$slot['group_id']][$slot['day_number']][$slot['slot']] = $slot['slot'];
+        }
+        // dd($this->disabled_slots, $this->groups);
+
         $this->getStat($stats);
         
         $notAcceptedEvents = DB::table('events')

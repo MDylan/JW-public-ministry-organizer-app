@@ -88,6 +88,8 @@ return [
     ],
     'start_time' => 'Szolgálat kezdete',
     'end_time' => 'Szolgálat vége',
+    'disabled_time_slots' => 'Letiltott időpontok',
+    'disabled_time_slots_info' => 'Figyelem! A kiválasztott időpontokra NEM lehet majd időpontot foglalni!',
     'times' => [
         '00:00' => '00:00',
         '00:30' => '00:30',

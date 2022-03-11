@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Classes\GenerateSlots;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\DayStat;
 use App\Models\Group;
 use App\Models\GroupDate;
+use Carbon\Carbon;
 use DateTime;
 
 class GenerateStatProcess implements ShouldQueue
@@ -67,7 +69,11 @@ class GenerateStatProcess implements ShouldQueue
 
         if($this->group_data['current_date'] === null) {
             $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-            $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00"); 
+            $end_date = $date;
+            if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
+                $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            }
+            $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00"); 
             GroupDate::create([
                 'group_id' => $groupId,
                 'date' => $date,
@@ -98,7 +104,9 @@ class GenerateStatProcess implements ShouldQueue
 
         $step = $this->date_data['min_time'] * 60;
         
-        for($current=$start;$current < $max;$current+=$step) {
+        $slots_array = GenerateSlots::generate($date, $start, $max, $step);
+        foreach($slots_array as $current) {
+        // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
             $this->day_stat[$key] = [
                 'group_id' => $this->groupId,

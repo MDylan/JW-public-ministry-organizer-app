@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Events;
 
+use App\Classes\GenerateSlots;
 use App\Http\Livewire\AppComponent;
 // use App\Models\DayStat;
 // use Illuminate\Support\Facades\Validator;
@@ -11,7 +12,9 @@ use DateTime;
 use App\Models\Group;
 // use App\Models\Event;
 use App\Models\GroupDate;
+use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 
 // use App\Models\GroupUser;
 // use App\Notifications\GroupUserAddedNotification;
@@ -263,7 +266,11 @@ class Modal extends AppComponent
 
         if($this->group_data['current_date'] === null) {
             $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-            $max = strtotime($date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+            $end_date = $date;
+            if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
+                $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            }
+            $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
             GroupDate::create([
                 'group_id' => $groupId,
                 'date' => $date,
@@ -308,7 +315,9 @@ class Modal extends AppComponent
         $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $row = 1;
         $peak = 0;
-        for($current=$start;$current < $max;$current+=$step) {
+        $slots_array = GenerateSlots::generate($this->date, $start,  $max, $step);
+        foreach($slots_array as $current) {
+        // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
                 'ts' => $current,
@@ -334,16 +343,31 @@ class Modal extends AppComponent
                 $day_selects['end'][$current] = date("H:i", $current);
 
             $row++;
-        }
-        // dd();
+        }        
+        // dd($new_slots);
         $day_selects['end'][$max] = date("H:i", $max);
-        // dd($day_table);
+        // dd($day_table, $step, date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $range, $period->toArray());
         //események
         // $events = $group->day_events($date)->get()->toArray();
         $events = $group['events'];
                 
-        $disabled_slots = $slots = [];        
-        
+        $disabled_slots = $slots = [];
+        if(!$past && $group['current_date']['date_status'] == 1) {
+            //get disabled time slot for this day
+            $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->form_groupId)
+                                ->where('day_number', '=', $dayOfWeek)
+                                ->orderBy('slot', 'asc')
+                                ->get()
+                                ->toArray();
+            foreach($disableds as $sl) {
+                $ts = strtotime($this->date." ".$sl['slot']);
+                $slot_key = "'".date("Hi", $ts)."'";
+                $disabled_slots[$slot_key] = true;
+                $slots[$slot_key][] = true;
+            }
+        }
+        // print_r($disabled_slots);
+        // dd($disabled_slots);
         foreach($events as $event) {
             $steps = ceil(($event['end'] - $event['start']) / $step);
             if(!isset($day_table["'".date('Hi', $event['start'])."'"])) continue;
@@ -395,31 +419,38 @@ class Modal extends AppComponent
                     $this->day_stat[$slot_key]['events']++;
                 }                
                 $peak = max($peak, $day_table[$slot_key]['publishers']);
-                if(Auth::id() == $event['user_id'] && !in_array($this->role, ['admin', 'roler', 'helper'])) {
+                if(Auth::id() == $event['user_id'] 
+                    && !in_array($this->role, ['admin', 'roler', 'helper'])
+                ) {
                     $disabled_slots[$slot_key] = true;
                 }
                 $cell_start += $step;
             }
         }
-        // dd($day_table);
+        ksort($disabled_slots);
+
+        // dd($day_table, $disabled_slots, $slots);
         //kiszűröm ami nem elérhető
         foreach($slots as $key => $times) {
+            // dump($key, isset($disabled_slots[$key]));
             if(count($times) >= ($this->group_data['need_approval'] 
-                        ? ($day_table[$key]['accepted'] >= $this->date_data['max_publishers'] 
+                        ? ( ($day_table[$key]['accepted'] ?? 0) >= $this->date_data['max_publishers'] 
                             ? $this->date_data['max_publishers'] 
                             : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
                 $day_table[$key]['status'] = 'full';
-                $k = $day_table[$key]['ts'];
-                unset($day_selects['start'][$k]);
-                unset($day_selects['end'][$k + $step]);
+                if(isset($day_table[$key]['ts'])) {
+                    $k = $day_table[$key]['ts'];
+                    unset($day_selects['start'][$k]);
+                    unset($day_selects['end'][$k + $step]);
+                }
             } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = $now > $day_table[$key]['ts'] ? 'full' : 'ready';
             } 
         }
         
-        // dd($day_table);
+        // dd($day_table, $disabled_slots);
         // dd($this->group->day_events($date));
         $this->day_data['table'] = $day_table;
         $this->day_data['selects'] = $day_selects;
