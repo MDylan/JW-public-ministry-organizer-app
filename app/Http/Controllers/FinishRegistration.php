@@ -41,7 +41,7 @@ class FinishRegistration extends Controller
             'name' => ['required', 'string', 'max:50', 'min:2'],
             'phone_number' => ['numeric'],
             'password' => $this->passwordRules(),
-            'terms' => ['required']
+            'terms' => config('settings_terms_checkbox') ? 'required' : 'sometimes|required'
         ])->validate();
 
         $user = User::where('id', '=', $id)

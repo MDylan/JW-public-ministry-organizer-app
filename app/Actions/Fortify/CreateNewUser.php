@@ -34,7 +34,7 @@ class CreateNewUser implements CreatesNewUsers
                 ],
                 'phone_number' => ['numeric'],
                 'password' => $this->passwordRules(),
-                'terms' => ['required']
+                'terms' => config('settings_terms_checkbox') ? 'required' : 'sometimes|required'
             ])->validate();
 
             $user = User::create([

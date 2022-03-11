@@ -69,18 +69,23 @@
                 </div>
                 <div class="row">
                 <div class="col-sm-8">
-                    <div class="icheck-primary">
-                        <input id="agreeTerms" class="@error('terms') is-invalid @enderror" name="terms" type="checkbox" value="yes">
-                  
-                    <label for="agreeTerms">
-                        {!! __('user.agreeTerms') !!}
-                    </label>
-                    @error('terms')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                    </div>
+                    @if (config('settings_terms_checkbox') == 1)
+                        <div class="icheck-primary">
+                            <input id="agreeTerms" class="@error('terms') is-invalid @enderror" name="terms" type="checkbox" value="yes">
+                    
+                        <label for="agreeTerms">
+                            {!! __('user.agreeTerms') !!}
+                        </label>
+                        @error('terms')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                        </div>
+                    @endif
                 </div>
                 <!-- /.col -->
                 <div class="col-sm-4">
-                    <button type="submit" class="btn btn-primary btn-block">{{__('user.register')}}</button>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="far fa-check-circle mr-1"></i>
+                        {{__('user.register')}}
+                    </button>
                 </div>
                 <!-- /.col -->
                 </div>

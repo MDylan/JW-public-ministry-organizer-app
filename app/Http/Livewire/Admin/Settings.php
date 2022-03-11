@@ -20,6 +20,7 @@ class Settings extends AppComponent
     //These will be only checkboxes (true/false)
     public $others = [
         'registration'  => true,
+        'terms_checkbox' => true,
         'claim_group_creator' => true,
         'debugbar'  => false,
         'maintenance' => false,

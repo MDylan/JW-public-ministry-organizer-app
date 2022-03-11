@@ -36,6 +36,7 @@ return [
     'others' => [
         'title' => 'Egyéb beállítások',
         'registration'  => 'Regisztrálás lehetősége. (Ha kikapcsolod, csak belépett felhasználó - pl csoportfelvigyázó - hozhat létre új felhasználót).',
+        'terms_checkbox' => 'Felhasználási feltételek a regisztrációnál (ha kikapcsolod, nem kell elfogadni semmilyen felhasználási feltételeket)',
         'claim_group_creator' => 'Csoport létrehozó jogkör igényelhető a Csoportok oldalon.',
         'debugbar'  => 'Debugbar bekapcsolása (Csak tesztelési/hibajavítási céllal kapcsold be! Egyébként biztonsági kockázat!)',
         'maintenance' => 'Karbantartás mód (Csak adminisztrátorok léphetnek be, senki más.)',
