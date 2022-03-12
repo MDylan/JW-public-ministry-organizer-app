@@ -708,6 +708,8 @@ class UpdateGroupForm extends AppComponent
         // dd($group_times);
         // dd($this->days);
         foreach($this->days as $day_key => $day) {
+            if(!isset($day['start_time'])) $day['start_time'] = "00:00";
+            if(!isset($day['end_time'])) $day['end_time'] = "00:00";
             $this->day_selects[$day['day_number']]['start'] = $this->generateTimeArray($day['end_time'], false);
             $ends = $this->generateTimeArray(false, $day['start_time'], $this->state['min_time']);
             $this->day_selects[$day['day_number']]['end'] = $ends;

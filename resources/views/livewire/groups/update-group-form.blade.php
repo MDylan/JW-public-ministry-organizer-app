@@ -323,43 +323,47 @@
                                             <div class="col-lg-3">
                                                 <label>@lang('statistics.day')</label>
                                                 <div class="form-group">                                                        
-                                                    <input data-day="{{$day}}" wire:model.defer="days.{{$day}}.day_number" type="checkbox" 
+                                                    <input data-day="{{$day}}" wire:model="days.{{$day}}.day_number" type="checkbox" 
                                                         class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
                                                     <label class="form-check-label" for="day_{{$day}}">{{__('group.days.'.$translate)}}</label>
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
-                                                    <select 
-                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.start_time" 
-                                                        name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
-                                                        class="timeselect start_time form-control 
-                                                        @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
+                                                @if(isset($day_selects[$day]))
+                                                    <div class="form-group">
+                                                        <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
+                                                        <select 
+                                                        @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                        data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.start_time" 
+                                                            name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
+                                                            class="timeselect start_time form-control 
+                                                            @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
 
-                                                        @foreach ($day_selects[$day]['start'] as $time)
-                                                            <option value="{{$time}}">{{ $time }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
+                                                            @foreach ($day_selects[$day]['start'] as $time)
+                                                                <option value="{{$time}}">{{ $time }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
-                                                    <select 
-                                                    @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                     data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.end_time" 
-                                                        name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
-                                                        class="timeselect end_time form-control 
-                                                        @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
+                                                @if(isset($day_selects[$day]))
+                                                    <div class="form-group">
+                                                        <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
+                                                        <select 
+                                                        @if (!isset($days[$day]['day_number'])) disabled @endif
+                                                        data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.end_time" 
+                                                            name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
+                                                            class="timeselect end_time form-control 
+                                                            @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
 
-                                                        @foreach ($day_selects[$day]['end'] as $time)
-                                                            <option value="{{$time}}">{{ $time }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div> 
+                                                            @foreach ($day_selects[$day]['end'] as $time)
+                                                                <option value="{{$time}}">{{ $time }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                    </div> 
+                                                @endif
                                             </div>
                                             @if ($errors->has('' .$day. '.start_time') || $errors->has('' .$day. '.end_time'))
                                                 <div class="col-lg-12">
@@ -369,28 +373,29 @@
                                                     </small>
                                                 </div>
                                             @endif
-                                            <div class="col-lg-12">
-                                                <label for="disabled_slots_{{$day}}">
-                                                    <i class="fas fa-ban mr-1"></i>
-                                                    @lang('group.disabled_time_slots'):</label>
-                                                @if  (count($disabled_slots[$day] ?? []) > 0)
-                                                    <span class="ml-2 badge badge-warning">@lang('app.total'): {{ count(array_filter($disabled_slots[$day] ?? [])) }}</span>
-                                                @endif
-                                                <br/>
-                                                @lang('group.disabled_time_slots_info')
-                                                {{-- @if(isset($disabled_slots[$day])) {{ var_dump($disabled_slots[$day]) }} @endif --}}
-                                                <div class="w-100 border  @if  (count(array_filter($disabled_slots[$day] ?? [])) > 0) border-warning @else border-secondary @endif rounded" style="height:100px;overflow-y:auto;">
-                                                    @foreach ($disabled_selects[$day] as $key => $time)
-                                                    <div class="ml-2 form-check">
-                                                        <input wire:model="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}"
-                                                        >
-                                                        <label class="form-check-label" for="disabled_{{ $day }}_{{ $time }}" role="button">
-                                                            {{ $time }}
-                                                        </label>
-                                                    </div>
-                                                     @endforeach
+                                            @if(isset($day_selects[$day]))
+                                                <div class="col-lg-12">
+                                                    <label for="disabled_slots_{{$day}}">
+                                                        <i class="fas fa-ban mr-1"></i>
+                                                        @lang('group.disabled_time_slots'):</label>
+                                                    @if  (count($disabled_slots[$day] ?? []) > 0)
+                                                        <span class="ml-2 badge badge-warning">@lang('app.total'): {{ count(array_filter($disabled_slots[$day] ?? [])) }}</span>
+                                                    @endif
+                                                    <br/>
+                                                    @lang('group.disabled_time_slots_info')
+                                                    
+                                                    <div class="ml-2 w-100 border  @if  (count(array_filter($disabled_slots[$day] ?? [])) > 0) border-warning @else border-secondary @endif rounded" style="height:100px;overflow-y:auto;">
+                                                        @foreach ($disabled_selects[$day] as $key => $time)
+                                                        <div class="ml-2 form-check">
+                                                            <input wire:model="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}">
+                                                            <label class="form-check-label" for="disabled_{{ $day }}_{{ $time }}" role="button">
+                                                                {{ $time }}
+                                                            </label>
+                                                        </div>
+                                                        @endforeach
+                                                    </div>                                                
                                                 </div>
-                                            </div>
+                                            @endif
                                         </div>                                                                          
                                     @endforeach
                                     <div class="row">
