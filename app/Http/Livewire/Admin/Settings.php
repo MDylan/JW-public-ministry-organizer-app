@@ -25,7 +25,8 @@ class Settings extends AppComponent
         'debugbar'  => false,
         'maintenance' => false,
         'gdpr' => false,
-        'use_recaptcha' => false
+        'use_https' => false,
+        'use_recaptcha' => false,        
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
@@ -147,21 +148,28 @@ class Settings extends AppComponent
                 ); 
             }
 
+            $setEnv = [];
+
             if($this->state['others']['use_recaptcha']) {
                 if(strlen(trim($this->state['recaptcha']['site_key'])) > 0
                     && strlen(trim($this->state['recaptcha']['secret_key'])) > 0
                 ) {
-                    setEnvironment::setEnvironmentValue([
-                        'USE_RECAPTCHA' => "true",
-                        'RECAPTCHA_SITE_KEY' => '"'.trim($this->state['recaptcha']['site_key']).'"',
-                        'RECAPTCHA_SECRET_KEY' => '"'.trim($this->state['recaptcha']['secret_key']).'"'
-                    ]);
+                    $setEnv['USE_RECAPTCHA'] = "true";
+                    $setEnv['RECAPTCHA_SITE_KEY'] = '"'.trim($this->state['recaptcha']['site_key']).'"';
+                    $setEnv['RECAPTCHA_SECRET_KEY'] = '"'.trim($this->state['recaptcha']['secret_key']).'"';
+                    
                 } else {
-                    setEnvironment::setEnvironmentValue(['USE_RECAPTCHA' => "false"]);
+                    $setEnv['USE_RECAPTCHA'] = "false";
                 }
             } else {
-                setEnvironment::setEnvironmentValue(['USE_RECAPTCHA' => "false"]);
+                $setEnv['USE_RECAPTCHA'] = "false";
             }
+            //set https
+            $setEnv['USE_HTTPS'] = ($this->state['others']['use_https']) ? "true" : "false";
+            
+            if(count($setEnv)) {
+                setEnvironment::setEnvironmentValue($setEnv);
+            }            
 
             $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
         }

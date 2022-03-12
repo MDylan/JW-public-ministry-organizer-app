@@ -26,10 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      * @var array
      */
     protected $fillable = [
-        // 'first_name',
-        // 'last_name',
         'email',
-        // 'phone',
         'password',
         'role',
         'last_login_time',
@@ -41,7 +38,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'language',
         'name',
         'phone_number',
-        'email_verified_at'
+        'email_verified_at',
+        'hidden_fields'
     ];
 
     /**
@@ -70,7 +68,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     protected $casts = [
         'email_verified_at' => 'datetime',
         'calendars' => 'array',
-        'phone_number' => 'encrypted'
+        'phone_number' => 'encrypted',
+        'hidden_fields' => 'array',
     ];
 
     // protected $appends = ['full_name'];
@@ -87,7 +86,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
-        'accepted_gdpr'
+        'accepted_gdpr',
+        'hidden_fields'
     ];
 
     /**

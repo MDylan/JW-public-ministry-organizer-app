@@ -50,7 +50,7 @@ class Event extends Model
 
     public function user() {
         return $this->belongsTo(User::class)
-                        ->select(['id', 'name']);
+                        ->select(['id', 'name', 'phone_number', 'hidden_fields']);
     }
 
     public function accept_user() {

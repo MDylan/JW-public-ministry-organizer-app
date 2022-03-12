@@ -83,5 +83,9 @@ return [
         'copy_success' => 'A kódok a vágólapra kerültek.',
     ],
     'online' => 'Épp online',
+    'hidden' => [
+        'title' => 'Adataim elrejtése',
+        'help' => 'Az email címedet és a telefonszámodat alapértelmezetten mindenki láthatja, akivel egy csoportban szolgálsz. Itt megadhatod, hogy csak azok lássák akik jogosultsággal bírnak a csoportodban (pl. csoportszolga, csoport segítő).',
+    ],
 
 ];

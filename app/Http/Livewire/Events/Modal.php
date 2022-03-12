@@ -207,20 +207,20 @@ class Modal extends AppComponent
             }
         }
         $user_signs = [];
-        $user_phones = [];
+        // $user_phones = [];
         if(is_array($group['group_users_all'])) {
             foreach($group['group_users_all'] as $user) {
                 if(isset($user['pivot']['signs'])) {
                     $user_signs[$user['id']] = $user['pivot']['signs'];
                 }
-                if($user['phone_number']) {
-                    $user_phones[$user['id']] = $user['phone_number'];
-                }
+                // if($user['phone_number']) {
+                //     $user_phones[$user['id']] = $user['phone_number'];
+                // }
             }
         }
         // dd($user_phones);
         $group['users_signs'] = $user_signs;
-        $group['users_phones'] = $user_phones;
+        // $group['users_phones'] = $user_phones;
         unset($group['group_users_all']);
         // dd($this->service_days);
         $this->group_data = $group; //->toArray();

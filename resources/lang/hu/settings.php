@@ -41,7 +41,8 @@ return [
         'debugbar'  => 'Debugbar bekapcsolása (Csak tesztelési/hibajavítási céllal kapcsold be! Egyébként biztonsági kockázat!)',
         'maintenance' => 'Karbantartás mód (Csak adminisztrátorok léphetnek be, senki más.)',
         'gdpr' => 'GDPR bekapcsolása (Akkor kapcsold be, ha az EU-n belül üzemelteted az oldalt). A felhasználók lementhetik a személyes adataikat egy .json fájlba.',
-        'use_recaptcha' => 'reCaptcha használata (spam védelem). Bekapcsolásával jelentősen megerősítheted az oldal robotok elleni védelmét. Google recaptchat fog használni a belépésnél és a regisztrációnál az oldal.'
+        'use_recaptcha' => 'reCaptcha használata (spam védelem). Bekapcsolásával jelentősen megerősítheted az oldal robotok elleni védelmét. Google recaptchat fog használni a belépésnél és a regisztrációnál az oldal.',
+        'use_https' => 'https titkosítás bekapcsolása (Figyelem! Akkor kapcsold be, ha a tárhely szolgáltatód aktiválta a https kapcsolatot. Téves bekapcsolás esetén az oldal nem fog betöltődni!)',
     ],
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
     'run' => [

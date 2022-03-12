@@ -200,7 +200,13 @@
                                         @lang('user.email'):
                                     </div>
                                 <div class="col-8  @if($editor) col-md-2 @else col-md-4 @endif text-left my-auto align-middle">
-                                    <a href="mailto:{{ $user->email }}">{{ $user->email }}</a>
+                                    @if(($user->hidden_fields['email'] ?? false) == false || $editor) 
+                                        <a href="mailto:{{ $user->email }}">
+                                            @if(($user->hidden_fields['email'] ?? false) == true)
+                                                <i class="fas fa-eye-slash mr-1 text-danger"></i>
+                                            @endif
+                                        {{ $user->email }}</a>
+                                    @endif
                                     @if ($user->pivot->accepted_at == null)
                                         <br/><span class="badge badge-warning"> @lang('group.waiting_approval') </span>
                                     @endif 
@@ -209,7 +215,13 @@
                                         @lang('user.phone'):
                                     </div>
                                 <div class="col-8 col-md-2 text-left text-md-center my-auto align-middle">
-                                    <a href="tel:+{{ $user->phone_number }}">{{ $user->phone_number }}</a>
+                                    @if(($user->hidden_fields['phone'] ?? false) == false || $editor) 
+                                        <a href="tel:+{{ $user->phone_number }}">
+                                            @if(($user->hidden_fields['phone'] ?? false) == true)
+                                                <i class="fas fa-eye-slash mr-1 text-danger"></i>
+                                            @endif
+                                        {{ $user->phone_number }}</a>
+                                    @endif
                                 </div>
                                     <div class="d-md-none col-4 text-right text-bold">
                                         @lang('user.last_login'):

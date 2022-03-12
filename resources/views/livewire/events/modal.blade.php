@@ -131,7 +131,12 @@
                                                             <button wire:ignore id="phone_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">
-                                                                    {{ $group_data['users_phones'][$event['user']['id']] }}
+                                                                    @if(($event['user']['hidden_fields']['phone'] ?? false) == false || $editor) 
+                                                                        @if(($event['user']['hidden_fields']['phone'] ?? false) == true)
+                                                                            <i class="fas fa-eye-slash mr-1 text-warning"></i>
+                                                                        @endif
+                                                                    {{ $event['user']['phone_number'] }}
+                                                                    @endif
                                                                 </span>
                                                             </button>
                                                             @if (isset($event['comment']))

@@ -41,57 +41,86 @@
                             <form method="POST" action="{{ route('user-profile-information.update')}}">
                                 @csrf
                                 @method("PUT")
-                                <div class="row">
-                                    
-                                <div class="col-sm-12">
-                                    <div class="form-group mb-3">
-                                        <label for="name">@lang('Full name')</label>
-                                        <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ auth()->user()->name }}" placeholder="@lang('Full name')" />
-                                        @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                    </div>
-                                </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                    <div class="form-group mb-3">
-                                        <label for="email">@lang('user.email'):</label>
-                                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" id="email" value="{{ auth()->user()->email }}" placeholder="@lang('user.email')" />
-                                        @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                    </div>
-                                    </div>
-                                    <div class="col-sm-6">
+                                <div class="border border-secondary border-left-0 border-right-0 rounded p-2">
+                                    <div class="row">                                    
+                                    <div class="col-sm-12">
                                         <div class="form-group mb-3">
-                                            <label for="phone">@lang('user.phone'):</label>
-                                            <input name="phone_number" type="number" class="form-control @error('phone_number') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone_number }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
-                        
-                                            <span class="w-100"></span>
-                                            <small id="phoneHelpBlock" class="text-muted">
-                                                @lang('user.phone_helper') <strong>362012345689</strong>
-                                            </small>
-                                            @error('phone')<div class="invalid-feedback" role="alert">{{__($message, ['attribute' => __('user.phone')])}}</div>@enderror
+                                            <label for="name">@lang('Full name')</label>
+                                            <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ auth()->user()->name }}" placeholder="@lang('Full name')" />
+                                            @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                        <div class="form-group mb-3">
+                                            <label for="email">@lang('user.email'):</label>
+                                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" id="email" value="{{ auth()->user()->email }}" placeholder="@lang('user.email')" />
+                                            @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                        </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="form-group mb-3">
+                                                <label for="phone">@lang('user.phone'):</label>
+                                                <input name="phone_number" type="number" class="form-control @error('phone_number') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone_number }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
+                            
+                                                <span class="w-100"></span>
+                                                <small id="phoneHelpBlock" class="text-muted">
+                                                    @lang('user.phone_helper') <strong>362012345689</strong>
+                                                </small>
+                                                @error('phone')<div class="invalid-feedback" role="alert">{{__($message, ['attribute' => __('user.phone')])}}</div>@enderror
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h5>@lang('user.calendars'):</h5>
-                                        @lang('user.calendars_info')
+                                <div class="border border-secondary border-left-0 border-right-0 rounded p-2 mt-2">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h5><i class="fas fa-calendar-check mr-1"></i> @lang('user.calendars'):</h5>
+                                            @lang('user.calendars_info')
+                                        </div>
                                     </div>
+                                    @foreach (config('events.calendars') as $calendar)
+                                        <div class="ml-2 form-check">
+                                            <input class="form-check-input" type="checkbox" name="calendars[{{$calendar}}]" value="1" id="calendar_{{ $calendar }}"
+                                            @if (isset(auth()->user()->calendars[$calendar]) || old('calendars.'.$calendar))
+                                                checked
+                                            @endif>
+                                            <label class="form-check-label" for="calendar_{{ $calendar }}" role="button">
+                                                {{ __('user.calendar.'.$calendar) }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                    @error('calendars_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
                                 </div>
-                                @foreach (config('events.calendars') as $calendar)
+                                <div class="border border-secondary border-left-0 border-right-0 rounded mt-2 p-2">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h5><i class="fas fa-eye-slash mr-1"></i> @lang('user.hidden.title'):</h5>
+                                            @lang('user.hidden.help')
+                                        </div>
+                                    </div>
                                     <div class="ml-2 form-check">
-                                        <input class="form-check-input" type="checkbox" name="calendars[{{$calendar}}]" value="1" id="calendar_{{ $calendar }}"
-                                        @if (isset(auth()->user()->calendars[$calendar]) || old('calendars.'.$calendar))
+                                        <input class="form-check-input" type="checkbox" name="hidden_fields[phone]" value="1" id="hidden_phone"
+                                        @if (isset(auth()->user()->hidden_fields['phone']) || old('hidden_fields.phone'))
                                             checked
                                         @endif>
-                                        <label class="form-check-label" for="calendar_{{ $calendar }}" role="button">
-                                            {{ __('user.calendar.'.$calendar) }}
+                                        <label class="form-check-label" for="hidden_phone" role="button">
+                                            {{ __('user.phone') }}
                                         </label>
                                     </div>
-                                @endforeach
-                                @error('calendars_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
-
-                                <div class="d-flex justify-content-center">
+                                    <div class="ml-2 form-check">
+                                        <input class="form-check-input" type="checkbox" name="hidden_fields[email]" value="1" id="hidden_email"
+                                        @if (isset(auth()->user()->hidden_fields['email']) || old('hidden_fields.email'))
+                                            checked
+                                        @endif>
+                                        <label class="form-check-label" for="hidden_email" role="button">
+                                            {{ __('user.email') }}
+                                        </label>
+                                    </div>
+                                    @error('hidden_fields_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
+                                </div>
+                                <div class="d-flex justify-content-center mt-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fa fa-save mr-1"></i>
                                         {{__('Save')}}
@@ -165,12 +194,15 @@
                                     </div>
                                 </div>
                             </form>
-                            <div class="row mt-5">
-                                <div class="col text-center">
-                                    <a href="{{ route('user.twofactorsettings') }}" class="btn btn-success mt-3">
-                                        <i class="fas fa-lock mr-1"></i>
-                                        @lang('user.two_factor.title')
-                                    </a>
+                            <div class="border border-secondary border-left-0 border-right-0 rounded p-2 mt-5">
+                                <div class="row">
+                                    <div class="col text-center">
+                                        @lang('user.two_factor.help')
+                                        <a href="{{ route('user.twofactorsettings') }}" class="btn btn-success mt-3">
+                                            <i class="fas fa-lock mr-1"></i>
+                                            @lang('user.two_factor.title')
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             

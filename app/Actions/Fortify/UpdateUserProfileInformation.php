@@ -22,7 +22,11 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         if(isset($input['calendars'])) {
             $input['calendars_keys'] = array_keys($input['calendars']);
         }
-
+        $input['hidden_fields_keys'] = [];
+        if(isset($input['hidden_fields'])) {
+            $input['hidden_fields_keys'] = array_keys($input['hidden_fields']);
+        }
+        // dd($input['hidden_fields']);
         Validator::make($input, [
             'name' => ['required', 'string', 'max:50', 'min:2'],
             'email' => [
@@ -33,7 +37,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 Rule::unique('users')->ignore($user->id),
             ],
             'phone_number' => ['numeric'],
-            'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))]
+            'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))],
+            'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])]
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
         if ($input['email'] !== $user->email &&
@@ -44,7 +49,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'name' => $input['name'],
                 'phone_number' => $input['phone_number'],
                 'email' => $input['email'],
-                'calendars' => isset($input['calendars']) ? $input['calendars'] : null
+                'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
+                'hidden_fields' => isset($input['hidden_fields']) ? $input['hidden_fields'] : null
             ])->save();
         }
     }

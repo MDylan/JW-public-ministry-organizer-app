@@ -8,7 +8,6 @@ class GenerateSlots {
      * Generate time slots, need to escape summer/winter time shift
      */
     static function generate($date, $start, $end, $step) {
-        // dd($date, date("Y-m-d H:i", $start), date("Y-m-d H:i", $end), $step);
         //convert it for safe
         $date = date("Y-m-d", strtotime($date));
         $min_hour = date("G", $start);
@@ -21,12 +20,11 @@ class GenerateSlots {
             if(self::isInt($hour)) {
                 $current = $hour.":00";
             } else {
-                $current = $hour.":30";
+                $current = floor($hour).":30";
             }
             $current_unix = strtotime($date." ".$current);
             $times[$current_unix] = $current_unix; //date("Y-m-d H:i", $current_unix);
         }
-        // dd($times);
         return $times;
     }
 

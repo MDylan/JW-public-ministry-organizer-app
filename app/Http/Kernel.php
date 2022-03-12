@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\HttpsProtocol;
 use App\Http\Middleware\SetGuestLanguage;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\setUserLastActivity;
@@ -42,6 +43,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             SetLocale::class,
             setUserLastActivity::class,
+            HttpsProtocol::class
         ],
 
         'api' => [
