@@ -16,7 +16,7 @@ class HttpsProtocol
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!$request->secure() && app()->environment('production') && env('USE_HTTPS', false)) {
+        if (!$request->secure() && app()->environment('production') && env('USE_HTTPS', "false") == "true") {
             return redirect()->secure($request->getRequestUri());
         }
 
