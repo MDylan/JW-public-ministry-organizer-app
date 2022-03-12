@@ -265,7 +265,8 @@ class Statistics extends AppComponent
             'return_visits',
             'bible_studies'
         ];
-        $users = $this->group->groupUsersAll;
+        $users = $this->group->groupUsersAll()->orderBy('users.name', 'asc')->get();
+        // dd($users->toArray());
         foreach($users as $user) {
             $users_stats[$user->id] = [
                 'name' => $user->name,
