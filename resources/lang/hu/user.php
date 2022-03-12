@@ -77,6 +77,10 @@ return [
         'recovery_codes' => 'Visszaállítási kódok',
         'error' => 'Hibás azonosítási kód!',
         'please_confirm' => 'Kérjük add meg a hitelesítő alkalmazásban lévő kódot, ezzel visszaigazolod, hogy megfelelően beállítottad a kétlépcsős azonosítást. Amíg ezt nem teszed meg, a kétlépcsős azonosítás nem fog működni.',
+        'no_device' => 'Nincs nálam az eszköz, kódot adok meg.',
+        'have_device' => 'Hitelesítő kódot adok meg.',
+        'copy_to_clipboard' => 'Vágolapra másolás',
+        'copy_success' => 'A kódok a vágólapra kerültek.',
     ],
     'online' => 'Épp online',
 

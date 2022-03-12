@@ -97,7 +97,9 @@
             @endif
         </div>
         <div class="card-footer text-muted">
-            <a href="{{route('login')}}" class="text-center">{{__('user.loginWithUser')}}</a>
+            <a href="{{route('login')}}" class="text-center">
+                <i class="fas fa-sign-in-alt mr-1"></i>
+                {{__('user.loginWithUser')}}</a>
         </div>
         <!-- /.form-box -->
     </div><!-- /.card -->

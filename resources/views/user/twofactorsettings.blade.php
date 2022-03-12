@@ -84,6 +84,10 @@
                                     </form>
                                 @endif
                             </p>
+                            <a href="{{ route('user.profile') }}" class="btn btn-primary">
+                                <i class="fas fa-arrow-circle-left mr-1"></i>
+                                @lang('app.back')
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -105,16 +109,25 @@
                                         <i class="fab fa-app-store-ios mr-1"></i> App Store
                                     </a>
                                 </div>
-
-
                                 <p>
                                     <h4>@lang('user.two_factor.recovery_codes')</h4>
-                                    <b>@lang('user.two_factor.store_it')</b></p>
-                                <samp>
-                                @foreach (auth()->user()->recoveryCodes() as $code)
-                                    {{ $code }}<br/>
-                                @endforeach
-                                </samp>
+                                    <b>@lang('user.two_factor.store_it')</b>
+                                </p>                                    
+                                <div class="row">
+                                    <div class="col-6 border border-primary text-center rounded py-2">
+                                        <samp id="two_factor_codes">
+                                            @foreach (auth()->user()->recoveryCodes() as $code)
+                                                {{ $code }}<br/>
+                                            @endforeach
+                                        </samp>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-primary" onclick="copyToClipboard('#two_factor_codes')">
+                                            <i class="far fa-copy mr-1"></i>
+                                            @lang('user.two_factor.copy_to_clipboard')
+                                        </button>
+                                    </div>
+                                </div>                               
                             </div>
                         </div>
                     </div>
@@ -125,5 +138,17 @@
             </div><!-- /.container-fluid -->
         </div>
         <!-- /.content -->
+        @section('footer_scripts')
+        <script>
+            function copyToClipboard(element) {
+                var $temp = $("<input>");
+                $("body").append($temp);
+                $temp.val($(element).text()).select();
+                document.execCommand("copy");
+                $temp.remove();
+                toastr.success('{{__('user.two_factor.copy_success')}}', '{{__('user.two_factor.copy_to_clipboard')}}');
+            }
+        </script>
+        @endsection
     </div>
 </x-admin-layout>

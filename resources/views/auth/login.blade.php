@@ -51,7 +51,9 @@
                 </div>
                 <!-- /.col -->
                 <div class="col-4">
-                <button type="submit" class="btn btn-primary btn-block">{{__('user.login')}}</button>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt mr-1"></i>
+                    {{__('user.login')}}</button>
                 </div>
                 <!-- /.col -->
             </div>
@@ -64,13 +66,17 @@
             <div class="row">
                 <div class="col text-center">
                     @if (Route::has('password.request'))
-                        <a href="{{route('password.request')}}">{{__('user.lostPassword')}}</a>
+                        <a href="{{route('password.request')}}">
+                            <i class="fas fa-key mr-1"></i>
+                            {{__('user.lostPassword')}}</a>
                     @endif  
                 </div>
                 @if (config('settings_registration') == 1)
                     <div class="col text-center">
                         @if (Route::has('register'))
-                            <a href="{{route('register')}}" class="text-center">{{__('user.register')}}</a>
+                            <a href="{{route('register')}}" class="text-center">
+                            <i class="far fa-address-card mr-1"></i>
+                            {{__('user.register')}}</a>
                         @endif
                     </div>
                 @endif

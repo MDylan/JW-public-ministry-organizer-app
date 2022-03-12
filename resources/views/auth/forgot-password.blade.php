@@ -40,6 +40,7 @@
                     <div class="form-group row mb-0">
                         <div class="col-md-8 offset-md-4">
                             <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key mr-1"></i>
                                 {{ __('Send Password Reset Link') }}
                             </button>
                         </div>
@@ -47,7 +48,9 @@
                 </form>
             </div>
             <div class="card-footer text-muted">
-                <a href="{{route('login')}}">{{__('user.login')}}</a>
+                <a href="{{route('login')}}">
+                    <i class="fas fa-sign-in-alt mr-1"></i>
+                    {{__('user.login')}}</a>
             </div>
         </div>
     </div>

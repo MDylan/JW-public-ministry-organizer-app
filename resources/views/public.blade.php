@@ -160,6 +160,7 @@
 <!-- AdminLTE App -->
 <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
 <script src="{{ asset('js/custom.js') }}?ver={{ filemtime(public_path('js/custom.js')) }}"></script>
+@yield('footer_scripts')
 
 </body>
 </html>

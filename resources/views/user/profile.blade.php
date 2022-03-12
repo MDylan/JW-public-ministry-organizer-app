@@ -165,9 +165,15 @@
                                     </div>
                                 </div>
                             </form>
-                            <a href="{{ route('user.twofactorsettings') }}" class="btn btn-success mt-3">
-                                @lang('user.two_factor.title')
-                            </a>
+                            <div class="row mt-5">
+                                <div class="col text-center">
+                                    <a href="{{ route('user.twofactorsettings') }}" class="btn btn-success mt-3">
+                                        <i class="fas fa-lock mr-1"></i>
+                                        @lang('user.two_factor.title')
+                                    </a>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
