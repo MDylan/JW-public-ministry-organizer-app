@@ -297,10 +297,15 @@ class EventEdit extends AppComponent
                             ->whereNull('events.deleted_at')
                             ->where('events.user_id', '=', $this->state['user_id'])
                             ->where(function($query) {
-                                $query->where('groups.id', '=', $this->groupId);
-                                $query->orWhere('groups.parent_group_id', '=', $this->groupId);
+                                $query->where('groups.id', '=', $this->groupId);                                
                                 if($this->group_data['parent_group_id']) {
                                     $query->orWhere('groups.id', '=', $this->group_data['parent_group_id']);
+                                    $query->orWhereIn('groups.parent_group_id', [
+                                        $this->groupId,  
+                                        $this->group_data['parent_group_id'] 
+                                    ]);
+                                } else {
+                                    $query->orWhere('groups.parent_group_id', '=', $this->groupId);
                                 }
                             })
                             ->whereBetween('events.day', [
