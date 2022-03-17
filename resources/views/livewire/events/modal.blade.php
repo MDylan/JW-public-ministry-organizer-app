@@ -128,7 +128,7 @@
                                                                 <i class="fa fa-edit ml-1"></i>
                                                             </a>
                                                             @endif
-                                                            <button wire:ignore id="phone_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showChild(this, 'hidden_child');">
+                                                            <div wire:ignore id="phone_event_{{ $event['id'] }}" class="badge badge-info p-2 font-weight-normal" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">
                                                                     @if(($event['user']['hidden_fields']['phone'] ?? false) == false || $editor) 
@@ -138,7 +138,7 @@
                                                                     {{ $event['user']['phone_number'] }}
                                                                     @endif
                                                                 </span>
-                                                            </button>
+                                                            </div>
                                                             @if (isset($event['comment']))
                                                                 <button wire:ignore id="comment_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showFullChild(this, 'cr');">
                                                                     <div class="cr crop_child overflow-hidden">

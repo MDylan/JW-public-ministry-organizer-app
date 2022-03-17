@@ -104,7 +104,7 @@ class GenerateStatProcess implements ShouldQueue
 
         $step = $this->date_data['min_time'] * 60;
         
-        $slots_array = GenerateSlots::generate($date, $start, $max, $step);
+        $slots_array = GenerateSlots::generate($date, $start, $max - $step, $step);
         foreach($slots_array as $current) {
         // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";

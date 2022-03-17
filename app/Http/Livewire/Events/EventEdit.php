@@ -181,7 +181,7 @@ class EventEdit extends AppComponent
         $day_selects = [];
         $row = 1;
         // dd($date->format("Y-m-d"), date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $step);
-        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max, $step);
+        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max - $step, $step);
         // dd($slots_array);
         foreach($slots_array as $current) {
         // for($current=$start;$current < $max;$current+=$step) {
@@ -197,7 +197,6 @@ class EventEdit extends AppComponent
             for ($i=1; $i <= ($this->date_data['max_publishers'] + config('events.max_columns')); $i++) {
                 $day_table[$key]['cells'][$i] = true;
             }
-            
             $day_selects['start'][$current] = date("H:i", $current);
             if($current != $start)
                 $day_selects['end'][$current] = date("H:i", $current);
@@ -205,6 +204,7 @@ class EventEdit extends AppComponent
             $row++;
         }
         $day_selects['end'][$max] = date("H:i", $max);
+        // dd($day_selects);
         //other events
         $events = $group->day_events($date)->get()->toArray();
                 

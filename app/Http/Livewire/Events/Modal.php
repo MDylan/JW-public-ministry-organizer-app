@@ -315,7 +315,8 @@ class Modal extends AppComponent
         $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $row = 1;
         $peak = 0;
-        $slots_array = GenerateSlots::generate($this->date, $start,  $max, $step);
+        $slots_array = GenerateSlots::generate($this->date, $start, $max - $step, $step);
+        // $slots_count = count($slots_array);
         foreach($slots_array as $current) {
         // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
@@ -337,14 +338,13 @@ class Modal extends AppComponent
             for ($i=1; $i <= ($this->date_data['max_publishers'] + config('events.max_columns')); $i++) { 
                 $day_table[$key]['cells'][$i] = true;
             }
-            
             $day_selects['start'][$current] = date("H:i", $current);
             if($current != $start)
                 $day_selects['end'][$current] = date("H:i", $current);
 
             $row++;
         }        
-        // dd($new_slots);
+        // dd($day_selects, $slots_count, $row);
         $day_selects['end'][$max] = date("H:i", $max);
         // dd($day_table, $step, date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $range, $period->toArray());
         //események
