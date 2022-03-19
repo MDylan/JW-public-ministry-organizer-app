@@ -174,6 +174,9 @@ class EventObserver
             $us->notify(
                 new EventDeletedNotification($data)
             );
+            $data['event_user'] = $us->name;
+        } else {
+            $data['event_user'] = 'anonym';
         }
         if($event->status == 1) {
             $group_id = $event->group_id;
@@ -187,6 +190,7 @@ class EventObserver
             }
             $admins = User::whereIn('id', $editors)
                         ->get();
+            
             // dd($admins->get());
             Notification::send($admins, new EventDeletedAdminsNotification($data));
         }
