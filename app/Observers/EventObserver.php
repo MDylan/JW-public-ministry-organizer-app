@@ -113,11 +113,13 @@ class EventObserver
                     ],
                     'reason' => session()->has('reason') ? session('reason') : false 
                 ];
-                
-                $us = User::find($event->user_id);
-                $us->notify(
-                    new EventUpdatedNotification($data)
-                );
+                if($event->user_id != ($auth ? auth()->user()->id : false)) {
+                    //notify user if not he modified this event
+                    $us = User::find($event->user_id);
+                    $us->notify(
+                        new EventUpdatedNotification($data)
+                    );
+                }
             }
 
             if(isset($store['new']['status'])) {
@@ -168,15 +170,17 @@ class EventObserver
             ],
             'reason' => session()->has('reason') ? session('reason') : false 
         ];
-        
-        $us = User::find($event->user_id);
-        if(!$us->isAnonymized) {
-            $us->notify(
-                new EventDeletedNotification($data)
-            );
-            $data['event_user'] = $us->name;
-        } else {
-            $data['event_user'] = 'anonym';
+        if($event->user_id != ($auth ? auth()->user()->id : false)) {
+            //notify user if not he deleted this event
+            $us = User::find($event->user_id);
+            if(!$us->isAnonymized) {
+                $us->notify(
+                    new EventDeletedNotification($data)
+                );
+                $data['event_user'] = $us->name;
+            } else {
+                $data['event_user'] = 'anonym';
+            }
         }
         if($event->status == 1) {
             $group_id = $event->group_id;

@@ -19,6 +19,7 @@ return [
             'accepted_at' => 'Elfogadva',
             'accepted_by' => 'Elfogadta',
             'status' => 'Állapot',
+            'comment' => 'Megjegyzés',
         ]
     ]
 

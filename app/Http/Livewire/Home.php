@@ -7,6 +7,7 @@ namespace App\Http\Livewire;
 
 use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -158,7 +159,12 @@ class Home extends Component
         $this->available_days = [];
         $start = strtotime("today");
         $end = strtotime("+ 10 day");
-        $this->days = range($start, $end, (24 * 60 * 60));
+        $period = CarbonPeriod::create(today(), now()->addDays(10));
+        foreach ($period as $date) {
+            $this->days[] = $date->timestamp;
+        }
+        // dd($this->days);
+        // $this->days = range($start, $end, (24 * 60 * 60));
         
         // $user = Auth()->user();
         // $groups = Auth::user()->groupsAccepted();
@@ -187,7 +193,7 @@ class Home extends Component
             },
         ])->get()->toArray();
 
-        // dd($stats);
+        // dd($this->days);
         $ids = [];
         foreach($stats as $stat) {
             $ids[] = $stat['id'];
@@ -220,7 +226,7 @@ class Home extends Component
                 $notAccepts[$event->group_id][$event->day] = true;
             }
         }
-        // dd($this->group_roles);
+        // dump($this->day_stat);
 
         return view('livewire.home', [
             'groups' => $stats,
