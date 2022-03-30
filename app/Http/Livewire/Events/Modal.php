@@ -3,7 +3,9 @@
 namespace App\Http\Livewire\Events;
 
 use App\Classes\GenerateSlots;
+use App\Classes\GenerateStat;
 use App\Http\Livewire\AppComponent;
+use App\Models\Event;
 // use App\Models\DayStat;
 // use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +15,7 @@ use App\Models\Group;
 // use App\Models\Event;
 use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
+use App\Models\GroupUser;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 
@@ -36,7 +39,8 @@ class Modal extends AppComponent
         'refresh', 
         'cancelEdit',
         'setGroup' => 'mount',
-        'hiddenModal'
+        'hiddenModal',
+        'rejectBulkFinal'
     ];
     public $active_tab = '';
     public $date = null;
@@ -59,38 +63,11 @@ class Modal extends AppComponent
     public $polling = false;
     private $editor = false;
     public $show_content = false;
+    public $bulk_function = false;
+    public $bulk_ids = null;
 
     public function mount($groupId = 0) {
-        // $this->date = null;
-        // if($groupId > 0) {
-        //     $check = auth()->user()->userGroups()->whereId($groupId);
-        //     if(!$check) {
-        //         $this->error = __('event.error.invalid_group');
-        //     } else {
-        //         $this->form_groupId = $groupId;
-        //         $this->day_data =  [
-        //             'date' => 0,
-        //             'dateFormat' => 0,
-        //             'table' => [],
-        //             'selects' => [
-        //                 'start' => [],
-        //                 'end' => [],
-        //             ],
-        //         ];
-
-                
-        //         // dd($this->role);
-        //     }
-        // }
     }
-
-    // public function getRole() {
-    //     $info = GroupUser::where('user_id', '=', Auth::id())
-    //         ->where('group_id', '=', $this->form_groupId)
-    //         ->select('group_role')
-    //         ->first()->toArray();
-    //     $this->role = $info['group_role'];
-    // }
 
     //dont delete, it's a listener
     public function refresh() {
@@ -98,30 +75,15 @@ class Modal extends AppComponent
         if($this->error !== false) return;
         $this->active_tab = '';
         $this->polling = true;
-
-        // $this->getInfo();
-
-        // $stat = DayStat::where([
-        //     'group_id' => $this->form_groupId,
-        //     'day' => $this->date
-        // ]);
-        // $stat->delete();
-
-        // DayStat::insert(
-        //     $this->day_stat
-        // );
-
-        // $this->emitUp('refresh');
-        // $this->emitTo('events.event-edit', 'createForm');
     }
 
-    // public function setGroup($groupId) {
-    //     $check = auth()->user()->userGroups()->whereId($groupId);            
-    //     if(!$check) {
-    //         abort('403');
-    //     }
-    //     $this->form_groupId = $groupId;
-    // }
+    public function getRole() {
+        $info = GroupUser::where('user_id', '=', Auth::id())
+            ->where('group_id', '=', $this->form_groupId)
+            ->select('group_role')
+            ->first()->toArray();
+        return $info['group_role'];
+    }
 
     public function getInfo() {
         // $this->active_tab = '';
@@ -414,7 +376,7 @@ class Modal extends AppComponent
                 $slots[$slot_key][] = true;
                 unset($day_table[$slot_key]['cells'][$cell]);
                 $day_table[$slot_key]['publishers']++;
-                if($event['status'] == 1) {
+                if($event['status'] == 1 || ($this->bulk_ids[$event['id']] ?? false) == true) {
                     $day_table[$slot_key]['accepted']++;
                     $this->day_stat[$slot_key]['events']++;
                 }                
@@ -489,6 +451,7 @@ class Modal extends AppComponent
         $this->date = $date;
         $this->active_tab = '';
         $this->polling_check();
+        $this->cancelBulk();
         
         // Debugbar::addMessage('setDate lefutott', 'mylabel');
         // $this->getInfo();
@@ -521,6 +484,94 @@ class Modal extends AppComponent
     public function polling_check() {
         $this->polling = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? true : false;
         // dd($this->polling);
+    }
+
+    public function setBulk() {
+        // dd('na');
+        $this->bulk_function = true;
+    }
+
+    public function cancelBulk() {
+        $this->bulk_function = false;
+        $this->bulk_ids = null;
+    }
+
+    public function bulk($eventId) {
+        // dd('ok', $eventId);
+        if(isset($this->bulk_ids[$eventId])) {
+            unset($this->bulk_ids[$eventId]);
+        } else {
+            $this->bulk_ids[$eventId] = $eventId;
+        }
+    }
+
+    public function acceptBulk() {
+        if(!is_array($this->bulk_ids)) {
+            $this->cancelBulk();
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('event.bulk.error')
+            ]);
+            return;
+        }
+        $this->acceptBulkFinal();
+    }
+
+    public function acceptBulkFinal() {        
+        $role = $this->getRole();
+        if(in_array($role, ['admin', 'roler']) && is_array($this->bulk_ids)) {
+            foreach($this->bulk_ids as $id) {
+                Event::where('id', '=', $id)
+                    ->where('status', '=', '0')
+                    ->first()
+                    ->update([
+                        'status' => 1
+                    ]);
+            }
+            $stat = new GenerateStat();
+            $stat->generate($this->form_groupId, $this->date);
+            $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.acccept_done')]);
+        }
+        $this->cancelBulk();
+    }
+
+    public function rejectBulk() {
+        if(!is_array($this->bulk_ids)) {
+            $this->cancelBulk();
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('event.bulk.error')
+            ]);
+            return;
+        }
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('event.bulk.confirmReject.question'),
+            'text' => __('event.bulk.confirmReject.message', ['number' => count($this->bulk_ids)]),
+            'emit' => 'rejectBulkFinal'
+        ]);
+    }
+
+    public function rejectBulkFinal() {
+        if(!is_array($this->bulk_ids)) {
+            $this->cancelBulk();
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('event.bulk.error')
+            ]);
+            return;
+        }
+        $role = $this->getRole();
+        if(in_array($role, ['admin', 'roler']) && is_array($this->bulk_ids)) {
+            foreach($this->bulk_ids as $id) {
+                Event::where('id', '=', $id)
+                    ->where('status', '=', '0')
+                    ->first()
+                    ->update([
+                        'status' => 2
+                    ]);
+            }
+            $stat = new GenerateStat();
+            $stat->generate($this->form_groupId, $this->date);
+            $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.confirmReject.success')]);
+        }
+        $this->cancelBulk();
     }
 
     public function render()

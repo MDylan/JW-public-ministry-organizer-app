@@ -83,6 +83,37 @@
                                         @endforeach                                
                                     </div>
                                 @endif
+
+                                @if ($editor && $group_data['need_approval'] == 1)
+
+                                    <div class="mx-2 @if($bulk_function) p-2 border border-warning rounded @endif">                                        
+                                        @if($bulk_function)
+                                            <div class="btn-group" role="group" aria-label="@lang('event.bulk.button')">
+                                                <button wire:click="cancelBulk" class="btn btn-secondary">
+                                                    <i class="fas fa-times mr-1"></i>
+                                                        @lang('event.bulk.cancel')
+                                                </button>
+                                                <button wire:click="acceptBulk" type="button" class="btn btn-success">
+                                                    <i class="far fa-check-circle mr-1"></i>
+                                                        @lang('event.bulk.accept')
+                                                </button>
+                                                <button wire:click="rejectBulk" type="button" class="btn btn-danger">
+                                                    <i class="far fa-times-circle mr-1"></i>
+                                                        @lang('event.bulk.reject')
+                                                </button>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                @lang('event.bulk.help')
+                                            </small>
+                                        @else
+                                            <button wire:click="setBulk" class="btn btn-primary">
+                                                <i class="fas fa-tasks mr-1"></i>
+                                                    @lang('event.bulk.button')
+                                            </button>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 {{-- {{ var_dump($day_events) }} --}}
                                 <div class="m-2 schedule_new" style="grid-template-columns: [times] 4em repeat({{$date_data['peak']}}, 1fr);" aria-labelledby="schedule-heading">
                                     @if (!empty($day_data['table']))
@@ -102,6 +133,9 @@
                                                     <div id="e_{{ $event['id'] }}" class="session session-2 track-{{($event['cell'])}}@if($event['status'] == 0)-plan @endif 
                                                     @if ($event['user_id'] == auth()->id())
                                                         userEvent
+                                                    @endif
+                                                    @if ($bulk_function && ($bulk_ids[$event['id']] ?? false) == true)
+                                                        bulk_selected
                                                     @endif" style="grid-column: {{$event['cell'] + 1}}; grid-row: {{$event['row']}}; grid-row-end: {{( $event['row'] + $event['height'])}};">
                                                         <h3 class="session-title">
                                                             @if($event['status'] == 0)
@@ -109,8 +143,18 @@
                                                                     <i class="fas fa-balance-scale-right" title="@lang('event.status_0')"></i>
                                                                 </span>
                                                             @endif
-                                                            @if ($event['editable'] != 'disabled') 
-                                                                <a href="" wire:click.prevent="editEvent_modal({{$event['id']}})">
+                                                            
+                                                            @if ($event['editable'] != 'disabled' && !$bulk_function) 
+                                                                <a href="" wire:click.prevent="editEvent_modal({{$event['id']}})" id="edit_event_{{ $event['id'] }}">
+                                                            @elseif($editor && ($bulk_function && $event['status'] != 1))
+                                                                @if ($r['status'] != 'full' || ($bulk_ids[$event['id']] ?? false) == true)
+                                                                    <a href="" wire:click.prevent="bulk({{$event['id']}})" id="bulk_event_{{ $event['id'] }}">
+                                                                @else
+                                                                    <a href="" id="bulk_event_{{ $event['id'] }}">
+                                                                @endif
+                                                                
+                                                            @elseif ($event['editable'] != 'disabled' && $bulk_function) 
+                                                                <a id="edit_event_{{ $event['id'] }}">
                                                             @endif
                                                                 @if (is_array($group_data['signs']))
                                                                     @foreach ($group_data['signs'] as $icon => $sign) 
@@ -124,9 +168,20 @@
                                                                     <i class="fa fa-user mr-1"></i>
                                                                 @endif 
                                                                 {{ $event['user']['name'] }}
-                                                            @if ($event['editable'] != 'disabled') 
-                                                                <i class="fa fa-edit ml-1"></i>
-                                                            </a>
+                                                            @if ($event['editable'] != 'disabled' && !$bulk_function) 
+                                                                    <i class="fa fa-edit ml-1"></i>
+                                                                </a>
+                                                            @elseif ($editor && ($bulk_function && $event['status'] != 1))
+                                                                    @if (($bulk_ids[$event['id']] ?? false) == true)
+                                                                        <i class="far fa-check-circle ml-1 text-success"></i>
+                                                                    @elseif($r['status'] == 'full')
+                                                                        <i class="fas fa-hourglass ml-1 text-warning"></i>
+                                                                    @else
+                                                                        <i class="far fa-circle ml-1 text-warning"></i>
+                                                                    @endif
+                                                                </a>
+                                                            @elseif ($event['editable'] != 'disabled' && $bulk_function) 
+                                                                </a>
                                                             @endif
                                                             <div wire:ignore id="phone_event_{{ $event['id'] }}" class="badge badge-info p-2 font-weight-normal" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>

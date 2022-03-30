@@ -505,3 +505,7 @@
 .crop_child {
   max-height: 26px;
 }
+
+.bulk_selected {
+  border: 4px solid #00ff00 !important;
+}

@@ -72,5 +72,20 @@ return [
     'comment' => [
         'label' => 'Megjegyzés',
         'helper' => 'Megjegyzés a szolgálatodhoz. Mindenki látja, kérjük fogalmazz röviden.'
-    ]
+    ],
+    'bulk' => [
+        'button' => 'Tömeges elfogadás / elutasítás',
+        'help' => 'Kattintással válaszd ki, amit elutasítanál vagy elfogadnál, majd kattints a megfelelő gombra. Ismételt kattintásra visszavonja a kijelölést.',
+        'accept' => 'A kijelöltek elfogadása',
+        'acccept_done' => 'A kijelölt szolgálatokat jóváhagytad',
+        'reject' => 'A kijelöltek elutasítása',
+        'confirmReject' => [
+            'question' => 'Biztosan elutasítod a kijelölt szolgálatokat?',
+            'message' => 'Összesen :number darab.',
+            'success' => 'Sikeresen elutasítottad a szolgálatot.',
+        ],
+        'cancel' => 'Mégsem módosítok semmit',
+        'error' => 'Nem volt mit elfogadni vagy elutasítani!',        
+
+    ],
 ];
