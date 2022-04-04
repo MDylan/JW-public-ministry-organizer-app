@@ -565,21 +565,6 @@ class EventEdit extends AppComponent
             if($exists !== null) {
                 $event = Event::findOrFail($this->editEvent['id']);
                 $event->update($validatedData);
-
-                if($validatedData['status'] == 1 && $this->editEvent['status'] == 0) {
-                    //accept this event, delete in other groups
-                    Event::where('status', '=', 0)
-                        ->where('user_id', '=', $data['user_id'])
-                        ->where('group_id', '!=', $this->groupId)
-                        ->where('start', '<', date("Y-m-d H:i", $data['end']))
-                        ->where('end', '>', date("Y-m-d H:i", $data['start']))
-                        ->update(['status' => 2]);
-                    //     ->get();
-                    // foreach($others as $other) {
-                    //     $other->status = 2;
-                    //     $other->save();
-                    // }
-                }
             }
 
 

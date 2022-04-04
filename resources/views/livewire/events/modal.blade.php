@@ -183,6 +183,7 @@
                                                             @elseif ($event['editable'] != 'disabled' && $bulk_function) 
                                                                 </a>
                                                             @endif
+                                                            @if(!$bulk_function)
                                                             <div wire:ignore id="phone_event_{{ $event['id'] }}" class="badge badge-info p-2 font-weight-normal" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">
@@ -194,6 +195,7 @@
                                                                     @endif
                                                                 </span>
                                                             </div>
+                                                            @endif
                                                             @if (isset($event['comment']))
                                                                 <button wire:ignore id="comment_event_{{ $event['id'] }}" class="btn btn-sm btn-info px-1 py-0" onclick="showFullChild(this, 'cr');">
                                                                     <div class="cr crop_child overflow-hidden">

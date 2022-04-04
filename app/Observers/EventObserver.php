@@ -137,6 +137,15 @@ class EventObserver
                 $us->notify(
                     new EventStatusChangedNotification($data)
                 );
+                if($event->status == 1) {
+                    //accept this event, delete in other groups
+                    Event::where('status', '=', 0)
+                        ->where('user_id', '=', $event->user_id)
+                        ->where('group_id', '!=', $event->group_id)
+                        ->where('start', '<', date("Y-m-d H:i", $event->end))
+                        ->where('end', '>', date("Y-m-d H:i", $event->start))
+                        ->update(['status' => 2]);
+                }
             }
         }
     }
