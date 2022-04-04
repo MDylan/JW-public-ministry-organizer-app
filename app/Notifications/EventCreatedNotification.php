@@ -53,6 +53,7 @@ class EventCreatedNotification extends Notification implements ShouldQueue
         $end = $e->format(__('app.format.time'));
 
         return (new MailMessage)
+            ->replyTo($this->data['replyTo'] ?? env('MAIL_FROM_ADDRESS'))
             ->subject(__('email.event.created.subject', [
                 'date' => $date,
                 'groupName' => $this->data['groupName']

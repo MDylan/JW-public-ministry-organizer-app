@@ -46,6 +46,18 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="inputName">{{__('group.replyToAddress')}}</label>
+                                                    <input type="email" class="form-control @error('replyTo') is-invalid @enderror" id="replyTo" wire:model.defer="state.replyTo" value="" placeholder=""  aria-describedby="replyToHelper" />
+                                                    <small id="replyToHelper" class="form-text text-muted">
+                                                        @lang('group.replyToHelper', ['defaultMail' => env('MAIL_FROM_ADDRESS')])
+                                                    </small>
+                                                    @error('replyTo')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="row align-items-end">
                                             <div class="col">
                                                 <div class="form-group">

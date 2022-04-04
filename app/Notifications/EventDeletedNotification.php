@@ -54,6 +54,7 @@ class EventDeletedNotification extends Notification implements ShouldQueue
         $end = $e->format(__('app.format.time'));
 
         $message = (new MailMessage)
+            ->replyTo($this->data['replyTo'] ?? env('MAIL_FROM_ADDRESS'))
             ->subject(__('email.event.deleted.subject', [
                 'date' => $date,
                 'groupName' => $this->data['groupName']

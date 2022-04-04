@@ -30,7 +30,8 @@ class Group extends Model
         'color_maximum',
         'parent_group_id',
         'signs',
-        'languages'
+        'languages',
+        'replyTo'
     ];
 
     /**
@@ -42,6 +43,7 @@ class Group extends Model
         'signs' => 'array',
         'languages' => 'array',
         'copy_from_parent' => 'array',
+        'replyTo' => 'encrypted',
     ];
 
     protected $appends = ['colors'];

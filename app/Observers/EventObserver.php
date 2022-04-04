@@ -44,6 +44,7 @@ class EventObserver
             $data = [
                 'userName' => auth()->user()->name, 
                 'groupName' => $event->groups->name,
+                'replyTo' => $event->groups->replyTo,
                 'date' => $event->day,
                 'newService' => [
                     'start' => date("Y-m-d H:i:s", $event->start),
@@ -102,6 +103,7 @@ class EventObserver
                 $data = [
                     'userName' => $auth ? auth()->user()->name : "SYSTEM", 
                     'groupName' => $event->groups->name,
+                    'replyTo' => $event->groups->replyTo,
                     'date' => $event->day,
                     'oldService' => [
                         'start' => date("Y-m-d H:i:s", $event->getOriginal('start')),
@@ -126,6 +128,7 @@ class EventObserver
                 $data = [
                     'groupName' => $event->groups->name,
                     'date' => $event->day,
+                    'replyTo' => $event->groups->replyTo,
                     'newService' => [
                         'start' => date("Y-m-d H:i:s", $event->start),
                         'end' => date("Y-m-d H:i:s", $event->end),                        
@@ -172,6 +175,7 @@ class EventObserver
         $data = [
             'userName' => $auth ? auth()->user()->name : false, 
             'groupName' => $event->groups->name,
+            'replyTo' => $event->groups->replyTo,
             'date' => $event->day,
             'oldService' => [
                 'start' => date("Y-m-d H:i:s", $event->start),

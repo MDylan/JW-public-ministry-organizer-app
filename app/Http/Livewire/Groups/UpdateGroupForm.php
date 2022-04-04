@@ -272,6 +272,7 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
+            'replyTo' => 'sometimes|email',
         ]);
 
         $validatedData = $v->validate();

@@ -253,6 +253,7 @@ class CalculateDatesEvents {
             $notifies[$event['user_id']]['deletes'][] = [
                 'userName' => $causer_user->name, 
                 'groupName' => $group->name,
+                'replyTo' => $group->replyTo,
                 'date' => $event['day'],
                 'oldService' => [
                     'start' => $event['start'],
@@ -277,6 +278,7 @@ class CalculateDatesEvents {
                 $notifies[$event['user_id']]['updates'][] = [
                     'userName' => $causer_user->name, 
                     'groupName' => $group->name,
+                    'replyTo' => $group->replyTo,
                     'date' => $event['day'],
                     'oldService' => [
                         'start' => $event['start'],
