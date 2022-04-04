@@ -12,8 +12,14 @@ use Illuminate\Support\Facades\Lang;
 class EventDeletedAdminsNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-
     private $data;
+
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 5;
 
     /**
      * Create a new notification instance.

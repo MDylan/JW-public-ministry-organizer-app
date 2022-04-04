@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\URL;
 class UserRegisteredNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 5;
+    
     /**
      * The callback that should be used to create the verify email URL.
      *

@@ -14,6 +14,13 @@ class LoginData extends Notification implements ShouldQueue
     private $data;
 
     /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 5;
+
+    /**
      * Create a new notification instance.
      *
      * @return void
