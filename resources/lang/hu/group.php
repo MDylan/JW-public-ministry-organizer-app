@@ -57,7 +57,7 @@ return [
         480 => '8 óra',
     ],
     'replyToAddress' => 'Válasz email cím',
-    'replyToHelper' => 'Add meg azt az email címet, ahová a hírnök válaszolhat, ha értesítést kap valamiről. Ha üresen hagyod, akkor a rendszer email címe lesz beállítva (:defaultMail) de az erre küldött a leveleket nem biztos, hogy megkapod.',
+    'replyToHelper' => 'Megadhatsz egy email címet, ahová a hírnök válaszolhat, ha értesítést kap valamiről (pl. a szolgálata elfogadásáról). Ha üresen hagyod, akkor a rendszer email címe lesz beállítva (:defaultMail).',
     'max_extend_days' => 'Hány nappal előre foglalhatnak le időpontot?',
     'max_extend_days_placeholder' => 'Például 60',
     'need_approval' => 'Jóváhagyás szükséges',
