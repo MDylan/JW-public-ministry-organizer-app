@@ -183,17 +183,17 @@ class EventObserver
             ],
             'reason' => session()->has('reason') ? session('reason') : false 
         ];
-        if($event->user_id != ($auth ? auth()->user()->id : false)) {
-            //notify user if not he deleted this event
-            $us = User::find($event->user_id);
-            if(!$us->isAnonymized) {
-                $us->notify(
-                    new EventDeletedNotification($data)
-                );
-                $data['event_user'] = $us->name;
-            } else {
-                $data['event_user'] = 'anonym';
-            }
+        $us = User::find($event->user_id);
+        if(!$us->isAnonymized) {
+            $data['event_user'] = $us->name;
+        } else {
+            $data['event_user'] = 'anonym';
+        }
+        if($event->user_id != ($auth ? auth()->user()->id : false) && !$us->isAnonymized) {
+            //notify user if not he deleted this event            
+            $us->notify(
+                new EventDeletedNotification($data)
+            );
         }
         if($event->status == 1) {
             $group_id = $event->group_id;

@@ -257,8 +257,8 @@ class UpdateGroupForm extends AppComponent
         $v = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
             'max_extend_days' => 'required|numeric|digits_between:1,365',
-            'min_publishers' => 'required|numeric|digits_between:1,10|lte:max_publishers',
-            'max_publishers' => 'required|numeric|digits_between:1,10|gte:min_publishers',
+            'min_publishers' => 'required|numeric|digits_between:1,12|lte:max_publishers',
+            'max_publishers' => 'required|numeric|digits_between:1,12|gte:min_publishers',
             'min_time' => 'required|numeric|in:30,60,120|lte:max_time',
             'max_time' => 'required|numeric|in:60,120,180,240,320,360,420,480|gte:min_time',            
             'need_approval' => 'required|numeric|in:0,1',
@@ -272,7 +272,8 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
-            'replyTo' => 'sometimes|email',
+            'replyTo' => 'nullable|email',
+            'showPhone' => 'required|numeric|in:0,1'
         ]);
 
         $validatedData = $v->validate();

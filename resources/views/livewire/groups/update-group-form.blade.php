@@ -121,7 +121,7 @@
                                             </div>
                                         </div>
                                         <div class="row align-items-end">
-                                            <div class="col-6">
+                                            <div class="col-4">
                                                 <div class="form-group">
                                                     <label>@lang('group.color_minimum')</label>
                                                     <div class="input-group">
@@ -132,7 +132,7 @@
                                                     </div> 
                                                 </div>
                                             </div>
-                                            <div class="col-6">
+                                            <div class="col-4">
                                                 <div class="form-group">
                                                     <label>@lang('group.color_maximum')</label>
                                                     <div class="input-group">
@@ -141,6 +141,19 @@
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_maximum']) style="color: {{ $state['color_maximum'] }};" @endif></i></span>
                                                         </div>
                                                     </div> 
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="form-group">
+                                                    <label for="showPhone">{{__('group.showPhone')}}</label>
+                                                    <small id="showPhone_help" class="form-text text-muted">
+                                                        @lang('group.showPhone_help')
+                                                    </small>
+                                                    <select class="form-control @error('showPhone') is-invalid @enderror" id="showPhone" wire:model.defer="state.showPhone" aria-describedby="showPhone_help">
+                                                        <option value="0">@lang('No')</option>
+                                                        <option value="1">@lang('Yes')</option>
+                                                    </select>
+                                                    @error('showPhone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
                                             </div>
                                         </div>

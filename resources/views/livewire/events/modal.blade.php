@@ -130,7 +130,14 @@
                                             @if (isset($day_events[$time]))
                                                 {{-- @dd($day_events) --}}
                                                 @foreach ($day_events[$time] as $event)
-                                                    <div id="e_{{ $event['id'] }}" class="session session-2 track-{{($event['cell'])}}@if($event['status'] == 0)-plan @endif 
+                                                    @php
+                                                        $event_cell = $event['cell'];
+                                                        //if more then 8 column exists than we reset the css
+                                                        if($event_cell%8 == 0) {
+                                                            $event_cell = $event['cell'] - 8;
+                                                        }
+                                                    @endphp
+                                                    <div id="e_{{ $event['id'] }}" class="session session-2 track-{{$event_cell}}@if($event['status'] == 0)-plan @endif 
                                                     @if ($event['user_id'] == auth()->id())
                                                         userEvent
                                                     @endif
@@ -183,7 +190,7 @@
                                                             @elseif ($event['editable'] != 'disabled' && $bulk_function) 
                                                                 </a>
                                                             @endif
-                                                            @if(!$bulk_function)
+                                                            @if(!$bulk_function && $group_data['showPhone'] == 1)
                                                             <div wire:ignore id="phone_event_{{ $event['id'] }}" class="badge badge-info p-2 font-weight-normal" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">

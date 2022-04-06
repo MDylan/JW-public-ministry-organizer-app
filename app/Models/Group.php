@@ -31,7 +31,8 @@ class Group extends Model
         'parent_group_id',
         'signs',
         'languages',
-        'replyTo'
+        'replyTo',
+        'showPhone'
     ];
 
     /**

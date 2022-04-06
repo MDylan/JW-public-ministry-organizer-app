@@ -79,6 +79,8 @@ return [
         'color_maximum' => 'Betelt a hírnökök száma.',
         'your_service' => 'Ezen a napon neked is szolgálatod van.',
     ],
+    'showPhone' => 'Telefonszámok megjelenítése',
+    'showPhone_help' => 'Mutassa a telefonszámokat a naptárban?',
     'days' => [
         '1' => 'Hétfő',
         '2' => 'Kedd',

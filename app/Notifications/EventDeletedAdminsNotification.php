@@ -69,7 +69,7 @@ class EventDeletedAdminsNotification extends Notification implements ShouldQueue
             ->line(__('email.event.deleted_to_admin.line_2', [
                 'oldServiceDate' => $date.": ".$start." - ".$end,
             ]))
-            ->line(__('event.publisher').": ".$this->data['event_user'])
+            ->line(__('event.publisher').": ".($this->data['event_user'] ?? '-' ))
             ->line(__('email.event.deleted_to_admin.line_3', [
                 'reason' => (($this->data['reason']) !== false
                                 ? __('email.event.deletion_reasons.'.$this->data['reason'])
