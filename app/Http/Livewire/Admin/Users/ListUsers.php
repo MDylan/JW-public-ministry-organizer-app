@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Admin\Users;
 
+use App\Helpers\CollectionHelper;
 use App\Http\Livewire\AppComponent;
 use App\Models\User;
 use Illuminate\Support\Facades\Lang;

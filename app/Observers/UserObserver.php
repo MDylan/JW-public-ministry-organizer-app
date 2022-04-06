@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Jobs\CalulcateUserNameIndexProcess;
 use App\Models\User;
 use App\Notifications\NewAdminNotification;
 use App\Notifications\UserRegisteredNotification;
@@ -23,6 +24,7 @@ class UserObserver
         if($user->role === 'mainAdmin') {
             $this->adminAdded($user);
         }
+        CalulcateUserNameIndexProcess::dispatch();
 
         // $user->notify(new UserRegisteredNotification());
 
@@ -43,6 +45,9 @@ class UserObserver
                 $this->adminAdded($user);
             }
         }
+        if($user->wasChanged('name')) {
+            CalulcateUserNameIndexProcess::dispatch();
+        }
     }
 
     /**
@@ -53,7 +58,7 @@ class UserObserver
      */
     public function deleted(User $user)
     {
-        //
+        CalulcateUserNameIndexProcess::dispatch();
     }
 
     /**
@@ -75,7 +80,7 @@ class UserObserver
      */
     public function forceDeleted(User $user)
     {
-        //
+        CalulcateUserNameIndexProcess::dispatch();
     }
 
     /**

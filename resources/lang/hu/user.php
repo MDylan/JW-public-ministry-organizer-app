@@ -37,7 +37,8 @@ return [
         'cancel' => 'Kérem az email címem törlését a rendszerből',
         'done' => 'A regisztrációd elkészült! :) Az alábbi oldalon tudod elfogadni vagy elutasítani a csoport meghívásaidat.',
         'cancelAlert' => 'Biztosan törlöd az email címedet?',
-        'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',        
+        'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',
+        'info' => 'Tájékoztatás az adataid védelméről: Személyes adataidat csak jelen oldalon használjuk fel. Az email címedet és a telefonszámodat alapértelmezetten mindenki láthatja, akivel egy csoportban szolgálsz, de a regisztráció után a "Profilom" menüben beállíthatod, hogy csak a Csoportszolgák és Csoport segítők láthassák.',
     ],
     'gdpr' => [
         'my_personal_datas' => 'Személyes adataim',

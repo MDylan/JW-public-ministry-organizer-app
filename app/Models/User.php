@@ -70,6 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'calendars' => 'array',
         'phone_number' => 'encrypted',
         'hidden_fields' => 'array',
+        'name' => 'encrypted',
     ];
 
     // protected $appends = ['full_name'];

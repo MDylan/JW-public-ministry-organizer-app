@@ -18,6 +18,9 @@ use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\UserProfileChangedNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class ListUsers extends AppComponent
 {
@@ -26,9 +29,11 @@ class ListUsers extends AppComponent
     public $selected_user;
     public $searchTerm = null;
     public $filter = [];
+    public $page = 1;
     //for search with an url string
     protected $queryString = [
-        'searchTerm' => ['except' => '']
+        'searchTerm' => ['except' => ''],
+        'page' => ['except' => '']
     ];
     private $group = null;
     private $role = null;
@@ -730,7 +735,7 @@ class ListUsers extends AppComponent
         ]);
     }
 
-    public function render()
+    public function render(Request $request)
     {
         $this->getGroupInfo();
         // $group = Group::findOrFail($this->groupId);
@@ -740,10 +745,6 @@ class ListUsers extends AppComponent
 
         $users = $this->group->groupUsers()
                     ->where(function($query) {
-                        if(strlen($this->searchTerm) > 0) {
-                            $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
-                            $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
-                        }
                         if(($this->filter['online'] ?? null) == true) {
                             $query->whereBetween('users.last_activity', [now()->subMinute(5), now()]);
                         }
@@ -762,10 +763,28 @@ class ListUsers extends AppComponent
                                 $query->whereJsonContains($field, $value);
                             }
                         }
-                    })
-                    ->paginate(10);
-        // dd($this->filter);
-        // dd($users->toArray());
+                    })->get(); 
+        if(strlen($this->searchTerm) > 0) {
+            //search in user's name and email. This is because we store user's name encrypted
+            $users = collect($users)->filter(function($user) {
+                if(
+                      mb_strpos(mb_strtolower($user->name), mb_strtolower($this->searchTerm)) !== false
+                   || mb_strpos(mb_strtolower($user->email), mb_strtolower($this->searchTerm)) !== false
+                ) return true;
+                return false;
+            });
+        }
+        //create pagination
+        $total = count($users);
+        $per_page = 10;
+        $current_page = $this->page; // $request->page ?? 1;
+        if($current_page < 1) $current_page = 1;
+        $itemsForCurrentPage = $users->slice(($current_page - 1) * $per_page, $per_page);
+        $users = new LengthAwarePaginator($itemsForCurrentPage, $total, $per_page, $current_page, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+        ]);
+
         return view('livewire.groups.list-users', [
             'editor' => $editor,
             'admin' => $this->group->groupAdmins()->wherePivot('user_id', Auth::id())->count(),
