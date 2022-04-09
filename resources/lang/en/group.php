@@ -26,18 +26,20 @@ return array (
   'color_someone' => 'Somebody has signed up',
   'create_info' => 'You will be able to edit the group data after the group has been created. You will be added automatically to the group and you will be granted with group overseer authorization. You will be able to add new members in the "Publishers" menu.',
   'days' => 
-  array (
-    0 => 'Sunday',
+  array (    
     1 => 'Monday',
     2 => 'Tuesday',
     3 => 'Wednesday',
     4 => 'Thursday',
     5 => 'Friday',
     6 => 'Saturday',
+    0 => 'Sunday',
   ),
   'days_head' => 'Service days',
   'days_info' => 'If you modify the time intervals of the day, the modification will be valid from today. If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days listed below will not be affected.',
   'deletegroup' => 'Delete group',
+  'disabled_time_slots' => 'Disabled time slots',
+  'disabled_time_slots_info' => 'Warning! The chosen time slots will not be available for booking.',
   'editGroup' => 'Edit group',
   'end_time' => 'End of service',
   'error_no_admin_user' => 'You have not assigned anybody to be the group overseer!',
@@ -64,6 +66,7 @@ return array (
     'button' => 'Link',
     'child' => 
     array (
+      'copy_data' => 'You can choose which data of the publishers should be  copied from the main group. After saving, copying will happen automatically, and from then on, you will not be able to modify these fields here.',
       'detach' => 
       array (
         'button' => 'Detach link',
@@ -132,6 +135,7 @@ return array (
     'self_delete_error' => 'You cannot remove yourself from the group. You can leave the group in the "Groups" menu.',
     'success' => 'You have successfully left the group.',
   ),
+  'main-group' => 'Main group',
   'manage' => 'Manage',
   'max' => 'Max.',
   'max_extend_days' => 'Appointments can be booked how many days before the event?',
@@ -192,6 +196,8 @@ return array (
   'reject_log' => 'Group invitation has been declined.',
   'reject_message' => 'This cannot be undone.',
   'reject_question' => 'Are sure you want to decline the invitation?',
+  'replyToAddress' => 'Email address for replies',
+  'replyToHelper' => 'You can add an email address here that can be used by publishers to send their replies after they have received some notifications (e.g. about their service being approved). If you leave this field empty, the system email address will be used (:defaultMail).',
   'request' => 
   array (
     'button' => 'Send request',
@@ -241,8 +247,11 @@ Except these actions, everything else can be performed by the group servant as w
   'service' => 'Service',
   'service_publishers' => 'Minimum :min, maximum :max publisher(s)',
   'service_time' => 'Minimum :min, maximum :max service time',
+  'showPhone' => 'Show telephone numbers',
+  'showPhone_help' => 'Should telephone numbers be shown in the calendar?',
   'signs' => 
   array (
+    'change' => 'Should the publisher be able to modify?',
     'error' => 'You have no permission to modify.',
     'info' => 'The following signs can be used by the publishers in this group. (Using these signs is not mandatory.) This can help you to easily identify e.g. who has a key to the  hall or who has a car. The name of the signs can be customized - publishers will be able to see them.',
     'name' => 'Name of the sign',
@@ -280,6 +289,8 @@ Except these actions, everything else can be performed by the group servant as w
     'under_edit' => 'Being edited on the form above!',
   ),
   'start_time' => 'Start of service',
+  'sub-group' => 'Sub-group',
+  'sub-group-alert' => 'You cannot modify this one here, because you have chosen the option that this data should be copied from the main group (:groupName). You can modify this there, in the main group.',
   'times' => 
   array (
     '00:00' => '00:00',

@@ -3,6 +3,23 @@
 return array (
   'approval_info' => 'Approval',
   'approved' => 'Approved',
+  'bulk' => 
+  array (
+    'acccept_done' => 'You have approved the selected services.',
+    'accept' => 'Approve all selected ones.',
+    'button' => 'Mass approval / decline',
+    'cancel' => 'I cancel all modification.',
+    'confirmReject' => 
+    array (
+      'message' => ':userName in total.',
+      'question' => 'Are you sure you want to decline the selected services?',
+      'success' => 'You have successfully declined the selected service(s).',
+    ),
+    'error' => 'Nothing to approve or decline.',
+    'help' => 'Select by clicking on the one that you want to approve or decline, then click on the proper option.
+If you click again on the one that has been selected, the selection will be annulled.',
+    'reject' => 'Decline all selected ones.',
+  ),
   'cancel_edit' => 'Cancel modification(s)',
   'choose_group' => 'Choose a group',
   'choose_publisher' => 'Choose a publisher',

@@ -77,7 +77,7 @@ return array (
     ),
     'modify_reasons' => 
     array (
-      'modified_service_time' => 'The time of the service on this day has been modified.',
+      'modified_service_time' => 'The time of the service on this day has been modified, and your planned service did not fit into the new service time.',
       'unknown' => 'Unknown',
     ),
     'status_changed' => 
@@ -137,6 +137,14 @@ return array (
     'line_2' => 'Assigned by: :adminBy',
     'line_3' => 'If this proves to be a mistake, please revoke his Administrator access permission as soon as possible.',
     'subject' => 'A new administrator has been assigned.',
+  ),
+  'profileChanged' => 
+  array (
+    'line_1' => 'We are informing you that your name or your telephone number on the website has been modified by :userName',
+    'line_2' => 'Your old data:',
+    'line_3' => 'Your new data:',
+    'line_4' => 'If you notice that any of your new data is incorrect, you can modify it in the "My profile" menu after login.',
+    'subject' => 'We have modified your personal data.',
   ),
   'registerFail' => 'If you are not the one who performed the registration, it will be deleted automatically after 48 hours.',
   'registerWelcome' => 'Successful registration on :url. Please click on the link below to confirm your registration.',
