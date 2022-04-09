@@ -7,6 +7,7 @@ return [
     'emailExists' => 'Ezzel az email címmel már van regisztráció',
     'login' => 'Belépés',
     'rememberMe' => 'Emlékezzen rám',
+    'captcha_error' => 'Hibás captcha, vagy túl sokat vártál. Próbáld újra.',
     'lostPassword' => 'Elfelejtett jelszó',
     'register' => 'Regisztráció',
     'registerMessage' => 'Új fiók létrehozása',

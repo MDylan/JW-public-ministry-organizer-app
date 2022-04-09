@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
+use App\Models\User;
 use Dialect\Gdpr\Http\Requests\GdprDownload;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;

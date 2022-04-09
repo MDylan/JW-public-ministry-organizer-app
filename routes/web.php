@@ -26,9 +26,11 @@ use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
+use App\Notifications\TestNotification;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +62,15 @@ Route::middleware(['signed'])->group(function () {
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
 
+//TODO: We will remove it later!!!
+/*
+Route::get('/mailtest', function () {
+    $mail = request()->get('mail');
+    Notification::route('mail', $mail)->notify(new TestNotification());
+
+    return 'mail test sent';
+})->middleware(['guest']);
+*/
 
 //Logged in users
 Route::middleware(['auth'])->group(function () {

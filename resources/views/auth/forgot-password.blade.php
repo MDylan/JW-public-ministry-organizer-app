@@ -11,17 +11,10 @@
             </div>
             <div class="card-body">
                 <p class="text-center">{{ __('Reset Password') }}</p>
-                @if (session('status'))
-                    <div class="alert alert-success" role="alert">
-                        {{ session('status') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('password.email') }}">
+                <form method="POST" action="{{ route('password.email') }}" id="lostpasswordForm">
                     @csrf
-                    <x-honey/>
                     @if (env('USE_RECAPTCHA', false))
-                        <x-honey-recaptcha/> 
+                        <input type="hidden" class="g-recaptcha" name="recaptcha_token" id="recaptcha_token">
                     @endif
                     <div class="form-group row">
                         <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
@@ -55,6 +48,7 @@
         </div>
     </div>
 </div>
-
-
 @endsection
+@if (env('USE_RECAPTCHA', false))
+    @include('auth.recaptcha-script', ['formId' => 'lostpasswordForm'])
+@endif

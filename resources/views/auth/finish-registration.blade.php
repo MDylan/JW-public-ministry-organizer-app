@@ -11,8 +11,6 @@
         </div>
         <div class="card-body">
                 <p class="login-box-msg">{{__('user.finish.helper')}}</p>
-
-                {{-- {!! Form::open() !!} --}}
                 <form method="POST" action="{{route('finish_registration_register', ['id' => $id])}}?expires={{ app('request')->input('expires') }}&signature={{ app('request')->input('signature') }}" accept-charset="UTF-8">
                 @csrf
                 <div class="row">

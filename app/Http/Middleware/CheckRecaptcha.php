@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Lukeraymonddowning\Honey\Facades\Honey;
+use Illuminate\Support\Facades\Http;
 
 class CheckRecaptcha
 {
@@ -19,13 +19,22 @@ class CheckRecaptcha
     {
         $check_needed = env('USE_RECAPTCHA', false);
         if($check_needed) {
-            $token = request()->honey_recaptcha_token;
-            $probablyABot = Honey::recaptcha()->checkToken($token)->isSpam();
+            $response = Http::asForm()->post("https://www.google.com/recaptcha/api/siteverify", [
+                'secret' => config('services.recaptcha.secret_key'),
+                'response' => $request->recaptcha_token,
+                'ip' => request()->ip(),
+            ]);
+
+            if ($response->successful() && $response->json('success') && $response->json('score') > config('services.recaptcha.min_score')) {
+                $probablyABot = false;
+            } else {
+                $probablyABot = true;
+            }
         } else {
             $probablyABot = false;
         }
         if($probablyABot) {
-            Honey::fail();
+            return back()->with('status', __('user.captcha_error'));
         } else {
             return $next($request);
         }

@@ -13,11 +13,10 @@
             @if (config('settings_registration') == 1)
                 <p class="login-box-msg">{{__('user.registerMessage')}}</p>
 
-                <form method="POST" action="{{route('register')}}">
+                <form method="POST" action="{{route('register')}}" id="registerForm">
                 @csrf
-                <x-honey/>
                 @if (env('USE_RECAPTCHA', false))
-                    <x-honey-recaptcha/> 
+                    <input type="hidden" class="g-recaptcha" name="recaptcha_token" id="recaptcha_token">
                 @endif
                 <div class="row">
                     <div class="col-md-12">
@@ -107,3 +106,6 @@
     <!-- /.register-box -->
 </div>
 @endsection
+@if (env('USE_RECAPTCHA', false))
+    @include('auth.recaptcha-script', ['formId' => 'registerForm'])
+@endif

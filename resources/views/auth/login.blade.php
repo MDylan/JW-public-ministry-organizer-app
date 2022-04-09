@@ -11,16 +11,10 @@
             <a href="/" class="h1">{{__('app.title')}}</a>
         </div>
         <div class="card-body">
-            {{-- @if (session('status'))
-                <div class="alert alert-success">
-                    {{ session('status') }}
-                </div>
-            @endif --}}
-            <form action="{{route('login')}}" method="POST">
+            <form action="{{route('login')}}" method="POST" id="loginForm">
                 @csrf
-                <x-honey/>
                 @if (env('USE_RECAPTCHA', false))
-                    <x-honey-recaptcha/> 
+                    <input type="hidden" class="g-recaptcha" name="recaptcha_token" id="recaptcha_token">
                 @endif
             <div class="input-group mb-3">
                 <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" placeholder="Email">
@@ -88,3 +82,6 @@
     <!-- /.login-box -->
 </div>
 @endsection
+@if (env('USE_RECAPTCHA', false))
+    @include('auth.recaptcha-script', ['formId' => 'loginForm'])
+@endif
