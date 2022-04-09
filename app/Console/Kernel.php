@@ -4,6 +4,8 @@ namespace App\Console;
 
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\UserWillBeAnonymizeNotification;
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -15,7 +17,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        \Dialect\Gdpr\Commands\AnonymizeInactiveUsers::class,
     ];
 
     /**
@@ -26,10 +28,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
         $schedule->command('queue:work --name=kozteruletek-job-1 --queue=default --max-time=25 --max-jobs=100 --sleep=3 --tries=3 --backoff=20')
                     ->everyMinute()
-                    // ->runInBackground()
                     ->withoutOverlapping(1);
         
         $schedule->call(function () {
@@ -46,6 +46,35 @@ class Kernel extends ConsoleKernel
                     ->update(['status' => 2]);
             
         })->everyFiveMinutes();
+
+        //anonymize inactive users
+        $schedule->command('gdpr:anonymizeInactiveUsers')->dailyAt('7:00');
+
+        $schedule->call(function () {
+            //notify inactive users
+            if (!config('gdpr.enabled')) {   
+                return;                
+            }
+            $date = Carbon::now()->subMonths(config('gdpr.settings.ttl'));
+            $date->addDays(15);
+            $model = config('gdpr.settings.user_model_fqn', 'App\Models\User');
+            $user = new $model();
+            $anonymizableUsers = $user::where('last_activity', '!=', null)
+                                ->where('isAnonymized', 0)
+                                ->where('last_activity', '<=', $date)
+                                ->get();
+    
+            foreach ($anonymizableUsers as $user) {
+                $date = Carbon::parse($user->last_activity)->addMonths(config('gdpr.settings.ttl'));
+                $data['lastDate'] = $date->format("Y-m-d");
+                $user->notify(
+                    new UserWillBeAnonymizeNotification($data)
+                );
+            }
+        })->dailyAt('7:10');
+        
+        
+        
     }
 
     /**

@@ -166,9 +166,11 @@ class Settings extends AppComponent
             }
             //set https
             $setEnv['USE_HTTPS'] = ($this->state['others']['use_https']) ? "true" : "false";
+            $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
             
             if(count($setEnv)) {
                 setEnvironment::setEnvironmentValue($setEnv);
+                Artisan::call("config:clear");
             }            
 
             $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
@@ -192,6 +194,9 @@ class Settings extends AppComponent
             ],
             'cache_clear' => [
                 'command' => 'cache:clear'
+            ],
+            'config_clear' => [
+                'command' => 'config:clear'
             ],
             'view_clear' => [
                 'command' => 'view:clear',

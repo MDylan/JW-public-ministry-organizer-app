@@ -5,6 +5,7 @@ return [
     'registerWelcome' => 'Elkészült a regisztrációd a :url oldalon. Kérjük, hogy aktiváld a regisztrációdat azzal, hogy az alábbi hivatkozásra kattintasz.',
     'registerFail' => 'Amennyiben nem te kérted ezt a regisztrációt, regisztrációdat automatikusan törölni fogjuk 48 óra múlva.',
     'signature' => 'Üdvözlettel a Segélyszolgálat Szervező oldal készítői',
+    'footer' => 'Ez egy automatikus levél, kérjük ne válaszolj rá.',
     'newadmin' => [
         'subject' => 'Új adminisztrátor lett kinevezve',
         'line_1' => 'Ez egy automatikus értesítés arról, hogy :newAdmin ki lett nevezve az oldalad adminisztrátornak.',
@@ -128,5 +129,11 @@ return [
         'line_2' => 'Régi adataid:',
         'line_3' => 'Új adataid:',
         'line_4' => 'Ha úgy látod, hogy az új adataid nem megfelelőek, akkor belépés után a Profilom menüben tudod javítani őket.',
+    ],
+    'anonymize' => [
+        'subject' => 'FONTOS: A hozzáférésedet hamarosan törölni fogjuk',
+        'line_1' => 'Szeretnénk értesíteni, hogy a GDPR adatvédelmi törvények miatt a(z) :appName oldalon hamarosan törölni fogjuk a személyes adataidat. Ezt követően nem fogsz tudni belépni sem.',
+        'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptél be az oldalra.',
+        'line_3' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig.',
     ],
 ];

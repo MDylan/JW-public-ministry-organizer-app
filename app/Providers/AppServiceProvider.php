@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
         $defaults = [
             'registration'  => true,
             'claim_group_creator' => true,
-            'gdpr' => false,
+            // 'gdpr' => false,
             'default_language' => $default_language,
         ];
         
@@ -76,8 +76,8 @@ class AppServiceProvider extends ServiceProvider
             'translatable.fallback_locale' => $defaults['default_language'],
             'translatable.locales' => $locales, //array_keys($available_languages),
             'app.fallback_locale' => $defaults['default_language'],
-            'cookie-consent.enabled' => $defaults['gdpr'],
-            'gdpr.enabled' => $defaults['gdpr']
+            // 'cookie-consent.enabled' => $defaults['gdpr'],
+            // 'gdpr.enabled' => $defaults['gdpr']
             // 'debugbar.enabled'  => isset($defaults['debugbar']) ? $defaults['debugbar'] : false
         ]);
         // dd(Config::get('cookie-consent.enabled'));

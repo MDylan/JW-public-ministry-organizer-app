@@ -1,6 +1,7 @@
 <?php
 
 return [
+
     /*
     |--------------------------------------------------------------------------
     | Prefix URI
@@ -30,39 +31,42 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Re-authentication
+    | Settings
     |--------------------------------------------------------------------------
     |
-    | Only authenticated users should be able to download their data.
-    | Re-authentication is recommended to prevent information leakage.
+    | This setting specifies the Time To Live in months, before the specified model
+    | is anonymized automatically.
     |
     */
 
-    're-authenticate' => true,
+    'settings' => [
+        'ttl' => 12,
+        'user_model_fqn' => \App\Models\User::class, // Fully qualified namespace of the User model
+    ],
 
     /*
     |--------------------------------------------------------------------------
-    | Cleanup Strategy
+    | String
     |--------------------------------------------------------------------------
     |
-    | This strategy will be used to clean up inactive users. Do not forget to
-    | mention these thresholds in your terms and conditions.
+    | This is the default string the anonymized fields will change to.
+    |
     |
     */
 
-    'cleanup' => [
-        'strategy' => 'Soved\Laravel\Gdpr\Jobs\Cleanup\Strategies\DefaultStrategy',
-
-        'defaultStrategy' => [
-            /*
-             * The number of months for which inactive users must be kept.
-             */
-            'keepInactiveUsersForMonths' => 12,
-
-            /*
-             * The number of days before deletion at which inactive users will be notified.
-             */
-            'notifyUsersDaysBeforeDeletion' => 30,
-        ],
+    'string' => [
+        'default' => 'Anonymized',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enabled
+    |--------------------------------------------------------------------------
+    |
+    | Used to disable auto anonymization
+    |
+    |
+    */
+    'enabled' => env('GDPR_ENABLED', true),
+
 ];

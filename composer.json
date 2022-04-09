@@ -7,7 +7,7 @@
     "require": {
         "php": "^8.0",
         "astrotomic/laravel-translatable": "^11.9",
-        "dialect/laravel-gdpr-compliance": "^1.4",
+        "dialect/laravel-gdpr-compliance": "1.4",
         "doctrine/dbal": "^3.1",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
@@ -18,7 +18,7 @@
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
         "livewire/livewire": "^2.10.4",
-        "pcinaglia/laraupdater": "^1.0",
+        "pcinaglia/laraupdater": "1.0",
         "rachidlaasri/laravel-installer": "^4.1",
         "spatie/calendar-links": "^1.6",
         "spatie/laravel-activitylog": "^4.0.0",
