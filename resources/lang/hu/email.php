@@ -136,4 +136,9 @@ return [
         'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptél be az oldalra.',
         'line_3' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig.',
     ],
+    'testmail' => [
+        'subject' => 'Próba értesítés',
+        'line_1' => 'Ez egy próba értesítés. Ha megkapod, az azt jelenti, hogy az email beállítások rendben vannak.',
+        'line_2' => 'Köszönjük, hogy ezt az alkalmazást használod. :)',
+    ]
 ];

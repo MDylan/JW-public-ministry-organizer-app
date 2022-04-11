@@ -22,9 +22,8 @@ class setEnvironment {
                 $keyPosition = strpos($str, "{$envKey}=");
                 $endOfLinePosition = strpos($str, "\n", $keyPosition);
                 $oldLine = substr($str, $keyPosition, $endOfLinePosition - $keyPosition);
-    
                 // If key does not exist, add it
-                if (!$keyPosition || !$endOfLinePosition || !$oldLine) {
+                if ($keyPosition === false || !$endOfLinePosition || !$oldLine) {
                     $str .= "{$envKey}={$envValue}\n";
                 } else {
                     $str = str_replace($oldLine, "{$envKey}={$envValue}", $str);
@@ -34,7 +33,7 @@ class setEnvironment {
         }
     
         $str = substr($str, 0, -1);
-        if (!file_put_contents($envFile, $str)) {
+        if (!file_put_contents($envFile, trim($str))) {
             return false;
         }         
         Artisan::call('config:clear');

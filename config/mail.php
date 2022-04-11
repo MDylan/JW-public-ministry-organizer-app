@@ -45,6 +45,17 @@ return [
             'auth_mode' => null,
         ],
 
+        'phpmail' => [
+            'transport' => 'smtp',
+            'host' => 'localhost',
+            'port' => 25,
+            'encryption' => null,
+            'username' => '',
+            'password' => '',
+            'timeout' => null,
+            'auth_mode' => null,
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

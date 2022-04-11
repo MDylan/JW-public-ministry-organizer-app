@@ -5,9 +5,12 @@ namespace App\Http\Livewire\Admin;
 use App\Classes\setEnvironment;
 use App\Http\Livewire\AppComponent;
 use App\Models\Settings as ModelsSettings;
+use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Notification;
 
 class Settings extends AppComponent
 {
@@ -34,8 +37,27 @@ class Settings extends AppComponent
         */
     ];
 
+    private $from_env = [
+        'APP_NAME',
+        'APP_URL',
+        'TIMEZONE',
+        'MAIL_MAILER',
+        'MAIL_HOST',
+        'MAIL_PORT',
+        'MAIL_ENCRYPTION',
+        'MAIL_USERNAME',
+        'MAIL_PASSWORD',
+        'MAIL_FROM_ADDRESS',        
+    ];
+
+    public $mailtest = null;
+
     public function mount() {
         $this->load();
+
+        if(!config('app.debug')) {
+            unset($this->others['debugbar']);
+        }
 
         foreach($this->others as $key => $value) {
             if(!isset($this->settings[$key])) {
@@ -47,6 +69,9 @@ class Settings extends AppComponent
 
         $this->state['recaptcha']['site_key'] = env('RECAPTCHA_SITE_KEY', '');
         $this->state['recaptcha']['secret_key'] = env('RECAPTCHA_SECRET_KEY', '');
+        foreach($this->from_env as $key) {
+            $this->state['env'][$key] = env($key, '');
+        }        
     }
 
     private function getLanguages() {
@@ -54,14 +79,12 @@ class Settings extends AppComponent
     }
 
     public function languageAdd() {
-        // dd('here', $this->state);
         $validatedData = Validator::make($this->state['languageAdd'], [
             'country_code' => 'required|alpha|min:2|max:6',
             'country_name' => 'required|string|max:50|min:2',
         ])->validate();
 
         $languages = $this->getLanguages();
-        // dd($languages);
         $languages[$validatedData['country_code']] = [
             'name' => $validatedData['country_name'],
             'visible' => true
@@ -106,7 +129,6 @@ class Settings extends AppComponent
 
     public function languageSetDefault() {
         $languages = $this->getLanguages(); 
-        // dd($this->state);
         $new = $this->state['default_language'];
         if(isset($languages[$new])) {
             ModelsSettings::updateOrCreate(
@@ -164,13 +186,15 @@ class Settings extends AppComponent
             } else {
                 $setEnv['USE_RECAPTCHA'] = "false";
             }
+            foreach($this->from_env as $key) {
+                $setEnv[$key] = '"'.addslashes(trim($this->state['env'][$key])).'"';
+            }
             //set https
             $setEnv['USE_HTTPS'] = ($this->state['others']['use_https']) ? "true" : "false";
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
             
             if(count($setEnv)) {
                 setEnvironment::setEnvironmentValue($setEnv);
-                Artisan::call("config:clear");
             }            
 
             $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
@@ -217,41 +241,38 @@ class Settings extends AppComponent
             } catch (Exception $e) {
                 return $this->response($e->getMessage(), 'error');
             }
-
-            // Artisan::call($commands[$command]);
             $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
         }
     }
 
-    // private function setEnvironmentValue(array $values)
-    // {
-    
-    //     $envFile = app()->environmentFilePath();
-    //     $str = file_get_contents($envFile);
-    
-    //     if (count($values) > 0) {
-    //         foreach ($values as $envKey => $envValue) {
-    
-    //             $str .= "\n"; // In case the searched variable is in the last line without \n
-    //             $keyPosition = strpos($str, "{$envKey}=");
-    //             $endOfLinePosition = strpos($str, "\n", $keyPosition);
-    //             $oldLine = substr($str, $keyPosition, $endOfLinePosition - $keyPosition);
-    
-    //             // If key does not exist, add it
-    //             if (!$keyPosition || !$endOfLinePosition || !$oldLine) {
-    //                 $str .= "{$envKey}={$envValue}\n";
-    //             } else {
-    //                 $str = str_replace($oldLine, "{$envKey}={$envValue}", $str);
-    //             }
-    
-    //         }
-    //     }
-    
-    //     $str = substr($str, 0, -1);
-    //     if (!file_put_contents($envFile, $str)) return false;
-    //     return true;
-    
-    // }
+    public function testMail() {
+        $reload = [
+            'MAIL_MAILER' => 'mail.default',
+            'MAIL_HOST' => 'mail.mailers.smtp.host',
+            'MAIL_PORT' => 'mail.mailers.smtp.port',
+            'MAIL_ENCRYPTION' => 'mail.mailers.smtp.encryption',
+            'MAIL_USERNAME' => 'mail.mailers.smtp.username',
+            'MAIL_PASSWORD' => 'mail.mailers.smtp.password',
+            'MAIL_FROM_ADDRESS' => 'mail.from.address', 
+        ];
+        $old_conf = [];
+        
+        foreach($reload as $variable => $config) {
+            $old_conf[$config] = Config::get($config);
+        }
+        $conf = [];
+        foreach($reload as $variable => $config) {
+            $conf[$config] = $this->state['env'][$variable];
+        }
+        Config::set($conf);       
+        try {
+            Notification::route('mail', $this->state['env']['MAIL_FROM_ADDRESS'])->notify(new TestNotification());
+            $this->mailtest = true;
+        } catch(Exception $e) {            
+            $this->mailtest = $e->getMessage();
+        }
+        Config::set($old_conf);
+    }
 
     public function render()
     {

@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Lang;
 
 class TestNotification extends Notification
 {
@@ -41,9 +42,11 @@ class TestNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->line('This is a test notification. When you arrive, your email settings are OK.')
-                    ->action(__('Log in'), url('/'))
-                    ->line('Thank you for using our application!');
+                    ->subject(Lang::get('email.testmail.subject'))
+                    ->line(Lang::get('email.testmail.line_1'))
+                    ->line(Lang::get('email.testmail.line_2'))
+                    ->action(__('Log in'), url('/'));
+                    
     }
 
     /**
