@@ -302,25 +302,31 @@
                             </div>
                         </div>
                         <div class="card-body" wire:ignore>
-                            <button type="button" class="btn btn-primary" wire:click="run('optimize')">
+                            <button type="button" class="btn btn-primary" wire:click="run('optimize')" wire:loading.attr="disabled">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): optimize:clear
                             </button>
                             <div class="w-100 py-2"></div>
-                            <button type="button" class="btn btn-primary" wire:click="run('cache_clear')">
+                            <button type="button" class="btn btn-primary" wire:click="run('cache_clear')" wire:loading.attr="disabled">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): cache:clear
                             </button>
                             <div class="w-100 py-2"></div>
-                            <button type="button" class="btn btn-primary" wire:click="run('view_clear')">
+                            <button type="button" class="btn btn-primary" wire:click="run('view_clear')" wire:loading.attr="disabled">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): view:clear
                             </button>
                             <div class="w-100 py-2"></div>
-                            <button type="button" class="btn btn-primary" wire:click="run('migrate')">
+                            <button type="button" class="btn btn-primary" wire:click="run('migrate')" wire:loading.attr="disabled">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): migrate
                             </button>
+                            <div wire:loading wire:target="run">
+                                <div class="la-ball-clip-rotate la-dark la-sm mr-2" style="float:left;">
+                                    <div></div>
+                                </div>
+                                @lang('event.please_wait')
+                            </div>
                         </div>
                     </div>
                 </div>
