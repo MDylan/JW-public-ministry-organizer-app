@@ -2,7 +2,6 @@
 
 namespace App\Http\Livewire\Groups;
 
-use App\Classes\CalculateDatesEvents;
 use App\Http\Livewire\AppComponent;
 use App\Jobs\CalculateDateProcess;
 use App\Models\Group;
@@ -14,7 +13,6 @@ use App\Models\GroupLiterature;
 use App\Rules\TimeCheck;
 use Carbon\Carbon;
 use DateTime;
-use GuzzleHttp\Promise\Create;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
@@ -67,7 +65,6 @@ class UpdateGroupForm extends AppComponent
     public $groupSigns = [];
 
     public function mount(Group $group) {
-        // dd($group->days);
 
         $this->state = $group->toArray();
         $this->default_colors = config('events.default_colors');
@@ -77,14 +74,7 @@ class UpdateGroupForm extends AppComponent
             }
         }
         $days = [];
-        // $collection = new Collection();
         foreach($group->days as $day) {
-            // dd($day);
-            // $collection->push((object) [
-            //     'day_number' => $day->day_number,
-            //     'start_time' => $day->start_time,
-            //     'end_time' => $day->end_time,
-            // ]);
             $days[$day->day_number] = [
                 'day_number' => ''.$day->day_number.'',
                 'start_time' => $day->start_time,
@@ -110,10 +100,6 @@ class UpdateGroupForm extends AppComponent
             }
         }
         $this->dateEditCancel();
-        // dd($dates->get()->toArray());
-        
-        // dd($days);
-        // dd($this->state['days'], $group->days, $collection);
         if($group->groupUsers) {
             foreach($group->groupUsers as $user) {
                 $slug = Str::slug($user->email, '-');
@@ -133,7 +119,6 @@ class UpdateGroupForm extends AppComponent
         }
 
         $this->users_old = $this->users;        
-        
         $this->group = $group;
 
         if($group->parent_group_id) {
@@ -149,9 +134,7 @@ class UpdateGroupForm extends AppComponent
         }
     }
 
-    /**
-     * Hozzáadja a usert a listához
-     */
+/*
     public function userAdd() {
 
         $email_array = preg_split('/\r\n|[\r\n]/', trim($this->search));
@@ -162,9 +145,6 @@ class UpdateGroupForm extends AppComponent
                 $email['email'][] = $mail;
             }
         }
-
-
-        // dd($email_array);
 
         $validatedData = Validator::make($email, [
             'email.*' => 'required|email',
@@ -189,9 +169,6 @@ class UpdateGroupForm extends AppComponent
         $this->search = "";
     }
 
-    /**
-     * Törli a listából a usert
-     */
     public function removeUser($email) {
         $admins = 0;
         foreach($this->users as $slug => $user) {
@@ -214,7 +191,7 @@ class UpdateGroupForm extends AppComponent
             $this->users[$email]['deleted_at'] = date("Y-m-d H:i:s");
         }
     }
-
+*/
     public function generateTimeArray($end = false, $start = false, $step = 30) {
         $start = $start ? strtotime($start) : strtotime("00:00");
         $max = $end ? strtotime($end) : $start + 24 * 60 * 60;
@@ -234,23 +211,12 @@ class UpdateGroupForm extends AppComponent
     }
 
     /**
-     * Elmenti a csoport adatait
+     * Save group's data
      */
     public function updateGroup() {
-        // dd($this->disabled_slots);
-
         $this->state['name'] = strip_tags($this->state['name']);
-        // dd($this->dates);
         $admins = 0;
-        // $current_admins = [];
         $reGenerateStat = [];
-
-        // foreach($this->users as $slug => $user) {
-        //     if($user['group_role'] == "admin") {
-        //         $admins++;
-        //         $current_admins[$slug] = true;
-        //     }
-        // }
 
         $pattern = "/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/";
 
@@ -278,15 +244,11 @@ class UpdateGroupForm extends AppComponent
 
         $validatedData = $v->validate();
 
-        // dd($validatedData);
-
         $validatedDays = Validator::make($this->days, [
             '*.day_number' => 'required',
             '*.start_time' => ['required','date_format:H:i', new TimeCheck('end_time', 'before_or_midnight') ], //|before_or_equal:*.end_time',
             '*.end_time' => ['required', 'date_format:H:i', new TimeCheck('start_time', 'after_or_midnight')] //|after_or_equal:*.start_time',
         ])->validate();
-
-        // dd($validatedDays);
 
         $change_check = [
             'max_publishers',
@@ -381,7 +343,6 @@ class UpdateGroupForm extends AppComponent
                 $reGenerateStat[$rdate->date] = $rdate->date;
             }
         }        
-        // dd($updates);
         if(isset($validatedDays)) {
             foreach($validatedDays as $d => $day) {
                 if(!isset($day['day_number'])) {
@@ -525,17 +486,7 @@ class UpdateGroupForm extends AppComponent
         }
         if(count($reGenerateStat)) {
             CalculateDateProcess::dispatch($this->group->id, $reGenerateStat, auth()->user()->id, $deleteAfterCalculate);
-            // CalculateDatesEvents::generate($this->group->id, $reGenerateStat, auth()->user()->id);
-            // if(count($deleteAfterCalculate)) {
-            //     foreach($deleteAfterCalculate as $day) {
-            //         GroupDate::where('group_id', '=', $this->group->id)
-            //                 ->where('date', '=', $day)
-            //                 ->where('date_status', '=', 0)
-            //                 ->delete();
-            //     }
-            // }
         }
-        // dd('ok');
         $this->group->refresh();
         Session::flash('message', __('group.groupUpdated')); 
         redirect()->route('groups');
@@ -642,10 +593,7 @@ class UpdateGroupForm extends AppComponent
     }
 
     public function dateEditCancel() {
-        $this->editedDate = null;/* [
-            'type' => null,
-            'id' => null,
-        ];*/
+        $this->editedDate = null;
         $this->dateAdd = [
             'date' => '',
             'date_status' => 2,
@@ -666,7 +614,6 @@ class UpdateGroupForm extends AppComponent
             $this->dateAdd['date_start'] = "";
             $this->dateAdd['date_end'] = "";
         }
-        // dd($this->dateAdd);
         $validatedDate = Validator::make($this->dateAdd, [
             'id' => 'sometimes|numeric',
             'date' => 'required|date_format:Y-m-d|after_or_equal:today',
@@ -687,7 +634,7 @@ class UpdateGroupForm extends AppComponent
         $this->dateEditCancel();
     }
 
-    public function dateRemove($date /* $type, $id*/) {
+    public function dateRemove($date) {
         if($this->dates[$date]['type'] == "new") {
             unset($this->dates[$date]);
             $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
@@ -704,11 +651,8 @@ class UpdateGroupForm extends AppComponent
 
     public function render()
     {
-        // $group_times = $this->hoursRange( 0, 86400, 1800 );
         $group_times = $this->generateTimeArray();
         $this->disabled_selects = [];
-        // dd($group_times);
-        // dd($this->days);
         foreach($this->days as $day_key => $day) {
             if(!isset($day['start_time'])) $day['start_time'] = "00:00";
             if(!isset($day['end_time'])) $day['end_time'] = "00:00";
@@ -716,7 +660,6 @@ class UpdateGroupForm extends AppComponent
             $ends = $this->generateTimeArray(false, $day['start_time'], $this->state['min_time']);
             $this->day_selects[$day['day_number']]['end'] = $ends;
             $this->disabled_selects[$day['day_number']] = $this->generateTimeArray(
-                                                            // date("H:i", strtotime($day['end_time']) - ($this->state['min_time'] * 60)), 
                                                             date("H:i", strtotime($day['end_time']) - ($this->state['min_time'] * 60)),
                                                             date("H:i", strtotime($day['start_time']) + ($this->state['min_time'] * 60)), 
                                                             $this->state['min_time']);
@@ -731,15 +674,12 @@ class UpdateGroupForm extends AppComponent
             if(isset($this->disabled_slots[$day['day_number']])) {
                 foreach($this->disabled_slots[$day['day_number']] as $key => $slot) {
                     if(!in_array($slot, $this->disabled_selects[$day['day_number']])) {
-                        // dump($slot, (int)$day['day_number'],  $key);
                         $this->disabled_slots[(int)$day['day_number']][$slot] = false;
                     }
                 }
             }
         }
         
-        // dump($this->disabled_slots);
-        // dd($this->day_selects, $this->days);
         if(count($this->dates))
             ksort($this->dates);
 

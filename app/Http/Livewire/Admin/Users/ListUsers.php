@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Auth\Events\Registered;
 
 
 class ListUsers extends AppComponent
@@ -24,7 +23,7 @@ class ListUsers extends AppComponent
     public $listeners = ['deleteUser'];
 
     /**
-     * Megjeleníti a modalt, amikor a gombra kattintunk
+     * Show Modal
      */
     public function addNew() {
         $this->showEditModal = false;
@@ -33,7 +32,7 @@ class ListUsers extends AppComponent
     }
 
     /**
-     * Elmenti a felhasználó adatait
+     * Create new user
      */
     public function createUser() {
         
@@ -43,7 +42,7 @@ class ListUsers extends AppComponent
             'phone_number' => 'nullable|numeric|digits_between:9,11',
             'role' => [
                 'required',
-                Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
+                Rule::notIn(Lang::get('roles')),
             ],
         ])->validate();
 
@@ -52,7 +51,6 @@ class ListUsers extends AppComponent
         $user = User::create($validatedData);
 
         $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
-        // event(new Registered($user));
 
     }
 
@@ -73,16 +71,11 @@ class ListUsers extends AppComponent
             'phone_number' => 'nullable|numeric|digits_between:9,11', 
             'role' => [
                 'required',
-                Rule::notIn(Lang::get('roles')),    //csak a megadott jogosultság adható ki
+                Rule::notIn(Lang::get('roles')),
             ],
         ])->validate();
 
-            // dd('ok');
-
         $this->user->update($validatedData);
-
-        // $user = User::create($validatedData);
-
         $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
 
     }
@@ -116,15 +109,11 @@ class ListUsers extends AppComponent
         $this->searchTerm = null;
     }
 
-    /**
-     * Ez felel az oldal tartalmáért
-     */
     public function render()
     {
         $users = User::query()
             ->where(function($query) {
                 $query->where('users.name', 'LIKE', '%'.$this->searchTerm.'%');
-                // $query->orWhere('users.last_name', 'LIKE', '%'.$this->searchTerm.'%');
                 $query->orWhere('users.email', 'LIKE', '%'.$this->searchTerm.'%');
             })
             ->latest()->paginate(20);

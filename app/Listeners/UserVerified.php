@@ -21,7 +21,7 @@ class UserVerified
     }
 
     /**
-     * Átállítja aktiváltra a felhasználót, amikor az email címét megerősíti
+     * Set user's "activated" status when he verify he's email
      *
      * @param  Verified  $event
      * @return void

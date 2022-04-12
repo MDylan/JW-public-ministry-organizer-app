@@ -80,7 +80,6 @@ class TimeCheck implements Rule, DataAwareRule
                 $this->error_str = "before";
             }
         }
-        // dd("Time: ".date("H:i", $time), "Other: ".date("H:i", $other), "Type: ".$this->type);
         return false;
     }
 

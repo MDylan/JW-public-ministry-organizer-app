@@ -24,17 +24,11 @@ class EventObserver
      */
     public function created(Event $event)
     {
-        // $store = [];
-        // $fillable = $event->getFillable();
-        // foreach($fillable as $field) {
-        //     $new = $event->$field;
-        //     $store['new'][$field] = $new;
-        // }
         $saved_data = [
             'event' => 'created',
             'group_id' => $event->group_id,
             'causer_id' => auth()->user()->id,
-            'changes' => '', // json_encode($store)
+            'changes' => '',
         ];
 
         $history = new LogHistory($saved_data);
@@ -208,7 +202,6 @@ class EventObserver
             $admins = User::whereIn('id', $editors)
                         ->get();
             
-            // dd($admins->get());
             Notification::send($admins, new EventDeletedAdminsNotification($data));
         }
 

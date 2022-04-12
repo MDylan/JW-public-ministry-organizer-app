@@ -66,13 +66,13 @@ class Event extends Model
         return $this->hasOne(GroupDate::class, 'group_id', 'group_id');
     }
 
-    //módosítja az adatbázisból visszanyert értéket unixtime-ra
+    //convert "Start" field to unixtime
     public function getStartAttribute($value) {
         $d = new DateTime( $value );
         return $d->getTimestamp();
     }
 
-    //módosítja az adatbázisból visszanyert értéket unixtime-ra
+    //convert "End" field to unixtime
     public function getEndAttribute($value) {
         $d = new DateTime( $value );
         return $d->getTimestamp();
@@ -97,7 +97,6 @@ class Event extends Model
     public function calendarLink() {
         $name = optional($this->groups)->name;
         if(!$name) $name = '';
-        // dd($this->start, $this->end);
         return Link::create(
             $name,
             DateTime::createFromFormat('U', $this->start),

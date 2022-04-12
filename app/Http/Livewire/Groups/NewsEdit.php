@@ -6,7 +6,6 @@ use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use App\Models\GroupNews;
 use App\Models\GroupNewsFile;
-// use App\Models\GroupNews;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
@@ -133,7 +132,7 @@ class NewsEdit extends AppComponent
 
     public function deleteConfirmed() {
         $this->getGroup();
-        $group_id = $this->groupId; // intval($this->group->id);
+        $group_id = $this->groupId;
         if(isset($this->state['id'])) {
             $files = $this->new_data->files()->get()->toArray();
             if(count($files)) {

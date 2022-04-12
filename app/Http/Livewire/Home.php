@@ -2,9 +2,6 @@
 
 namespace App\Http\Livewire;
 
-// use App\Models\Event;
-// use App\Models\Group;
-
 use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -21,7 +18,6 @@ class Home extends Component
     private $events = [];
     private $available_days = [];
     private $disabled_slots = [];
-    // private $dates = [];
     public $listeners = [
         'refresh' => 'render',
         'pollingOn',
@@ -40,7 +36,6 @@ class Home extends Component
     }
 
     public function getStat($group_stats) {
-        // dd($group_stats);
         $daysOfWeeks = [];
 
         foreach($group_stats as $group) {
@@ -88,7 +83,6 @@ class Home extends Component
                     $dates[$date['date']] = $date;
                 }
             }
-            // dd($group['stats']);
             //loading stats from db
             $colors = [];
             foreach($group["stats"] as $stat) {
@@ -130,8 +124,6 @@ class Home extends Component
                     $pos = 0;
                     $this->day_stat[$group['id']][$day]['style'] = "linear-gradient(to right";
                     foreach($values as $k => $color) {
-                        // $this->day_stat[$group['id']][$day]['style'] .= ", ".$color." ".$percent."% ".$pos."%";
-
                         $this->day_stat[$group['id']][$day]['style'] .= ", ".$color." ".$pos."% ".($pos + $percent)."%";
 
                         $pos+=$percent;
@@ -163,11 +155,6 @@ class Home extends Component
         foreach ($period as $date) {
             $this->days[] = $date->timestamp;
         }
-        // dd($this->days);
-        // $this->days = range($start, $end, (24 * 60 * 60));
-        
-        // $user = Auth()->user();
-        // $groups = Auth::user()->groupsAccepted();
         $stats = Auth::user()->groupsAccepted()->with([
             'stats' => function($q) use($start, $end) {
                 $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
@@ -180,9 +167,7 @@ class Home extends Component
             },
             'days',
             'dates' => function($q) use($start, $end) {
-                // $q->select(['group_id', 'date', /*'date_start', 'date_end',*/ 'date_status', 'note']);
                 $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
-                // $q->whereIn('date_status', [0,2]);
             },
             'posters' => function($q) {
                 $q->where('show_date', '<=', date("Y-m-d"));
@@ -193,7 +178,6 @@ class Home extends Component
             },
         ])->get()->toArray();
 
-        // dd($this->days);
         $ids = [];
         foreach($stats as $stat) {
             $ids[] = $stat['id'];
@@ -208,7 +192,6 @@ class Home extends Component
         foreach($d_slots as $slot) {
             $this->disabled_slots[$slot['group_id']][$slot['day_number']][$slot['slot']] = $slot['slot'];
         }
-        // dd($this->disabled_slots, $this->groups);
 
         $this->getStat($stats);
         
@@ -219,14 +202,12 @@ class Home extends Component
                                 ->where('status', '=', '0')
                                 ->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)])
                                 ->get(['group_id', 'day']);
-                                // ->toArray();
         $notAccepts = [];
         if(count($notAcceptedEvents)) {
             foreach($notAcceptedEvents as $event) {
                 $notAccepts[$event->group_id][$event->day] = true;
             }
         }
-        // dump($this->day_stat);
 
         return view('livewire.home', [
             'groups' => $stats,

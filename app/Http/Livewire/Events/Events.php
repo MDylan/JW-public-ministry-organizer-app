@@ -10,7 +10,6 @@ use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
 use DateTime;
-// use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -20,23 +19,12 @@ class Events extends AppComponent
 
     public $year = 0;
     public $month = 0;
-    // public $calendar = [];
     public $pagination = [];
     private $current_month = "";
     private $groups = [];
     private $cal_service_days = [];
     private $cal_group_data = [];
     public $form_groupId = 0;
-    // public $cal_day_data = [
-    //     'date' => 0,
-    //     'dateFormat' => 0,
-    //     'table' => [],
-    //     'selects' => [
-    //         'start' => [],
-    //         'end' => [],
-    //     ],
-    // ];
-    // public $cal_original_day_data = [];
     public $listeners = [
         'openModal', 
         'refresh' => 'render',
@@ -44,7 +32,6 @@ class Events extends AppComponent
         'pollingOff',
         'openEventsModal'
     ];
-    // public $cal_active_tab = '';
     private $first_day = null;
     private $last_day = null;
     private $day_stat = [];
@@ -302,16 +289,8 @@ class Events extends AppComponent
                 }
             }
         }
-        // dd($specialDatesList);
-        // dd($key." ".$groupId, $this->groups);
-        // $this->getGroupData();
         $this->build_pagination($this->cal_group_data['created_at']);
-
-        // dd($this->cal_service_days);
-
-        $calendar = [];
-
-        
+        $calendar = [];        
 
         // How many days does this month contain?
         $numberDays = date('t',$firstDayOfMonth);
@@ -342,7 +321,6 @@ class Events extends AppComponent
         $today = strtotime('today');
         $max_day = strtotime('+'.$this->cal_group_data['max_extend_days'].' days');
         $this->cal_group_data['max_day'] = date("Y-m-d", $max_day);
-        // dd(date('Y-m-d', $max_day), date('Y-m-d', $today));
 
         while ($currentDay <= $numberDays) {
             //start new row
@@ -358,9 +336,7 @@ class Events extends AppComponent
             $timestamp = strtotime($date);
             $available = false;
             $service_day = false;
-            $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";"; // (empty($this->cal_group_data['color_default']) ? "#cecece" : $this->cal_group_data['color_default']).";";
-            // $available = ($timestamp >= $today && $timestamp <= $max_day);
-            // $service_day = (isset($this->cal_service_days[$weekDays[$dayOfWeek]])) ? true : false;
+            $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";"; 
             if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
                 $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
             }
@@ -369,7 +345,6 @@ class Events extends AppComponent
                 if($specialDates[$date]['date_status'] == 0) {
                     $available = false;
                     $service_day = false;
-                    // unset($this->day_stat[$date]);
                     $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";";
                 } else {
                     $available = true;
@@ -469,7 +444,6 @@ class Events extends AppComponent
                                     ->pluck('day', 'day')
                                     ->toArray();
         }
-        // dd($calendar);
         return view('livewire.events.events', [
             'service_days' => $this->cal_service_days,
             'calendar' => $calendar,
@@ -483,7 +457,5 @@ class Events extends AppComponent
             'groups' => $this->groups,
             'group_editor' => in_array($this->cal_group_data['pivot']['group_role'], ['admin', 'roler']) ? true : false
         ]);
-
-        // return view('livewire.events.calendar');
     }
 }

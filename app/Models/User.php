@@ -9,7 +9,6 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
-// use Illuminate\Support\Facades\DB;
 use Dialect\Gdpr\Portable;
 use Dialect\Gdpr\Anonymizable;
 use Illuminate\Support\Str;
@@ -73,8 +72,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'name' => 'encrypted',
     ];
 
-    // protected $appends = ['full_name'];
-
     /**
      * The attributes that should be visible in the downloadable data.
      *
@@ -116,7 +113,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     }
 
     /**
-     * Ellenőrzi van e ilyen joga a usernek
+     * Check user's rule
      */
     public function hasRole(string $role) {
         return $this->role === $role ? true : null;
@@ -154,7 +151,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
                         ->withPivot(['group_role', 'note', 'accepted_at'])
                         ->wherePivotNotNull('accepted_at')
                         ->wherePivotNull('deleted_at')
-                        // ->select(['groups.id', 'groups.name', 'groups.min_publishers', 'groups.max_publishers', 'groups.max_extend_days', 'groups.created_at'])
                         ->with('days');
     }
 
@@ -181,23 +177,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
                 ->whereIn('status', [0,1]);
     }
 
-    // public function getFullNameAttribute() {
-    //     // return "{$this->last_name} {$this->first_name}";
-    //     return $this->name;
-    // }
-
-    // function scopeWhereFullName($query, $value) {
-    //     // $query->where(DB::raw('concat(first_name, " ", last_name)'), 'LIKE', "%{$value}%");
-    //     $query->where('name', 'LIKE', "%{$value}%");
-    // }
-
     public function canSetEventUser() {
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role'])
                     ->wherePivotIn('group_role', ['admin', 'roler', 'helper'])
                     ->wherePivotNotNull('accepted_at')
                     ->wherePivot('deleted_at', null);
-                    // ->using(GroupUser::class);
     }
 
     public function userGroupsEditable() {
@@ -276,9 +261,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
             $array['groups'] = $groups;
             unset($array['groups_accepted']);
         }       
-
-        // dd($array);
-
         return $array;
     }
 

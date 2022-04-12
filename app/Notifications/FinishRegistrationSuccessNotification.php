@@ -17,7 +17,7 @@ class FinishRegistrationSuccessNotification extends Notification implements Shou
      *
      * @var int
      */
-    public $tries = 5;
+    public $tries = 60;
 
     /**
      * Create a new notification instance.

@@ -25,9 +25,8 @@ class GroupDay extends Model
         return $this->belongsTo(Group::class);
     }
 
-    //vissza alakítom, hogy az űrlapok működjenek rendesen
+    //Convert back "StartTime" field
     public function getStartTimeAttribute($value) {
-        // return $value;
         return date( 'H:i', strtotime($value) );
     }
     public function getEndTimeAttribute($value) {

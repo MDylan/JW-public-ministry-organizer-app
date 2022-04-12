@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +49,5 @@ class LogHistory extends Model
     public function getCreatedAtFormatAttribute() {
         $d = new DateTime( $this->created_at );
         return $d->format(__('app.format.datetime'));
-        // return Carbon::parse($this->getAttribute('created_at'))->format(__('app.format.datetime'));
     }
 }

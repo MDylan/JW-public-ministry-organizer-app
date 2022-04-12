@@ -26,11 +26,9 @@ use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
-use App\Notifications\TestNotification;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,16 +60,6 @@ Route::middleware(['signed'])->group(function () {
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
 
-//TODO: We will remove it later!!!
-/*
-Route::get('/mailtest', function () {
-    $mail = request()->get('mail');
-    Notification::route('mail', $mail)->notify(new TestNotification());
-
-    return 'mail test sent';
-})->middleware(['guest']);
-*/
-
 //Logged in users
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
@@ -98,7 +86,6 @@ Route::middleware(['auth'])->group(function () {
     //Only for verified users
     Route::middleware(['verified'])->group(function () {
         Route::get('user/profile', Profile::class)->name('user.profile');
-
 
         Route::middleware(['profileFull'])->group(function () {
 
@@ -148,5 +135,3 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 });
-
-// require_once __DIR__ . '/fortify.php';

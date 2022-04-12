@@ -2,16 +2,13 @@
 
 namespace App\Http\Middleware;
 
-// use App\Models\Settings as ModelsSettings;
 use App\Models\StaticPage;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-// use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Cache;
-// use DebugBar\DebugBar;
 
 class SetLocale
 {
@@ -24,7 +21,6 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next)
     {
-        // $language = 'en'; // default
         $language = Config::get('settings_default_language');   //default
         $languages = Config::get('available_languages');
         $user = Auth::user();
@@ -64,15 +60,6 @@ class SetLocale
             }
         }
         
-        // $debugbar = Config::get('settings_debugbar');
-        
-        // if(isset($debugbar)) {
-        //     if($debugbar == 1 && Auth::user()->role == "mainAdmin") {
-        //         \Debugbar::enable();
-        //     }
-        // }
-        // \Debugbar::enable();
-
         //share menus content to views
         if(Auth()->check()) {
             $staticpages = Cache::rememberForever('sidemenu_auth', function () {

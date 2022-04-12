@@ -37,7 +37,6 @@ class History extends AppComponent
 
     public function setMonth() {
         if(isset($this->months[$this->state['month']])) {
-            // $this->state['month'] = $yearMonth;
             $month = strtoTime($this->state['month']);
             $this->year = date("Y", $month);
             $this->month = date("m", $month);

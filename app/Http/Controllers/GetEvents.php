@@ -4,22 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use DateTime;
-use Illuminate\Http\Request;
 
 class GetEvents extends Controller
 {
-    //
 
     public function index() {
         $start = request()->input('start');
         $end = request()->input('end');
         $groupId = request()->input('groupId');
-
-        // dd('ok');
-
-        // if(!$start || !$end || !$groupId) {
-        //     abort('404');
-        // }
 
         $start_date = new DateTime( $start );
         $sd = $start_date->format("Y-m-d");
@@ -29,7 +21,6 @@ class GetEvents extends Controller
 
         $group = Group::findOrFail($groupId);
         $events = $group->between_events($sd, $ed)->get()->toArray();
-        // dd($events);
         $array = [];
         foreach($events as $event) {
             $array[] = [

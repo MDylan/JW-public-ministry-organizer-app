@@ -71,12 +71,11 @@ class ListUsers extends AppComponent
     }
 
     public function openModal($modalId = 'UserModal') {
-        // parent::openModal($modalId);
         $this->dispatchBrowserEvent('show-modal', ['id' => $modalId]);
     }
 
     /**
-     * Elmenti a felhasználó adatait
+     * Save user's info
      */
     public function createUser() {   
 
@@ -90,9 +89,7 @@ class ListUsers extends AppComponent
             return;
         }
 
-        // $email_array = preg_split('/\r\n|[\r\n]/', trim($this->new_users));
         $email_array = preg_split("/\R/", trim($this->new_users)); 
-        // dd($email_array);
         $email = [];
         if(count($email_array)) {
             foreach($email_array as $mail) {
@@ -101,11 +98,10 @@ class ListUsers extends AppComponent
                 $email['email'][] = $tmail;
             }
         }
-        // dd($email);
 
         $v = Validator::make($email, [
             'email.*' => 'required|email:filter',
-        ]); //->validate();
+        ]); 
 
         $v->after(function ($validator) {            
             $langs = config('available_languages');
@@ -118,7 +114,6 @@ class ListUsers extends AppComponent
         
         $validatedData = $v->validate();
 
-        // dd($validatedData);
         if(count($validatedData['email'])) {
             $current_users = $this->group->groupUsers()->pluck('users.id')->toArray();
 
@@ -130,7 +125,6 @@ class ListUsers extends AppComponent
                         'password' => bcrypt($password),
                         'language' => $this->email_language
                     ]);
-                    // dd($u);
                     $url = URL::temporarySignedRoute(
                         'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), [
                             'id' => $u->id
@@ -158,8 +152,7 @@ class ListUsers extends AppComponent
                 'savedMessage' => __('app.saved')
             ]);
         }
-        $this->new_users = "";       
-        
+        $this->new_users = "";   
 
     }
 
@@ -167,14 +160,12 @@ class ListUsers extends AppComponent
      * Load user data into edit modal
      */
     public function editUser($UserId) {
-        // dd($UserId);
         $this->getGroupInfo();
         if($this->isNotHelper()) {
             abort(403);
         }
 
         $user = $this->group->groupUsers()->where('user_id', '=', $UserId)->first();
-        // dd($user);
         $this->selected_user = [
             'id' => $user->id,
             'user' => [
@@ -205,21 +196,17 @@ class ListUsers extends AppComponent
         $admins = $this->group->groupAdmins()->get()->count();
         $current_user = $this->group->groupUsers()->where('user_id', Auth::id())->first();
         $selected_user = $this->group->groupUsers()->where('user_id', $this->selected_user['id'])->first();
-        // dd($selected_user->toArray());
 
         if(!in_array($this->state['group_role'], $this->maxRoles())) {
             //if user have lower right, he dont change privilage
             $this->state['group_role'] = $selected_user->pivot->group_role;
         }
-        // dd($this->state, $this->maxRoles(), $this->role, $selected_user->pivot->group_role);
-        // $roles = implode(",", $this->maxRoles());
-        // dd($roles, $this->maxRoles());
 
         $v = Validator::make($this->state, [
             'hidden' => 'required|boolean',
             'note' => 'nullable|string|max:50', 
             'group_role' =>  [
-                Rule::In(self::$group_roles),    //csak a megadott jogosultság adható ki
+                Rule::In(self::$group_roles),
             ],
         ]);
         $v->after(function ($validator) use ($admins, $current_user, $selected_user) {
@@ -322,15 +309,6 @@ class ListUsers extends AppComponent
             'message' => __('group.user.confirmDelete.success')
         ]);
 
-        // if($group->groupUsersAll()->detach($this->userIdBeeingRemoved)) {
-        //     $this->dispatchBrowserEvent('success', [
-        //         'message' => __('group.user.confirmDelete.success')
-        //     ]);
-        // } else {
-        //     $this->dispatchBrowserEvent('error', [
-        //         'message' => __('group.user.confirmDelete.error')
-        //     ]);
-        // }
         $this->userIdBeeingRemoved = null;
     }
 
@@ -356,7 +334,6 @@ class ListUsers extends AppComponent
         if(($group_signs[$icon]['checked'] ?? null) == true) {
             $this->filter['signs'][$icon] = !($this->filter['signs'][$icon] ?? false);
         }
-        // dd($this->filter);
         $this->resetPage();
     }
 
@@ -378,8 +355,6 @@ class ListUsers extends AppComponent
 
     public function user_admin_groups() {
         $user_admin_groups = User::find(Auth::id())->userGroupsDeletable()->get(['groups.id', 'groups.name', 'groups.parent_group_id']);
-        // unset($user_admin_groups[$this->groupId]);
-        // dd($user_admin_groups);
         return $user_admin_groups;
     }
 
@@ -433,7 +408,6 @@ class ListUsers extends AppComponent
                 $user_sync = [];
                 foreach($new_users as $new_user) {
                     $user_sync[$new_user['id']] = [
-                        // 'group_role' => $new_user['pivot']['group_role'],
                         'note' => strip_tags(trim($new_user['pivot']['note'])),
                         'hidden' => $new_user['pivot']['hidden'] == 1 ? 1 : 0,
                         'deleted_at' => null, //because maybe we try to reattach logged out user
@@ -446,21 +420,13 @@ class ListUsers extends AppComponent
                     'groupAdmin' => auth()->user()->name, 
                     'groupName' => $new_group->name
                 ];
-                //az újakat értesítem, hogy hozzá lett adva a csoporthoz
+                //new users notification
                 if(isset($res['attached'])) {
                     $attached_users = User::whereIn('id', $res['attached'])
                         ->whereNotNull('email_verified_at')
                         ->get();
 
-                    Notification::send($attached_users, new GroupUserAddedNotification($data));
-                    // foreach($res['attached'] as $user) {
-                    //     $us = User::find($user);
-                    //     if($us->email_verified_at) {
-                    //         $us->notify(
-                    //             new GroupUserAddedNotification($data)
-                    //         );
-                    //     }
-                    // }                
+                    Notification::send($attached_users, new GroupUserAddedNotification($data));          
                 }
                 if(isset($res['updated'])) {
                     $updated_users = User::whereIn('id', $res['updated'])
@@ -474,7 +440,6 @@ class ListUsers extends AppComponent
                         $m->detach();
                     }                
                 }
-                // dd($res);
                 $this->dispatchBrowserEvent('hide-modal', [
                     'id' => 'LinkToModal',
                     'message' => __('group.link.success'),
@@ -484,8 +449,7 @@ class ListUsers extends AppComponent
                 $this->dispatchBrowserEvent('error', [
                     'message' => __('group.link.error')
                 ]);
-            }
-            
+            }            
         }
     }
 
@@ -584,7 +548,6 @@ class ListUsers extends AppComponent
      * Toggle user signs
      */
     public function toogleSign($user_id, $icon) {
-        // $group = Group::findorFail($this->groupId);
         $this->getGroupInfo();
         if(Auth::id() !== $user_id && $this->isNotHelper()) {
             $this->dispatchBrowserEvent('error', [
@@ -650,11 +613,9 @@ class ListUsers extends AppComponent
                 $this->copy_fields[$field] = false;
             }
         }
-        // $this->copy_fields = $this->group->copy_from_parent;
     }
 
     private function isNotEditor() {
-        // return $this->group->editors()->wherePivot('user_id', Auth::id())->count();
         return !in_array($this->role, ['admin', 'roler']);
     }
 
@@ -667,14 +628,12 @@ class ListUsers extends AppComponent
             ->where('group_id', '=', $this->groupId)
             ->select('group_role')
             ->first()->toArray();
-        // dd($info);
         $this->role = $info['group_role'];
     }
 
     private function maxRoles() {
         $roles = self::$group_roles;
         $available = [];
-        // dd($this->role);
         foreach($roles as $role) {
             $available[] = $role;
             if($role == $this->role) break;
@@ -738,10 +697,9 @@ class ListUsers extends AppComponent
     public function render(Request $request)
     {
         $this->getGroupInfo();
-        // $group = Group::findOrFail($this->groupId);
         $parent_group = $this->group->parentGroup;
         $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
-        $editor = !$this->isNotHelper(); // $group->editors()->wherePivot('user_id', Auth::id())->count();
+        $editor = !$this->isNotHelper(); 
 
         $users = $this->group->groupUsers()
                     ->where(function($query) {
@@ -777,7 +735,7 @@ class ListUsers extends AppComponent
         //create pagination
         $total = count($users);
         $per_page = 10;
-        $current_page = $this->page; // $request->page ?? 1;
+        $current_page = $this->page; 
         if($current_page < 1) $current_page = 1;
         $itemsForCurrentPage = $users->slice(($current_page - 1) * $per_page, $per_page);
         $users = new LengthAwarePaginator($itemsForCurrentPage, $total, $per_page, $current_page, [

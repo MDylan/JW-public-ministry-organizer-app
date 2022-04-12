@@ -19,7 +19,7 @@ class GroupParentGroupAttachedNotification extends Notification implements Shoul
      *
      * @var int
      */
-    public $tries = 5;
+    public $tries = 60;
 
     /**
      * Create a new notification instance.

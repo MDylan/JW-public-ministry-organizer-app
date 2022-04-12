@@ -11,10 +11,6 @@ class Settings extends Model
 {
     use HasFactory,LogsActivity;
 
-    // protected static $logFillable = true;
-    // protected static $logName = 'settings';
-    // protected static $logOnlyDirty = true;
-
     protected $fillable = [
         'name',
         'value',

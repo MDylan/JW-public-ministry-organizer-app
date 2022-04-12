@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\GroupNews;
 use App\Models\GroupNewsFile;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 

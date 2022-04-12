@@ -20,7 +20,7 @@ class UserRegisteredNotification extends Notification implements ShouldQueue
      *
      * @var int
      */
-    public $tries = 5;
+    public $tries = 60;
     
     /**
      * The callback that should be used to create the verify email URL.

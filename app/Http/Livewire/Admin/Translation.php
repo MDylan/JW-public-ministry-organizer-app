@@ -11,7 +11,6 @@ class Translation extends AppComponent
     {
         $settings = [];
         $settings = Settings::where('name', '=', 'languages')->pluck('value', 'name')->toArray();
-        // dd($settings);
         return view('livewire.admin.translation', [
             'settings' => $settings
         ]);

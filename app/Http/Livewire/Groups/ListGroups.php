@@ -2,16 +2,13 @@
 
 namespace App\Http\Livewire\Groups;
 
-// use App\Classes\GenerateStat;
 use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
-// use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class ListGroups extends AppComponent
 {
@@ -51,7 +48,7 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Megjeleníti a modalt, amikor a gombra kattintunk
+     * Show modal
      */
     public function askGroupCreatorPrivilege() {
         $this->showEditModal = false;
@@ -60,7 +57,7 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Elküldi a csoport létrehozási jogosultságról az igénylést emailben
+     * Send request email
      */
     public function requestGroupCreatorPrivilege() {
         $this->state['phone'] = auth()->user()->phone;
@@ -86,7 +83,7 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Meghívás elfogadása
+     * Accept invitation
      */
     public function accept($groupId) {
         $accept = new GroupUserMoves($groupId, Auth::id());
@@ -103,17 +100,16 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Meghívás elutasítása, modal hívás
+     * Reject invitation modal
      */
     public function rejectModal($groupId) {
-        // dd($groupId);
         $this->groupBeeingRejected = $groupId;
 
         $this->dispatchBrowserEvent('show-reject-confirmation');
     }
 
     /**
-     * Elutasította a meghívást, törlöm a kérést.
+     * Rejected invitation, delete request
      */
     public function rejectConfirmed() {
         $reject = new GroupUserMoves($this->groupBeeingRejected, Auth::id());
@@ -129,7 +125,7 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Kilépés előtti modal
+     * Modal before quit
      */
     public function confirmLogoutModal($groupId) {
         $userId = Auth::id();
@@ -143,7 +139,7 @@ class ListGroups extends AppComponent
             }
         }
         if($admins == 0) {
-            //nincs más admin, nem léphet ki
+            //no other admin
             $this->dispatchBrowserEvent('sweet-error', [
                 'title' => __('group.logout.error'),
                 'message' => __('group.logout.no_admin'),
@@ -155,27 +151,12 @@ class ListGroups extends AppComponent
     }
 
     /**
-     * Megerősítette a kilépését
+     * Confirmed quit
      */
     public function logoutConfirmed() {
 
         $logout = new GroupUserMoves($this->groupBeeingLogout, Auth::id());
         $res = $logout->detach();
-
-        // $group = Group::findOrFail($this->groupBeeingLogout);
-        // $events = auth()->user()->feature_events()
-        //             ->where('group_id', $this->groupBeeingLogout);
-        // //recalculate events
-        // $days = [];
-        // foreach($events->get()->toArray() as $event) {
-        //     $days[] = $event['day'];
-        // }
-        // $events->delete();
-        // foreach($days as $day) {
-        //     $stat = new GenerateStat();
-        //     $stat->generate($this->groupBeeingLogout, $day);
-        // }
-        // $res = $group->groupUsers()->detach(Auth::id());
         if($res) {
             $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
         } else {
@@ -193,8 +174,6 @@ class ListGroups extends AppComponent
             abort(403);
         }
 
-        // dd($this->state);
-
         $validatedData = Validator::make($this->state, [
             'name' => 'required|string|max:50|min:2',
         ])->validate();
@@ -202,9 +181,6 @@ class ListGroups extends AppComponent
         $user = Auth()->user();
         $group = Group::create($validatedData);
         $user->userGroups()->save($group, ['group_role' => 'admin', 'accepted_at' => date('Y-m-d H:i:s')]);
-
-        // Session::flash('message', __('group.groupCreated')); 
-        // redirect()->route('groups.edit', ['group' => $group->id]);
 
         $this->dispatchBrowserEvent('hide-modal', [
             'id' => 'createGroup',
@@ -218,7 +194,7 @@ class ListGroups extends AppComponent
 
     public function render()
     {        
-        $user = Auth()->user(); // User::findOrFail(Auth::id());
+        $user = Auth()->user(); 
         $groups = $user->userGroups()->paginate(20);
 
         return view('livewire.groups.list-groups', [

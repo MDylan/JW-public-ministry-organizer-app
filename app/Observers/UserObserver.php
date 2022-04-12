@@ -26,9 +26,6 @@ class UserObserver
         }
         CalulcateUserNameIndexProcess::dispatch();
 
-        // $user->notify(new UserRegisteredNotification());
-
-        // event(new UserRegisteredNotification($user));
     }
 
     /**
@@ -39,7 +36,7 @@ class UserObserver
      */
     public function updated(User $user)
     {
-        //ha frissítés után admin jogot kapott, értesítem a többi admint
+        //If he get "mainAdmin" privilege, notify other admins
         if($user->wasChanged('role')) {
             if($user->getOriginal('name') !== 'mainAdmin' && $user->role === 'mainAdmin') {
                 $this->adminAdded($user);

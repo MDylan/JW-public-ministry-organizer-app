@@ -69,7 +69,6 @@ class LastEvents extends AppComponent
             ]);
             return false;
         } else {
-            // dd($event->toArray());
             $groups = Auth()->user()->userGroups->toArray();
             $this->eventFormDisabled = false;
             if($this->searchForId($event->groups->id, $groups) === false) {
@@ -106,15 +105,12 @@ class LastEvents extends AppComponent
         if($this->eventFormDisabled) return;
         
         if(count($this->reports)) {
-            // dd($this->reports);
             $validatedData = Validator::make($this->reports, [
                 '*.placements' => 'digits_between:0,2',
                 '*.videos' => 'digits_between:0,2',
                 '*.return_visits' => 'digits_between:0,2',
                 '*.bible_studies' => 'digits_between:0,2',
-                // '*.note' => 'sometimes|string|max:50',
             ])->validate();
-            // dd($validatedData);
             foreach($validatedData as $literatureId => $report) {
                 $this->eventForm->serviceReports()->updateOrCreate(
                     ['group_literature_id' => $literatureId],
@@ -148,14 +144,7 @@ class LastEvents extends AppComponent
                     ->orderBy('start', 'desc')
                     ->with(['serviceReports', 'groups.literatures'])
                     ->has('groups')
-                    ->get();
-                    // ->toArray();
-
-        // dd($events->toArray());
-
-        // $groups = Auth()->user()->userGroups->toArray();
-        // dd($groups);
-        
+                    ->get();     
 
         return view('livewire.events.last-events', [
             'events' => $events,

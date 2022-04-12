@@ -23,7 +23,6 @@ class StaticPageEdit extends AppComponent
             $page = StaticPage::whereId($staticPage)->firstOrFail();
             if($page) {
                 $this->state = $page->toArray();
-                // dd($page->first()->toArray());
                 if(count($this->state['translations'])) {
                     foreach($this->state['translations'] as $translation) {
                         $this->state['lang'][$translation['locale']] = [
@@ -38,11 +37,6 @@ class StaticPageEdit extends AppComponent
     }
 
     public function editPage() {
-        // dd($this->state);
-
-        // $validatedData = $this->state;
-        
-
         $validatedData = Validator::make($this->state, [
             'status' => 'required|numeric|in:0,1,2,3',
             'slug' => 'required|alpha|unique:static_pages,slug'.(isset($this->state['id']) ? ','.$this->state['id'] : '' ),
@@ -58,7 +52,6 @@ class StaticPageEdit extends AppComponent
         }
 
         if(isset($this->state['id'])) {
-            // dd($validatedData);
             $page = StaticPage::findOrFail($this->state['id']);
             $page->update($validatedData);
             Session::flash('message', __('staticpage.edited')); 
@@ -103,8 +96,6 @@ class StaticPageEdit extends AppComponent
     {
 
         $statuses = range(0,3,1);
-
-        // if(!isset($this->state['position'])) $this->state['position'] = 'left';
 
         return view('livewire.admin.static-page-edit', [
             'statuses' => $statuses,

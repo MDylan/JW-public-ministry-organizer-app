@@ -4,18 +4,11 @@ namespace App\Classes;
 
 use App\Models\Event;
 use App\Models\Group;
-// use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
 use App\Models\User;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventUpdatedNotification;
-// use App\Models\LogHistory;
-// use App\Observers\EventObserver;
-// use Carbon\Carbon;
 use DateTime;
-// use Illuminate\Container\Container;
-// use Illuminate\Events\Dispatcher;
-// use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class CalculateDatesEvents {
@@ -38,7 +31,6 @@ class CalculateDatesEvents {
         foreach($d_slots as $slot) {
             $disabled_slots[$slot['day_number']][$slot['slot']] = $slot['slot'];
         }
-        // dd($disabled_slots);
 
         $events = DB::table('events')
                     ->join('group_dates', function ($join) {
@@ -55,7 +47,6 @@ class CalculateDatesEvents {
                     ->orderByDesc('events.day')
                     ->orderByDesc('events.start')
                     ->get();
-        // dd($events);
         $deletes = [];
         $updates = [];
         $modifies = [];

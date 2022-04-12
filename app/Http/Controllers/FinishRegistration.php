@@ -21,8 +21,6 @@ class FinishRegistration extends Controller
         $user = User::where('id', '=', $id)
         ->where('role', '=', 'registered')
         ->firstOrFail();
-
-        // session('language', $user->language);
         
         $cancelUrl = URL::temporarySignedRoute(
             'finish_registration_cancel', now()->addMinutes(60), ['id' => $user->id]

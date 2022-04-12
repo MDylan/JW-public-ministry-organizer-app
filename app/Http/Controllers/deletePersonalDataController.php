@@ -5,10 +5,7 @@ namespace App\Http\Controllers;
 use App\Classes\GroupUserMoves;
 use App\Models\User;
 use App\Notifications\deletePersonalDataNotification;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 
