@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '7bba16d72ca9cff354d0281ce34245e9247ed204',
+    'reference' => 'ccd511fca982c0fec916e7979872dc975ea2ac70',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -544,7 +544,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '7bba16d72ca9cff354d0281ce34245e9247ed204',
+      'reference' => 'ccd511fca982c0fec916e7979872dc975ea2ac70',
     ),
     'laravel/sail' => 
     array (
@@ -1002,15 +1002,6 @@
       array (
       ),
       'reference' => '570292577277f06f590635381a7f761a6cf4f026',
-    ),
-    'rachidlaasri/laravel-installer' => 
-    array (
-      'pretty_version' => '4.1.0',
-      'version' => '4.1.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'b751b4c23dba893e9a4a12f881a6fd8fa921d228',
     ),
     'ralouphie/getallheaders' => 
     array (
