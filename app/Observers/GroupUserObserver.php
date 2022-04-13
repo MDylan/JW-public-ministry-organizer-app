@@ -41,7 +41,7 @@ class GroupUserObserver
                 }
             }
         }
-        if(count($store)) {
+        if(count($store) && (auth()->user() !== null)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupUser->group_id,

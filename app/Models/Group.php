@@ -45,6 +45,7 @@ class Group extends Model
         'languages' => 'array',
         'copy_from_parent' => 'array',
         'replyTo' => 'encrypted',
+        'name' => 'encrypted'
     ];
 
     protected $appends = ['colors'];

@@ -30,6 +30,7 @@ class Event extends Model
         'day' => 'datetime:Y-m-d',
         'start' => 'datetime:Y-m-d H:i',
         'end' => 'datetime:Y-m-d H:i',
+        'comment' => 'encrypted'
     ];
 
     protected $appends = ['full_time', 'day_name', 'service_hour', 

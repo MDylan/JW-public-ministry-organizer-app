@@ -18,6 +18,7 @@ final class GroupUser extends Pivot
 
     protected $casts = [
         'signs' => 'array',
+        'note' => 'encrypted',
     ];
 
     public function histories()

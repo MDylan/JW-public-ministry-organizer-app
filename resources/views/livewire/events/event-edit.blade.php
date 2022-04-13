@@ -77,7 +77,7 @@
                     <div class="alert alert-light">
                         <i class="fas fa-info mr-1"></i> @lang('event.paralel_events')<br/>
                         @foreach ($other_events as $other)
-                            <b>{{ $other['name'] }}</b>
+                            <b>{{ Crypt::decryptString($other['name']) }}</b>
                                 {{ \Carbon\Carbon::parse($other['start'])->format(__('app.format.time')) }} - 
                                 {{ \Carbon\Carbon::parse($other['end'])->format(__('app.format.time')) }}<br/>
                         @endforeach
@@ -109,7 +109,7 @@
                                 @foreach ($user_statistics as $stat)
                                     <div class="row">
                                         <div class="col-12 col-md-6 text-left text-md-right">
-                                            <b>{{ $stat['name'] }}</b>
+                                            <b>{{ Crypt::decryptString($stat['name']) }}</b>
                                         </div>
                                         <div class="col-12 col-md-6">
                                             @if ($stat['status'] == 0)

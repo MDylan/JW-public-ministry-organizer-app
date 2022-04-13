@@ -16,6 +16,10 @@ class GroupPosters extends Model
         'hide_date',
     ];
 
+    protected $casts = [
+        'info' => 'encrypted'
+    ];
+
     public function group() {
         return $this->belongsTo(Group::class);
     }
