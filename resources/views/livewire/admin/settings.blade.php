@@ -130,7 +130,7 @@
                                     <div class="card-header" id="mainSettingsHeader">
                                         <div class="card-title w-100">
                                             <a class="d-block w-100 collapsed" href="#mainSettings" role="button"
-                                                data-toggle="collapse" data-target="#mainSettings" aria-expanded="true" aria-controls="mainSettings">
+                                                data-toggle="collapse" data-target="#mainSettings" aria-expanded="false" aria-controls="mainSettings">
                                                 <i class="fas fa-cogs mr-1"></i>
                                                 @lang('settings.main.title')
                                             </a>
@@ -165,7 +165,7 @@
                                     <div class="card-header" id="mailSettingsHeader">
                                         <div class="card-title w-100">
                                             <a class="d-block w-100 collapsed" href="#mailSettings" role="button"
-                                                data-toggle="collapse" data-target="#mailSettings" aria-expanded="true" aria-controls="mailSettings">
+                                                data-toggle="collapse" data-target="#mailSettings" aria-expanded="false" aria-controls="mailSettings">
                                                 <i class="far fa-envelope mr-1"></i>
                                                 @lang('settings.mail')
                                             </a>
@@ -245,7 +245,7 @@
                                     <div class="card-header" id="otherSettingsHeader">
                                         <div class="card-title w-100">
                                             <a class="d-block w-100 collapsed" role="button"
-                                                 data-target="#otherSettings" data-toggle="collapse" href="#otherSettings" aria-expanded="true">                                                 
+                                                 data-target="#otherSettings" data-toggle="collapse" href="#otherSettings" aria-expanded="false">                                                 
                                                  <i class="fas fa-tasks mr-1"></i>
                                                  @lang('settings.others.title')
                                             </a>
@@ -337,7 +337,9 @@
     <script src="{{ asset('plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script>
     <script>
         $(document).ready(function() {
-            $('.collapse').collapse();
+            $('.collapse').collapse({
+                toggle: false
+            });
 
             window.addEventListener('show-languageRemove-confirmation', event => {
                 Swal.fire({
