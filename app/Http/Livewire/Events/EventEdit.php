@@ -77,34 +77,46 @@ class EventEdit extends AppComponent
 
     public function editForm($eventId) {
         $this->eventId = $eventId;
-        // $this->user_statistics = [];
-        // $groupId = $this->groupId;
-        // $date = $this->date;
-        $this->getRole();
+        $editEvent = $this->checkUserRole();
+        if($editEvent === false) return;
+        
+        $this->editEvent = $editEvent;
+        $this->state['user_id'] = $editEvent['user_id'];
 
-        // $group = Group::findOrFail($groupId);
+        // $this->getRole();
 
-        if($this->eventId !== null) {
-            // $editEvent_old = $group->day_events($date)->whereId($this->eventId)->firstOrFail()->toArray();
-            // $event = $group->load('events.histories')->firstWhere('id', $this->eventId);
-            $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
-            // dd($editEvent);
-            // dd($editEvent_old, $editEvent);
+        // if($this->eventId !== null) {
+        //     $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
 
-            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
-                && $editEvent['user_id'] !== Auth::id()) {
-                    $this->error = __('event.error.no_permission');
-                    $this->cancelEdit();
-                return;
-            }            
-            $this->editEvent = $editEvent;
-            $this->state['user_id'] = $editEvent['user_id'];
-        }
+        //     if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+        //         && $editEvent['user_id'] !== Auth::id()) {
+        //             $this->error = __('event.error.no_permission');
+        //             $this->cancelEdit();
+        //         return;
+        //     }            
+        //     $this->editEvent = $editEvent;
+        //     $this->state['user_id'] = $editEvent['user_id'];
+        // }
 
         $this->getInfo();
         $this->change_start();
         $this->change_end();
         $this->formText['title'] = __('event.edit_event');
+    }
+
+    public function checkUserRole() {
+        $this->getRole();
+        if($this->eventId !== null) {
+            $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
+
+            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+                && $editEvent['user_id'] !== Auth::id()) {
+                    $this->error = __('event.error.no_permission');
+                    $this->cancelEdit();
+                return false;
+            }            
+            return $editEvent;
+        }
     }
 
     public function getInfo($saveProcess = false) {
@@ -593,6 +605,9 @@ class EventEdit extends AppComponent
     }
 
     public function deleteConfirmed() {
+        $editEvent = $this->checkUserRole();
+        if($editEvent === false) return;
+
         $event = Event::findOrFail($this->eventId);
         $res = $event->delete();
         if($res) {
