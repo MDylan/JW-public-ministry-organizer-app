@@ -20,7 +20,7 @@ class EncryptGroupNameField extends Migration
 
         foreach (App\Models\Group::withTrashed()->get() as $group) {
             $group->name = Crypt::encryptString($group->name);
-            $group->save();
+            $group->saveQuietly();
         }
     }
 

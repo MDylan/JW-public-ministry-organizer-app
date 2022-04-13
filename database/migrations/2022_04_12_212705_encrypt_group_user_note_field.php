@@ -16,7 +16,7 @@ class EncryptGroupUserNoteField extends Migration
     {
         foreach (App\Models\GroupUser::withTrashed()->get() as $user) {
             $user->note = Crypt::encryptString($user->note);
-            $user->save();
+            $user->saveQuietly();
         }
     }
 

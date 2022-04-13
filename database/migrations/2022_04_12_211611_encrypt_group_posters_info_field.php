@@ -16,7 +16,7 @@ class EncryptGroupPostersInfoField extends Migration
     {
         foreach (App\Models\GroupPosters::all() as $poster) {
             $poster->info = Crypt::encryptString($poster->info);
-            $poster->save();
+            $poster->saveQuietly();
         }
     }
 

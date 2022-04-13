@@ -16,7 +16,7 @@ class EncryptEventsCommentField extends Migration
     {
         foreach (App\Models\Event::withTrashed()->get() as $event) {
             $event->comment = Crypt::encryptString($event->comment);
-            $event->save();
+            $event->saveQuietly();
         }
     }
 
