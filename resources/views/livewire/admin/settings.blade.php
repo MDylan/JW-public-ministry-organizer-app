@@ -26,6 +26,53 @@
                 <div class="col-lg-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
+                            <div class="card-title">@lang('settings.status.title')</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
+                                <li class="list-group-item">@lang('settings.status.last_schedule_run'): {{ ($settings['last_schedule_run'] ?? "-") }}
+                                
+                                @if (($settings['last_schedule_run'] ?? null) > \Carbon\Carbon::now()->subMinutes(2))
+                                    <i class="far fa-check-circle ml-1 text-success"></i>
+                                @else                                    
+                                    <p class="text-danger">
+                                        <i class="fas fa-exclamation mr-1 text-danger"></i>
+                                        @lang('settings.schedule_error') @lang('settings.schedule_info')</p>
+                                @endif
+                                
+                                </li>
+                                <li class="list-group-item">@lang('settings.status.waiting_jobs'): {{ $waiting_jobs }} 
+                                    @if ($waiting_jobs == 0)
+                                        <i class="far fa-check-circle ml-1 text-success"></i>
+                                    @endif
+                                </li>
+                                <li class="list-group-item">@lang('settings.status.failed_jobs'): {{ $failed_jobs }} 
+                                @if ($failed_jobs > 0)
+                                    <p class="text-danger">
+                                        <i class="fas fa-exclamation mr-1 text-danger"></i>
+                                        @lang('settings.there_are_failed_jobs')
+                                        <div class="w-100 py-1"></div>
+                                        <button type="button" class="btn btn-primary" wire:click="run('retry')" wire:loading.attr="disabled">
+                                            <i class="fa fa-play mr-1"></i>
+                                            @lang('settings.failed_jobs_retry')
+                                        </button>
+                                        <div class="w-100 py-1"></div>
+                                        <div wire:loading wire:target="run">
+                                            <div class="la-ball-clip-rotate la-dark la-sm mr-2" style="float:left;">
+                                                <div></div>
+                                            </div>
+                                            @lang('event.please_wait')
+                                        </div>
+                                    </p>
+                                @else
+                                    <i class="far fa-check-circle ml-1 text-success"></i>
+                                @endif</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
                             <div class="card-title">@lang('settings.languages.title')</div>
                         </div>
                         <div class="card-body">
@@ -320,11 +367,6 @@
                             <button type="button" class="btn btn-primary" wire:click="run('migrate')" wire:loading.attr="disabled">
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): migrate
-                            </button>
-                            <div class="w-100 py-2"></div>
-                            <button type="button" class="btn btn-primary" wire:click="run('retry')" wire:loading.attr="disabled">
-                                <i class="fa fa-play mr-1"></i>
-                                @lang('settings.run.optimize'): queue:retry all
                             </button>
                             <div class="w-100 py-2"></div>
                             <div wire:loading wire:target="run">

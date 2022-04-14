@@ -74,4 +74,15 @@ return [
     'mail_username' => 'Levelezéshez használt felhasználói név',
     'mail_password' => 'Levelezéshez használt jelszó',
     'mail_from_address' => 'A feladó email címe',
+    'status' => [
+        'title' => 'A rendszer állapota',
+        'php_version' => 'PHP verzió',
+        'last_schedule_run' => 'Ütemezett feladatok legutóbbi futása',
+        'waiting_jobs' => 'Várakozó feladatok',
+        'failed_jobs' => 'Hibás feladatok',        
+    ],
+    'schedule_info' => 'Az ütemezett feladatok biztosítják, hogy az oldal megfelelően működjön (pl az email értesítések ki legyenek küldve, frissüljenek a felhasználók adatai stb. Kérlek figyelj rá, hogy a tárhely szolgáltatódnál be legyen állítva, hogy percenként induljon el ennek a futása (cron). Erről bővebben <a href="https://laravel.com/docs/8.x/scheduling#running-the-scheduler" target="_blank">a dokumentációban olvashatsz.</a>',
+    'schedule_error' => 'HIBA! Az ütemezett feladat nagyon régen futott (vagy még egyátalán nem). Ez működési problémákat okozhat.',
+    'there_are_failed_jobs' => 'Egy vagy több ütemezett feladat futtatása során hiba lépett fel. Erről emailben értesítést is kaptál. Próbáld meg újra futtatni őket. Ha továbbra is hiba lép fel, kérjük jelezd a program fejlesztőjének a hibát és küld el neki az email tartalmát.',
+    'failed_jobs_retry' => 'Hibás feladatok újrafuttatása',
 ];

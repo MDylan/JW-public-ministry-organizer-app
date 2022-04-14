@@ -4,11 +4,13 @@ namespace App\Console;
 
 use App\Models\Event;
 use App\Models\LogHistory;
+use App\Models\Settings;
 use App\Models\User;
 use App\Notifications\UserWillBeAnonymizeNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Cache;
 
 class Kernel extends ConsoleKernel
 {
@@ -40,7 +42,7 @@ class Kernel extends ConsoleKernel
             
         })->hourlyAt(50);
 
-        $schedule->call(function () {            
+        $schedule->call(function () {
             //set event's statuses to deleted if not accepted in time
             Event::where('status', '=', '0')
                     ->where('start', '<=', date("Y-m-d H:i:s"))
@@ -88,6 +90,14 @@ class Kernel extends ConsoleKernel
                     'day', '<=', $date
                 )->forceDelete();
         })->daily();
+
+        //store last schedule run
+        $schedule->call(function () {
+            Settings::updateOrInsert(
+                [ 'name' => 'last_schedule_run' ],
+                [ 'value' => now() ]
+            );
+        })->everyMinute();
         
     }
 

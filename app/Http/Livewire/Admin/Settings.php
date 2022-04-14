@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 class Settings extends AppComponent
 {
@@ -280,10 +282,15 @@ class Settings extends AppComponent
     public function render()
     {
         
-        $this->load();        
+        $this->load();
+
+        $failed_jobs = DB::table('failed_jobs')->get()->count();
 
         $this->state['default_language'] = $this->settings['default_language'];
 
-        return view('livewire.admin.settings');
+        return view('livewire.admin.settings', [
+            'waiting_jobs' => Queue::size(),
+            'failed_jobs' => $failed_jobs
+        ]);
     }
 }
