@@ -508,7 +508,7 @@
                                             <label for="dateAdd_start">@lang('group.special_dates.date_start')</label>
                                             <select @if($dateAdd['date_status'] != 2) disabled @endif  id="dateAdd_start" wire:model.defer="dateAdd.date_start" class="form-control @error('date_start') is-invalid @enderror">
                                                 @foreach ($group_times as $field => $translate) 
-                                                    <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+                                                    <option value="{{$translate}}">{{ $translate }}</option>
                                                 @endforeach
                                             </select>
                                             @error('date_start')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -517,7 +517,7 @@
                                             <label for="dateAdd_end">@lang('group.special_dates.date_end')</label>
                                             <select @if($dateAdd['date_status'] != 2) disabled @endif id="dateAdd_end" wire:model.defer="dateAdd.date_end" class="form-control @error('date_end') is-invalid @enderror">
                                                 @foreach ($group_times as $field => $translate) 
-                                                    <option value="{{$translate}}">{{ __('group.times.'.$translate)}}</option>
+                                                    <option value="{{$translate}}">{{ $translate }}</option>
                                                 @endforeach
                                             </select>
                                             @error('date_end')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
