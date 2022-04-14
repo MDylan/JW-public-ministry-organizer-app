@@ -142,15 +142,17 @@ class Modal extends AppComponent
                 ];
             }
         }
-        $user_signs = [];
+        $user_signs = $users_active = [];
         if(is_array($group['group_users_all'])) {
             foreach($group['group_users_all'] as $user) {
                 if(isset($user['pivot']['signs'])) {
                     $user_signs[$user['id']] = $user['pivot']['signs'];
                 }
+                $users_active[$user['id']] = $user['pivot']['accepted_at'] ? true : false;
             }
         }
         $group['users_signs'] = $user_signs;
+        $group['users_active'] = $users_active;
         unset($group['group_users_all']);
         $this->group_data = $group; //->toArray();
         // dd($this->group_data);
