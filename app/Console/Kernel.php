@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Models\Event;
+use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\UserWillBeAnonymizeNotification;
 use Carbon\Carbon;
@@ -73,7 +74,20 @@ class Kernel extends ConsoleKernel
             }
         })->dailyAt('7:10');
         
-        
+        //delete old LogHistory data
+        $schedule->call(function () {
+            $date = Carbon::now()->subMonths(3);
+            LogHistory::where('created_at', '<=', $date)->delete();
+        })->daily();
+
+        //delete old trashed events
+        $schedule->call(function () {
+            $date = Carbon::now()->subMonths(3);
+            Event::onlyTrashed()
+                ->where(
+                    'day', '<=', $date
+                )->forceDelete();
+        })->daily();
         
     }
 
