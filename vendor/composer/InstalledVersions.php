@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'ccd511fca982c0fec916e7979872dc975ea2ac70',
+    'reference' => '067e33e9f3c4328c835bf5b79adfda1449fc2258',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -567,7 +567,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'ccd511fca982c0fec916e7979872dc975ea2ac70',
+      'reference' => '067e33e9f3c4328c835bf5b79adfda1449fc2258',
     ),
     'laravel/sail' => 
     array (
@@ -1230,6 +1230,15 @@ private static $installed = array (
       array (
       ),
       'reference' => '01db8a42ba379489279b849d8def306e0886c04a',
+    ),
+    'spatie/laravel-failed-job-monitor' => 
+    array (
+      'pretty_version' => '4.1.1',
+      'version' => '4.1.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '16014a76a314be3f9f6369d4e61e20e9c9367d58',
     ),
     'spatie/laravel-package-tools' => 
     array (

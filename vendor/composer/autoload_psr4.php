@@ -41,6 +41,7 @@ return array(
     'Symfony\\Component\\CssSelector\\' => array($vendorDir . '/symfony/css-selector'),
     'Symfony\\Component\\Console\\' => array($vendorDir . '/symfony/console'),
     'Spatie\\LaravelPackageTools\\' => array($vendorDir . '/spatie/laravel-package-tools/src'),
+    'Spatie\\FailedJobMonitor\\' => array($vendorDir . '/spatie/laravel-failed-job-monitor/src'),
     'Spatie\\CookieConsent\\' => array($vendorDir . '/spatie/laravel-cookie-consent/src'),
     'Spatie\\CalendarLinks\\' => array($vendorDir . '/spatie/calendar-links/src'),
     'Spatie\\Activitylog\\' => array($vendorDir . '/spatie/laravel-activitylog/src'),

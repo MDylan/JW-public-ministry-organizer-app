@@ -92,6 +92,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
             'Symfony\\Component\\CssSelector\\' => 30,
             'Symfony\\Component\\Console\\' => 26,
             'Spatie\\LaravelPackageTools\\' => 27,
+            'Spatie\\FailedJobMonitor\\' => 24,
             'Spatie\\CookieConsent\\' => 21,
             'Spatie\\CalendarLinks\\' => 21,
             'Spatie\\Activitylog\\' => 19,
@@ -349,6 +350,10 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Spatie\\LaravelPackageTools\\' => 
         array (
             0 => __DIR__ . '/..' . '/spatie/laravel-package-tools/src',
+        ),
+        'Spatie\\FailedJobMonitor\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src',
         ),
         'Spatie\\CookieConsent\\' => 
         array (
@@ -5601,6 +5606,11 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Spatie\\CalendarLinks\\Link' => __DIR__ . '/..' . '/spatie/calendar-links/src/Link.php',
         'Spatie\\CookieConsent\\CookieConsentMiddleware' => __DIR__ . '/..' . '/spatie/laravel-cookie-consent/src/CookieConsentMiddleware.php',
         'Spatie\\CookieConsent\\CookieConsentServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-cookie-consent/src/CookieConsentServiceProvider.php',
+        'Spatie\\FailedJobMonitor\\Exceptions\\InvalidConfiguration' => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src/Exceptions/InvalidConfiguration.php',
+        'Spatie\\FailedJobMonitor\\FailedJobMonitorServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src/FailedJobMonitorServiceProvider.php',
+        'Spatie\\FailedJobMonitor\\FailedJobNotifier' => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src/FailedJobNotifier.php',
+        'Spatie\\FailedJobMonitor\\Notifiable' => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src/Notifiable.php',
+        'Spatie\\FailedJobMonitor\\Notification' => __DIR__ . '/..' . '/spatie/laravel-failed-job-monitor/src/Notification.php',
         'Spatie\\LaravelPackageTools\\Exceptions\\InvalidPackage' => __DIR__ . '/..' . '/spatie/laravel-package-tools/src/Exceptions/InvalidPackage.php',
         'Spatie\\LaravelPackageTools\\Package' => __DIR__ . '/..' . '/spatie/laravel-package-tools/src/Package.php',
         'Spatie\\LaravelPackageTools\\PackageServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-package-tools/src/PackageServiceProvider.php',

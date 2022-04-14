@@ -21,7 +21,8 @@
         "pcinaglia/laraupdater": "1.0.2",
         "spatie/calendar-links": "^1.6",
         "spatie/laravel-activitylog": "^4.0.0",
-        "spatie/laravel-cookie-consent": "^3.1"
+        "spatie/laravel-cookie-consent": "^3.1",
+        "spatie/laravel-failed-job-monitor": "^4.1"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

@@ -7056,6 +7056,85 @@
             "install-path": "../spatie/laravel-cookie-consent"
         },
         {
+            "name": "spatie/laravel-failed-job-monitor",
+            "version": "4.1.1",
+            "version_normalized": "4.1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-failed-job-monitor.git",
+                "reference": "16014a76a314be3f9f6369d4e61e20e9c9367d58"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-failed-job-monitor/zipball/16014a76a314be3f9f6369d4e61e20e9c9367d58",
+                "reference": "16014a76a314be3f9f6369d4e61e20e9c9367d58",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^7.0|^8.0|^9.0",
+                "php": "^8.0",
+                "spatie/laravel-package-tools": "^1.6"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.4",
+                "orchestra/testbench": "^5.0|^6.0|^7.0",
+                "phpunit/phpunit": "^8.5|^9.5"
+            },
+            "suggest": {
+                "guzzlehttp/guzzle": "Allows notifications to be sent to Slack",
+                "laravel/slack-notification-channel": "Required for sending notifications via Slack"
+            },
+            "time": "2022-02-25T10:36:01+00:00",
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Spatie\\FailedJobMonitor\\FailedJobMonitorServiceProvider"
+                    ]
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\FailedJobMonitor\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Get notified when a queued job fails",
+            "homepage": "https://github.com/spatie/laravel-failed-job-monitor",
+            "keywords": [
+                "job",
+                "laravel-failed-job-monitor",
+                "monitor",
+                "notify",
+                "queue",
+                "slack",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-failed-job-monitor/issues",
+                "source": "https://github.com/spatie/laravel-failed-job-monitor/tree/4.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "install-path": "../spatie/laravel-failed-job-monitor"
+        },
+        {
             "name": "spatie/laravel-package-tools",
             "version": "1.11.1",
             "version_normalized": "1.11.1.0",
