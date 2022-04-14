@@ -229,6 +229,9 @@ class Settings extends AppComponent
                 'command' => 'migrate',
                 'params' => ['--force'=> true]
             ],
+            'retry' => [
+                'command' => 'queue:retry all'
+            ],
         ];
         if(isset($commands[$command])) {
 

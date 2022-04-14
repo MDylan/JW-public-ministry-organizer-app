@@ -321,6 +321,12 @@
                                 <i class="fa fa-play mr-1"></i>
                                 @lang('settings.run.optimize'): migrate
                             </button>
+                            <div class="w-100 py-2"></div>
+                            <button type="button" class="btn btn-primary" wire:click="run('retry')" wire:loading.attr="disabled">
+                                <i class="fa fa-play mr-1"></i>
+                                @lang('settings.run.optimize'): queue:retry all
+                            </button>
+                            <div class="w-100 py-2"></div>
                             <div wire:loading wire:target="run">
                                 <div class="la-ball-clip-rotate la-dark la-sm mr-2" style="float:left;">
                                     <div></div>
