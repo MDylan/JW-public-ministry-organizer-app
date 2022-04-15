@@ -77,6 +77,7 @@ return [
     'status' => [
         'title' => 'A rendszer állapota',
         'php_version' => 'PHP verzió',
+        'software_version' => 'Szoftver verzió',
         'last_schedule_run' => 'Ütemezett feladatok legutóbbi futása',
         'waiting_jobs' => 'Várakozó feladatok',
         'failed_jobs' => 'Hibás feladatok',        
@@ -85,4 +86,5 @@ return [
     'schedule_error' => 'HIBA! Az ütemezett feladat nagyon régen futott (vagy még egyátalán nem). Ez működési problémákat okozhat.',
     'there_are_failed_jobs' => 'Egy vagy több ütemezett feladat futtatása során hiba lépett fel. Erről emailben értesítést is kaptál. Próbáld meg újra futtatni őket. Ha továbbra is hiba lép fel, kérjük jelezd a program fejlesztőjének a hibát és küld el neki az email tartalmát.',
     'failed_jobs_retry' => 'Hibás feladatok újrafuttatása',
+    'software_url' => 'A szoftver weboldala',
 ];

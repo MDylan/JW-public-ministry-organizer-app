@@ -26,11 +26,25 @@
                 <div class="col-lg-6">
                     <div class="card card-primary card-outline">
                         <div class="card-header">
-                            <div class="card-title">@lang('settings.status.title')</div>
+                            <div class="card-title">
+                                <i class="fas fa-heartbeat mr-1"></i>
+                                @lang('settings.status.title')</div>
                         </div>
                         <div class="card-body p-1">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
+                                <li class="list-group-item">@lang('settings.status.software_version'): 
+                                    {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }} 
+                                    @if((new \pcinaglia\laraupdater\LaraUpdaterController)->check() == '')
+                                        <i class="far fa-check-circle mx-1 text-success"></i>
+                                    @else
+                                        <i class="fas fa-exclamation mx-1 text-danger"></i>
+                                        @lang('laraupdater.UPDATE_FOUND')
+                                    @endif
+                                    <a href="{{ config('events.github_url') }}" target="_blank" class="text-green">
+                                        @lang('settings.software_url')
+                                    </a>
+                                </li>
                                 <li class="list-group-item">@lang('settings.status.last_schedule_run'): {{ ($settings['last_schedule_run'] ?? "-") }}
                                 
                                 @if (($settings['last_schedule_run'] ?? null) > \Carbon\Carbon::now()->subMinutes(2))
@@ -73,7 +87,9 @@
                     </div>
                     <div class="card card-primary card-outline">
                         <div class="card-header">
-                            <div class="card-title">@lang('settings.languages.title')</div>
+                            <div class="card-title">
+                                <i class="fas fa-globe mr-1"></i>
+                                @lang('settings.languages.title')</div>
                         </div>
                         <div class="card-body">
                             <div class="form-row  align-items-end">
