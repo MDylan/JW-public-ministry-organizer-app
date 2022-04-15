@@ -12,3 +12,9 @@ npm-debug.log
 yarn-error.log
 /storage/installed
 /.vscode
+public/dist/css/*-cache_adminlte.min.css
+public/dist/js/*-cache_adminlte.js
+public/plugins/bootstrap/js/*-cache_bootstrap.js
+public/plugins/fontawesome-free/css/*-cache_fontawesome.css
+public/plugins/sweetalert2/*-cache_sweetalert2.js
+public/plugins/toastr/*-cache_toastr.js

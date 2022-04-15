@@ -182,6 +182,7 @@ return [
         Barryvdh\Debugbar\ServiceProvider::class,
         pcinaglia\laraupdater\LaraUpdaterServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
+        'Eusonlito\LaravelPacker\PackerServiceProvider',
     ],
 
     /*
@@ -234,7 +235,7 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
-
+        'Packer'    => 'Eusonlito\LaravelPacker\Facade',
     ],
 
 ];

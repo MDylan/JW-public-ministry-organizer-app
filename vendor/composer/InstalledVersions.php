@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '067e33e9f3c4328c835bf5b79adfda1449fc2258',
+    'reference' => '844ff8759406250c9c6d2e9909ca290e12dc6a26',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -191,6 +191,15 @@ private static $installed = array (
       array (
       ),
       'reference' => '0dbf5d78455d4d6a41d186da50adc1122ec066f4',
+    ),
+    'eusonlito/laravel-packer' => 
+    array (
+      'pretty_version' => 'v2.2.5',
+      'version' => '2.2.5.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'af7b6e391657b3168c0c3b886791d9a71d2ec47e',
     ),
     'facade/flare-client-php' => 
     array (
@@ -526,6 +535,15 @@ private static $installed = array (
         0 => 'v8.83.1',
       ),
     ),
+    'imagecow/imagecow' => 
+    array (
+      'pretty_version' => 'v2.4.1',
+      'version' => '2.4.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'bcf60d475683a36a40cb2343a102aa79114b4525',
+    ),
     'joedixon/laravel-translation' => 
     array (
       'pretty_version' => 'v1.1.2',
@@ -567,7 +585,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '067e33e9f3c4328c835bf5b79adfda1449fc2258',
+      'reference' => '844ff8759406250c9c6d2e9909ca290e12dc6a26',
     ),
     'laravel/sail' => 
     array (

@@ -9,6 +9,7 @@
         "astrotomic/laravel-translatable": "^11.9",
         "dialect/laravel-gdpr-compliance": "1.4.7",
         "doctrine/dbal": "^3.1",
+        "eusonlito/laravel-packer": "^2.2",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",

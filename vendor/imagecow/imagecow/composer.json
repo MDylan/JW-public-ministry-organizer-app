@@ -1,0 +1,34 @@
+{
+	"name": "imagecow/imagecow",
+	"type": "library",
+	"description": "PHP library to manipulate and generate responsive images",
+	"keywords": ["image"],
+	"homepage": "https://github.com/oscarotero/imagecow/",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Oscar Otero",
+			"email": "oom@oscarotero.com",
+			"homepage": "http://oscarotero.com",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"email": "oom@oscarotero.com",
+		"issues": "https://github.com/oscarotero/imagecow/issues"
+	},
+	"require": {
+		"php": ">=5.5"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^4.8|^6.2"
+	},
+	"scripts": {
+		"test": "phpunit"
+	},
+	"autoload": {
+		"psr-4": {
+			"Imagecow\\": "src"
+		}
+	}
+}
