@@ -7,10 +7,10 @@
 .calendar_day {
     width: 14%;
 }
-.available {
+.day_available {
   background-color: #00ff00;
 }
-.available:hover {
+.day_available:hover {
     font-weight: bold;
     cursor: pointer;
 }

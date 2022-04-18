@@ -89,7 +89,7 @@
                                             @if ($day['current']) table-secondary
                                             @elseif (isset($cal_service_days[$day['weekDay']]) == null || !$day['available']) table-active
                                             @else table-light @endif
-                                            @if ($day['service_day']) available @endif
+                                            @if ($day['service_day']) day_available @endif
                                             @if (isset($userEvents[$day['fullDate']])) userEvent @endif
                                             "
                                         @endif data-day="{{ $day['fullDate'] }}"

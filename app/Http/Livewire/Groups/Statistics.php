@@ -14,10 +14,15 @@ class Statistics extends AppComponent
 
     protected $group;
     public $groupId = 0;
-    public $months = [];
+    // public $months = [];
     public $year = 0;
     public $month = 0;
     public $current_month = 0;
+    public $filter_sub_group = false;
+    public $filter_all_event = false;
+    public $period = null;
+    public $startDate = null;
+    public $endDate = null;
 
     public function mount($group) {
         $this->groupId = $group;
@@ -28,7 +33,12 @@ class Statistics extends AppComponent
         $this->year = date("Y");
         $this->month = date("m");
         
-
+        if(!$this->startDate) {
+            $this->startDate = date("Y-m-")."01";
+        }
+        if(!$this->endDate) {
+            $this->endDate = date("Y-m-t", strtotime($this->startDate));
+        }
     }
 
     public function getMonthListFromDate(Carbon $start)
@@ -49,20 +59,34 @@ class Statistics extends AppComponent
 
     public function render()
     {
-        $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
-        $this->current_month = date('F', $firstDayOfMonth);
-        $this->first_day = date("Y-m-d", $firstDayOfMonth);
-        $this->last_day = date("Y-m-t", $firstDayOfMonth);
 
-        $this->group = Group::
-                with(['dates' => function($q) {
+        $startDate = Carbon::parse($this->startDate);
+        $endDate = Carbon::parse($this->endDate);
+
+        if($startDate->gt($endDate)) {
+            $this->startDate = $endDate;
+            $this->endDate = $startDate;
+        }
+        if($startDate->eq($endDate)) {
+            $this->endDate = $endDate->addDay();
+        }
+
+        $this->first_day = $this->startDate;
+        $this->last_day = $this->endDate;
+
+        // $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
+        // $this->current_month = date('F', $firstDayOfMonth);
+        // $this->first_day = date("Y-m-d", $firstDayOfMonth);
+        // $this->last_day = date("Y-m-t", $firstDayOfMonth);
+
+        $this->group = Group::with([
+                'dates' => function($q) {
                     $q->whereBetween('date', [$this->first_day, $this->last_day]);
-                }])->firstWhere('id', '=', $this->groupId);
+                },
+                'literatures'
+                ])->firstWhere('id', '=', $this->groupId);
         $start = strtotime($this->group->created_at);
-        $this->getMonthListFromDate(Carbon::parse(date("Y-m-01", $start)));
-
-        
-        
+        // $this->getMonthListFromDate(Carbon::parse(date("Y-m-01", $start)));
 
         $stats = DayStat::where('group_id', $this->group->id)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
@@ -238,12 +262,13 @@ class Statistics extends AppComponent
             'return_visits',
             'bible_studies'
         ];
-        $users = $this->group->groupUsersAll()->orderBy('users.name', 'asc')->get();
+        $users = $this->group->groupUsersAll()->orderBy('users.name_index', 'asc')->get();
         foreach($users as $user) {
             $users_stats[$user->id] = [
                 'name' => $user->name,
                 'events' => 0,
                 'hours' => 0,
+                'last_event' => 0,
                 'days' => []
             ];
 
@@ -251,14 +276,24 @@ class Statistics extends AppComponent
                 $users_stats[$user->id][$placement] = 0;
             }
         }
+
+        $groups = [];
+        $groups[] = $this->group->id;
+        if($this->group->childGroups && $this->filter_sub_group) {
+            $groups = array_merge($groups, $this->group->childGroups->pluck('id')->toArray());
+        }
+
+        $filter_events = [1];
+        if($this->filter_all_event) {
+            $filter_events = [0,1,2];
+        }
       
-        $events = Event::where('group_id', $this->group->id)
+        $events = Event::whereIn('group_id', $groups)
                     ->whereBetween('day', [$this->first_day, $this->last_day])
-                    ->whereIn('status', [1])
-                    ->orderBy('start', 'desc')
+                    ->whereIn('status', $filter_events)
+                    ->orderBy('start', 'asc')
                     ->with(['serviceReports.literature']) 
                     ->get();
-
         if(count($events)) {
             foreach($events as $event) {
                 $users_stats[$event->user_id]['events']++;
@@ -268,6 +303,7 @@ class Statistics extends AppComponent
                 $totalDuration = $finishTime->diffInHours($startTime);
                 $users_stats[$event->user_id]['hours'] += $totalDuration;
                 $users_stats[$event->user_id]['days'][$event->day.''] = true;
+                $users_stats[$event->user_id]['last_event'] = $event->day;
 
                 if(count($event->serviceReports)) {
                     foreach($event->serviceReports as $report) {
@@ -293,12 +329,18 @@ class Statistics extends AppComponent
         return view('livewire.groups.statistics', [
             'groupName' => $this->group->name,
             'groupId' => $this->group->id,
+            'childs' => count($this->group->childGroups->toArray()),
+            'need_approval' => $this->group->need_approval,
             'total' => $total,
             'day_stats' => $day_stats,
             'users_stats' => $users_stats,
             'placements_stats' => $placements_stats,
             'placements_total' => $placements_total,
-            'date_info' => $date_info
+            'date_info' => $date_info,
+            'literatures' => count($this->group->literatures),
+            'picker' => [
+                'minDate' => $this->group->created_at->format("Y-m-d")
+            ]
         ]);
     }
 }

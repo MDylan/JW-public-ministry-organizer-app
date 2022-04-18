@@ -16,6 +16,12 @@ return [
     ],
     'summary' => 'Összesítés',
     'month' => 'Hónap',
+    'period' => 'Időszak',
+    'date_from' => 'mettől',
+    'date_to' => 'meddig',
+    'filter_sub_group' => 'Az alcsoportokat is számolja',
+    'filter_all_event' => 'Az elutasított jelentkezéseket is számolja',
+    'download_in_excel_format' => 'Letöltés excel formátumban',
     'modify' => 'Változtatás',
     'loading' => 'A statisztika betöltése folyamatban, kérlek várj...',
     'help' => 'Adatok magyarázata',
@@ -34,7 +40,8 @@ return [
         'days'  => 'Különböző napok',
         'hours' => 'Betervezett órák',
         'hours_info' => 'Nincsenek kiszűrve belőle azok az alkalmak, amikor a hírnök nem tudta ellátni a szolgálatát, mert nem volt meg a minimális létszám.',
-    ]
+        'last_event' => 'Legutóbbi szolgálat',
+    ],
 
     
 ];
