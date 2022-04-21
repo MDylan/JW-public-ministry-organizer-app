@@ -83,7 +83,8 @@ class PosterEditModal extends AppComponent
 
         if($this->posterId) {
             $save = GroupPosters::where('id', '=', $this->posterId)
-                            ->where('group_id', '=', $this->groupId);
+                            ->where('group_id', '=', $this->groupId)                            
+                            ->first();
             $save->update($validatedData);
         } else {
             $validatedData['group_id'] = $this->groupId;
