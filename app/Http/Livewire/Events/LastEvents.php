@@ -57,7 +57,7 @@ class LastEvents extends AppComponent
     public function getEventInfo($loadForm = false) {
         $event = Auth::user()->events()
                         ->where('id', $this->eventId)
-                        ->whereNotNull('accepted_at')
+                        ->where('status', 1)
                         ->with(['serviceReports', 'groups.literatures'])
                         ->has('groups')
                         ->first();
@@ -138,9 +138,9 @@ class LastEvents extends AppComponent
             $this->last_day = date("Y-m-d");
         }
 
-        $events = Event::where('user_id', Auth()->user()->id)
+        $events = Event::where('user_id', Auth()->user()->id ) 
                     ->whereBetween('day', [$this->first_day, $this->last_day])
-                    ->whereNotNull('accepted_at')
+                    ->where('status', 1)
                     ->orderBy('start', 'desc')
                     ->with(['serviceReports', 'groups.literatures'])
                     ->has('groups')
