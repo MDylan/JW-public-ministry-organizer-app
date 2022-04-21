@@ -25,7 +25,7 @@ class GroupNewsFile extends Model
     public function getUrlAttribute() {
         $new = $this->new()->first();
         if($new->group_id !== null)
-            return env('APP_URL').'/news_file/'.$new->group_id.'/'.$this->id;
+            return '/news_file/'.$new->group_id.'/'.$this->id;
         else {
             return '';
         }

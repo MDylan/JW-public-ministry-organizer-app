@@ -42,7 +42,7 @@ class NewsEdit extends AppComponent
         $this->group = Group::findOrFail($this->groupId);
 
         $all_languages = config('available_languages');
-        if(count($this->group->languages)) {
+        if($this->group->languages !== null) {
             foreach($this->group->languages as $code => $value) {
                 if($value) {
                     $this->languages[$code] = $all_languages[$code];
