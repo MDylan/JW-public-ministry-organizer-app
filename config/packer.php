@@ -36,7 +36,7 @@ return array(
     |
     */
 
-    'public_path' => realpath(getenv('DOCUMENT_ROOT')),
+    'public_path' => null, // realpath(getenv('DOCUMENT_ROOT')),
 
     /*
     |--------------------------------------------------------------------------
@@ -49,7 +49,7 @@ return array(
     |
     */
 
-    'asset' => 'http://'.getenv('SERVER_NAME').'/',
+    'asset' => null, // getenv('APP_URL').'/',
 
     /*
     |--------------------------------------------------------------------------

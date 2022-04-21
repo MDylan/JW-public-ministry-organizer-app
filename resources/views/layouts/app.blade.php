@@ -6,6 +6,12 @@
   <link rel="shortcut icon" type="image/jpg" href="{{ asset('favicon.png') }}"/>
   <title>{{ __('app.title') }}</title>
 
+  {{-- <link href="/plugins/fontawesome-free/css/all.min.css" rel="stylesheet" />
+  <link href="/dist/css/adminlte.min.css" rel="stylesheet" />
+  <link href="/css/style.css" rel="stylesheet" />
+  <link href="/plugins/toastr/toastr.min.css" rel="stylesheet" />
+  <link href="/css/public_style.css" rel="stylesheet" /> --}}
+
   {!! Packer::css('/plugins/fontawesome-free/css/all.min.css', '/plugins/fontawesome-free/css/cache_fontawesome.css') !!}
   {!! Packer::css('/dist/css/adminlte.min.css', '/dist/css/cache_adminlte.min.css') !!}
   {!! Packer::css([
