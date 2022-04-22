@@ -193,10 +193,8 @@ class EventEdit extends AppComponent
         $day_selects = [];
         $row = 1;
         // dd($date->format("Y-m-d"), date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $step);
-        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max - $step, $step);
-        // dd($slots_array);
+        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max, $step);
         foreach($slots_array as $current) {
-        // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
                 'ts' => $current,

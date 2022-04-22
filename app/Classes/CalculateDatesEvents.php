@@ -70,14 +70,14 @@ class CalculateDatesEvents {
                 $dayOfWeek = $d->format("w");
                 $dayOfWeeks[$event->day] = $dayOfWeek;
             } else {
-                $dayOfWeek = $dayOfWeeks[$event->day];
-                if(isset($disabled_slots[$dayOfWeek])) {
-                    $di_slots = $disabled_slots[$dayOfWeek];
-                    foreach($di_slots as $di_slot) {
-                        $ts = strtotime($event->day." ".$di_slot);
-                        $slot_key = date("H:i", $ts);
-                        $days_disabled_slots[$event->day][$slot_key] = true;
-                    }
+                $dayOfWeek = $dayOfWeeks[$event->day];                
+            }
+            if(isset($disabled_slots[$dayOfWeek]) && !isset($days_disabled_slots[$event->day])) {
+                $di_slots = $disabled_slots[$dayOfWeek];
+                foreach($di_slots as $di_slot) {
+                    $ts = strtotime($event->day." ".$di_slot);
+                    $slot_key = date("H:i", $ts);
+                    $days_disabled_slots[$event->day][$slot_key] = true;
                 }
             }
 
@@ -99,10 +99,10 @@ class CalculateDatesEvents {
                 $updates[$event->id]['start'] = date("Y-m-d H:i:s", $start);
                 $event->start = $start;
             } elseif($event->end > $end && $event->start < $end) {
-                //only the start not good, we update it
+                //only the end not good, we update it
                 $modifies[$event->id]['end_modify'][] = "set end time to: ".date("Y-m-d H:i:s", $end);
                 $updates[$event->id]['end'] = date("Y-m-d H:i:s", $end);
-                $event->end = $start;
+                $event->end = $end;
             }
 
             if(isset($deletes[$event->id])) continue;
@@ -188,7 +188,8 @@ class CalculateDatesEvents {
             }
             if($oks == 0 || $new_start == $new_end) {
                 $deletes[$event->id] = $event->id;
-                $modifies[$event->id]['delete'][] = "not_oks";
+                $modifies[$event->id]['delete'][] = "not_oks. new_start: ".$new_start.", new_end:".$new_end;
+                $modifies[$event->id]['delete'][] = "start: ".date("Y-m-d H:i:s", $event->start).", end: ".date("Y-m-d H:i:s", $event->end);
             }
             if($new_start != $event->start && $new_start) {
                 $event->start = $new_start;
@@ -225,7 +226,7 @@ class CalculateDatesEvents {
                 $cell_start += $step;
             }
         }
-        // dd(/*$disabled_slots, $debug,*/ $modifies, 'Upd', $updates, 'Del:', $deletes, $events, $original_data);
+        // dd($disabled_slots, $days_disabled_slots, $debug, $modifies, 'Upd', $updates, 'Del:', $deletes, $events, $original_data);
 
         if($user_id) {
             $causer_user = User::find($user_id);
@@ -310,5 +311,5 @@ class CalculateDatesEvents {
             $stat = new GenerateStat();
             $stat->generate($group_id, $day);
         }
-    }
+    }    
 }

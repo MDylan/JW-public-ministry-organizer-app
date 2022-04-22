@@ -238,7 +238,7 @@ class Modal extends AppComponent
         $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $row = 1;
         $peak = 0;
-        $slots_array = GenerateSlots::generate($this->date, $start, $max - $step, $step);
+        $slots_array = GenerateSlots::generate($this->date, $start, $max, $step);
         foreach($slots_array as $current) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
@@ -263,7 +263,7 @@ class Modal extends AppComponent
                 $day_selects['end'][$current] = date("H:i", $current);
 
             $row++;
-        }        
+        }
         $day_selects['end'][$max] = date("H:i", $max);
         //events
         $events = $group['events'];

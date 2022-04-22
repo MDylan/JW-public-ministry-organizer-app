@@ -13,18 +13,24 @@ class GenerateSlots {
         $min_hour = date("G", $start);
         $max_hour = date("G", $end);
 
-        if($max_hour == 0) $max_hour = 24 - ($step / 60 / 60);
+        if($max_hour == 0) $max_hour = 24; // - ($step / 60 / 60);
         $step_hour = ($step / 60 / 60);
+
+        if(date("Gi", $end) == date("G", $end)."30") 
+            $max_hour += $step_hour; //this is for half hours
+        
         $times = [];
-        for ($hour = $min_hour; $hour <= $max_hour; $hour += $step_hour) {
+        for ($hour = $min_hour; $hour < $max_hour; $hour += $step_hour) {
             if(self::isInt($hour)) {
                 $current = $hour.":00";
             } else {
                 $current = floor($hour).":30";
             }
             $current_unix = strtotime($date." ".$current);
-            $times[$current_unix] = $current_unix; //date("Y-m-d H:i", $current_unix);
+            $times[$current_unix] = $current_unix; 
+            // $times[$current_unix] = date("Y-m-d H:i", $current_unix);
         }
+        // dd($times);
         return $times;
     }
 
