@@ -69,10 +69,10 @@
                                         <th class="calendar_day">
                                             <div class="d-flex justify-content-center">
                                                 <div class="d-none d-sm-block">
-                                                    {{ $translate }}
+                                                    {{ __('group.days.'.$translate) }}
                                                 </div> 
                                                 <div class="d-block d-sm-none">
-                                                    {{ __('event.weekdays_short.'.$dn) }}
+                                                    {{ __('event.weekdays_short.'.$translate) }}
                                                 </div>
                                             </div>
                                         </th>    

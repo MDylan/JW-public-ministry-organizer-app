@@ -158,6 +158,7 @@ return [
         'show_date' => 'kezdés dátuma',
         'hide_date' => 'befejezés dátuma',
         'comment' => 'megjegyzés',
+        'firstDay' => 'nap'
     ],
     'values' => [
         'date_status' => [

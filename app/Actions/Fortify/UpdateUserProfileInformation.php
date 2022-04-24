@@ -38,7 +38,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             ],
             'phone_number' => ['numeric'],
             'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))],
-            'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])]
+            'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])],
+            'firstDay' => ['sometimes', 'numeric', 'in:0,1']
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
         if ($input['email'] !== $user->email &&
@@ -50,7 +51,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'phone_number' => $input['phone_number'],
                 'email' => $input['email'],
                 'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
-                'hidden_fields' => isset($input['hidden_fields']) ? $input['hidden_fields'] : null
+                'hidden_fields' => isset($input['hidden_fields']) ? $input['hidden_fields'] : null,
+                'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null
             ])->save();
         }
     }

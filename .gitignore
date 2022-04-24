@@ -12,6 +12,7 @@ npm-debug.log
 yarn-error.log
 /storage/installed
 /.vscode
+/tmp/*
 public/dist/css/*-cache_adminlte.min.css
 public/dist/js/*-cache_adminlte.js
 public/plugins/bootstrap/js/*-cache_bootstrap.js

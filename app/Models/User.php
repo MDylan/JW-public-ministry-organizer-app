@@ -38,7 +38,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'name',
         'phone_number',
         'email_verified_at',
-        'hidden_fields'
+        'hidden_fields',
+        'firstDay'
     ];
 
     /**

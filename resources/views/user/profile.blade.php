@@ -92,6 +92,16 @@
                                         </div>
                                     @endforeach
                                     @error('calendars_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
+                                    <div class="form-group row">
+                                        <label for="first_day" class="col-sm-4 col-form-label text-bold text-right">@lang('user.first_day_of_week'):</label>
+                                        <div class="col-sm-8">
+                                            <select name="firstDay" class="form-control @error('firstDay') is-invalid @enderror" id="first_day">
+                                                <option value="0">@lang('group.days.0')</option>
+                                                <option value="1" @if ($firstday == 1) selected @endif>@lang('group.days.1')</option>
+                                            </select> 
+                                            @error('firstDay')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                        </div>
+                                      </div>
                                 </div>
                                 <div class="border border-secondary border-left-0 border-right-0 rounded mt-2 p-2">
                                     <div class="row">
@@ -208,14 +218,8 @@
                             
                         </div>
                     </div>
-                </div>
-                <!-- /.col-md-6 -->
-            </div>
-            <!-- /.row -->
 
-            <div class="row">
-                @if (Config::get('settings_gdpr'))
-                    <div class="col-md-6">
+                    @if (Config::get('settings_gdpr'))
                         <div class="card card-primary card-outline">
                             <div class="card-header">
                             <h5 class="m-0">@lang('user.gdpr.my_personal_datas')</h5>
@@ -246,9 +250,14 @@
                                     </div>
                                 </form>
                             </div>
-                        </div>
-                    </div>                                    
-                @endif
+                        </div>                                 
+                    @endif
+                </div>
+                <!-- /.col-md-6 -->
+            </div>
+            <!-- /.row -->
+
+            <div class="row">               
 
                 <div class="col-md-6">
                     <div class="card card-danger card-outline collapsed-card">

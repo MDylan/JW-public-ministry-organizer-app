@@ -63,6 +63,7 @@ return [
         'webOffice' => 'Office',
         'ics' => 'ics fájl'
     ],
+    'first_day_of_week' => 'A hét első napja',
     'two_factor' => [
         'title' => 'Kétlépcsős azonosítás (2FA) beállítása',
         'help' => 'A kétlépcsős azonosítás (más néven kétfaktoros hitelesítés) egy plusz biztonsági szinttel látja el fiókodat, arra az esetre, ha ellopják a jelszavadat. A kétlépcsős azonosítás beállítása után két dolgot kell használod, amikor bejelentkezel a fiókodba: A jelszavadat és egy eszközt, pl a telefonodat.',

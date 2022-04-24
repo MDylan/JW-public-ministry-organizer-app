@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Events;
 
+use App\Http\Controllers\User\Profile;
 use App\Http\Livewire\AppComponent;
 use App\Models\DayStat;
 use App\Models\Event;
@@ -292,52 +293,76 @@ class Events extends AppComponent
         $this->build_pagination($this->cal_group_data['created_at']);
         $calendar = [];        
 
-        // How many days does this month contain?
-        $numberDays = date('t',$firstDayOfMonth);
 
         // Retrieve some information about the first day of the
         // month in question.
-        $dayOfWeek = strftime("%u", $firstDayOfMonth) - 1;
 
-        $weekDays = [
-            1,2,3,4,5,6,0
-        ];
+        $dayOfWeek = date("w", $firstDayOfMonth);
+
+        $firstDay = auth()->user()->firstDay;
+        if($firstDay === null) {
+            $first_day_name = date('l', strtotime("this week"));
+            $firstDay = ($first_day_name == "Monday") ? 1 : 0;
+        } 
+
         $row = 1;
-        $currentDay = 1;
+        $lineBreak = 7;
 
-        if ($dayOfWeek > 0) { 
-            $calendar[$row][] = [
-                'colspan' => $dayOfWeek,
-                'day' => '',
-                'current' => '',
-                'weekDay' => '',
-                'fullDate' => '',
-                'available' => false,
-                'service_day' => false,
+        if($firstDay == 1) {
+            //monday is the first day of week
+            $weekDays = [
+                1,2,3,4,5,6,0
             ];
+            $isoDay = date("N", $firstDayOfMonth);
+            if ($isoDay > 0) { 
+                $calendar[$row][] = [
+                    'colspan' => $isoDay - 1,
+                    'day' => '',
+                    'current' => '',
+                    'weekDay' => '',
+                    'fullDate' => '',
+                    'available' => false,
+                    'service_day' => false,
+                ];                
+            }
+        } else {
+            //sunday is the first day of week
+            $weekDays = [
+                0,1,2,3,4,5,6
+            ];
+            if ($dayOfWeek > $firstDay) { 
+                $calendar[$row][] = [
+                    'colspan' => $dayOfWeek,
+                    'day' => '',
+                    'current' => '',
+                    'weekDay' => '',
+                    'fullDate' => '',
+                    'available' => false,
+                    'service_day' => false,
+                ];
+            }
         }
 
-        $month = str_pad($this->month, 2, "0", STR_PAD_LEFT);
         $today = strtotime('today');
         $max_day = strtotime('+'.$this->cal_group_data['max_extend_days'].' days');
         $this->cal_group_data['max_day'] = date("Y-m-d", $max_day);
 
-        while ($currentDay <= $numberDays) {
-            //start new row
-            if ($dayOfWeek == 7) {
+        $calendar_days = Carbon::parse($this->first_day)->daysUntil($this->last_day);
 
+        foreach($calendar_days as $currentDay) {
+            //start new row
+            $date = $currentDay->format("Y-m-d");
+            $timestamp = $currentDay->getTimestamp();
+            $weekDay = $currentDay->dayOfWeek;
+            if ($weekDay == $firstDay) {
                 $dayOfWeek = 0;
                 $row++;
-            }
+            }           
             
-            $currentDayRel = str_pad($currentDay, 2, "0", STR_PAD_LEFT);
-            
-            $date = "$this->year-$month-$currentDayRel";
-            $timestamp = strtotime($date);
             $available = false;
             $service_day = false;
             $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";"; 
-            if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
+            if(isset($this->cal_service_days[$weekDay])) {
                 $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
             }
 
@@ -351,17 +376,17 @@ class Events extends AppComponent
                     $service_day = true;
                     $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
                 }
-            } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
+            } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDay])) {
                 //create day data if it's not exists
                 $end_date = $date;
-                if(strtotime($this->cal_service_days[$weekDays[$dayOfWeek]]['end_time']) == strtotime("00:00")) {
+                if(strtotime($this->cal_service_days[$weekDay]['end_time']) == strtotime("00:00")) {
                     $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
                 }
                 GroupDate::create([
                     'group_id' => $groupId,
                     'date' => $date,
-                    'date_start' => $date." ".$this->cal_service_days[$weekDays[$dayOfWeek]]['start_time'].":00",
-                    'date_end' => $end_date." ".$this->cal_service_days[$weekDays[$dayOfWeek]]['end_time'].":00",
+                    'date_start' => $date." ".$this->cal_service_days[$weekDay]['start_time'].":00",
+                    'date_end' => $end_date." ".$this->cal_service_days[$weekDay]['end_time'].":00",
                     'date_status' => 1,
                     'date_min_publishers' => $this->cal_group_data['min_publishers'],
                     'date_max_publishers' => $this->cal_group_data['max_publishers'],
@@ -373,7 +398,7 @@ class Events extends AppComponent
                 $service_day = true;
                 $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
             }
-            if(isset($this->cal_service_days[$weekDays[$dayOfWeek]])) {
+            if(isset($this->cal_service_days[$weekDay])) {
                 $specialDates[$date] = [
                     'date_min_publishers' => $this->cal_group_data['min_publishers'],
                     'date_max_publishers' => $this->cal_group_data['max_publishers'],
@@ -389,25 +414,21 @@ class Events extends AppComponent
 
             $calendar[$row][] = [
                 'colspan' => null,
-                'weekDay' => $weekDays[$dayOfWeek],
-                'day' => $currentDay,
+                'weekDay' => $weekDay,
+                'day' => $currentDay->format("j"),
                 'current' => $date == date("Y-m-d") ? true : false,
                 'fullDate' => $date,
                 'available' => $available,
                 'service_day' => $service_day
             ];
             
-            // Increment counters
-            $currentDay++;
             $dayOfWeek++;
         }
 
         // Complete the row of the last week in month, if necessary
 
-        if ($dayOfWeek != 7) { 
-
-            $remainingDays = 7 - $dayOfWeek;
-
+        if ($dayOfWeek != $lineBreak) { 
+            $remainingDays = $lineBreak - $dayOfWeek;
             $calendar[$row][] = [
                 'colspan' => $remainingDays,
                 'day' => '',
@@ -449,7 +470,7 @@ class Events extends AppComponent
             'calendar' => $calendar,
             'specialDatesList' => $specialDatesList,
             'notAcceptedEvents' => $notAcceptedEvents,
-            'group_days' => is_array(trans('group.days')) ? trans('group.days') : range(0,6,1),
+            'group_days' => $weekDays, // is_array(trans('group.days')) ? trans('group.days') : range(0,6,1),
             'current_month' => $this->current_month,
             'cal_group_data' => $this->cal_group_data,
             'day_stat' => $this->day_stat,

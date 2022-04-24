@@ -1037,16 +1037,16 @@
         },
         {
             "name": "eusonlito/laravel-packer",
-            "version": "v2.2.5",
+            "version": "v2.2.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eusonlito/laravel-Packer.git",
-                "reference": "af7b6e391657b3168c0c3b886791d9a71d2ec47e"
+                "reference": "1bb6516683cd9d66713b774f79aad19e190400a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/eusonlito/laravel-Packer/zipball/af7b6e391657b3168c0c3b886791d9a71d2ec47e",
-                "reference": "af7b6e391657b3168c0c3b886791d9a71d2ec47e",
+                "url": "https://api.github.com/repos/eusonlito/laravel-Packer/zipball/1bb6516683cd9d66713b774f79aad19e190400a8",
+                "reference": "1bb6516683cd9d66713b774f79aad19e190400a8",
                 "shasum": ""
             },
             "require": {
@@ -1094,9 +1094,9 @@
             ],
             "support": {
                 "issues": "https://github.com/eusonlito/laravel-Packer/issues",
-                "source": "https://github.com/eusonlito/laravel-Packer/tree/v2.2.5"
+                "source": "https://github.com/eusonlito/laravel-Packer/tree/v2.2.6"
             },
-            "time": "2022-03-22T16:21:23+00:00"
+            "time": "2022-04-22T18:56:53+00:00"
         },
         {
             "name": "fideloper/proxy",
