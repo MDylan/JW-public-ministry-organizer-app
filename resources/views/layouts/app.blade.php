@@ -5,13 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" type="image/jpg" href="{{ asset('favicon.png') }}"/>
   <title>{{ __('app.title') }}</title>
-
-  {{-- <link href="/plugins/fontawesome-free/css/all.min.css" rel="stylesheet" /> --}}
-  {{-- <link href="/dist/css/adminlte.min.css" rel="stylesheet" />
-  <link href="/css/style.css" rel="stylesheet" />
-  <link href="/plugins/toastr/toastr.min.css" rel="stylesheet" />
-  <link href="/css/public_style.css" rel="stylesheet" /> --}}
-
   {!! Packer::css('/plugins/fontawesome-free/css/all.min.css', '/plugins/fontawesome-free/css/cache_fontawesome.css') !!}
   {!! Packer::css('/dist/css/adminlte.min.css', '/dist/css/cache_adminlte.min.css') !!}
   {!! Packer::css([
@@ -20,9 +13,6 @@
     'css/public_style.css'
   ], 
   '/storage/cache/css/all_style.css') !!}
-  {{-- @can('is-admin')
-    {!! Packer::css('css/style.css', 'css/teszt_style.css') !!}
-  @endcan --}}
   @yield('header_style')
   @livewireStyles
 </head>
@@ -31,7 +21,6 @@
     <!-- Navbar -->
     @livewire('partials.nav-bar')
     <!-- /.navbar -->
-
     <!-- Main Sidebar Container -->
     @livewire('partials.side-menu')
 
@@ -64,14 +53,12 @@
     @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))  
   </div>
   <!-- ./wrapper -->
-
   <!-- REQUIRED SCRIPTS -->
   {!! Packer::js('/plugins/jquery/jquery.min.js', '/storage/cache/js/jquery.js') !!}  
   {!! Packer::js('/plugins/bootstrap/js/bootstrap.bundle.min.js', '/plugins/bootstrap/js/cache_bootstrap.js') !!}
   {!! Packer::js('/dist/js/adminlte.min.js', '/dist/js/cache_adminlte.js') !!}
   {!! Packer::js('/plugins/toastr/toastr.min.js', '/plugins/toastr/cache_toastr.js') !!}
   {!! Packer::js('/plugins/sweetalert2/sweetalert2.all.min.js', '/plugins/sweetalert2/cache_sweetalert2.js') !!}
-
   {!! Packer::js([
     '/js/custom.js',
     '/js/modal.js',
@@ -83,14 +70,7 @@
         "progressBar": true,
         "positionClass": "toast-bottom-right",
       }
-      window.addEventListener('hide-form', event => {
-          $('#form').modal('hide');
-          toastr.success(event.detail.message, '{{__('app.saved')}}');
-      });
-      window.addEventListener('show-form', event => {
-          $('#form').modal('show');
-      });
-       window.addEventListener('success', event => {
+      window.addEventListener('success', event => {
           toastr.success(event.detail.message, '{{__('app.saved')}}');
       });
       window.addEventListener('error', event => {
@@ -101,23 +81,6 @@
           icon: 'error',
           title: '' + event.detail.title + '',
           text: ''+ event.detail.message + ''
-        })
-      });
-
-      window.addEventListener('show-eventDelete-confirmation', event => {
-        Swal.fire({
-          title: '@lang('event.confirmDelete.question')',
-          text: '@lang('event.confirmDelete.message')',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: '@lang('Yes')',
-          cancelButtonText: '@lang('Cancel')'
-        }).then((result) => {
-          if (result.isConfirmed) {
-              Livewire.emit('deleteConfirmed');
-          }
         })
       });
       window.addEventListener('show-deletion-confirmation', event => {
@@ -140,8 +103,7 @@
         toastr.success('{{Session::get('message')}}', '{{__('app.saved')}}');
       @endif
     });
-  </script>  
-
+  </script>
   @yield('footer_scripts')
   @livewireScripts  
 </body>

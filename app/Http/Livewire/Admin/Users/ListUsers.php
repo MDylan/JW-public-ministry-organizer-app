@@ -28,18 +28,22 @@ class ListUsers extends AppComponent
     public function addNew() {
         $this->showEditModal = false;
         $this->state = [];
-        $this->dispatchBrowserEvent('show-form');
+        $this->dispatchBrowserEvent('show-modal', [
+            'id' => 'form',
+        ]);
     }
 
     /**
      * Create new user
      */
     public function createUser() {
-        
+        if(!isset($this->state['role'])) {
+            $this->state['role'] = 'registered';
+        }
         $validatedData = Validator::make($this->state, [
             'email' => 'required|email:filter|unique:users',
             'name' => 'required|string|max:50|min:2',
-            'phone_number' => 'nullable|numeric|digits_between:9,11',
+            'phone_number' => 'nullable|numeric',
             'role' => [
                 'required',
                 Rule::notIn(Lang::get('roles')),
@@ -48,9 +52,13 @@ class ListUsers extends AppComponent
 
         $validatedData['password'] = bcrypt(Str::random(10));
 
-        $user = User::create($validatedData);
-
-        $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
+        User::create($validatedData);
+        
+        $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'form',
+            'message' => __('user.userSaved'),
+            'savedMessage' => __('app.saved')
+        ]);
 
     }
 
@@ -59,8 +67,9 @@ class ListUsers extends AppComponent
         $this->showEditModal = true;
         $this->state = $user->toArray();
         $this->user = $user;
-
-        $this->dispatchBrowserEvent('show-form');
+        $this->dispatchBrowserEvent('show-modal', [
+            'id' => 'form',
+        ]);
     }
 
     public function updateUser() {
@@ -76,8 +85,11 @@ class ListUsers extends AppComponent
         ])->validate();
 
         $this->user->update($validatedData);
-        $this->dispatchBrowserEvent('hide-form', ['message' => __('user.userSaved')]);
-
+        $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'form',
+            'message' => __('user.userSaved'),
+            'savedMessage' => __('app.saved')
+        ]);
     }
 
     public function confirmUserRemoval($userId) {

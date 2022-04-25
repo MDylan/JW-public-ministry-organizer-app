@@ -53,7 +53,9 @@ class ListGroups extends AppComponent
     public function askGroupCreatorPrivilege() {
         $this->showEditModal = false;
         $this->state = [];
-        $this->dispatchBrowserEvent('show-form');
+        $this->dispatchBrowserEvent('show-modal', [
+            'id' => 'form',
+        ]);
     }
 
     /**
@@ -79,7 +81,11 @@ class ListGroups extends AppComponent
                     ->replyTo(auth()->user()->email)
                     ->subject(__('group.requestMail.subject'));
          });
-         $this->dispatchBrowserEvent('hide-form', ['message' => __('group.request.sent')]);
+         $this->dispatchBrowserEvent('hide-modal', [
+            'id' => 'form',
+            'message' => __('group.request.sent'),
+            'savedMessage' => __('app.saved')
+        ]);
     }
 
     /**

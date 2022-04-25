@@ -175,7 +175,7 @@
                         <div class="form-group row">
                             <label for="InputPhone" class="col-sm-4 col-form-label text-right">@lang('user.phone')</label>
                             <div class="col-sm-8">
-                                <input type="text" wire:model.defer="state.phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
+                                <input type="number" wire:model.defer="state.phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
                                 @error('phone_number')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 <small id="phoneHelpBlock" class="form-text text-muted">
                                     {{__('app.justNumber')}}
@@ -187,13 +187,23 @@
                                 <div class="form-group row">
                                     <label for="inputRole" class="col-sm-4 col-form-label">{{__('app.userRole')}}</label>
                                     <div class="col-sm-8">
-                                        <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control">
+                                        <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control @error('role') is-invalid @enderror">
                                             @foreach ($roles as $field => $translate) 
                                                 <option value="{{$translate}}">{{ __('roles.'.$translate)}}</option>
                                             @endforeach
                                         </select>
+                                        @error('role')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                     </div>
                                 </div>
+                                @if ($errors->any())
+                                    <div class="alert alert-danger">
+                                        <ul>
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

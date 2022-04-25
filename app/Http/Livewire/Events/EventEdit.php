@@ -598,8 +598,11 @@ class EventEdit extends AppComponent
     }
 
     public function confirmEventDelete() {
-        // $this->getUserOtherEvents();
-        $this->dispatchBrowserEvent('show-eventDelete-confirmation');
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('event.confirmDelete.question'),
+            'text' => __('event.confirmDelete.message'),
+            'emit' => 'deleteConfirmed'
+        ]);
     }
 
     public function deleteConfirmed() {
