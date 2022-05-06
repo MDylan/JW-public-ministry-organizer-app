@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\DayStat;
 use App\Models\Group;
 use App\Models\GroupDate;
+use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
 use DateTime;
 
@@ -74,6 +75,18 @@ class GenerateStatProcess implements ShouldQueue
                 $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
             }
             $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00"); 
+
+            $disabled_slots_insert = [];
+            //get disabled time slot for this day
+            $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->groupId)
+                ->where('day_number', '=', $dayOfWeek)
+                ->orderBy('slot', 'asc')
+                ->get()
+                ->toArray();
+            foreach($disableds as $sl) {
+                $disabled_slots_insert[$sl['slot']] = true;
+            }
+
             GroupDate::create([
                 'group_id' => $groupId,
                 'date' => $date,
@@ -83,7 +96,8 @@ class GenerateStatProcess implements ShouldQueue
                 'date_min_publishers' => $this->group_data['min_publishers'],
                 'date_max_publishers' => $this->group_data['max_publishers'],
                 'date_min_time' => $this->group_data['min_time'],
-                'date_max_time' => $this->group_data['max_time']
+                'date_max_time' => $this->group_data['max_time'],
+                'disabled_slots' => $disabled_slots_insert
             ]);
             $this->date_data = [
                 'min_publishers' => $this->group_data['min_publishers'],
@@ -106,7 +120,6 @@ class GenerateStatProcess implements ShouldQueue
         
         $slots_array = GenerateSlots::generate($date, $start, $max, $step);
         foreach($slots_array as $current) {
-        // for($current=$start;$current < $max;$current+=$step) {
             $key = "'".date('Hi', $current)."'";
             $this->day_stat[$key] = [
                 'group_id' => $this->groupId,

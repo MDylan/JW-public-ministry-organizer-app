@@ -19,7 +19,7 @@ class GroupDayDisabledSlots extends Model
         'slot' => 'datetime:H:i',
     ];
 
-    protected $appends = ['slot_ts'];
+    // protected $appends = ['slot_ts'];
 
     public function group() {
         return $this->belongsTo(Group::class);

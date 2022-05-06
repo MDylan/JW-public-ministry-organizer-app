@@ -90,12 +90,12 @@
                                             @elseif (isset($cal_service_days[$day['weekDay']]) == null || !$day['available']) table-active
                                             @else table-light @endif
                                             @if ($day['service_day']) day_available @endif
-                                            @if (isset($userEvents[$day['fullDate']])) userEvent @endif
+                                            @if (isset($dates[$day['fullDate']]['user_event'])) userEvent @endif
                                             "
                                         @endif data-day="{{ $day['fullDate'] }}"
                                         @if ($day['service_day']) onclick="modal({{$cal_group_data['id']}}, '{{ $day['fullDate'] }}')" @endif
-                                        @if (isset($day_stat[$day['fullDate']]))
-                                                    style="background: {{$day_stat[$day['fullDate']]}}"
+                                        @if (isset($dates[$day['fullDate']]['color']))
+                                                    style="background: {{$dates[$day['fullDate']]['color']}}"
                                                 @endif
                                         >
                                         <div class="row justify-content-end">                                            
@@ -128,6 +128,12 @@
                     <div class="card card-primary card-outline">
                         <h5 class="card-header">
                             @lang('group.special_dates.title')
+                            @if ($group_editor)
+                                <button wire:click="$emitTo('groups.special-date-modal', 'openModal')" class="btn btn-primary btn-sm">
+                                    <i class="fa fa-plus mr-1"></i>
+                                        @lang('app.add')
+                                </button>
+                            @endif
                         </h5>
                         <div class="card-body pt-0">
                             <ul class="list-group list-group-flush">
@@ -138,6 +144,11 @@
                                         $carbon_end = \Carbon\Carbon::parse($date['date_end']);
                                     @endphp
                                     <li class="list-group-item p-2">
+                                        @if ($group_editor)
+                                            <button wire:click="$emitTo('groups.special-date-modal', 'openModal', '{{ $carbon_date->format("Y-m-d") }}')" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endif
                                         <strong>{{ $carbon_date->format(__('app.format.date')) }}, {{ __('event.weekdays_short.'.( $carbon_date->format('w'))) }} 
                                             @if ($date['date_status'] == 2) 
                                                 {{ $carbon_start->format(__('app.format.time')) }} - {{ $carbon_end->format(__('app.format.time')) }}
@@ -186,6 +197,7 @@
         </div>
     </div>
     @if ($group_editor)
-        @livewire('groups.poster-edit-modal')    
+        @livewire('groups.poster-edit-modal')
+        @livewire('groups.special-date-modal', ['groupId' => $cal_group_data['id']])
     @endif    
 </div>

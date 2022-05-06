@@ -1,6 +1,6 @@
 <div>
     <div class="modal fade show" id="{{ $modalId }}" tabindex="-1" aria-labelledby="" aria-hidden="true" wire:ignore.self>
-        <div class="modal-dialog">
+        <div class="modal-dialog {{ $modalSize }}">
             <div class="modal-content">
                 <div class="modal-header">
                     @if(isset($title))

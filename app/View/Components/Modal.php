@@ -8,16 +8,18 @@ class Modal extends Component
 {
 
     public $modalId;
+    public $modalSize;
 
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($modalId) //
+    public function __construct($modalId, $modalSize = "") //
     {
         // dd('comp');
         $this->modalId = $modalId;
+        $this->modalSize = $modalSize;
     }
 
     /**

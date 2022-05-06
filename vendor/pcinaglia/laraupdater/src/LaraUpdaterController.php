@@ -232,7 +232,11 @@ class LaraUpdaterController extends Controller
 
     private function getLastVersion(){
         $content = Cache::remember('laraupdater_lastversion', (config('laraupdater.version_check_time') * 60), function () {
-            return file_get_contents(config('laraupdater.update_baseurl').'/laraupdater.json');
+            try {
+                return file_get_contents(config('laraupdater.update_baseurl').'/laraupdater.json');
+            } catch(\Exception $e) {
+            return json_encode(array('version' => false /*$this->getCurrentVersion()*/));
+            }
         });
         $content = json_decode($content, true);
         return $content; //['version' => $v, 'archive' => 'RELEASE-$v.zip', 'description' => 'plain text...'];

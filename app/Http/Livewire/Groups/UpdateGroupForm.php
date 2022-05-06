@@ -336,8 +336,9 @@ class UpdateGroupForm extends AppComponent
                     'date_max_publishers' => $this->state['max_publishers'],
                     'date_min_time' => $this->state['min_time'],
                     'date_max_time' => $this->state['max_time'],
+                    'disabled_slots' => ($this->disabled_slots[$dayOfWeek] ?? null)
                 ];
-                GroupDate::whereId($rdate->id)->update(
+                $rdate->update(
                     $updates
                 );
                 $reGenerateStat[$rdate->date] = $rdate->date;
@@ -391,6 +392,7 @@ class UpdateGroupForm extends AppComponent
         }
         $deleteAfterCalculate = [];
         //add or modify special dates
+        /*
         if(count($this->dates)) {
             foreach($this->dates as $date) {
                 if($date['type'] == 'new') {
@@ -418,6 +420,7 @@ class UpdateGroupForm extends AppComponent
                             'date_max_publishers' => $date['date_max_publishers'],
                             'date_min_time' => $date['date_min_time'],
                             'date_max_time' => $date['date_max_time'],
+                            // 'disabled_slots' => $this->disabled_slots[]
                         ]
                     );
                     $reGenerateStat[$date['date']] = $date['date'];
@@ -484,6 +487,7 @@ class UpdateGroupForm extends AppComponent
                 }
             }
         }
+        */
         if(count($reGenerateStat)) {
             CalculateDateProcess::dispatch($this->group->id, $reGenerateStat, auth()->user()->id, $deleteAfterCalculate);
         }

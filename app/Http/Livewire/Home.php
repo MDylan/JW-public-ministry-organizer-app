@@ -17,7 +17,6 @@ class Home extends Component
     private $day_stat = [];
     private $events = [];
     private $available_days = [];
-    private $disabled_slots = [];
     public $listeners = [
         'refresh' => 'render',
         'pollingOn',
@@ -36,8 +35,6 @@ class Home extends Component
     }
 
     public function getStat($group_stats) {
-        $daysOfWeeks = [];
-
         foreach($group_stats as $group) {
             $this->groups[] = $group['id'];
             $this->group_roles[$group['id']] = $group['pivot']['group_role'];
@@ -110,7 +107,7 @@ class Home extends Component
                     $color = $group['colors']['color_maximum'];// '#ff0000'; //red
                 }
                 $slot_key = Carbon::parse($stat['time_slot'])->format("H:i");
-                if(($this->disabled_slots[$stat['group_id']][$dayOfWeek][$slot_key] ?? false)) {
+                if(($dates[$stat['day']]['disabled_slots'][$slot_key] ?? false)) {
                     $color = $default_color;
                 }
                 $colors[$day][] = $color;
@@ -181,16 +178,6 @@ class Home extends Component
         $ids = [];
         foreach($stats as $stat) {
             $ids[] = $stat['id'];
-        }
-
-        $this->disabled_slots = [];
-        $d_slots = GroupDayDisabledSlots::whereIn('group_id', $ids)
-            ->orderBy('group_id', 'asc')
-            ->orderBy('day_number', 'asc')
-            ->orderBy('slot', 'asc')
-            ->get()->toArray();
-        foreach($d_slots as $slot) {
-            $this->disabled_slots[$slot['group_id']][$slot['day_number']][$slot['slot']] = $slot['slot'];
         }
 
         $this->getStat($stats);

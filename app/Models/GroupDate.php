@@ -20,7 +20,12 @@ class GroupDate extends Model
         'date_max_publishers',
         'date_min_time',
         'date_max_time',
-        'run_job'
+        'run_job',
+        'disabled_slots'
+    ];
+
+    protected $casts = [
+        'disabled_slots' => 'array'
     ];
 
     public function group() {

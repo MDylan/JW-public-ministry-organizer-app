@@ -430,7 +430,7 @@
                         </div> <!-- end of days section -->
 
 
-                        <div class="card card-primary card-outline">
+                        {{-- <div class="card card-primary card-outline">
                             <div class="card-header">
                                 <div class="card-title">@lang('group.special_dates.title')</div>
                                 <div class="card-tools">
@@ -546,7 +546,6 @@
                                 <div class="grid-striped">
                                 @foreach ($dates as $date)
                                     @if($date['type'] == "removed") @continue; @endif
-                                    {{-- @foreach ($types as $id => $date) --}}
                                     <div class="row p-2">                                   
                                         <div class="col-md-8 my-auto">
                                             <strong>{{ $date['note'] }}</strong><br/>
@@ -564,7 +563,6 @@
                                            
                                         </div>
                                         <div class="col-md-4 text-center my-auto">
-                                            {{-- {{ $editedDate['type'] }} {{ $editedDate['id'] }} {{ $type }} {{ $id }} --}}
                                             @if ($editedDate == $date['date']) @lang('group.special_dates.under_edit')
                                             @else
                                                 @if(!$carbon_date->isPast()) 
@@ -580,8 +578,6 @@
                                             @endif
                                         </div>                                        
                                     </div>
-                                    {{-- @endforeach --}}
-                                    
                                 @endforeach
                                 </div>
                                 <div class="row">
@@ -590,7 +586,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> <!-- end of spacial dates section -->
+                        </div> <!-- end of spacial dates section --> --}}
                     </div>
                 </div>
                 <div class="row mb-3">

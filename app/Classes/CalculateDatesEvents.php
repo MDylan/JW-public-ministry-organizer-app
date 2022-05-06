@@ -23,15 +23,6 @@ class CalculateDatesEvents {
             $dates = [$date];
         }
 
-        $disabled_slots = [];
-        $d_slots = GroupDayDisabledSlots::where('group_id', '=', $group_id)
-            ->orderBy('day_number', 'asc')
-            ->orderBy('slot', 'asc')
-            ->get()->toArray();
-        foreach($d_slots as $slot) {
-            $disabled_slots[$slot['day_number']][$slot['slot']] = $slot['slot'];
-        }
-
         $events = DB::table('events')
                     ->join('group_dates', function ($join) {
                         $join->on('group_dates.group_id', '=', 'events.group_id')
@@ -39,7 +30,7 @@ class CalculateDatesEvents {
                     })
                     ->select('events.id', 'events.day', 'events.start', 'events.end', 'events.status', 'events.user_id',
                                 'group_dates.date', 'group_dates.date_status', 'group_dates.date_start', 'group_dates.date_end', 
-                                'group_dates.date_max_publishers', 'group_dates.date_min_time')
+                                'group_dates.date_max_publishers', 'group_dates.date_min_time', 'group_dates.disabled_slots')
                     ->whereNull('events.deleted_at')
                     ->where('events.group_id', '=', $group_id)
                     ->whereIn('events.day', $dates)
@@ -72,14 +63,7 @@ class CalculateDatesEvents {
             } else {
                 $dayOfWeek = $dayOfWeeks[$event->day];                
             }
-            if(isset($disabled_slots[$dayOfWeek]) && !isset($days_disabled_slots[$event->day])) {
-                $di_slots = $disabled_slots[$dayOfWeek];
-                foreach($di_slots as $di_slot) {
-                    $ts = strtotime($event->day." ".$di_slot);
-                    $slot_key = date("H:i", $ts);
-                    $days_disabled_slots[$event->day][$slot_key] = true;
-                }
-            }
+            $days_disabled_slots[$event->day] = json_decode(($event->disabled_slots ?? "{}"), true);
 
             $start = strtotime($event->date_start);
             $end = strtotime($event->date_end);
@@ -120,7 +104,7 @@ class CalculateDatesEvents {
                 $slots[$key] = isset($days_disabled_slots[$event->day][date("H:i", $key)]) ? false : true;
             }
             //find new end slot
-            if(!isset($slots[$event->end])) {
+            if(($slots[$event->end] ?? false) == false) {
                 $new_end = 0;
                 $reverse_slots = array_reverse($slots_array, true);
                 foreach($reverse_slots as $current) {
@@ -139,7 +123,7 @@ class CalculateDatesEvents {
             }
             
             //find new start slot
-            if(!isset($slots[$event->start])) {
+            if(($slots[$event->start] ?? false) == false) {
                 $new_start = 0;
                 foreach($slots_array as $current) {
                     if($current <= $event->start) {
@@ -149,7 +133,7 @@ class CalculateDatesEvents {
                 if($new_start) {
                     $modifies[$event->id]['new_start'] = date("Y-m-d H:i:s", $new_start);
                     $updates[$event->id]['start'] = date("Y-m-d H:i:s", $new_start);
-                    $event->end = $new_end;
+                    $event->start = $new_start;
                 } else {
                     $deletes[$event->id] = $event->id;
                     $modifies[$event->id]['new_delete_start'][] = "not_start_slot: ".date("Y-m-d H:i", $event->start)." -- ".date("Y-m-d H:i", $start);

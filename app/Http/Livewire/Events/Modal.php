@@ -14,7 +14,7 @@ use App\Models\GroupDayDisabledSlots;
 use App\Models\GroupUser;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
-
+use Illuminate\Support\Facades\DB;
 
 class Modal extends AppComponent
 {
@@ -101,8 +101,6 @@ class Modal extends AppComponent
                             });
                         },
                     ])->findOrFail($groupId)->toArray();
-        // dd($group);
-        // dd(Carbon::parse($date)->addDay()->format("Y-m-d"));
         if(isset($group['current_date'])) {
             if($group['current_date']['date_status'] == 0) {
                 $this->error = __('event.error.no_service_day')." (".$group['current_date']['note'].")";
@@ -188,6 +186,10 @@ class Modal extends AppComponent
             } 
         }
 
+        $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
+        $disabled_slots = $slots = [];
+        
+
         if($this->group_data['current_date'] === null) {
             $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
             $end_date = $date;
@@ -195,6 +197,22 @@ class Modal extends AppComponent
                 $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
             }
             $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
+            $disabled_slots_insert = [];
+            if(!$past) {
+                //get disabled time slot for this day
+                $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->form_groupId)
+                                    ->where('day_number', '=', $dayOfWeek)
+                                    ->orderBy('slot', 'asc')
+                                    ->get()
+                                    ->toArray();
+                foreach($disableds as $sl) {
+                    $ts = strtotime($this->date." ".$sl['slot']);
+                    $slot_key = "'".date("Hi", $ts)."'";
+                    $disabled_slots[$slot_key] = true;
+                    $slots[$slot_key][] = true;
+                    $disabled_slots_insert[$sl['slot']] = true;
+                }
+            }
             GroupDate::create([
                 'group_id' => $groupId,
                 'date' => $date,
@@ -204,7 +222,8 @@ class Modal extends AppComponent
                 'date_min_publishers' => $this->group_data['min_publishers'],
                 'date_max_publishers' => $this->group_data['max_publishers'],
                 'date_min_time' => $this->group_data['min_time'],
-                'date_max_time' => $this->group_data['max_time']
+                'date_max_time' => $this->group_data['max_time'],
+                'disabled_slots' => $disabled_slots_insert
             ]);
             $this->date_data = [
                 'min_publishers' => $this->group_data['min_publishers'],
@@ -226,7 +245,6 @@ class Modal extends AppComponent
             ];
         }
 
-
         if($now < $max) {
             $this->current_available = true;
         }
@@ -235,7 +253,7 @@ class Modal extends AppComponent
         $day_table = [];
         $day_selects = [];
         $day_events = [];
-        $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
+        
         $row = 1;
         $peak = 0;
         $slots_array = GenerateSlots::generate($this->date, $start, $max, $step);
@@ -268,19 +286,12 @@ class Modal extends AppComponent
         //events
         $events = $group['events'];
                 
-        $disabled_slots = $slots = [];
-        if(!$past && $group['current_date']['date_status'] == 1) {
-            //get disabled time slot for this day
-            $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->form_groupId)
-                                ->where('day_number', '=', $dayOfWeek)
-                                ->orderBy('slot', 'asc')
-                                ->get()
-                                ->toArray();
-            foreach($disableds as $sl) {
-                $ts = strtotime($this->date." ".$sl['slot']);
-                $slot_key = "'".date("Hi", $ts)."'";
-                $disabled_slots[$slot_key] = true;
-                $slots[$slot_key][] = true;
+        if(count(($group['current_date']['disabled_slots'] ?? []))) {
+            $disabled_slots = [];
+            foreach($group['current_date']['disabled_slots'] as $slot_key => $v) {
+                $key = "'".str_replace(":", "", $slot_key)."'";
+                $disabled_slots[$key] = true;
+                $slots[$key][] = true;
             }
         }
         foreach($events as $event) {

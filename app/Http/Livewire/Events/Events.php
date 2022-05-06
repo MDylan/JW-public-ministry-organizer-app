@@ -142,17 +142,8 @@ class Events extends AppComponent
         }        
     }
 
-    public function getStat($specialDates) {
+    public function getStat() {
         $groupId = session('groupId');
-
-        $disabled_slots = [];
-        $d_slots = GroupDayDisabledSlots::where('group_id', '=', $groupId)
-            ->orderBy('day_number', 'asc')
-            ->orderBy('slot', 'asc')
-            ->get()->toArray();
-        foreach($d_slots as $slot) {
-            $disabled_slots[$slot['day_number']][$slot['slot']] = $slot['slot'];
-        }
 
         $stats = DayStat::where('group_id', $groupId)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
@@ -269,27 +260,69 @@ class Events extends AppComponent
                 $this->form_groupId = $groupId;
             }
         }
-        $this->cal_group_data = $this->groups[$key];
-        // dd($this->cal_group_data);
-        $days = $this->cal_group_data['days'];
-        if(count($days)) {
-            foreach($days as $day) {
-                $this->cal_service_days[$day['day_number']] = [
-                    'start_time' => $day['start_time'],
-                    'end_time' => $day['end_time'],
-                ];
-            }
+
+        $this->cal_group_data = Auth::user()->groupsAccepted()
+        ->where('groups.id', '=', $this->form_groupId)
+        ->with([
+            'stats' => function($q) {
+                $q->whereBetween('day', [$this->first_day, $this->last_day]);
+                $q->orderBy('time_slot');
+            },
+            'justEvents' => function($q) {
+                $q->where('user_id', '=', Auth::id());
+                $q->whereIn('status', [0,1]);
+                $q->whereBetween('day', [$this->first_day, $this->last_day]);
+            },
+            'days',
+            'disabled_slots',
+            'dates' => function($q) {
+                $q->whereBetween('date', [$this->first_day, $this->last_day]);
+            },
+        ])->first()->toArray();
+
+        $dates = [];
+        foreach($this->cal_group_data['dates'] as $date) {
+            $dates[$date['date']] = $date;
         }
-        $specialDates = [];
+        $service_days = [];
+        foreach($this->cal_group_data['days'] as $day) {
+            $service_days[$day['day_number']] =  [
+                'start_time' => $day['start_time'],
+                'end_time' => $day['end_time'],
+            ];
+        }
+        $disabled_slots = [];
+        foreach($this->cal_group_data['disabled_slots'] as $slot) {
+            $disabled_slots[$slot['day_number']][$slot['slot']] = true;
+        }
+        $stats = $this->cal_group_data['stats'];
         $specialDatesList = [];
-        if(count($this->cal_group_data['dates'])) {
-            foreach($this->cal_group_data['dates'] as $date) {
-                $specialDates[$date['date']] = $date;
-                if($date['date_status'] != 1) {
-                    $specialDatesList[] = $date;
-                }
-            }
-        }
+
+
+
+        // dd($dates);
+        // dd($this->cal_group_data);
+
+        // $this->cal_group_data = $this->groups[$key];
+        // $days = $this->cal_group_data['days'];
+        // if(count($days)) {
+        //     foreach($days as $day) {
+        //         $this->cal_service_days[$day['day_number']] = [
+        //             'start_time' => $day['start_time'],
+        //             'end_time' => $day['end_time'],
+        //         ];
+        //     }
+        // }
+        // $specialDates = [];
+        // $specialDatesList = [];
+        // if(count($this->cal_group_data['dates'])) {
+        //     foreach($this->cal_group_data['dates'] as $date) {
+        //         $specialDates[$date['date']] = $date;
+        //         if($date['date_status'] != 1) {
+        //             $specialDatesList[] = $date;
+        //         }
+        //     }
+        // }
         $this->build_pagination($this->cal_group_data['created_at']);
         $calendar = [];        
 
@@ -338,7 +371,7 @@ class Events extends AppComponent
                     'weekDay' => '',
                     'fullDate' => '',
                     'available' => false,
-                    'service_day' => false,
+                    'service_day' => false
                 ];
             }
         }
@@ -348,6 +381,10 @@ class Events extends AppComponent
         $this->cal_group_data['max_day'] = date("Y-m-d", $max_day);
 
         $calendar_days = Carbon::parse($this->first_day)->daysUntil($this->last_day);
+        // dd($dates);
+        // dd($this->cal_group_data);
+        
+
 
         foreach($calendar_days as $currentDay) {
             //start new row
@@ -361,51 +398,93 @@ class Events extends AppComponent
             
             $available = false;
             $service_day = false;
-            $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";"; 
-            if(isset($this->cal_service_days[$weekDay])) {
-                $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
-            }
-
-            if(isset($specialDates[$date])) {
-                if($specialDates[$date]['date_status'] == 0) {
-                    $available = false;
-                    $service_day = false;
-                    $this->day_stat[$date] = $this->cal_group_data['colors']['color_default'].";";
-                } else {
-                    $available = true;
-                    $service_day = true;
-                    $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
-                }
-            } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDay])) {
+            // $dates[$date]['color'] = $this->cal_group_data['colors']['color_default'].";"; 
+            if(isset($service_days[$weekDay]) && !isset($dates[$date]['date_status']) && $timestamp >= $today) {
                 //create day data if it's not exists
                 $end_date = $date;
-                if(strtotime($this->cal_service_days[$weekDay]['end_time']) == strtotime("00:00")) {
+                if(strtotime($service_days[$weekDay]['end_time']) == strtotime("00:00")) {
                     $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
                 }
-                GroupDate::create([
+                // dump("create: ". $date);
+                $dates[$date] = $create = [
                     'group_id' => $groupId,
                     'date' => $date,
-                    'date_start' => $date." ".$this->cal_service_days[$weekDay]['start_time'].":00",
-                    'date_end' => $end_date." ".$this->cal_service_days[$weekDay]['end_time'].":00",
+                    'date_start' => $date." ".$service_days[$weekDay]['start_time'].":00",
+                    'date_end' => $end_date." ".$service_days[$weekDay]['end_time'].":00",
                     'date_status' => 1,
                     'date_min_publishers' => $this->cal_group_data['min_publishers'],
                     'date_max_publishers' => $this->cal_group_data['max_publishers'],
                     'date_min_time' => $this->cal_group_data['min_time'],
-                    'date_max_time' => $this->cal_group_data['max_time']
-                ]);
-                
+                    'date_max_time' => $this->cal_group_data['max_time'],
+                    'disabled_slots' => $disabled_slots[$dayOfWeek] ?? null
+                ];
+                GroupDate::create($create);
+                if(!isset($dates[$date]['color']))
+                    $dates[$date]['color'] = $this->cal_group_data['colors']['color_empty'].";";
+            }
+            if(isset($service_days[$weekDay]) && !isset($dates[$date]['date_status'])) {
+                $dates[$date]['color'] = $this->cal_group_data['colors']['color_empty'].";";
+            }
+
+            if(($dates[$date]['date_status'] ?? null) === 0) {
+                $available = false;
+                $service_day = false;
+                if(!isset($dates[$date]['color']))
+                    $dates[$date]['color'] = $this->cal_group_data['colors']['color_default'].";";
+            } elseif(in_array(($dates[$date]['date_status'] ?? false), [1,2])) {
                 $available = true;
                 $service_day = true;
-                $this->day_stat[$date] = $this->cal_group_data['colors']['color_empty'].";";
+                if(!isset($dates[$date]['color']))
+                    $dates[$date]['color'] = $this->cal_group_data['colors']['color_empty'].";";
             }
-            if(isset($this->cal_service_days[$weekDay])) {
-                $specialDates[$date] = [
-                    'date_min_publishers' => $this->cal_group_data['min_publishers'],
-                    'date_max_publishers' => $this->cal_group_data['max_publishers'],
-                    'date_min_time' => $this->cal_group_data['min_time'],
-                    'date_max_time' => $this->cal_group_data['max_time']
-                ];
+            if(in_array(($dates[$date]['date_status'] ?? []), [0,2])) {
+                // dd($dates[$date]);
+                $specialDatesList[$date] = $dates[$date];
+                // dump($dates[$date]);
             }
+
+            // if(isset($specialDates[$date])) {
+            //     if($specialDates[$date]['date_status'] == 0) {
+            //         $available = false;
+            //         $service_day = false;
+            //         $dates[$date]['color'] = $this->cal_group_data['colors']['color_default'].";";
+            //     } else {
+            //         $available = true;
+            //         $service_day = true;
+            //         $dates[$date]['color'] = $this->cal_group_data['colors']['color_empty'].";";
+            //     }
+            // } elseif($timestamp >= $today && isset($this->cal_service_days[$weekDay])) {
+            //     //create day data if it's not exists
+            //     $end_date = $date;
+            //     if(strtotime($this->cal_service_days[$weekDay]['end_time']) == strtotime("00:00")) {
+            //         $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            //     }
+            //     GroupDate::create([
+            //         'group_id' => $groupId,
+            //         'date' => $date,
+            //         'date_start' => $date." ".$this->cal_service_days[$weekDay]['start_time'].":00",
+            //         'date_end' => $end_date." ".$this->cal_service_days[$weekDay]['end_time'].":00",
+            //         'date_status' => 1,
+            //         'date_min_publishers' => $this->cal_group_data['min_publishers'],
+            //         'date_max_publishers' => $this->cal_group_data['max_publishers'],
+            //         'date_min_time' => $this->cal_group_data['min_time'],
+            //         'date_max_time' => $this->cal_group_data['max_time'],
+            //         'disabled_slots' => $disabled_slots[$dayOfWeek]
+            //     ]);
+                
+            //     $available = true;
+            //     $service_day = true;
+            //     $dates[$date]['color'] = $this->cal_group_data['colors']['color_empty'].";";
+            // }
+            // if(isset($this->cal_service_days[$weekDay])) {
+            //     $specialDates[$date] = [
+            //         'date_min_publishers' => $this->cal_group_data['min_publishers'],
+            //         'date_max_publishers' => $this->cal_group_data['max_publishers'],
+            //         'date_min_time' => $this->cal_group_data['min_time'],
+            //         'date_max_time' => $this->cal_group_data['max_time'],
+            //         'disabled_slots' => $this->cal_group_data['disabled_slots']   
+            //     ];
+            // }
 
             if($timestamp > $max_day) {
                 $available = false;
@@ -436,22 +515,59 @@ class Events extends AppComponent
                 'weekDay' => '',
                 'fullDate' => '',
                 'available' => false,
-                'service_day' => false,
+                'service_day' => false
             ];
-        }  
+        }
+        ksort($dates);
 
-        // dd($specialDates);
-        $this->getStat($specialDates);
-        $this->userEvents = [];
-        $userEvents = Event::where([
-            'group_id' => $this->cal_group_data['id'],
-            'user_id' => Auth::id(),
-        ])
-        ->whereIn('status', [0,1])
-        ->whereBetween('day', [$this->first_day, $this->last_day])
-        ->get()->toArray();
+        $colors = $dayOfWeeks = [];
+        foreach($stats as $stat) {
+            if(!isset($dayOfWeeks[$stat['day']])) {
+                $d = new DateTime( $stat['day'] );
+                $dayOfWeek = $d->format("w");
+                $dayOfWeeks[$stat['day']] = $dayOfWeek;
+            } else {
+                $dayOfWeek = $dayOfWeeks[$stat['day']];
+            }
+
+            $min_publishers = $dates[$stat['day']]['date_min_publishers'];
+            $max_publishers = $dates[$stat['day']]['date_max_publishers'];
+            $color = $this->cal_group_data['colors']['color_empty']; //green
+            if($stat['events'] > 0 && $stat['events'] < $min_publishers) {
+                $color = $this->cal_group_data['colors']['color_someone']; //blue
+            }
+            if($stat['events'] >= $min_publishers) {
+                $color =  $this->cal_group_data['colors']['color_minimum']; //yellow
+            } 
+            if($stat['events'] == $max_publishers) {
+                $color = $this->cal_group_data['colors']['color_maximum']; //red
+            }
+            $slot_key = Carbon::parse($stat['time_slot'])->format("H:i");
+            if(($dates[$stat['day']]['disabled_slots'][$slot_key] ?? false)) {
+                $color = $this->cal_group_data['colors']['color_default'];
+            }
+            $colors[$stat['day']][] = $color;
+        }
+        if(count($colors)) {
+            $total_percent = [];
+            foreach($colors as $day => $values) {
+                $total = count($values);
+                $percent = round(100 / $total, 3);
+                $total_percent[$day] = 0;
+                $pos = 0;
+                $dates[$day]['color'] = "linear-gradient(to right";
+                foreach($values as $k => $color) {
+                    $dates[$day]['color'] .= ", ".$color." ".$pos."% ".($pos + $percent)."%";
+                    $pos+=$percent;
+                    $total_percent[$day]+=$percent;
+                }
+                $dates[$day]['color'] .= ");";
+            }
+        }
+
+        $userEvents = $this->cal_group_data['just_events'];
         foreach($userEvents as $ev) {
-            $this->userEvents[$ev['day']] = true;
+            $dates[$ev['day']]['user_event'] = true;
         }
 
         $notAcceptedEvents = [];
@@ -468,6 +584,7 @@ class Events extends AppComponent
         return view('livewire.events.events', [
             'service_days' => $this->cal_service_days,
             'calendar' => $calendar,
+            'dates' => $dates,
             'specialDatesList' => $specialDatesList,
             'notAcceptedEvents' => $notAcceptedEvents,
             'group_days' => $weekDays, // is_array(trans('group.days')) ? trans('group.days') : range(0,6,1),

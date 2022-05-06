@@ -125,6 +125,12 @@ class Group extends Model
                     ->orderBy('day_number');
     }
 
+    public function disabled_slots() {
+        return $this->hasMany(GroupDayDisabledSlots::class)
+                    ->select(['group_id', 'day_number', 'slot'])
+                    ->orderBy('day_number');
+    }
+
     public function justEvents() {
         return $this->hasMany(Event::class)
                     ->orderBy('start');
