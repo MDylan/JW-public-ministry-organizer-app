@@ -51,7 +51,9 @@ class SetLocale
         } elseif (session('language')) {
             $language = session('language');
         }
-        app()->setLocale($language);
+        if($language) {
+            app()->setLocale($language);
+        }
 
         //If maintenance mod active and user is not admin, logout and redirect
         if(Auth::check()) {
@@ -60,17 +62,22 @@ class SetLocale
             }
         }
         
-        //share menus content to views
-        if(Auth()->check()) {
-            $staticpages = Cache::rememberForever('sidemenu_auth', function () {
-                return StaticPage::whereIn('status', [0,1,3])->get();
-            });
-        } else {
-            $staticpages = Cache::rememberForever('sidemenu_guest', function () {
-                return StaticPage::whereIn('status', [1,2])->get();
-            });
+        try {
+            //share menus content to views
+            if(Auth()->check()) {
+                $staticpages = Cache::rememberForever('sidemenu_auth', function () {
+                    return StaticPage::whereIn('status', [0,1,3])->get();
+                });
+            } else {
+                $staticpages = Cache::rememberForever('sidemenu_guest', function () {
+                    return StaticPage::whereIn('status', [1,2])->get();
+                });
+            }
+            View::share('sidemenu', $staticpages);
+        } catch (\Throwable $th) {
+            //throw $th;
         }
-        View::share('sidemenu', $staticpages);
+
 
         return $next($request);
     }

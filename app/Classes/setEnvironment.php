@@ -6,9 +6,13 @@ use Illuminate\Support\Facades\Artisan;
 
 class setEnvironment {
     static function setEnvironmentValue(array $values)
-    {    
-
-        if(auth()->user()->role !== "mainAdmin") {
+    {
+        if(
+            (auth()->user()->role ?? null) !== "mainAdmin" && request()->routeIs('admin.settings')
+            && (
+                !request()->routeIs('setup.*')
+            )
+        ) {
             abort('403');
         }
 

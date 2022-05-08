@@ -7,6 +7,12 @@ use App\Http\Controllers\GroupLogout;
 use App\Http\Controllers\GroupNewsDelete;
 use App\Http\Controllers\GroupNewsFileDownloadController;
 use App\Http\Controllers\jumpToCalendarController;
+use App\Http\Controllers\Setup\AccountController;
+use App\Http\Controllers\Setup\BasicsController;
+use App\Http\Controllers\Setup\DatabaseController;
+use App\Http\Controllers\Setup\MailController;
+use App\Http\Controllers\Setup\MetaController;
+use App\Http\Controllers\Setup\RequirementsController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
@@ -29,6 +35,7 @@ use App\Http\Livewire\Home;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +66,40 @@ Route::middleware(['signed'])->group(function () {
 
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
+
+//installer available only if file not exists
+if (!Storage::exists('installed.txt')) {
+    // Setup routes
+    Route::prefix('setup')->group(function () {
+        Route::get('/start', [MetaController::class, 'welcome'])
+            ->name('setup.welcome');
+        Route::get('/requirements', [RequirementsController::class, 'index'])
+            ->name('setup.requirements');
+
+        Route::get('/basics', [BasicsController::class, 'index'])
+            ->name('setup.basics');
+        Route::post('/basics', [BasicsController::class, 'configure'])
+            ->name('setup.save-basics');
+
+        Route::get('/database', [DatabaseController::class, 'index'])
+            ->name('setup.database');
+        Route::post('/database', [DatabaseController::class, 'configure'])
+            ->name('setup.save-database');
+
+        Route::get('/mail', [MailController::class, 'index'])
+            ->name('setup.mail');
+        Route::post('/mail', [MailController::class, 'configure'])
+            ->name('setup.save-mail');
+
+        Route::get('/account', [AccountController::class, 'index'])
+            ->name('setup.account');
+        Route::post('/account', [AccountController::class, 'register'])
+            ->name('setup.save-account');
+
+        Route::get('/complete', [MetaController::class, 'complete'])
+            ->name('setup.complete');
+    });
+}
 
 //Logged in users
 Route::middleware(['auth'])->group(function () {
