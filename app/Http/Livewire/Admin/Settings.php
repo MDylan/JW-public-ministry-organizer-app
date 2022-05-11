@@ -137,6 +137,10 @@ class Settings extends AppComponent
                 ['name' => 'default_language'],
                 ['value' => $new]
             ); 
+            $setEnv = [];
+            $setEnv['APP_LANG'] = '"'.$new.'"';
+            setEnvironment::setEnvironmentValue($setEnv);
+
             $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.defaultSet.success')]);
         } else {
             $this->dispatchBrowserEvent('error', ['message' => __('settings.languages.defaultSet.error')]);

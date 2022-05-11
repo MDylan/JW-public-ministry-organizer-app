@@ -65,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
                 'available_languages' => $available_languages,
                 'translatable.fallback_locale' => $defaults['default_language'],
                 'translatable.locales' => $locales,
-                'app.fallback_locale' => $defaults['default_language'],
+                // 'app.fallback_locale' => $defaults['default_language'],
             ]);
 
             if(isset($defaults['debugbar'])) {
