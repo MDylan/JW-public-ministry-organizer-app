@@ -20,7 +20,13 @@ class UserRegisteredNotification extends Notification implements ShouldQueue
      *
      * @var int
      */
-    public $tries = 60;
+    public $tries = 2880;
+    /**
+     * The number of seconds to wait before retrying the job.
+     *
+     * @var int
+     */
+    public $backoff = 60;
     
     /**
      * The callback that should be used to create the verify email URL.
