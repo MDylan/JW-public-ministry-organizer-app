@@ -194,6 +194,13 @@ class Settings extends AppComponent
             //set https
             $setEnv['USE_HTTPS'] = ($this->state['others']['use_https']) ? "true" : "false";
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
+
+            if($setEnv['USE_HTTPS'] != getenv('USE_HTTPS')) {
+                //clear css cache
+                foreach (glob(public_path()."/plugins/fontawesome-free/css/*-cache_fontawesome.css") as $filename) {
+                    unlink($filename);
+                }
+            }
             
             if(count($setEnv)) {
                 setEnvironment::setEnvironmentValue($setEnv);
