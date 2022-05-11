@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setup;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Http\Controllers\Controller;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,8 +44,8 @@ class AccountController extends Controller
             'email_verified_at' => now()
         ]);
 
-        Artisan::call('db:seed', [
-            '--force' => true, // Needed for production
+        (new DatabaseSeeder())->callWith(StaticPagesSetupSeeder::class, [
+            'user_id' => $user->id
         ]);
         cache()->forget('sidemenu_auth');
         cache()->forget('sidemenu_guest');

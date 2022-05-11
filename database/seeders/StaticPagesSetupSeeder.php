@@ -12,14 +12,14 @@ class StaticPagesSetupSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run($user_id)
     {
         $lang = env('APP_LANG', 'en');
         $home = [
             'status' => 2,
             'slug' => 'home',
             'position' => 'hidden',
-            'user_id' => 1,
+            'user_id' => $user_id,
             $lang => [
                 'title' => 'Home',
                 'content' => 'This is the default home page. You can edit this at Administration / Static pages menu',
@@ -31,7 +31,7 @@ class StaticPagesSetupSeeder extends Seeder
             'status' => 1,
             'slug' => 'contact',
             'position' => 'bottom',
-            'user_id' => 1,
+            'user_id' => $user_id,
             $lang => [
                 'title' => 'Contact page',
                 'content' => 'This is the default contact page. You can edit this at Administration / Static pages menu',
@@ -43,7 +43,7 @@ class StaticPagesSetupSeeder extends Seeder
             'status' => 1,
             'slug' => 'terms',
             'position' => 'bottom',
-            'user_id' => 1,
+            'user_id' => $user_id,
             $lang => [
                 'title' => 'Terms page',
                 'content' => 'This is the default terms & conditions page. You can edit this at Administration / Static pages menu',
@@ -55,7 +55,7 @@ class StaticPagesSetupSeeder extends Seeder
             'status' => 3,
             'slug' => 'help',
             'position' => 'bottom',
-            'user_id' => 1,
+            'user_id' => $user_id,
             $lang => [
                 'title' => 'Help page',
                 'content' => 'This is the default help page. You can edit this at Administration / Static pages menu',
