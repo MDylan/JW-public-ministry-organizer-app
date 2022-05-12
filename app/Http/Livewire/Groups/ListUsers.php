@@ -365,6 +365,7 @@ class ListUsers extends AppComponent
         }
         $this->resetErrorBag();
         $this->resetValidation();
+        $this->setCopyDataList();
         
         //don't choose any group...
         if($this->new_parent_group_id == 0) {
@@ -391,10 +392,20 @@ class ListUsers extends AppComponent
 
         $errors = count($this->getErrorBag()->all());
         if($errors === 0) {
-            $up = $group->update(['parent_group_id' => $this->new_parent_group_id]);
+            $copy_from_parent = [];
+            foreach($this->copy_datas as $field => $tr) {
+                if(isset($this->copy_fields[$field])) {
+                    $copy_from_parent[$field] = $this->copy_fields[$field];
+                }
+            }
+            $up = $group->update([
+                'parent_group_id' => $this->new_parent_group_id,
+                'copy_from_parent' => $copy_from_parent
+            ]);
             if($up) {
                 $new_group = Group::findorFail($this->new_parent_group_id);
-
+                $group->signs = $new_group->signs;
+                $group->save();
                 //send notifications to admins
                 $admins = $group->groupAdmins;
                 $data = [
@@ -414,6 +425,9 @@ class ListUsers extends AppComponent
                         //automatically accept invitation if user is already member of the parent group
                         'accepted_at' => $new_user['pivot']['accepted_at'] ? date("Y-m-d H:i:s") : null
                     ];
+                    if($copy_from_parent['signs'] == true) {
+                        $user_sync[$new_user['id']]['signs'] = $new_user['pivot']['signs'];
+                    }
                 }
                 $res = $group->groupUsersAll()->sync($user_sync);
                 $data = [
@@ -480,7 +494,10 @@ class ListUsers extends AppComponent
         $selected_group = $group->childGroups()->where('id', $this->detachId)->first();
         if(!$selected_group->id) abort(403);
 
-        $group->childGroups()->where('id', $this->detachId)->update(['parent_group_id' => null]);
+        $group->childGroups()->where('id', $this->detachId)->update([
+            'parent_group_id' => null, 
+            'copy_from_parent' => null
+        ]);
         $this->detachId = null;
         $this->dispatchBrowserEvent('hide-modal', [
             'id' => 'ChildGroupsModal',
@@ -523,7 +540,10 @@ class ListUsers extends AppComponent
         if($group->parent_group_id != $this->detachId)
             abort(403);
 
-        $res = $group->update(['parent_group_id' => null]);
+        $res = $group->update([
+            'parent_group_id' => null,
+            'copy_from_parent' => null
+        ]);
         if($res) {
             $this->detachId = null;
 

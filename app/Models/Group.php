@@ -32,7 +32,8 @@ class Group extends Model
         'signs',
         'languages',
         'replyTo',
-        'showPhone'
+        'showPhone',
+        'copy_from_parent'
     ];
 
     /**

@@ -491,6 +491,18 @@
                                 @lang('group.link.danger')
                             </div>
                         </div>
+
+                        <div class="alert alert-light">@lang('group.link.child.copy_data')
+                            @foreach ($copy_datas as $field => $translate)
+                                <div class="ml-2 form-check">
+                                    <input wire:model.defer="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
+                                    <label class="form-check-label" for="calendar_{{ $field }}" role="button">
+                                        {{ $translate }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul>
