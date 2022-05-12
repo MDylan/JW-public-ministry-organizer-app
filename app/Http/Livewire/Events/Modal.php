@@ -159,32 +159,46 @@ class Modal extends AppComponent
         $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
         $next_date = $this_date = strtotime($date); 
         $next = false;
-        while(!$next) {
-            $next_date = $next_date + (24 * 60 * 60);
-            $dayNum = date("w", $next_date);
-            $unixTime = $next_date;
+        if(count($this->service_days) > 0 || count($group['dates'] ?? []) > 1) {
+            $counting = 0;
+            while(!$next) {
+                $next_date = $next_date + (24 * 60 * 60);
+                $dayNum = date("w", $next_date);
+                $unixTime = $next_date;
 
-            if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
-                $next = true;
-                $this->day_data['next_date'] = date("Y-m-d", $next_date); 
-                if($unixTime > $max_time) {
-                    $this->day_data['next_date'] = false;
+                if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+                    $next = true;
+                    $this->day_data['next_date'] = date("Y-m-d", $next_date); 
+                    if($unixTime > $max_time) {
+                        $this->day_data['next_date'] = false;
+                    }
                 }
-            } 
-        }
+                $counting++;
+                if($counting == 90) {
+                    //if not found next day, break the loop
+                    $next = true;
+                }
+            }        
 
-        $prev_date = $this_date; 
-        $prev = false;
-        while(!$prev) {
-            $prev_date = $prev_date - (24 * 60 * 60);
-            $dayNum = date("w", $prev_date);
-            $unixTime = $prev_date;
+            $prev_date = $this_date; 
+            $prev = false;
+            $counting = 0;
+            while(!$prev) {
+                $prev_date = $prev_date - (24 * 60 * 60);
+                $dayNum = date("w", $prev_date);
+                $unixTime = $prev_date;
 
-            if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
-                $prev = true;
-                $this->day_data['prev_date'] = date("Y-m-d", $prev_date); 
-            } 
-        }
+                if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+                    $prev = true;
+                    $this->day_data['prev_date'] = date("Y-m-d", $prev_date); 
+                } 
+                $counting++;
+                if($counting == 90) {
+                    //if not found previous day, break the loop
+                    $prev = true;
+                }
+            }
+        }   
 
         $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $disabled_slots = $slots = [];
@@ -524,7 +538,6 @@ class Modal extends AppComponent
                 'date_data' => $this->date_data
             ]);
         } 
-        
         return view('livewire.events.modal-empty');
     }
 }

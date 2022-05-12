@@ -28,14 +28,17 @@
                                 <div class="col-12 col-lg-4 text-center">
                                     <nav>
                                         <ul class="pagination justify-content-center">
-                                            <li class="page-item">
-                                                <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a></li>
+                                            @if (($day_data['prev_date'] ?? false) !== false)
+                                                <li class="page-item">
+                                                    <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a>
+                                                </li>
+                                            @endif
                                             <li class="page-item disabled">
                                                 <a class="page-link text-nowrap" href="#" tabindex="-1" aria-disabled="true">
                                                     <b>{{$day_data['dateFormat']}}</b>
                                                 </a>
                                             </li>
-                                            @if ($day_data['next_date'] !== false)
+                                            @if (($day_data['next_date'] ?? false) !== false)
                                                 <li class="page-item">
                                                     <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
                                                 </li>
