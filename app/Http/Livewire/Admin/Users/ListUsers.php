@@ -77,7 +77,7 @@ class ListUsers extends AppComponent
         $validatedData = Validator::make($this->state, [
             'email' => 'required|email|unique:users,email,'.$this->user->id,
             'name' => 'required|string|max:50|min:2',
-            'phone_number' => 'nullable|numeric|digits_between:9,11', 
+            'phone_number' => 'nullable|numeric', 
             'role' => [
                 'required',
                 Rule::notIn(Lang::get('roles')),

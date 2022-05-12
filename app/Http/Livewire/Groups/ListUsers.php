@@ -240,7 +240,7 @@ class ListUsers extends AppComponent
         {
             $userValidatedData = Validator::make($this->state['user'], [
                 'name' => 'required|string|max:50|min:2',
-                'phone_number' => 'nullable|numeric|digits_between:9,11', 
+                'phone_number' => 'nullable|numeric', 
             ])->validate();
     
             
