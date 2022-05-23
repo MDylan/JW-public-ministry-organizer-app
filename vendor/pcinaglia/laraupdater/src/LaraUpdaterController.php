@@ -17,6 +17,7 @@ class LaraUpdaterController extends Controller
 {
 
     private $tmp_backup_dir = null;
+    private $cache = true;
 
     private function checkPermission(){
 
@@ -35,7 +36,7 @@ class LaraUpdaterController extends Controller
     * Download and Install Update.
     */
     public function update()
-    {
+    {  
         echo "<h2>".trans("laraupdater.LaraUpdater")."</h2>";
         echo '<h4><a href="'.url('/').'">'.trans("laraupdater.Return_to_App_HOME").'</a></h4>';
 
@@ -44,6 +45,7 @@ class LaraUpdaterController extends Controller
             exit;
         }
 
+        $this->cache = false;
         $lastVersionInfo = $this->getLastVersion();
 
         if ( $lastVersionInfo['version'] <= $this->getCurrentVersion() ){
@@ -230,15 +232,27 @@ class LaraUpdaterController extends Controller
         File::put(base_path().'/version.txt', $last); //UPDATE $current_version to last version
     }
 
-    private function getLastVersion(){
-        $content = Cache::remember('laraupdater_lastversion', (config('laraupdater.version_check_time') * 60), function () {
-            try {
-                return file_get_contents(config('laraupdater.update_baseurl').'/laraupdater.json');
-            } catch(\Exception $e) {
-            return json_encode(array('version' => false /*$this->getCurrentVersion()*/));
-            }
-        });
+    private function getLastVersion($file = "laraupdater.json") {
+        if(!$this->cache) {
+            $content = file_get_contents(config('laraupdater.update_baseurl').'/'.$file);
+        } else {
+            $content = Cache::remember('laraupdater_lastversion', (config('laraupdater.version_check_time') * 60), function () use ($file) {
+                try {
+                    return file_get_contents(config('laraupdater.update_baseurl').'/'.$file);
+                } catch(\Exception $e) {
+                    return json_encode(array('version' => false /*$this->getCurrentVersion()*/));
+                }
+            });
+        }
         $content = json_decode($content, true);
+        if(isset($content['previous_version'])) {
+            if( version_compare($content['previous_version'], $this->getCurrentVersion(), ">") ) {
+                //There are some previous updates, first install those
+                Cache::forget('laraupdater_lastversion');
+                $this->cache = false;
+                $content = $this->getLastVersion("laraupdater-".$content['previous_version'].".json");
+            }
+        }
         return $content; //['version' => $v, 'archive' => 'RELEASE-$v.zip', 'description' => 'plain text...'];
     }
 
