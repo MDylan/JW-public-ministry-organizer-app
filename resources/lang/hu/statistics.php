@@ -36,6 +36,7 @@ return [
     ],
     'publishers_data' => 'Hírnökök',
     'publisher' => [
+        'joined' => 'Csatlakozott',
         'events' => 'Különböző alkalmak',
         'days'  => 'Különböző napok',
         'hours' => 'Betervezett órák',

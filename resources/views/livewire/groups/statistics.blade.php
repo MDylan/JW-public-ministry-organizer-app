@@ -221,6 +221,7 @@
                                         <thead>
                                             <tr>
                                                 <th>@lang('group.users')</th>
+                                                <th>@lang('statistics.publisher.joined')</th>
                                                 <th class="text-right">@lang('statistics.publisher.events')</th>
                                                 <th class="text-right">@lang('statistics.publisher.last_event')</th>
                                                 <th class="text-right">@lang('statistics.publisher.days')</th>
@@ -237,6 +238,13 @@
                                             @foreach ($users_stats as $stat)
                                                 <tr>
                                                     <td class="text-bold">{{ $stat['name'] }}</td>
+                                                    <td class="text-bold">
+                                                        @if(isset($stat['joined']))
+                                                        {{ \Carbon\Carbon::parse($stat['joined'])->format(__('app.format.datetime')) }}
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
                                                     <td class="text-right">{{ $stat['events'] }}</td>
                                                     <td class="text-right">
                                                         @if($stat['last_event'] !== 0)

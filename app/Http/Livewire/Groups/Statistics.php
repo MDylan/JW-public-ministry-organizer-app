@@ -266,6 +266,7 @@ class Statistics extends AppComponent
         foreach($users as $user) {
             $users_stats[$user->id] = [
                 'name' => $user->name,
+                'joined' => $user->pivot->accepted_at,
                 'events' => 0,
                 'hours' => 0,
                 'last_event' => 0,
