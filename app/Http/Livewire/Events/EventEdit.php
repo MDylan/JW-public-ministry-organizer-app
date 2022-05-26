@@ -307,7 +307,7 @@ class EventEdit extends AppComponent
         $this->user_statistics = [];
         if(in_array($this->role, ['admin', 'roler'])) {
             $date = strtotime($this->date);
-            $date_back = date("Y-m-d", $date - (15 * 24 * 60 * 60));
+            $date_back = date("Y-m-d", $date - (30 * 24 * 60 * 60));
             $date_future = date("Y-m-d", $date + (15 * 24 * 60 * 60));
 
             $stats = DB::table('events')
