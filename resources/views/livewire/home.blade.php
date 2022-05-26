@@ -19,6 +19,12 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
+        @if (count($groups))
+            <div class="p-3 mb-2 bg-primary text-white rounded">
+                <i class="fas fa-list mr-1"></i>
+                
+            </div>
+        @endif
         <div class="card-columns">
             @forelse ($groups as $group)
                 <div class="card card-primary card-outline" wire:ignore.self>
