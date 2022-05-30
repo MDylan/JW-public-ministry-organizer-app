@@ -99,7 +99,6 @@ class UpdateGroupForm extends AppComponent
                 $this->dates[$date['date'].""] = $date;
             }
         }
-        $this->dateEditCancel();
         if($group->groupUsers) {
             foreach($group->groupUsers as $user) {
                 $slug = Str::slug($user->email, '-');
@@ -134,64 +133,6 @@ class UpdateGroupForm extends AppComponent
         }
     }
 
-/*
-    public function userAdd() {
-
-        $email_array = preg_split('/\r\n|[\r\n]/', trim($this->search));
-
-        $email = [];
-        if(count($email_array)) {
-            foreach($email_array as $mail) {
-                $email['email'][] = $mail;
-            }
-        }
-
-        $validatedData = Validator::make($email, [
-            'email.*' => 'required|email',
-        ])->validate();
-
-        // dd($validatedData);
-        if(count($validatedData['email'])) {
-            foreach($validatedData['email'] as $mail) {
-                $slug = Str::slug($mail, '-');
-                if(isset($this->users[$slug])) continue;
-                $this->users[$slug] = [
-                    'email' => $mail,
-                    'group_role' => 'member',
-                    'note' => '',
-                    'user_id' => false,
-                    'name' => '?',
-                    'hidden' => false,
-                    'deleted_at' => null
-                ];
-            }
-        }
-        $this->search = "";
-    }
-
-    public function removeUser($email) {
-        $admins = 0;
-        foreach($this->users as $slug => $user) {
-            if($slug == $email) continue;
-            if($user['group_role'] == "admin") $admins++;
-        }
-        if($admins == 0) {
-            //no other admin, can't remove this user
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_other_admin'),
-            ]);
-        } elseif($this->users[$email]['user_id'] == Auth::id()) {
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.self_delete_error'),
-            ]);
-        } else {
-            // unset($this->users[$email]);
-            $this->users[$email]['deleted_at'] = date("Y-m-d H:i:s");
-        }
-    }
-*/
     public function generateTimeArray($end = false, $start = false, $step = 30) {
         $start = $start ? strtotime($start) : strtotime("00:00");
         $max = $end ? strtotime($end) : $start + 24 * 60 * 60;
@@ -391,103 +332,6 @@ class UpdateGroupForm extends AppComponent
             }
         }
         $deleteAfterCalculate = [];
-        //add or modify special dates
-        /*
-        if(count($this->dates)) {
-            foreach($this->dates as $date) {
-                if($date['type'] == 'new') {
-                    if($date['date_status'] == 0) {
-                        $start = $end = $date['date'];
-                    } else {
-                        $start = $date['date']." ".$date['date_start'];
-                        $end_date = $date['date'];
-                        if($date['date_end'] == "00:00") {
-                            $end_date = Carbon::parse($date['date'])->addDay()->format("Y-m-d");
-                        }
-                        $end = $end_date." ".$date['date_end'];
-                    }
-                    GroupDate::updateOrCreate(
-                        [
-                            'group_id' => $this->group->id,
-                            'date' => $date['date']
-                        ], 
-                        [
-                            'date_start' => $start,
-                            'date_end' => $end,
-                            'date_status' => $date['date_status'],
-                            'note' => $date['note'],
-                            'date_min_publishers' => $date['date_min_publishers'],
-                            'date_max_publishers' => $date['date_max_publishers'],
-                            'date_min_time' => $date['date_min_time'],
-                            'date_max_time' => $date['date_max_time'],
-                            // 'disabled_slots' => $this->disabled_slots[]
-                        ]
-                    );
-                    $reGenerateStat[$date['date']] = $date['date'];
-                }
-                if($date['type'] == "changed") {
-                    if($date['date_status'] == 0) {
-                        $start = $end = $date['date'];
-                    } else {
-                        $start = $date['date']." ".$date['date_start'];
-                        $end_date = $date['date'];
-                        if($date['date_end'] == "00:00") {
-                            $end_date = Carbon::parse($date['date'])->addDay()->format("Y-m-d");
-                        }
-                        $end = $end_date." ".$date['date_end'];
-                    }
-                    GroupDate::whereId($date['id'])->update(
-                        [
-                            'date_start' => $start,
-                            'date_end' => $end,
-                            'date_status' => $date['date_status'],
-                            'note' => $date['note'],
-                            'date_min_publishers' => $date['date_min_publishers'],
-                            'date_max_publishers' => $date['date_max_publishers'],
-                            'date_min_time' => $date['date_min_time'],
-                            'date_max_time' => $date['date_max_time'],
-                        ]
-                    );
-                    $reGenerateStat[$date['date']] = $date['date'];
-                }
-                if($date['type'] == 'removed') {
-                    //update or delete this day, based on if it's a service day or not
-                    $d = new DateTime($date['date']);
-                    $dayOfWeek = $d->format("w");
-                    if(!isset($validatedDays[$dayOfWeek])) {
-                        //it's not a service day, delete after calculate
-                        $deleteAfterCalculate[$date['date']] = $date['date'];
-                        $start = $date['date']." ".$date['date_start'];
-                        $end = $date['date']." ".$date['date_end'];
-                        $status = 0;
-                    } else {
-                        //it's a service day, we must restore original data
-                        $status = 1;
-                        $start = $date['date']." ".$this->days[$dayOfWeek]['start_time'].":00";
-                        $end_date = $date['date'];
-                        if($this->days[$dayOfWeek]['end_time'] == "00:00") {
-                            $end_date = Carbon::parse($date['date'])->addDay()->format("Y-m-d");
-                        }
-                        $end = $end_date." ".$this->days[$dayOfWeek]['end_time'].":00";
-                    }
-                    
-                    GroupDate::whereId($date['id'])->update(
-                        [
-                            'date_start' => $start,
-                            'date_end' => $end,
-                            'date_status' => $status,
-                            'note' => null,
-                            'date_min_publishers' => $this->state['min_publishers'],
-                            'date_max_publishers' => $this->state['max_publishers'],
-                            'date_min_time' => $this->state['min_time'],
-                            'date_max_time' => $this->state['max_time'],
-                        ]
-                    );
-                    $reGenerateStat[$date['date']] = $date['date'];
-                }
-            }
-        }
-        */
         if(count($reGenerateStat)) {
             CalculateDateProcess::dispatch($this->group->id, $reGenerateStat, auth()->user()->id, $deleteAfterCalculate);
         }
@@ -571,86 +415,6 @@ class UpdateGroupForm extends AppComponent
                 'message' => __('group.literature.tooShort'),
             ]);
         }
-    }
-
-    public function dateAdd() {
-        $validatedDate = Validator::make($this->dateAdd, [
-            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
-            'date_status' => 'required|numeric|in:0,2',
-            'note' => 'required|string|min:3|max:255',
-            'date_start' => 'required_if:date_status,2|date_format:H:i|before:date_end',
-            'date_end' => 'required_if:date_status,2|date_format:H:i|after:date_start',
-            'date_min_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|lte:date_max_publishers',
-            'date_max_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|gte:date_min_publishers',
-            'date_min_time' => 'required_if:date_status,2|numeric|in:30,60,120|lte:date_max_time',
-            'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320|gte:date_min_time',
-        ])->validate();
-        $validatedDate['type'] = 'new';
-        $this->dates[$validatedDate['date'].""] = $validatedDate;
-
-        $this->dateEditCancel();
-    }
-
-    public function dateEdit($date) {
-        $this->dateAdd = $this->dates[$date]; 
-        $this->editedDate = $date; 
-    }
-
-    public function dateEditCancel() {
-        $this->editedDate = null;
-        $this->dateAdd = [
-            'date' => '',
-            'date_status' => 2,
-            'note' => '',
-            'date_start' => '',
-            'date_end' => '',
-            'date_min_publishers' => $this->state['min_publishers'],
-            'date_max_publishers' => $this->state['max_publishers'],
-            'date_min_time' => $this->state['min_time'],
-            'date_max_time' => $this->state['max_time'],
-        ];
-    }
-
-    public function dateSave() {
-        if($this->editedDate === null) return;
-
-        if($this->dateAdd['date_status'] == 0) {
-            $this->dateAdd['date_start'] = "";
-            $this->dateAdd['date_end'] = "";
-        }
-        $validatedDate = Validator::make($this->dateAdd, [
-            'id' => 'sometimes|numeric',
-            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
-            'date_status' => 'required|numeric|in:0,2',
-            'note' => 'required|string|min:3|max:255',
-            'date_start' => 'required_if:date_status,2|date_format:H:i|before:date_end',
-            'date_end' => 'required_if:date_status,2|date_format:H:i|after:date_start',            
-            'date_min_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|lte:date_max_publishers',
-            'date_max_publishers' => 'required_if:date_status,2|numeric|digits_between:1,10|gte:date_min_publishers',
-            'date_min_time' => 'required_if:date_status,2|numeric|in:30,60,120|lte:date_max_time',
-            'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320|gte:date_min_time',
-        ])->validate();
-
-        //we must update it later, move to changed array
-        $type = $this->dates[$this->editedDate]['type'] == "current" ? "changed" : $this->dates[$this->editedDate]['type'];
-        $validatedDate['type']  = $type;
-        $this->dates[$this->editedDate] = $validatedDate;
-        $this->dateEditCancel();
-    }
-
-    public function dateRemove($date) {
-        if($this->dates[$date]['type'] == "new") {
-            unset($this->dates[$date]);
-            $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
-        } else {
-            $this->editedDateRemove = $date; 
-            $this->dispatchBrowserEvent('show-special_dates-confirmation', ['date' => $date]);
-        }
-    }
-
-    public function dateDeleteConfirmed() {
-        $this->dates[$this->editedDateRemove]['type'] = 'removed';
-        $this->dispatchBrowserEvent('success', ['message' => __('group.special_dates.confirmDelete.success')]);
     }
 
     public function render()
