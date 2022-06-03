@@ -64,7 +64,7 @@ class Home extends Component
                 $this->events[$group['id']][$day][] = $event;
             }
 
-            $dates = [];
+            $dates = $future_days = [];
             //load dates info, and enable/disable date if needed
             if(count($group['dates'])) {
                 foreach($group['dates'] as $date) {
@@ -80,6 +80,31 @@ class Home extends Component
                     $dates[$date['date']] = $date;
                 }
             }
+            if($group['future_changes'] !== null) {
+                $change_date = Carbon::parse($group['future_changes']['change_date']);
+                foreach($group['future_changes']['days'] as $d) {
+                    if($d['day_number'] === false) continue;
+                    $future_days[$d['day_number']] = [
+                        'start_time' => $d['start_time'],
+                        'end_time' => $d['end_time'],
+                    ];
+                }
+                foreach($this->available_days[$group['id']] as $day => $value) {
+                    $date_now = Carbon::createFromTimestamp($day);
+                    if($date_now->gte($change_date)) {
+                        $check = isset($future_days[$date_now->format("w")]);
+
+                        if($check && ($dates[$date_now->format("Y-m-d")]['date_status'] ?? 1) != 0) {
+                            $this->available_days[$group['id']][$day] = true;
+                            $this->day_stat[$group['id']][$day]['style'] = $green_color;
+                        } else {
+                            $this->available_days[$group['id']][$day] = false;
+                            $this->day_stat[$group['id']][$day]['style'] = $default_color;
+                        }
+                    }
+                }
+            }
+
             //loading stats from db
             $colors = [];
             foreach($group["stats"] as $stat) {
@@ -173,8 +198,9 @@ class Home extends Component
                         ->orWhereNull('hide_date');
                 });
             },
+            'futureChanges'
         ])->get()->toArray();
-
+        // dd($stats);
         $ids = [];
         foreach($stats as $stat) {
             $ids[] = $stat['id'];

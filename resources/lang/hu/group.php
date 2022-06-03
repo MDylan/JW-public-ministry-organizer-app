@@ -218,7 +218,7 @@ return [
         ],
     ],
     'history' => 'Előzmények',
-    'days_info' => 'Ha módosítod a napok idő-intervallumát, akkor az a mai naptól lép életbe. Ha már van valakinek betervezve olyan szolgálata, ami kívül esik az új időponttól, akkor az módosítva vagy törölve lesz attól függően, hogy belefér e az új időtartamba vagy sem. A régi szolgálati napokat és a lent megadott különleges napokat ez nem érinti.',
+    'days_info' => 'Ha már van valakinek betervezve olyan szolgálata, ami kívül esik az új időponttól, akkor az módosítva vagy törölve lesz attól függően, hogy belefér e az új időtartamba vagy sem. A régi szolgálati napokat és a lent megadott különleges napokat ez nem érinti.',
     'special_dates' => [
         'title' => 'Különleges napok',
         'info' => 'Itt különleges napokat adhatsz meg, amikor valamiért eltér a szolgálat ideje attól ahogy egyébként lenni szokott, vagy le is tilthatsz adott napot, hogy aznapra ne lehessen szolgálatot betervezni. Ha aznapra már valaki betervezett szolgálatot, akkor mentés után a rendszer automatikusan ellenőrzi, hogy belefér e a megadott időtartamba. Ha nem, akkor módosítja/törli a szolgálatot.',
@@ -279,5 +279,19 @@ return [
         'title' => 'Szűrés',
         'myself' => 'Magamra',
         'off_all' => 'Minden szűrő ki',
+    ],
+    'update' => [
+        'from' => 'Módosítás életbelépésének dátuma',
+        'info' => 'A fenti módosítások a megadott naptól lesznek érvényesek. Vedd figyelembe, hogy ha későbbi dátumot adsz meg mint a mai nap, akkor új módosítást már nem fogsz tudni beállítani addig a napig.',
+        'wrong_date' => 'Nem adhatsz meg korábbi dátumot mint a mai nap',
+        'in_progress' => 'Egy jövőbeli módosítás már el lett mentve. Addig nem módosíthatod az aktuális adatokat, amíg az életbe nem lép. A változtatás ekkor fog életbe lépni: :dateFrom. A változtatást :userName kezdeményezte, vele egyeztess kérlek.',
+        'in_progress_show' => 'Ide kattintva megtekintheted a tervezett módosítást.',
+        'in_progress_delete' => 'Törlöm a jövőbeli változtatást',
+        'in_progress_delete_confirm' => [
+            'question' => 'Biztosan törlöd ezt a jövőbeli változtatást?',
+            'message' => 'A betervezett szolgálatok felül lesznek bírálva és módosítja/törli a rendszer.',
+            'success' => 'A jövőbeli változtatás törölve lett.',
+            'error' => 'Sikertelen törlés!'
+        ],
     ]
 ];

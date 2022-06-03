@@ -2,7 +2,9 @@
 
 namespace App\Console;
 
+use App\Classes\updateGroupFutureChanges;
 use App\Models\Event;
+use App\Models\GroupFutureChange;
 use App\Models\LogHistory;
 use App\Models\Settings;
 use App\Models\User;
@@ -90,6 +92,15 @@ class Kernel extends ConsoleKernel
                     'day', '<=', $date
                 )->forceDelete();
         })->daily();
+
+        //check group's future changes
+        $schedule->call(function () {
+            $changes = GroupFutureChange::where('change_date', '=', date("Y-m-d"))->get();
+            foreach($changes as $change) {
+                $init = new updateGroupFutureChanges();
+                $init->initChanges($change->group_id);
+            }
+        })->everyMinute();
 
         //store last schedule run
         $schedule->call(function () {

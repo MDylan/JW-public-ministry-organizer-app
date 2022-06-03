@@ -258,4 +258,8 @@ class Group extends Model
         return $this->hasMany(GroupPosters::class)
                     ->orderBy('show_date', 'asc');
     }
+
+    public function futureChanges() {
+        return $this->hasOne(GroupFutureChange::class);
+    }
 }

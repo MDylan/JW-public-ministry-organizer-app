@@ -168,12 +168,17 @@ class SpecialDateModal extends Component
         }
 
         $deleteAfterCalculate = [];
+        $no_need_update = false;
         //update or delete this day, based on if it's a service day or not
         $d = new DateTime($this->date);
         $dayOfWeek = $d->format("w");
         if(!isset($days[$dayOfWeek])) {
-            //it's not a service day, delete after calculate
-            $deleteAfterCalculate[$this->date] = $this->date;
+            if($this->state["date_status"] == 0) {
+                $no_need_update = true;
+            } else {
+                //it's not a service day, delete after calculate
+                $deleteAfterCalculate[$this->date] = $this->date;
+            }
             $start = $this->date." ".$this->state['date_start'];
             $end = $this->date." ".$this->state['date_end'];
             $status = 0;
@@ -196,25 +201,32 @@ class SpecialDateModal extends Component
         foreach($d_slots as $slot) {
             $disabled_slots[$slot['day_number']][$slot['slot']] = $slot['slot'];
         }
-        
-        $del = GroupDate::where('date', '=', $this->date)
+        if($no_need_update) {
+            $del = GroupDate::where('date', '=', $this->date)
                 ->where('group_id', '=', $this->groupId)
-                ->update(
-            [
-                'date_start' => $start,
-                'date_end' => $end,
-                'date_status' => $status,
-                'note' => null,
-                'date_min_publishers' => $this->group->min_publishers,
-                'date_max_publishers' => $this->group->max_publishers,
-                'date_min_time' => $this->group->min_time,
-                'date_max_time' => $this->group->max_time,
-                'disabled_slots' => $disabled_slots[$dayOfWeek] ?? []
-            ]
-        );
+                ->delete();
+        } else {
+            $del = GroupDate::where('date', '=', $this->date)
+                    ->where('group_id', '=', $this->groupId)
+                    ->update(
+                [
+                    'date_start' => $start,
+                    'date_end' => $end,
+                    'date_status' => $status,
+                    'note' => null,
+                    'date_min_publishers' => $this->group->min_publishers,
+                    'date_max_publishers' => $this->group->max_publishers,
+                    'date_min_time' => $this->group->min_time,
+                    'date_max_time' => $this->group->max_time,
+                    'disabled_slots' => $disabled_slots[$dayOfWeek] ?? []
+                ]
+            );
+        }
 
         if($del) {
-            CalculateDateProcess::dispatch($this->groupId, $this->date, auth()->user()->id, $deleteAfterCalculate);
+            if(!$no_need_update) {
+                CalculateDateProcess::dispatch($this->groupId, $this->date, auth()->user()->id, $deleteAfterCalculate);
+            }
             $this->dispatchBrowserEvent('hide-modal', [
                 'id' => 'SpecialDateModal',
                 'message' => __('group.special_dates.confirmDelete.success'),

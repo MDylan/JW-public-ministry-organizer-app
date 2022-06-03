@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Events;
 
 use App\Classes\GenerateSlots;
 use App\Classes\GenerateStat;
+use App\Helpers\GroupDateHelper;
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
 use Illuminate\Support\Facades\Auth;
@@ -77,7 +78,7 @@ class Modal extends AppComponent
         $date = $this->date;
 
         $group = Group::with([
-                        'days', 
+                        // 'days', 
                         'events' => function($q) use ($date) {
                             $q->select(['id', 'group_id', 'user_id', 'day', 'start', 'end', 'accepted_at', 'accepted_by', 'status', 'comment']);
                             $q->where('day', '=', $date);
@@ -92,27 +93,28 @@ class Modal extends AppComponent
                             $q->where('date', '=', $date);
                         },
                         'groupUsersAll', //we will unset this later!
-                        'dates',
+                        // 'dates',
                         'posters' => function($q) use ($date) {
                             $q->where('show_date', '<=', $date);
                             $q->where(function ($q) use ($date) {
                                 $q->where('hide_date', '>=', $date)
                                     ->orWhereNull('hide_date');
                             });
-                        },
+                        }
                     ])->findOrFail($groupId)->toArray();
+        // dd($group);
         if(isset($group['current_date'])) {
             if($group['current_date']['date_status'] == 0) {
                 $this->error = __('event.error.no_service_day')." (".$group['current_date']['note'].")";
                 return;
             }
         }
-        $dates = [];
-        if(isset($group['dates'])) {
-            foreach($group['dates'] as $d) {
-                $dates[$d['date_status']][strtotime($d['date'])] = $d;
-            }
-        }
+        // $dates = [];
+        // if(isset($group['dates'])) {
+        //     foreach($group['dates'] as $d) {
+        //         $dates[$d['date_status']][strtotime($d['date'])] = $d;
+        //     }
+        // }
         $this->role = $group['current_user'][0]['pivot']['group_role'];
         $this->editor = in_array($this->role, ['admin', 'roler']) ? true : false;
         //unset this part, it's not public for livewire
@@ -128,18 +130,31 @@ class Modal extends AppComponent
         $this->day_data['date'] = $date;
         $this->day_data['dateFormat'] = $d->format(__('app.format.date').'.,')." ".__('event.weekdays_short.'.$dayOfWeek);
         
-        $days = $group['days'];
+        $next_date = GroupDate::where('group_id', '=', $groupId)
+                            ->where('date', '>', $date)
+                            ->orderBy('date', 'ASC')
+                            ->first('date');
+        $this->day_data['next_date'] = $next_date->date ?? false;
+
+        $prev_date = GroupDate::where('group_id', '=', $groupId)
+                            ->where('date', '<', $date)
+                            ->orderBy('date', 'DESC')
+                            ->first('date');
+        $this->day_data['prev_date'] = $prev_date->date ?? false;
+        // dd($prev_date->date);
+
+        // $days = $group['days'];
         $next = $prev = false;
-        $days_array = [];
-        if(count($days)) {
-            foreach($days as $day) {
-                $days_array[] = $day['day_number'];
-                $this->service_days[$day['day_number']] = [
-                    'start_time' => $day['start_time'],
-                    'end_time' => $day['end_time'],
-                ];
-            }
-        }
+        // $days_array = [];
+        // if(count($days)) {
+        //     foreach($days as $day) {
+        //         $days_array[] = $day['day_number'];
+        //         $this->service_days[$day['day_number']] = [
+        //             'start_time' => $day['start_time'],
+        //             'end_time' => $day['end_time'],
+        //         ];
+        //     }
+        // }
         $user_signs = $users_active = [];
         if(is_array($group['group_users_all'])) {
             foreach($group['group_users_all'] as $user) {
@@ -156,97 +171,70 @@ class Modal extends AppComponent
         // dd($this->group_data);
         //calculate next end previous day
         $now = time();
-        $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
-        $next_date = $this_date = strtotime($date); 
-        $next = false;
-        if(count($this->service_days) > 0 || count($group['dates'] ?? []) > 1) {
-            $counting = 0;
-            while(!$next) {
-                $next_date = $next_date + (24 * 60 * 60);
-                $dayNum = date("w", $next_date);
-                $unixTime = $next_date;
+        // $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
+        // $next_date = $this_date = strtotime($date); 
+        // $next = false;
+        // if(count($this->service_days) > 0 || count($group['dates'] ?? []) > 1) {
+        //     $counting = 0;
+        //     while(!$next) {
+        //         $next_date = $next_date + (24 * 60 * 60);
+        //         $dayNum = date("w", $next_date);
+        //         $unixTime = $next_date;
 
-                if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
-                    $next = true;
-                    $this->day_data['next_date'] = date("Y-m-d", $next_date); 
-                    if($unixTime > $max_time) {
-                        $this->day_data['next_date'] = false;
-                    }
-                }
-                $counting++;
-                if($counting == 90) {
-                    //if not found next day, break the loop
-                    $next = true;
-                }
-            }        
+        //         if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+        //             $next = true;
+        //             $this->day_data['next_date'] = date("Y-m-d", $next_date); 
+        //             if($unixTime > $max_time) {
+        //                 $this->day_data['next_date'] = false;
+        //             }
+        //         }
+        //         $counting++;
+        //         if($counting == 90) {
+        //             //if not found next day, break the loop
+        //             $next = true;
+        //         }
+        //     }        
 
-            $prev_date = $this_date; 
-            $prev = false;
-            $counting = 0;
-            while(!$prev) {
-                $prev_date = $prev_date - (24 * 60 * 60);
-                $dayNum = date("w", $prev_date);
-                $unixTime = $prev_date;
+        //     $prev_date = $this_date; 
+        //     $prev = false;
+        //     $counting = 0;
+        //     while(!$prev) {
+        //         $prev_date = $prev_date - (24 * 60 * 60);
+        //         $dayNum = date("w", $prev_date);
+        //         $unixTime = $prev_date;
 
-                if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
-                    $prev = true;
-                    $this->day_data['prev_date'] = date("Y-m-d", $prev_date); 
-                } 
-                $counting++;
-                if($counting == 90) {
-                    //if not found previous day, break the loop
-                    $prev = true;
-                }
-            }
-        }   
+        //         if((isset($this->service_days[$dayNum]) && !isset($dates[0][$unixTime])) || isset($dates[2][$unixTime])) {
+        //             $prev = true;
+        //             $this->day_data['prev_date'] = date("Y-m-d", $prev_date); 
+        //         } 
+        //         $counting++;
+        //         if($counting == 90) {
+        //             //if not found previous day, break the loop
+        //             $prev = true;
+        //         }
+        //     }
+        // }   
 
         $past = (Carbon::parse($this->date)->isFuture() || Carbon::parse($this->date)->isToday()) ? false : true;
         $disabled_slots = $slots = [];
         
 
         if($this->group_data['current_date'] === null) {
-            $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-            $end_date = $date;
-            if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
-                $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            $helper = new GroupDateHelper($this->form_groupId);
+            $generate = $helper->generateDate($this->date);
+            if(is_array($generate)) {
+                $this->date_data = [
+                    'min_publishers' => $generate['date_min_publishers'],
+                    'max_publishers' => $generate['date_max_publishers'],
+                    'min_time' => $generate['date_min_time'],
+                    'max_time' => $generate['date_max_time'],
+                    'peak' => 0
+                ];
+                $start = strtotime($generate['date_start']);
+                $max = strtotime($generate['date_end']);
+                $disabled_slots = $generate['disabled_slots'];
+                $group['current_date']['disabled_slots'] = $generate['disabled_slots'];
             }
-            $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00");
-            $disabled_slots_insert = [];
-            if(!$past) {
-                //get disabled time slot for this day
-                $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->form_groupId)
-                                    ->where('day_number', '=', $dayOfWeek)
-                                    ->orderBy('slot', 'asc')
-                                    ->get()
-                                    ->toArray();
-                foreach($disableds as $sl) {
-                    $ts = strtotime($this->date." ".$sl['slot']);
-                    $slot_key = "'".date("Hi", $ts)."'";
-                    $disabled_slots[$slot_key] = true;
-                    $slots[$slot_key][] = true;
-                    $disabled_slots_insert[$sl['slot']] = true;
-                }
-            }
-            GroupDate::create([
-                'group_id' => $groupId,
-                'date' => $date,
-                'date_start' => date("Y-m-d H:i:s", $start),
-                'date_end' => date("Y-m-d H:i:s", $max),
-                'date_status' => 1,
-                'date_min_publishers' => $this->group_data['min_publishers'],
-                'date_max_publishers' => $this->group_data['max_publishers'],
-                'date_min_time' => $this->group_data['min_time'],
-                'date_max_time' => $this->group_data['max_time'],
-                'disabled_slots' => $disabled_slots_insert
-            ]);
-            $this->date_data = [
-                'min_publishers' => $this->group_data['min_publishers'],
-                'max_publishers' => $this->group_data['max_publishers'],
-                'min_time' => $this->group_data['min_time'],
-                'max_time' => $this->group_data['max_time'],
-                'peak' => 0
-            ];
-
         } else {
             $start = strtotime($this->group_data['current_date']['date_start']);
             $max = strtotime($this->group_data['current_date']['date_end']);
@@ -531,7 +519,7 @@ class Modal extends AppComponent
             $this->error = false;
             return view('livewire.events.modal', [
                 'group_data' => $this->group_data,
-                'service_days' => $this->service_days,
+                // 'service_days' => $this->service_days,
                 'day_events' => $this->day_events,
                 'day_data' => $this->day_data,
                 'editor' => $this->editor,

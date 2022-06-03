@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Classes\CalculateDatesEvents;
+use App\Models\DayStat;
 use App\Models\GroupDate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -41,12 +42,14 @@ class CalculateDateProcess implements ShouldQueue
     {
         CalculateDatesEvents::generate($this->group_id, $this->date, $this->user_id);
         if(count($this->deleteAfterCalculate)) {
-            foreach($this->deleteAfterCalculate as $day) {
-                GroupDate::where('group_id', '=', $this->group->id)
-                        ->where('date', '=', $day)
-                        ->where('date_status', '=', 0)
-                        ->delete();
-            }
+            GroupDate::where('group_id', '=', $this->group_id)
+                    ->whereIn('date', $this->deleteAfterCalculate)
+                    ->where('date_status', '=', 0)
+                    ->delete();
+
+            DayStat::where('group_id', '=', $this->group_id)
+                    ->whereIn('day', $this->deleteAfterCalculate)
+                    ->delete();
         }
     }
 }

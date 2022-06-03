@@ -40,6 +40,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'ed962a97bd972bc82007176b647d4e36' => __DIR__ . '/..' . '/facade/ignition/src/helpers.php',
         'f18cc91337d49233e5754e93f3ed9ec3' => __DIR__ . '/..' . '/laravelcollective/html/src/helpers.php',
         '72b1e3f4a2af9b30b3f137b3ec2057fc' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/helpers.php',
+        'd21d43db5f6e840ee7b10744ec7fdf66' => __DIR__ . '/../..' . '/app/Helpers/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -661,6 +662,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Classes\\GenerateStat' => __DIR__ . '/../..' . '/app/Classes/GenerateStat.php',
         'App\\Classes\\GroupUserMoves' => __DIR__ . '/../..' . '/app/Classes/GroupUserMoves.php',
         'App\\Classes\\setEnvironment' => __DIR__ . '/../..' . '/app/Classes/setEnvironment.php',
+        'App\\Classes\\updateGroupFutureChanges' => __DIR__ . '/../..' . '/app/Classes/updateGroupFutureChanges.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Helpers\\CollectionHelper' => __DIR__ . '/../..' . '/app/Helpers/CollectionHelper.php',
@@ -743,6 +745,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Models\\GroupDate' => __DIR__ . '/../..' . '/app/Models/GroupDate.php',
         'App\\Models\\GroupDay' => __DIR__ . '/../..' . '/app/Models/GroupDay.php',
         'App\\Models\\GroupDayDisabledSlots' => __DIR__ . '/../..' . '/app/Models/GroupDayDisabledSlots.php',
+        'App\\Models\\GroupFutureChange' => __DIR__ . '/../..' . '/app/Models/GroupFutureChange.php',
         'App\\Models\\GroupLiterature' => __DIR__ . '/../..' . '/app/Models/GroupLiterature.php',
         'App\\Models\\GroupNews' => __DIR__ . '/../..' . '/app/Models/GroupNews.php',
         'App\\Models\\GroupNewsFile' => __DIR__ . '/../..' . '/app/Models/GroupNewsFile.php',

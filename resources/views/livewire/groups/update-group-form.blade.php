@@ -23,7 +23,37 @@
         <div class="container-fluid">
             <form wire:submit.prevent="updateGroup">
                 @csrf
-                <div class="row">                
+                <div class="row">
+                    {{-- @dump($future_changes) --}}
+                    @if (isset($future_changes))
+                        <div wire:ignore class="col-lg-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> @lang('group.update.in_progress', [
+                                    'dateFrom' => $future_changes->change_date,
+                                    'userName' => $future_changes->user->name
+                                ])
+                                <div class="w-100 py-2"></div>
+                                @if(request()->input('show_future')) 
+                                    <a title="@lang('app.delete')" href="" wire:click.prevent="confirmFutureChangesRemoval()" class="float-right btn btn-danger mr-1 mb-1">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        @lang('group.update.in_progress_delete')
+                                    </a>
+                                @else
+                                <a href="?show_future=1" class="btn btn-info">
+                                    <i class="far fa-eye mr-1"></i>
+                                    @lang('group.update.in_progress_show')
+                                </a>
+                                @endif
+                                <div class="w-100 py-2"></div>
+                                <a wire:ignore href="{{ route('groups') }}" class="btn btn-primary mb-2 mb-md-0">
+                                    <i class="fas fa-arrow-alt-circle-left mr-1"></i>
+                                    @lang('app.back')
+                                </a>
+                            </div>
+
+                        </div>
+                    @endif
+                    @if(!isset($future_changes) || request()->input('show_future'))
                     <div class="col-lg-6">
                         <div class="card card-primary card-outline">
                             <div class="card-header">
@@ -410,7 +440,7 @@
                                                     @lang('group.disabled_time_slots_info')
                                                     
                                                     <div class="ml-2 w-100 border  @if  (count(array_filter($disabled_slots[$day] ?? [])) > 0) border-warning @else border-secondary @endif rounded" style="height:100px;overflow-y:auto;">
-                                                        @foreach ($disabled_selects[$day] as $key => $time)
+                                                        @foreach ($disabled_selects[$day] ?? [] as $key => $time)
                                                         <div class="ml-2 form-check">
                                                             <input wire:model="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}">
                                                             <label class="form-check-label" for="disabled_{{ $day }}_{{ $time }}" role="button">
@@ -429,24 +459,40 @@
                             </div>
                         </div> <!-- end of days section -->
                     </div>
+                    @endif
                 </div>
-                <div class="row mb-3">
-                    <div class="col-lg-4">
-                        <a href="{{route('groups')}}">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
-                        </a>        
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-save mr-1"></i>
-                            {{__('app.saveChanges')}}</button>
+                @if (!isset($future_changes))
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="card card-primary card-outline p-2">
+                                <div class="card-body">
+                                    @lang('group.update.info')
+                                    <div class="form-inline">
+                                        <label for="date_from">@lang('group.update.from'):</label>
+                                        <input wire:model="change_date" type="date" class="form-control @error('change_date') is-invalid @enderror" id="date_from" value="" />
+                                        @error('change_date')
+                                            <div class="invalid-feedback" role="alert">{{$message}}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                @if ($errors->any())
+                                    <p class="text-danger mt-2">
+                                        {{__('app.pleaseFixErrors')}}
+                                    </p>
+                                @endif
+
+                                <a href="{{route('groups')}}">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
+                                </a>        
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-save mr-1"></i>
+                                    {{__('app.saveChanges')}}</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-lg-8">
-                        @if ($errors->any())
-                            <p class="text-danger mt-2">
-                                {{__('app.pleaseFixErrors')}}
-                            </p>
-                        @endif
-                    </div>
-                </div>
+                @endif
             </form>
         </div>
     </div>

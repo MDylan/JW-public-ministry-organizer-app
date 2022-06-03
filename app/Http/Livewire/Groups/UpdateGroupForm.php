@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\Groups;
 
+use App\Classes\updateGroupFutureChanges;
+use App\Helpers\GroupDateHelper;
 use App\Http\Livewire\AppComponent;
 use App\Jobs\CalculateDateProcess;
 use App\Models\Group;
@@ -9,30 +11,32 @@ use App\Models\GroupDate;
 use Illuminate\Support\Str;
 use App\Models\GroupDay;
 use App\Models\GroupDayDisabledSlots;
+use App\Models\GroupFutureChange;
 use App\Models\GroupLiterature;
 use App\Rules\TimeCheck;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 
 class UpdateGroupForm extends AppComponent
 {
 
-    public $users = [];
-    public $users_old = []; //original users
+    // public $users = [];
+    // public $users_old = []; //original users
     public $search = "";
     public $group;
     public $days = [];
     public $days_original = [];
     public $admins = [];
 
-    public $dateAdd = [];
-    public $dates = [];
-    public $hidePastDates = 1;
-    public $editedDate = null;
-    public $editedDateRemove = [];
+    // public $dateAdd = [];
+    // public $dates = [];
+    // public $hidePastDates = 1;
+    // public $editedDate = null;
+    // public $editedDateRemove = [];
 
     public $literatures = [];
     public $editedLiteratureType = null;
@@ -43,8 +47,15 @@ class UpdateGroupForm extends AppComponent
     public $day_selects = [];
     public $disabled_slots = [];
     public $disabled_selects = [];
+    public $change_date = null;
+    public $future_changes = null;
 
-    public $listeners = ['literatureDeleteConfirmed', 'dateDeleteConfirmed'];
+    public $listeners = [
+        'literatureDeleteConfirmed', 
+        'dateDeleteConfirmed', 
+        'confirmFutureChangesRemoval',
+        'removeFutureChanges'
+    ];
 
     public $defaultSigns = [
         'fa-key',
@@ -88,37 +99,38 @@ class UpdateGroupForm extends AppComponent
                 $this->literatures['current'][$literature->id] = $literature->name;
             }
         }
-        $dates = $group->dates()->whereIn('date_status', [0,2])->where('date', '>=', date("Y-m-d"))->get()->toArray();
-        if(count($dates)) {
-            foreach($dates as $date) {
-                $date_start = new DateTime($date['date_start']);
-                $date['date_start'] = $date_start->format("H:i");
-                $date_end = new DateTime($date['date_end']);
-                $date['date_end'] = $date_end->format("H:i");
-                $date['type'] = 'current';
-                $this->dates[$date['date'].""] = $date;
-            }
-        }
-        if($group->groupUsers) {
-            foreach($group->groupUsers as $user) {
-                $slug = Str::slug($user->email, '-');
-                $this->users[$slug] = [
-                    'email' => $user->email,
-                    'group_role' => $user->pivot->group_role,
-                    'note' => $user->pivot->note,
-                    'user_id' => $user->id,
-                    'name' => $user->name,
-                    'hidden' => $user->pivot->hidden == 1 ? true : false,
-                    'deleted_at' => null
-                ];
-                if($user->pivot->group_role == 'admin') {
-                    $this->admins[$slug] = true;
-                }
-            }
-        }
+        // $dates = $group->dates()->whereIn('date_status', [0,2])->where('date', '>=', date("Y-m-d"))->get()->toArray();
+        // if(count($dates)) {
+        //     foreach($dates as $date) {
+        //         $date_start = new DateTime($date['date_start']);
+        //         $date['date_start'] = $date_start->format("H:i");
+        //         $date_end = new DateTime($date['date_end']);
+        //         $date['date_end'] = $date_end->format("H:i");
+        //         $date['type'] = 'current';
+        //         $this->dates[$date['date'].""] = $date;
+        //     }
+        // }
+        // if($group->groupUsers) {
+        //     foreach($group->groupUsers as $user) {
+        //         $slug = Str::slug($user->email, '-');
+        //         $this->users[$slug] = [
+        //             'email' => $user->email,
+        //             'group_role' => $user->pivot->group_role,
+        //             'note' => $user->pivot->note,
+        //             'user_id' => $user->id,
+        //             'name' => $user->name,
+        //             'hidden' => $user->pivot->hidden == 1 ? true : false,
+        //             'deleted_at' => null
+        //         ];
+        //         if($user->pivot->group_role == 'admin') {
+        //             $this->admins[$slug] = true;
+        //         }
+        //     }
+        // }
 
-        $this->users_old = $this->users;        
+        // $this->users_old = $this->users;        
         $this->group = $group;
+        $this->future_changes = $group->futureChanges;
 
         if($group->parent_group_id) {
             $this->parent_group = Group::findOrFail($group->parent_group_id)->toArray();
@@ -130,6 +142,26 @@ class UpdateGroupForm extends AppComponent
                             ->get()->toArray();
         foreach($slots as $slot) {
             $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
+        }
+
+        $this->change_date = date("Y-m-d");
+
+        //load future changes to show, if request it
+        if(request()->input('show_future') && $group->futureChanges !== null) {
+            $future = new updateGroupFutureChanges();
+            $future->getChanges($this->group->id);
+            $this->state = $future->getState();
+            $this->days = $future->getDays();
+            $disabled_slots = $future->getDisabledSlots();
+            foreach($disabled_slots as $slot) {
+                $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
+            }
+        }
+
+        //remove future changes
+        if(request()->input('remove_future_changes') && $group->futureChanges !== null) {
+            $this->group->futureChanges()->delete();
+            $this->updateGroup(true);
         }
     }
 
@@ -154,10 +186,14 @@ class UpdateGroupForm extends AppComponent
     /**
      * Save group's data
      */
-    public function updateGroup() {
+    public function updateGroup($must_refresh = false) {
         $this->state['name'] = strip_tags($this->state['name']);
         $admins = 0;
         $reGenerateStat = [];
+
+        Validator::make(['change_date' => $this->change_date], [
+            'change_date' => 'required|date_format:Y-m-d|after_or_equal:'.date("Y-m-d")
+        ])->validate();
 
         $pattern = "/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/";
 
@@ -198,26 +234,29 @@ class UpdateGroupForm extends AppComponent
             'max_time',
             'need_approval'
         ];
-        $must_refresh = false;
+        // $must_refresh = false;
         foreach($change_check as $field) {
             if($validatedData[$field] != $this->group->{$field}) {
                 $must_refresh = true;
             }
         }
 
-        $this->group->update($validatedData);
-
-        $childs = Group::where('parent_group_id', '=', $this->group->id)->get();
-        foreach($childs as $child) {
-            $modify = false;
-            if(($child->copy_from_parent['signs'] ?? null) == true) {
-                $child->signs = $validatedData['signs'];
-                $modify = true;
-            }
-            if($modify) {
-                $child->save();
+        $disabled_slots = [];
+        if(count($this->disabled_slots)) {
+            // dd($this->disabled_slots);
+            foreach($this->disabled_slots as $day => $slots) {
+                foreach($slots as $slot => $value) {
+                    if(!$value) continue;
+                    $disabled_slots[$day] = [
+                        'day_number' => $day,
+                        'slot' => $slot
+                    ];
+                }
             }
         }
+
+        $this->saveFutureChanges($validatedData, $validatedDays, $disabled_slots);
+
         //check disabled slots
         $original_disabled_slots = [];
         $slots = GroupDayDisabledSlots::where('group_id', '=', $this->group->id)
@@ -230,19 +269,6 @@ class UpdateGroupForm extends AppComponent
         //compare current and old slots
         $d_slots_compare = ($original_disabled_slots === $this->disabled_slots);
         if(!$d_slots_compare) {
-            GroupDayDisabledSlots::where('group_id', '=', $this->group->id)->delete();
-            if(count($this->disabled_slots)) {
-                foreach($this->disabled_slots as $day => $slots) {
-                    foreach($slots as $slot => $value) {
-                        if(!$value) continue;
-                        GroupDayDisabledSlots::create([
-                            'group_id' => $this->group->id,
-                            'day_number' => $day,
-                            'slot' => $slot
-                        ]);
-                    }
-                }
-            }
             $must_refresh = true;
         }
 
@@ -252,64 +278,66 @@ class UpdateGroupForm extends AppComponent
             $must_refresh = true;
         }
 
-        $updates = [];
-        if($must_refresh) {
-            $refresh_dates = GroupDate::where('group_id', '=', $this->group->id)
-                                ->where('date', '>=', date("Y-m-d"))
-                                ->where('date_status', '=', 1)
-                                ->get();
-            foreach($refresh_dates as $rdate) {
-                $d = new DateTime($rdate->date);
-                $dayOfWeek = $d->format("w");
-                $status = 1;
-                $start = $rdate->date." ".$this->days[$dayOfWeek]['start_time'].":00";
-                $end_date = $rdate->date;
-                if(strtotime($this->days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
-                    $end_date = Carbon::parse($rdate->date)->addDay()->format("Y-m-d");
-                }
-                $end = $end_date." ".$this->days[$dayOfWeek]['end_time'].":00";
-                $updates = [
-                    'date_start' => $start,
-                    'date_end' => $end,
-                    'date_status' => $status,
-                    'note' => null,
-                    'date_min_publishers' => $this->state['min_publishers'],
-                    'date_max_publishers' => $this->state['max_publishers'],
-                    'date_min_time' => $this->state['min_time'],
-                    'date_max_time' => $this->state['max_time'],
-                    'disabled_slots' => ($this->disabled_slots[$dayOfWeek] ?? null)
-                ];
-                $rdate->update(
-                    $updates
-                );
-                $reGenerateStat[$rdate->date] = $rdate->date;
-            }
-        }        
+        $new_days = [];
         if(isset($validatedDays)) {
             foreach($validatedDays as $d => $day) {
                 if(!isset($day['day_number'])) {
                     continue;
                 }                
-                if($day['day_number'] === false) {
-                    $del = GroupDay::where('group_id', $this->group->id)
-                    ->where('day_number', $d)
-                    ->first();
-                    if($del)
-                        $del->delete();
-                } else {
-                    GroupDay::updateOrCreate(
-                        [
-                            'group_id' => $this->group->id,
-                            'day_number' => $day['day_number']
-                        ], 
-                        [
-                            'start_time' => $day['start_time'],
-                            'end_time' => $day['end_time']
-                        ]
-                    );
+                if($day['day_number'] !== false) {
+                    $new_days[$day['day_number']] = [
+                        'start_time' => $day['start_time'],
+                        'end_time' => $day['end_time'],
+                    ];
                 }
             }      
         }
+
+        $updates = [];
+        $deleteAfterCalculate = [];
+        $helper = new GroupDateHelper($this->group->id);
+
+        if($must_refresh) {             
+            $refresh_dates = GroupDate::where('group_id', '=', $this->group->id)
+                                ->where('date', '>=', $this->change_date)
+                                ->where('date_status', '=', 1)
+                                ->get();
+            foreach($refresh_dates as $rdate) {
+                $helper->generateDate($rdate->date);
+                // $d = new DateTime($rdate->date);
+                // $dayOfWeek = $d->format("w");
+                // if(isset($new_days[$dayOfWeek])) {
+                //     $status = 1;
+                //     $start = $rdate->date." ".$new_days[$dayOfWeek]['start_time'].":00";
+                //     $end_date = $rdate->date;
+                //     if(strtotime($new_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
+                //         $end_date = Carbon::parse($rdate->date)->addDay()->format("Y-m-d");
+                //     }
+                //     $end = $end_date." ".$new_days[$dayOfWeek]['end_time'].":00";
+                //     $updates = [
+                //         'date_start' => $start,
+                //         'date_end' => $end,
+                //         'date_status' => $status,
+                //         'note' => null,
+                //         'date_min_publishers' => $this->state['min_publishers'],
+                //         'date_max_publishers' => $this->state['max_publishers'],
+                //         'date_min_time' => $this->state['min_time'],
+                //         'date_max_time' => $this->state['max_time'],
+                //         'disabled_slots' => ($this->disabled_slots[$dayOfWeek] ?? null)
+                //     ];
+                // } else {
+                //     $updates = [
+                //         'date_status' => 0
+                //     ];
+                //     $deleteAfterCalculate[] = $rdate->date;
+                // }
+                // $rdate->update(
+                //     $updates
+                // );
+                // $reGenerateStat[$rdate->date] = $rdate->date;
+            }
+        }
+
         if(count($this->literatures)) {
             if(isset($this->literatures['new'])) {
                 $save = [];
@@ -331,14 +359,45 @@ class UpdateGroupForm extends AppComponent
                 }
             }
         }
-        $deleteAfterCalculate = [];
-        if(count($reGenerateStat)) {
-            CalculateDateProcess::dispatch($this->group->id, $reGenerateStat, auth()->user()->id, $deleteAfterCalculate);
+        $helper->recalculateDates();
+        
+        if(Carbon::parse($this->change_date)->eq(Carbon::today())) {
+            $init = new updateGroupFutureChanges();
+            $init->initChanges($this->group->id);
         }
+        // if(count($reGenerateStat)) {
+        //     CalculateDateProcess::dispatch($this->group->id, $reGenerateStat, auth()->user()->id, $deleteAfterCalculate);
+        // }
         $this->group->refresh();
         Session::flash('message', __('group.groupUpdated')); 
         redirect()->route('groups');
-        
+    }
+
+    private function saveFutureChanges($group, $days, $disabled_slots) {
+        return GroupFutureChange::create([
+            'group_id' => $this->group->id,
+            'change_date' => $this->change_date,
+            'group' => $group,
+            'disabled_slots' => $disabled_slots,
+            'days' => $days,
+            'user_id' => auth()->user()->id
+        ]);
+    }
+
+    public function confirmFutureChangesRemoval() {
+        $this->dispatchBrowserEvent('show-deletion-confirmation', [
+            'title' => __('group.update.in_progress_delete_confirm.question',),
+            'text' => __('group.update.in_progress_delete_confirm.message'),
+            'emit' => 'removeFutureChanges'
+        ]);
+    }
+
+    public function removeFutureChanges() {
+
+        return Redirect::route('groups.edit', ['group' => $this->group->id, 'remove_future_changes' => 1]);
+
+        // $this->group->futureChanges()->delete();
+        // $this->updateGroup(true);
     }
 
     function hoursRange( $lower = 0, $upper = 86400, $step = 3600, $format = '' ) {
@@ -448,8 +507,8 @@ class UpdateGroupForm extends AppComponent
             }
         }
         
-        if(count($this->dates))
-            ksort($this->dates);
+        // if(count($this->dates))
+        //     ksort($this->dates);
 
         return view('livewire.groups.update-group-form', [
             'min_time_options' => [30,60,120],

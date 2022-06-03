@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Classes\GenerateSlots;
+use App\Helpers\GroupDateHelper;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -64,47 +65,52 @@ class GenerateStatProcess implements ShouldQueue
         }
         $this->group_data = $group->toArray();
 
-        if($this->group_data['current_date']['date_status'] == 0) {
+        if(($this->group_data['current_date']['date_status'] ?? 1) == 0) {
             return false;
         }
 
         if($this->group_data['current_date'] === null) {
-            $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
-            $end_date = $date;
-            if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
-                $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            $helper = new GroupDateHelper($this->groupId);
+            $generate = $helper->generateDate($this->date);
+            if(!$generate) return;
+            else {
+                $this->date_data = [
+                    'min_publishers' => $generate['date_min_publishers'],
+                    'max_publishers' => $generate['date_max_publishers'],
+                    'min_time' => $generate['date_min_time'],
+                    'max_time' => $generate['date_max_time']
+                ];
             }
-            $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00"); 
+            // $start = strtotime($date." ".$this->service_days[$dayOfWeek]['start_time'].":00");
+            // $end_date = $date;
+            // if(strtotime($this->service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
+            //     $end_date = Carbon::parse($date)->addDay()->format("Y-m-d");
+            // }
+            // $max = strtotime($end_date." ".$this->service_days[$dayOfWeek]['end_time'].":00"); 
 
-            $disabled_slots_insert = [];
-            //get disabled time slot for this day
-            $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->groupId)
-                ->where('day_number', '=', $dayOfWeek)
-                ->orderBy('slot', 'asc')
-                ->get()
-                ->toArray();
-            foreach($disableds as $sl) {
-                $disabled_slots_insert[$sl['slot']] = true;
-            }
+            // $disabled_slots_insert = [];
+            // //get disabled time slot for this day
+            // $disableds = GroupDayDisabledSlots::where('group_id', '=', $this->groupId)
+            //     ->where('day_number', '=', $dayOfWeek)
+            //     ->orderBy('slot', 'asc')
+            //     ->get()
+            //     ->toArray();
+            // foreach($disableds as $sl) {
+            //     $disabled_slots_insert[$sl['slot']] = true;
+            // }
 
-            GroupDate::create([
-                'group_id' => $groupId,
-                'date' => $date,
-                'date_start' => date("Y-m-d H:i:s", $start),
-                'date_end' => date("Y-m-d H:i:s", $max),
-                'date_status' => 1,
-                'date_min_publishers' => $this->group_data['min_publishers'],
-                'date_max_publishers' => $this->group_data['max_publishers'],
-                'date_min_time' => $this->group_data['min_time'],
-                'date_max_time' => $this->group_data['max_time'],
-                'disabled_slots' => $disabled_slots_insert
-            ]);
-            $this->date_data = [
-                'min_publishers' => $this->group_data['min_publishers'],
-                'max_publishers' => $this->group_data['max_publishers'],
-                'min_time' => $this->group_data['min_time'],
-                'max_time' => $this->group_data['max_time']
-            ];
+            // GroupDate::create([
+            //     'group_id' => $groupId,
+            //     'date' => $date,
+            //     'date_start' => date("Y-m-d H:i:s", $start),
+            //     'date_end' => date("Y-m-d H:i:s", $max),
+            //     'date_status' => 1,
+            //     'date_min_publishers' => $this->group_data['min_publishers'],
+            //     'date_max_publishers' => $this->group_data['max_publishers'],
+            //     'date_min_time' => $this->group_data['min_time'],
+            //     'date_max_time' => $this->group_data['max_time'],
+            //     'disabled_slots' => $disabled_slots_insert
+            // ]);
         } else {
             $start = strtotime($this->group_data['current_date']['date_start']);
             $max = strtotime($this->group_data['current_date']['date_end']);
