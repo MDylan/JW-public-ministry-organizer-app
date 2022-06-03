@@ -15,6 +15,7 @@ class PosterEditModal extends AppComponent
     private $group = [];
     public $posterId = 0;
     public $fromDate = null;
+    public $openModal = false;
 
     protected $listeners = [         
         'openModal',
@@ -40,17 +41,20 @@ class PosterEditModal extends AppComponent
                             ->where('group_id', '=', $this->groupId)
                             ->first()
                             ->toArray();
+        // dd($this->state);
     }
 
     public function openModal($groupId, $posterId = 0) {
         $this->getGroupData($groupId);
         $this->state = [];
         $this->posterId = 0;
+        $this->openModal = true;
         if($posterId != 0) {
             // dd('poster');
             $this->posterId = $posterId;
             $this->getPosterData();
         } else {
+            $this->state['id'] = "rand_".rand(0, 999);
             if($this->fromDate !== null) {
                 // dd('dateset');
                 $this->state['show_date'] = $this->fromDate;
@@ -98,6 +102,7 @@ class PosterEditModal extends AppComponent
         ]);        
         $this->emitUp('refresh');
         $this->reset();
+        $this->openModal = false;
     }
 
     public function hiddenModal($parameters_back) {
@@ -133,6 +138,11 @@ class PosterEditModal extends AppComponent
                 'message' => __('group.poster.confirmDelete.error')
             ]);
         }
+        $this->openModal = false;
+    }
+
+    public function updatedStateInfo() {
+        $this->getGroupData();
     }
 
     public function render()

@@ -19,3 +19,4 @@ public/plugins/bootstrap/js/*-cache_bootstrap.js
 public/plugins/fontawesome-free/css/*-cache_fontawesome.css
 public/plugins/sweetalert2/*-cache_sweetalert2.js
 public/plugins/toastr/*-cache_toastr.js
+public/plugins/summernote/*-cache_summernote-bs4.min.js
