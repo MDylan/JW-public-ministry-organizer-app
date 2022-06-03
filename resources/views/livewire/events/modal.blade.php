@@ -80,7 +80,7 @@
                                                             @lang('group.poster.until_revoked')
                                                         @endif
                                                     </strong>
-                                                    {{ $poster['info'] }}
+                                                    {!! $poster['info'] !!}
                                                 </div>
                                             </div>
                                         @endforeach                                
