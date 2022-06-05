@@ -197,6 +197,11 @@ class Settings extends AppComponent
             }
             //set https
             $setEnv['USE_HTTPS'] = ($this->state['others']['use_https']) ? "true" : "false";
+            if($this->state['others']['use_https']) {
+                $setEnv['APP_URL'] = str_replace("http://", "https://", $setEnv['APP_URL']);
+            } else {
+                $setEnv['APP_URL'] = str_replace("https://", "http://", $setEnv['APP_URL']);
+            }
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
 
             if($setEnv['USE_HTTPS'] != getenv('USE_HTTPS')) {

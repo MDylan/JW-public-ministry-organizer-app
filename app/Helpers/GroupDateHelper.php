@@ -27,7 +27,7 @@ class GroupDateHelper {
     }
 
     public function generateDate(string $date) {
-        Log::debug($date);
+        // Log::debug($date);
         $date = Carbon::parse($date);                       
 
         $date_info = $this->group->dates()->where('date', '=', $date)->first();
@@ -56,10 +56,10 @@ class GroupDateHelper {
 
         $future_changes = $this->group->futureChanges;
         if($future_changes !== null) {
-            Log::debug('Vannak jövőbeli változtatások');
+            // Log::debug('Vannak jövőbeli változtatások');
             $change_date = Carbon::parse($future_changes->change_date);
             if($date->gte($change_date)) {
-                Log::debug('jövőbeli, így módosítom');
+                // Log::debug('jövőbeli, így módosítom');
                 //overwrite current datas for future changes
                 $group_data = $future_changes->group;
                 $service_days = $disabled_slots = [];
@@ -76,13 +76,13 @@ class GroupDateHelper {
                     }
                 }
             } else {
-                Log::debug('múltbeli dátum');
+                // Log::debug('múltbeli dátum');
             }
         }
         $dayOfWeek = $date->format("w");
         $date_format = $date->format("Y-m-d");
         if(isset($service_days[$dayOfWeek])) {
-            Log::debug('szolgálati nap');
+            // Log::debug('szolgálati nap');
             $start = $date_format." ".$service_days[$dayOfWeek]['start_time'].":00";
             $end_date = $date_format;
             if(strtotime($service_days[$dayOfWeek]['end_time']) == strtotime("00:00")) {
@@ -111,7 +111,7 @@ class GroupDateHelper {
             }
             return $updates;
         } else {
-            Log::debug('törölve lesz');
+            // Log::debug('törölve lesz');
             //it's not a service day, delete if exists
             if($date_info !== null) {
                 $date_info->update([
@@ -126,7 +126,7 @@ class GroupDateHelper {
     }
 
     public function recalculateDates() {
-        Log::debug('Érintett dátumok', $this->reGenerateStat);
+        // Log::debug('Érintett dátumok', $this->reGenerateStat);
         if(count($this->reGenerateStat) > 0) {
             CalculateDateProcess::dispatch($this->group->id, $this->reGenerateStat, auth()->user()->id ?? 0, $this->deleteAfterCalculate);
         }
