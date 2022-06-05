@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Groups;
 
+use App\Helpers\GroupDateHelper;
 use App\Jobs\CalculateDateProcess;
 use App\Models\Group;
 use App\Models\GroupDate;
@@ -160,6 +161,15 @@ class SpecialDateModal extends Component
             return;
         }
 
+        $del = GroupDate::where('date', '=', $this->date)
+            ->where('group_id', '=', $this->groupId)
+            ->delete();
+
+        $helper = new GroupDateHelper($this->groupId);
+        $helper->generateDate($this->date);
+        $helper->recalculateDates();
+
+        /*
         $days = [];
         foreach($this->group->days as $day) {
             $days[$day->day_number] = [
@@ -224,11 +234,11 @@ class SpecialDateModal extends Component
                 ]
             );
         }
-
+        */
         if($del) {
-            if(!$no_need_update) {
-                CalculateDateProcess::dispatch($this->groupId, $this->date, auth()->user()->id, $deleteAfterCalculate);
-            }
+            // if(!$no_need_update) {
+            //     CalculateDateProcess::dispatch($this->groupId, $this->date, auth()->user()->id, $deleteAfterCalculate);
+            // }
             $this->dispatchBrowserEvent('hide-modal', [
                 'id' => 'SpecialDateModal',
                 'message' => __('group.special_dates.confirmDelete.success'),
