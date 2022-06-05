@@ -32,6 +32,7 @@ class SpecialDateModal extends Component
     protected $listeners = [         
         'openModal',
         'deleteDate',
+        'setGroup' => 'mount',
     ];
 
     public function mount($groupId) {
@@ -51,19 +52,20 @@ class SpecialDateModal extends Component
     }
 
     public function getDateData() {
-        $this->state = GroupDate::where('date', '=', $this->date)
-                            ->where('group_id', '=', $this->groupId)
-                            ->whereIn('date_status', [0,2])
-                            ->first()
-                            ->toArray();
-        $this->state['date_start'] = Carbon::parse($this->state['date_start'])->format("H:i");
-        $this->state['date_end'] = Carbon::parse($this->state['date_end'])->format("H:i");
+        $info = GroupDate::where('date', '=', $this->date)
+            ->where('group_id', '=', $this->groupId)
+            ->whereIn('date_status', [0,2])
+            ->first();
+        if($info !== null) {
+            $this->state = $info->toArray();
+            $this->state['date_start'] = Carbon::parse($this->state['date_start'])->format("H:i");
+            $this->state['date_end'] = Carbon::parse($this->state['date_end'])->format("H:i");
+        }
     }
 
     public function openModal($date = false) {
         $this->getGroupData();
         if($date) {
-            // dd('poster');
             $this->date = $date;
             $this->getDateData();
         }

@@ -110,8 +110,10 @@ class Events extends AppComponent
         // $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $this->form_groupId)->firstOrFail()->toArray();
         // if($group['pivot']['group_id']) {
         if($key !== false) {
+            // dd('change', $this->form_groupId);
             session(['groupId' => $this->form_groupId]);
             $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
+            $this->emitTo('groups.special-date-modal', 'setGroup', $this->form_groupId);
         }         
     }
     
