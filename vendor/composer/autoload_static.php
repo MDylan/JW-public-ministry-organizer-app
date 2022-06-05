@@ -666,6 +666,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Helpers\\CollectionHelper' => __DIR__ . '/../..' . '/app/Helpers/CollectionHelper.php',
+        'App\\Helpers\\GroupDateHelper' => __DIR__ . '/../..' . '/app/Helpers/GroupDateHelper.php',
         'App\\Http\\Controllers\\Admin\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/DashboardController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\FinishRegistration' => __DIR__ . '/../..' . '/app/Http/Controllers/FinishRegistration.php',

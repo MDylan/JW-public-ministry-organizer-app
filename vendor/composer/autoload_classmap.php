@@ -22,6 +22,7 @@ return array(
     'App\\Console\\Kernel' => $baseDir . '/app/Console/Kernel.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Helpers\\CollectionHelper' => $baseDir . '/app/Helpers/CollectionHelper.php',
+    'App\\Helpers\\GroupDateHelper' => $baseDir . '/app/Helpers/GroupDateHelper.php',
     'App\\Http\\Controllers\\Admin\\DashboardController' => $baseDir . '/app/Http/Controllers/Admin/DashboardController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
     'App\\Http\\Controllers\\FinishRegistration' => $baseDir . '/app/Http/Controllers/FinishRegistration.php',
