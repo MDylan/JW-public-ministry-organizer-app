@@ -34,7 +34,7 @@
                         </div>
                     </div>
 
-                    <p>@lang('setup.intro')</p>
+                    <p>@lang('setup.intro_info')</p>
 
                     <ol>
                         <li>@lang('setup.intro.step1')</li>

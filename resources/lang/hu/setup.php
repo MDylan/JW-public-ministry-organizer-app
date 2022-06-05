@@ -6,7 +6,7 @@ return [
     'try_again' => 'Próbáld újra',
 
     'welcome' => 'Üdvözöl a telepítő',
-    'intro' => 'A következő lépésekben beállíthatod a programot, hogy megfelelően működjön.',
+    'intro_info' => 'A következő lépésekben beállíthatod a programot, hogy megfelelően működjön.',
     'intro.step1' => 'Követelmények ellenőrzése.',
     'intro.step2' => 'Alapbeállítások elvégzése',
     'intro.step3' => 'Adatbázis beállítás és a kapcsolat ellenőrzése.',
@@ -52,7 +52,7 @@ return [
         'MAIL_USERNAME' => 'felhasználói név'
     ],
 
-    'account_setup' => 'Fiók beállítása',
+    'account_setup_info' => 'Fiók beállítása',
     'account_setup.intro' => 'Mielőtt használatba vehetnéd a programot, el kell készítened a felhasználói fiókodat.',
     'account_setup.name' => 'Írd be a neved',
     'account_setup.email' => 'Írd be az email címed',

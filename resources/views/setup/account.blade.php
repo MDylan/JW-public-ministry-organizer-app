@@ -7,7 +7,7 @@
 
             <div class="card card-primary card-outline">
                 <div class="card-header">
-                    <h5>@lang('setup.account_setup')</h5>
+                    <h5>@lang('setup.account_setup_info')</h5>
                 </div>
                 <div class="card-body">
 
