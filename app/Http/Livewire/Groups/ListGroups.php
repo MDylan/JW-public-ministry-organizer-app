@@ -62,7 +62,7 @@ class ListGroups extends AppComponent
      * Send request email
      */
     public function requestGroupCreatorPrivilege() {
-        $this->state['phone'] = auth()->user()->phone;
+        $this->state['phone'] = auth()->user()->phone_number;
         $validatedData = Validator::make($this->state, [
             'congregation' => 'required|min:3',
             'reason' => 'required|min:10',
