@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'title' => 'Segélyszolgálat szervező',
+    'title' => 'Közterület szervező',
     'menu-admin' => 'Adminisztráció',
     'menu-home' => 'Főoldal',
     'menu-users' => 'Felhasználók',
