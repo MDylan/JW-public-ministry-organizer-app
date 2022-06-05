@@ -36,7 +36,7 @@ return array (
     6 => 'Saturday',
   ),
   'days_head' => 'Service days',
-  'days_info' => 'If you modify the time intervals of the day, the modification will be valid from today. If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days listed below will not be affected.',
+  'days_info' => 'If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days will not be affected.',
   'deletegroup' => 'Delete group',
   'disabled_time_slots' => 'Disabled time slots',
   'disabled_time_slots_info' => 'Warning! The chosen time slots will not be available for booking.',

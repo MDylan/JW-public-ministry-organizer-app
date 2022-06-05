@@ -218,7 +218,7 @@ return [
         ],
     ],
     'history' => 'Előzmények',
-    'days_info' => 'Ha már van valakinek betervezve olyan szolgálata, ami kívül esik az új időponttól, akkor az módosítva vagy törölve lesz attól függően, hogy belefér e az új időtartamba vagy sem. A régi szolgálati napokat és a lent megadott különleges napokat ez nem érinti.',
+    'days_info' => 'Ha már van valakinek betervezve olyan szolgálata, ami kívül esik az új időponttól, akkor az módosítva vagy törölve lesz attól függően, hogy belefér e az új időtartamba vagy sem. A régi szolgálati napokat és a különleges napokat ez nem érinti.',
     'special_dates' => [
         'title' => 'Különleges napok',
         'info' => 'Itt különleges napokat adhatsz meg, amikor valamiért eltér a szolgálat ideje attól ahogy egyébként lenni szokott, vagy le is tilthatsz adott napot, hogy aznapra ne lehessen szolgálatot betervezni. Ha aznapra már valaki betervezett szolgálatot, akkor mentés után a rendszer automatikusan ellenőrzi, hogy belefér e a megadott időtartamba. Ha nem, akkor módosítja/törli a szolgálatot.',

@@ -65,7 +65,7 @@ return array (
     'light' => 'Light theme',
     'system' => 'System theme',
   ),
-  'title' => 'Help service organizer',
+  'title' => 'Public Ministry organizer',
   'top_notifies' => 
   array (
     'group_approvals' => 'In the :groupName group :events event is waiting for approval (:year/:month)',
