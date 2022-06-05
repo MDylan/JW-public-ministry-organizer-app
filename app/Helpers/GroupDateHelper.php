@@ -71,8 +71,10 @@ class GroupDateHelper {
                     ];
                 }
                 if(count($future_changes->disabled_slots)) {
-                    foreach($future_changes->disabled_slots as $slot) {
-                        $disabled_slots[$slot['day_number']][$slot['slot']] = true;
+                    foreach($future_changes->disabled_slots as $slots) {
+                        foreach($slots as $slot) {
+                            $disabled_slots[$slot['day_number']][$slot['slot']] = true;
+                        }
                     }
                 }
             } else {

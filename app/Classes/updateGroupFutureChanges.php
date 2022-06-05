@@ -50,18 +50,23 @@ class updateGroupFutureChanges {
             $this->parent_group = Group::findOrFail($group->parent_group_id)->toArray();
         }
 
-        $slots = GroupDayDisabledSlots::where('group_id', '=', $this->group->id)
-                            ->orderBy('day_number', 'asc')
-                            ->orderBy('slot', 'asc')
-                            ->get()->toArray();
-        foreach($slots as $slot) {
-            $this->disabled_slots[$slot['day_number']][$slot['slot']] = true;
-        }
+        // $slots = GroupDayDisabledSlots::where('group_id', '=', $this->group->id)
+        //                     ->orderBy('day_number', 'asc')
+        //                     ->orderBy('slot', 'asc')
+        //                     ->get()->toArray();
+        // foreach($slots as $slot) {
+        //     $this->disabled_slots[$slot['day_number']][$slot['slot']] = true;
+        // }
 
         $this->changes = $this->group->futureChanges;
         // dd($this->changes);
         $this->days = $this->changes->days;
-        $this->disabled_slots = $this->changes->disabled_slots;
+        foreach($this->changes->disabled_slots as $slots) {
+            foreach($slots as $slot) {
+                $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
+            }
+        }
+        // $this->disabled_slots = ;
     }
 
     public function getState() {
@@ -107,15 +112,15 @@ class updateGroupFutureChanges {
         if(!$d_slots_compare) {
             GroupDayDisabledSlots::where('group_id', '=', $this->group->id)->delete();
             if(count($this->disabled_slots)) {
-                foreach($this->disabled_slots as $day => $slot) {
-                    // foreach($slots as $slot => $value) {
-                        // if(!$value) continue;
+                foreach($this->disabled_slots as $day => $slots) {
+                    foreach($slots as $slot => $value) {
+                        if(!$value) continue;
                         GroupDayDisabledSlots::create([
                             'group_id' => $this->group->id,
-                            'day_number' => $slot['day_number'],
-                            'slot' => $slot['slot']
+                            'day_number' => $day,
+                            'slot' => $slot
                         ]);
-                    // }
+                    }
                 }
             }
             $must_refresh = true;

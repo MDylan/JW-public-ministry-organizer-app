@@ -152,10 +152,12 @@ class UpdateGroupForm extends AppComponent
             $future->getChanges($this->group->id);
             $this->state = $future->getState();
             $this->days = $future->getDays();
-            $disabled_slots = $future->getDisabledSlots();
-            foreach($disabled_slots as $slot) {
-                $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
-            }
+            $this->disabled_slots = $future->getDisabledSlots();
+            // foreach($disabled_slots as $slots) {
+            //     foreach($slots as $slot) {
+            //         $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
+            //     }
+            // }
         }
 
         //remove future changes
@@ -247,13 +249,14 @@ class UpdateGroupForm extends AppComponent
             foreach($this->disabled_slots as $day => $slots) {
                 foreach($slots as $slot => $value) {
                     if(!$value) continue;
-                    $disabled_slots[$day] = [
+                    $disabled_slots[$day][$slot] = [
                         'day_number' => $day,
                         'slot' => $slot
                     ];
                 }
             }
         }
+        // dd($this->disabled_slots, $disabled_slots);
 
         $this->saveFutureChanges($validatedData, $validatedDays, $disabled_slots);
 
