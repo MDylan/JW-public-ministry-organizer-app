@@ -44,7 +44,7 @@ class AccountController extends Controller
             'email_verified_at' => now()
         ]);
 
-        (new DatabaseSeeder())->callWith(StaticPagesSetupSeeder::class, [
+        (new DatabaseSeeder())->callWith(\Database\Seeders\StaticPagesSetupSeeder::class, [
             'user_id' => $user->id
         ]);
         cache()->forget('sidemenu_auth');
