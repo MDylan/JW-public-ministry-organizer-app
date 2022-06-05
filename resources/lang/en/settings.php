@@ -1,6 +1,9 @@
 <?php
 
 return array (
+  'app_name' => 'Site name (This will appear as the sender of the mail.)',
+  'app_url' => 'Web address of the site (URL)',
+  'failed_jobs_retry' => 'Run failed tasks again',
   'languages' => 
   array (
     'confirmDelete' => 
@@ -31,6 +34,25 @@ return array (
     ),
     'visibility_changed' => 'The visibility of the language has been changed.',
   ),
+  'mail' => 'Send mail',
+  'mail_encryption' => 'Encryption type used for mailing',
+  'mail_from_address' => 'Email address of the sender',
+  'mail_host' => 'Mail server address',
+  'mail_info' => 'The site sends out countless notifications to the user, so proper setting of the mailing system is crucial. You can test the settings without saving by clicking on the "Mail test" button.',
+  'mail_mailer' => 'Send mail through by',
+  'mail_password' => 'Password used for mailing',
+  'mail_port' => 'Port (For example: 25 / 465 / 587)',
+  'mail_test' => 'Mail test',
+  'mail_test_error' => 'Sending email has failed!',
+  'mail_test_on_progress' => 'Please wait, sending mail is in progress...',
+  'mail_test_success' => 'Email has been sent successfully!',
+  'mail_username' => 'Username used for mailing',
+  'main' => 
+  array (
+    'info' => 'Please consider that whatever modification you make here, it might have a significant impact on the operation of the whole site.',
+    'title' => 'Site default settings',
+  ),
+  'no_encryption' => 'No encryption',
   'others' => 
   array (
     'claim_group_creator' => 'Group overseer authorization can be requested on the "Group" page.',
@@ -54,4 +76,20 @@ return array (
     'success' => 'Command ran successfully',
     'title' => 'Run Artisan commands',
   ),
+  'schedule_error' => 'ERROR! The scheduled task has not run for a long time (or has not yet run at all). This might cause malfuntioning.',
+  'schedule_info' => 'The scheduled tasks ensure that the site functions properly (e.g. email notifications may be sent out, user data may be updated, etc.). Please make sure that it is set up at your hosting service provider that the run of the scheduled tasks happens once every minute (cron).
+You can read more about it in
+<a href="https://laravel.com/docs/8.x/scheduling#running-the-scheduler" target="_blank">documentation.</a>',
+  'software_url' => 'Website of the software',
+  'status' => 
+  array (
+    'failed_jobs' => 'Failed tasks',
+    'last_schedule_run' => 'Last run of scheduled tasks',
+    'php_version' => 'PHP version',
+    'software_version' => 'Software version',
+    'title' => 'System status',
+    'waiting_jobs' => 'Waiting tasks',
+  ),
+  'there_are_failed_jobs' => 'An error occured during the run of one or more tasks. You have received a notification email about the error. Please try to run the task(s) again. If the error keeps occuring, please contact the software developer about it and send them the content of the notification email.',
+  'timezone' => 'Time zone',
 );

@@ -14,6 +14,7 @@ return array (
   ),
   'calendars' => 'Calendars',
   'calendars_info' => 'If you switch on one of them, you will be able to add quickly your service to your calendar from the event bar on the right side.',
+  'captcha_error' => 'Captcha error, or you waited for too long. Please try again.',
   'delete' => 
   array (
     'alert' => 'Attention, this action will delete your current profile as well, and all your personal data will perish, and you will be signed out immediately.',
@@ -38,6 +39,7 @@ return array (
     'info' => 'Information about how your data is protected: We use your personal data only on this site. As a default setting, your email address and telephone number are visible to everybody who is in the same group with you. But after registration, you will be able to change this setting under the "My profile" menu so that only group servants and group helpers might see these.',
     'registration' => 'Finish registration',
   ),
+  'first_day_of_week' => 'First day of the week',
   'gdpr' => 
   array (
     'download' => 'Download my personal data',

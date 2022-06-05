@@ -25,6 +25,13 @@ return array (
     'line_5' => 'If you wish to modify this setting, please go to the "Publishers" menu to reattach the groups.',
     'subject' => 'Important: The main group setting has been detached.',
   ),
+  'anonymize' => 
+  array (
+    'line_1' => 'We are informing you that your personal data will soon be deleted from the :appName site due to GDPR regulations. Following deletion, you will not be able to log in.',
+    'line_2' => 'This is necessary because it has been too long since you have last logged in.',
+    'line_3' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest.',
+    'subject' => 'IMPORTANT: Your access will soon be revoked.',
+  ),
   'dear' => 'Dear',
   'deletePersonalData' => 
   array (
@@ -116,6 +123,7 @@ return array (
     'line_5' => 'The link below can be used only for confirming your registration.',
     'subject' => 'You have been invited to become the user of the :appName page.',
   ),
+  'footer' => 'This is an automatically generated email. Please, do not reply.',
   'groupUserAdded' => 
   array (
     'line_1' => 'This is an automatically generated notification about :groupAdmin inviting you to join the :groupName group.',
@@ -150,4 +158,10 @@ return array (
   'registerWelcome' => 'Successful registration on :url. Please click on the link below to confirm your registration.',
   'signature' => 'Your brothers, 
 The authors of the Help Service Organizer page',
+  'testmail' => 
+  array (
+    'line_1' => 'This is a test notification. If you have received this, it means that the email settings are correct.',
+    'line_2' => 'Thank you for using this app :)',
+    'subject' => 'Test notification.',
+  ),
 );

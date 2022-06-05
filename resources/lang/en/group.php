@@ -26,17 +26,17 @@ return array (
   'color_someone' => 'Somebody has signed up',
   'create_info' => 'You will be able to edit the group data after the group has been created. You will be added automatically to the group and you will be granted with group overseer authorization. You will be able to add new members in the "Publishers" menu.',
   'days' => 
-  array (    
+  array (
+    0 => 'Sunday',
     1 => 'Monday',
     2 => 'Tuesday',
     3 => 'Wednesday',
     4 => 'Thursday',
     5 => 'Friday',
     6 => 'Saturday',
-    0 => 'Sunday',
   ),
   'days_head' => 'Service days',
-  'days_info' => 'If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days listed below will not be affected.',
+  'days_info' => 'If you modify the time intervals of the day, the modification will be valid from today. If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days listed below will not be affected.',
   'deletegroup' => 'Delete group',
   'disabled_time_slots' => 'Disabled time slots',
   'disabled_time_slots_info' => 'Warning! The chosen time slots will not be available for booking.',
@@ -275,6 +275,7 @@ Except these actions, everything else can be performed by the group servant as w
     'no_special_dates' => 'No special days in this month',
     'note' => 'Remarks (can be seen by all group members)',
     'note_placeholder' => 'E.g.: special campaign.',
+    'saved' => 'Special day saved.',
     'statuses' => 
     array (
       0 => 'No',
@@ -342,6 +343,22 @@ Except these actions, everything else can be performed by the group servant as w
     '23:00' => '23:00',
     '23:30' => '23:30',
     '24:00' => '24:00',
+  ),
+  'update' => 
+  array (
+    'from' => 'Modification will be valid from',
+    'in_progress' => 'A modification for the future has already been set. Only after it has become valid, you will be able to modify any actual data. The modification will be valid from: :dateFrom. The modification has been set by :userName - please, check with him/her.',
+    'in_progress_delete' => 'Delete future modification',
+    'in_progress_delete_confirm' => 
+    array (
+      'error' => 'Deletion failed.',
+      'message' => 'Planned services will be superseded and the system will modify/delete them.',
+      'question' => 'Are you sure you want to delete this future modification?',
+      'success' => 'The future modification has been deleted.',
+    ),
+    'in_progress_show' => 'Click here to see the planned modification.',
+    'info' => 'The modifications above will be valid from the chosen day. Please consider that if you give a day that is later than today, you will not be able to make a new modification until the chosen day.',
+    'wrong_date' => 'You cannot set a date that is earlier than today.',
   ),
   'user' => 
   array (

@@ -2,6 +2,8 @@
 
 return array (
   'daily_data' => 'Daily data',
+  'date_from' => 'From',
+  'date_to' => 'Until',
   'day' => 'Day',
   'day_stats' => 
   array (
@@ -24,16 +26,22 @@ return array (
     'ready' => 'The number of hours when we reached the min. headcount limit and so we were able to serve.',
     'service_hours' => 'The amount of time that all publishers spent in service (sum).',
   ),
+  'download_in_excel_format' => 'Download as excel file',
+  'filter_all_event' => 'Denied applications are also counted',
+  'filter_sub_group' => 'Sub-groups are also counted',
   'help' => 'Explanation for the data',
   'loading' => 'Statistics loading, please wait...',
   'modify' => 'Modification',
   'month' => 'Month',
+  'period' => 'Time period',
   'publisher' => 
   array (
     'days' => 'Different days',
     'events' => 'Different occasions',
     'hours' => 'Planned hours',
     'hours_info' => 'The occasions when the publisher was unable to serve due to lack of min. headcount are not excluded.',
+    'joined' => 'Joined',
+    'last_event' => 'Last service',
   ),
   'publishers_data' => 'Publishers',
   'statistics' => 'Statistics',

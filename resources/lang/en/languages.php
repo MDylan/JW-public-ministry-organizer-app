@@ -1,12 +1,12 @@
 <?php
 
-return [
-    'hu' => 'Hungarian',
-    'en' => 'English',
-    'de' => 'German',
-    'ro' => 'Romanian',
-    'fr' => 'French',
-    'sk' => 'Slovak',
-    'es' => 'Spanish',
-    'it' => 'Italian',
-];
+return array (
+  'de' => 'German',
+  'en' => 'English',
+  'es' => 'Spanish',
+  'fr' => 'French',
+  'hu' => 'Hungarian',
+  'it' => 'Italian',
+  'ro' => 'Romanian',
+  'sk' => 'Slovakian',
+);
