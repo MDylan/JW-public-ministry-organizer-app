@@ -13,6 +13,7 @@ Please see my videos [here](https://www.youtube.com/channel/UC98z7F9PB8AF-ZPcgIz
 ## Basic features
 
 - You can create multiple groups / places where your congregation will make public ministry
+- Multiple congregation can use it (they can create separate groups)
 - Custom service day and time for each groups
 - Easy to use for publishers
 - Four right privilige in all group
