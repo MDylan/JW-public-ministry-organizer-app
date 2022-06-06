@@ -16,7 +16,7 @@ Please see my videos [here](https://www.youtube.com/channel/UC98z7F9PB8AF-ZPcgIz
 - Multiple congregation can use it (they can create separate groups)
 - Custom service day and time for each groups
 - Easy to use for publishers
-- Four right privilige in all group
+- Four privilege levels in each group
 - Mobile friendly
 - Multi language support
 - GDPR ready
