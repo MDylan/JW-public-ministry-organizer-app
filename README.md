@@ -2,6 +2,7 @@
 # JW Public Ministry Organizer App
 
 This is a great tool to organize your congregation public ministry service.
+You can install it almost any webserver. (See requirements)
 
 
 ## Demo
@@ -17,6 +18,7 @@ Please see my videos [here](https://www.youtube.com/channel/UC98z7F9PB8AF-ZPcgIz
 - Four right privilige in all group
 - Mobile friendly
 - Multi language support
+- GDPR ready
 
 Based on [Laravel 8](https://laravel.com/)
 
@@ -63,8 +65,14 @@ We recommend to use https connection. You can enable it into "Administration/Set
 ## Installation
 
 1. Upload all files to your webserver.
-2. Set your public path root folder to "/public" directory. (This is important!)
+2. Set your document root path to "/public" directory. (This is important!)
 3. Open your site url, and make the step-by-step setup to install.
+
+If you have any error under installation, just delete .env file and open your site again.
+
+### Important!
+Do NOT delete .env file after you create any sensitive data in your site.
+Most of the personal data are encrypted, based on "APP_KEY" variable in .env file, so if you modify this, you lose your old encrypted data!
 
     
 ## FAQ
@@ -89,5 +97,5 @@ I'm a pioneer and love public ministry service! I'm living in Hungary.
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT Lincense](https://choosealicense.com/licenses/mit/)
 
