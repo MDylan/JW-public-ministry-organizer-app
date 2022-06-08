@@ -99,7 +99,7 @@
                                             </button>
                                 @if($group_signs) 
                                     @foreach ($group_signs as $icon => $sign)
-                                        @if ($sign['checked'])
+                                        @if ($sign['checked'] ?? false)
                                             <button wire:click="filterIcon('{{ $icon }}')"
                                                 class="btn btn-sm p-1 mr-1 
                                                 @if (($filter['signs'][$icon] ?? null) == true)
@@ -160,7 +160,7 @@
                                     <div class="w-100"></div>
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
-                                            @if ($sign['checked'])
+                                            @if ($sign['checked'] ?? false)
                                                 @if($editor && !$copy_fields['signs']
                                                   || ($user->id == Auth::id() && ($sign['change_self'] ?? null) == true && !$copy_fields['signs'])
                                                  )

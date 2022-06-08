@@ -16,7 +16,7 @@ Please see my videos [here](https://www.youtube.com/channel/UC98z7F9PB8AF-ZPcgIz
 - Multiple congregation can use it (they can create separate groups)
 - Custom service day and time for each groups
 - Easy to use for publishers
-- Four right privilige in all group
+- Four privilege levels in each group
 - Mobile friendly
 - Multi language support
 - GDPR ready
@@ -39,10 +39,10 @@ Any help are welcomed! :)
 - You must set your domain's root path to "/public" folder.
 - Public domain name
 
-## PHP REQUIMENTS
+## PHP REQUIREMENTS
 - Minimum PHP 8.0.7 
 - Allow URL fopen
-- Enable intl extension
+- INTL PHP extension
 - BCMath PHP Extension
 - Ctype PHP Extension
 - Fileinfo PHP Extension
@@ -60,7 +60,7 @@ There are some basic protection in login and registration system.
 3. You can enable google recaptcha (not neccessary if you not want to)
 
 - User's name and phone number stored in encrypted format in database.
-- User's can use 2FA login (you can set this in the "Profile" menu.
+- User's can use 2FA login (you can set this in the "Profile" menu.)
 
 We recommend to use https connection. You can enable it into "Administration/Settings" menu.
 ## Installation
