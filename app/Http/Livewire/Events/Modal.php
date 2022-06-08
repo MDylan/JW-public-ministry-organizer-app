@@ -342,7 +342,8 @@ class Modal extends AppComponent
                 $cell_start += $step;
             }
         }
-        ksort($disabled_slots);
+        if(is_array($disabled_slots))
+            ksort($disabled_slots);
 
         //filter what not available
         foreach($slots as $key => $times) {
