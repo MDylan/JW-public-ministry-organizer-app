@@ -275,20 +275,22 @@
                                     <div class="input-group mb-1">
                                         <div class="input-group-prepend">
                                             <div class="input-group-text">
-                                                <input wire:model.defer="state.signs.{{$sign}}.checked" type="checkbox" />
+                                                <input wire:model="state.signs.{{$sign}}.checked" type="checkbox" />
                                             </div>
                                             <button class="btn btn-outline-success" style="width:45px;" type="button">
                                                 <i class="fa {{$sign}}"></i>
                                             </button>
                                         </div>
-                                        <input type="text" wire:model.defer="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text">@lang('group.signs.change')</span>
-                                            <select wire:model.defer="state.signs.{{$sign}}.change_self" class="form-control">
-                                                <option value="0">@lang('No')</option>
-                                                <option value="1">@lang('Yes')</option>
-                                            </select>
-                                        </div>
+                                        @if($state['signs'][$sign]['checked'] ?? false)
+                                            <input type="text" wire:model.defer="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">@lang('group.signs.change')</span>
+                                                <select wire:model.defer="state.signs.{{$sign}}.change_self" class="form-control">
+                                                    <option value="0">@lang('No')</option>
+                                                    <option value="1">@lang('Yes')</option>
+                                                </select>
+                                            </div>
+                                        @endif
                                     </div>
                                     @endforeach
                                 @endif                                
