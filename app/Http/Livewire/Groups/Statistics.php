@@ -177,36 +177,40 @@ class Statistics extends AppComponent
             }
         }
 
-        $days_array = $this->group->days->toArray();
+        // $days_array = $this->group->days->toArray();
         $period = CarbonPeriod::create($this->first_day, $this->last_day);
-        $days = [];
-        foreach($days_array as $day) {
-            $days[$day['day_number']] = $day;
-        }
+        // $days = [];
+        // foreach($days_array as $day) {
+        //     $days[$day['day_number']] = $day;
+        // }
         //total slots
         foreach ($period as $date) {
             $dayOfWeek = $date->format('w');
             $date_format = $date->format("Y-m-d");
+            // dump($date_format);
             $key = $date->format('U');
-            if(isset($days[$dayOfWeek]) || isset($dates[$key]) ) {
-                if(isset($dates[$key])) {
+
+            if(!isset($day_stats[$key]['service_hour'])) $day_stats[$key]['service_hour'] = 0;
+            if(!isset($day_stats[$key]['ready'])) $day_stats[$key]['ready'] = 0;
+            if(!isset($day_stats[$key]['max'])) $day_stats[$key]['max'] = 0;
+            if(!isset($day_stats[$key]['empty'])) $day_stats[$key]['empty'] = 0;
+            if(!isset($day_stats[$key]['not_enough'])) $day_stats[$key]['not_enough'] = 0;
+
+            if(!isset($day_stats[$key]['min_available_time'])) $day_stats[$key]['min_available_time'] = 0;
+            if(!isset($day_stats[$key]['max_available_time'])) $day_stats[$key]['max_available_time'] = 0;
+
+            if(/*isset($days[$dayOfWeek]) ||*/ isset($dates[$key]) ) {
+                // if(isset($dates[$key])) {
                     $start = strtotime($dates[$key]['date_start']);
                     $max = strtotime($dates[$key]['date_end']);
-                } else {
-                    $start = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['start_time'].":00");
-                    $max = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['end_time'].":00");  
-                }
+                // } else {
+                //     $start = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['start_time'].":00");
+                //     $max = strtotime($date->format('Y-m-d')." ".$days[$dayOfWeek]['end_time'].":00");  
+                // }
                 
                 $day_stats[$key]['date'] = $date_format;
 
-                if(!isset($day_stats[$key]['service_hour'])) $day_stats[$key]['service_hour'] = 0;
-                if(!isset($day_stats[$key]['ready'])) $day_stats[$key]['ready'] = 0;
-                if(!isset($day_stats[$key]['max'])) $day_stats[$key]['max'] = 0;
-                if(!isset($day_stats[$key]['empty'])) $day_stats[$key]['empty'] = 0;
-                if(!isset($day_stats[$key]['not_enough'])) $day_stats[$key]['not_enough'] = 0;
 
-                if(!isset($day_stats[$key]['min_available_time'])) $day_stats[$key]['min_available_time'] = 0;
-                if(!isset($day_stats[$key]['max_available_time'])) $day_stats[$key]['max_available_time'] = 0;
 
                 //if it's a disabled date, skip it
                 if( isset($dates[$key]) ) {
@@ -248,6 +252,8 @@ class Statistics extends AppComponent
                         $day_stats[$key]['empty'] = $hours[$date_data['min_time']];
                     } 
                 }
+            } else {
+                unset($day_stats[$key]);
             }
         }
         ksort($day_stats);
