@@ -45,6 +45,7 @@ class Modal extends AppComponent
     public $show_content = false;
     public $bulk_function = false;
     public $bulk_ids = null;
+    public $refreshUp = false;
 
     public function mount($groupId = 0) {
     }
@@ -54,6 +55,8 @@ class Modal extends AppComponent
         if($this->error !== false) return;
         $this->active_tab = '';
         $this->polling = true;
+        if($this->refreshUp !== false)
+            $this->emitTo($this->refreshUp, 'refresh');
     }
 
     public function getRole() {
@@ -369,7 +372,7 @@ class Modal extends AppComponent
         $this->day_events = $day_events;
     }
 
-    public function openModal($date, $groupId = 0) {
+    public function openModal($date, $groupId = 0, $refreshUp = false) {
         $this->reset();
         $this->date = $date;
         if($groupId > 0) {
@@ -382,6 +385,7 @@ class Modal extends AppComponent
         
         $this->polling_check();
         $this->show_content = true;
+        $this->refreshUp = $refreshUp;
     }
 
     public function hiddenModal() {

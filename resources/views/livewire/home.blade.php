@@ -157,7 +157,7 @@
             <!-- /.row -->
             <script>
                 function modal(groupId, date) {
-                    livewire.emitTo('events.modal', 'openModal', date, groupId);
+                    livewire.emitTo('events.modal', 'openModal', date, groupId, 'home');
                     // livewire.emit('pollingOff');
                 }
             </script>
