@@ -249,7 +249,9 @@ class Modal extends AppComponent
                 'peak' => 0
             ];
         }
-
+        if(count($this->date_data) == 0) {
+            abort('403', __('group.color_explanation.color_default'));
+        }
         if($now < $max) {
             $this->current_available = true;
         }
