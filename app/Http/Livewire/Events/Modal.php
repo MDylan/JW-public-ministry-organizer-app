@@ -393,6 +393,8 @@ class Modal extends AppComponent
     public function hiddenModal() {
         $this->polling = false;
         $this->show_content = false;
+        if($this->refreshUp !== false)
+            $this->emitTo($this->refreshUp, 'refresh');
     }
 
     public function openPosterModal($posterId = 0) {
