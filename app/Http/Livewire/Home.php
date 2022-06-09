@@ -18,13 +18,13 @@ class Home extends Component
     private $events = [];
     private $available_days = [];
     public $listeners = [
-        'refresh' => 'render',
+        'refresh' => 'pollingOn',
         'pollingOn',
         'pollingOff'
     ];
     private $groups = [];
     private $group_roles = [];
-    public $polling = false;
+    public $polling = true;
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -155,6 +155,14 @@ class Home extends Component
                 }
             }
         }
+    }
+
+    /**
+     * Open Events Modal
+     */
+    public function openEventsModal($groupId, $date) {
+        $this->pollingOff();
+        $this->emitTo('events.modal', 'openModal', $date, $groupId, 'home');
     }
 
     public function pollingOn() {

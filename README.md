@@ -9,11 +9,22 @@ You can install it almost any webserver. (See requirements)
 
 Please see my videos [here](https://www.youtube.com/channel/UC98z7F9PB8AF-ZPcgIz4FNw/videos).
 
+## Screenshots
+
+Home screen
+![Home sceen](screenshots/screenshot_home.jpg)
+
+Day events screen
+![Day events sceen](screenshots/screenshot_day_events.jpg)
+
+Monthly calendar
+![Monthly calendar](screenshots/screenshot_calendar.jpg)
 
 ## Basic features
 
 - You can create multiple groups / places where your congregation will make public ministry
-- Multiple congregation can use it (they can create separate groups)
+- Multiple congregation can use it (they can create separate groups [See](screenshots/groups_diagram.jpg) )
+
 - Custom service day and time for each groups
 - Easy to use for publishers
 - Four privilege levels in each group

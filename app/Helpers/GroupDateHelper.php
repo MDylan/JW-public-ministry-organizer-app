@@ -34,7 +34,8 @@ class GroupDateHelper {
         
         //don't modify past dates and not modify special dates
         if(Carbon::today()->gt($date) || ($date_info->date_status ?? 1) !== 1) {
-            return ($date_info->toArray() ?? []);        
+            if($date_info === null) return false;
+            else $date_info->toArray();        
         }
         // dd($date_info->toArray());
         $group_data = $this->group->toArray();

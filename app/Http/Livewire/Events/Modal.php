@@ -45,6 +45,7 @@ class Modal extends AppComponent
     public $show_content = false;
     public $bulk_function = false;
     public $bulk_ids = null;
+    public $refreshUp = false;
 
     public function mount($groupId = 0) {
     }
@@ -54,6 +55,8 @@ class Modal extends AppComponent
         if($this->error !== false) return;
         $this->active_tab = '';
         $this->polling = true;
+        if($this->refreshUp !== false)
+            $this->emitTo($this->refreshUp, 'refresh');
     }
 
     public function getRole() {
@@ -246,7 +249,9 @@ class Modal extends AppComponent
                 'peak' => 0
             ];
         }
-
+        if(count($this->date_data) == 0) {
+            abort('403', __('group.color_explanation.color_default'));
+        }
         if($now < $max) {
             $this->current_available = true;
         }
@@ -342,7 +347,8 @@ class Modal extends AppComponent
                 $cell_start += $step;
             }
         }
-        ksort($disabled_slots);
+        if(is_array($disabled_slots))
+            ksort($disabled_slots);
 
         //filter what not available
         foreach($slots as $key => $times) {
@@ -368,7 +374,7 @@ class Modal extends AppComponent
         $this->day_events = $day_events;
     }
 
-    public function openModal($date, $groupId = 0) {
+    public function openModal($date, $groupId = 0, $refreshUp = false) {
         $this->reset();
         $this->date = $date;
         if($groupId > 0) {
@@ -381,11 +387,14 @@ class Modal extends AppComponent
         
         $this->polling_check();
         $this->show_content = true;
+        $this->refreshUp = $refreshUp;
     }
 
     public function hiddenModal() {
         $this->polling = false;
         $this->show_content = false;
+        if($this->refreshUp !== false)
+            $this->emitTo($this->refreshUp, 'refresh');
     }
 
     public function openPosterModal($posterId = 0) {

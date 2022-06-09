@@ -81,7 +81,8 @@
                                 <tr @if (date("w", $day) == 0) style="border-bottom:2px solid #000;" @endif>
                                     <td class="text-center position-relative">
                                         @if($available_days[$group['id']][$day]) 
-                                            <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
+                                            {{-- <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')"> --}}
+                                            <a href="javascript:void(0);" wire:click="openEventsModal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
                                                 @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
                                                     @if(isset($notAccepts[$group['id']][date("Y-m-d", $day)]))
                                                         <i class="fas fa-balance-scale-right mr-1 mt-1 position-absolute" style="margin-left: -26px"></i>
@@ -153,15 +154,14 @@
             @endforelse
             <!-- /.col-md-6 -->
         </div>
-        @if(count($groups) > 0)
-            <!-- /.row -->
+        {{-- @if(count($groups) > 0)
             <script>
                 function modal(groupId, date) {
-                    livewire.emitTo('events.modal', 'openModal', date, groupId);
+                    livewire.emitTo('events.modal', 'openModal', date, groupId, 'home');
                     // livewire.emit('pollingOff');
                 }
             </script>
-        @endif
+        @endif --}}
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
