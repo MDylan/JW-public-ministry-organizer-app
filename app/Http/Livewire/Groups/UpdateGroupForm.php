@@ -503,8 +503,8 @@ class UpdateGroupForm extends AppComponent
             //remove old time slots if needed
             if(isset($this->disabled_slots[$day['day_number']])) {
                 foreach($this->disabled_slots[$day['day_number']] as $key => $slot) {
-                    if(!in_array($slot, $this->disabled_selects[$day['day_number']])) {
-                        $this->disabled_slots[(int)$day['day_number']][$slot] = false;
+                    if(!in_array($key, $this->disabled_selects[$day['day_number']])) {
+                        $this->disabled_slots[(int)$day['day_number']][$key] = false;
                     }
                 }
             }
