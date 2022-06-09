@@ -61,6 +61,7 @@ class TimeCheck implements Rule, DataAwareRule
         $key = $parts[0];
         // $attr = $parts[1];
         $midnight = strtotime("00:00");
+        if(!isset($this->data[$key][$this->other])) return false;
         $other = $this->other_time = strtotime($this->data[$key][$this->other]);
         $time = strtotime($value);
 
