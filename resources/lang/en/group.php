@@ -51,6 +51,12 @@ return array (
     'off_all' => 'Clear all filters',
     'title' => 'Filter',
   ),
+  'finish_guest_registration' => 
+  array (
+    'alert' => 'Please, use this option only in case when the publisher would be otherwise unable to register themselves.',
+    'help' => 'If you mark this, the user will not have to register but will be signed in by the system and will be included in the group as well. They will also receive a new password and will be notified about it in email.',
+    'label' => 'Guest registration',
+  ),
   'groupCreated' => 'Group has been created!',
   'groupDeleted' => 'The group has been deleted!',
   'groupDeleted_log' => 'The group has been deleted.',
