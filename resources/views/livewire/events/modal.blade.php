@@ -29,7 +29,7 @@
                                     <nav>
                                         <ul class="pagination justify-content-center">
                                             @if (($day_data['prev_date'] ?? false) !== false)
-                                                <li class="page-item">
+                                                <li class="page-item" id="prev_{{$date}}">
                                                     <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['prev_date']}}')">@lang('Previous')</a>
                                                 </li>
                                             @endif
@@ -39,7 +39,7 @@
                                                 </a>
                                             </li>
                                             @if (($day_data['next_date'] ?? false) !== false)
-                                                <li class="page-item">
+                                                <li class="page-item" id="next_{{$date}}">
                                                     <a class="page-link" href="javascript:void(0);" wire:click="setDate('{{$day_data['next_date']}}')">@lang('Next')</a>
                                                 </li>
                                             @endif
