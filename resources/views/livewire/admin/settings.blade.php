@@ -82,6 +82,8 @@
                                 @else
                                     <i class="far fa-check-circle ml-1 text-success"></i>
                                 @endif</li>
+                                <li class="list-group-item">@lang('app.menu-users'): {{ $stat_users }}, @lang('user.online'): {{ $stat_online }}</li>
+                                <li class="list-group-item">@lang('app.menu-groups'): {{ $stat_groups }}</li>
                             </ul>
                         </div>
                     </div>

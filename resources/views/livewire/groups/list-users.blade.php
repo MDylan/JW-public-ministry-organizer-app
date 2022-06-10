@@ -364,6 +364,26 @@
                                 </div>
                             </div>  
                         </div>
+                        @if($state['user']['email_verified_at'] === null && $current_parent_group_id === null)
+                            <div class="row mb-2">
+                                <div class="col-4 text-bold text-right"></div>
+                                <div class="col-8">
+                                    <input wire:model.defer="state.finish_guest_registration" name="finish_guest_registration" wire:ignore.self type="checkbox" id="finish_guest_registration" value="1">
+                                    <label for="finish_guest_registration">
+                                        @lang('group.finish_guest_registration.label')
+                                        <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseGuestHelp" role="button" aria-expanded="false" aria-controls="collapseGuestHelp">
+                                            <i class="fa fa-question"></i>
+                                        </button>
+                                    </label>   
+                                </div>
+                                <div class="collapse col-12" id="collapseGuestHelp">
+                                    <div class="card card-body mt-2">
+                                        {{__('group.finish_guest_registration.help')}}
+                                        <b>{{__('group.finish_guest_registration.alert')}}</b>
+                                    </div>
+                                </div>  
+                            </div>
+                        @endif
                         <div class="row mb-2">
                             <div class="col-4"></div>
                             <div class="col-8">

@@ -15,12 +15,14 @@ use App\Notifications\FinishRegistration;
 use App\Notifications\GroupParentGroupAttachedNotification;
 use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupUserAddedNotification;
+use App\Notifications\LoginData;
 use App\Notifications\UserProfileChangedNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Hash;
 
 class ListUsers extends AppComponent
 {
@@ -181,7 +183,9 @@ class ListUsers extends AppComponent
             'user' => [
                 'name' => $user->name,
                 'phone_number' => $user->phone_number,
+                'email_verified_at' => $user->email_verified_at,
             ],
+            'finish_guest_registration' => 0
         ];
 
         $this->dispatchBrowserEvent('show-modal', ['id' => 'UserModal']);
@@ -202,11 +206,20 @@ class ListUsers extends AppComponent
             $this->state['group_role'] = $selected_user->pivot->group_role;
         }
 
+        if($selected_user->email_verified_at === null) {
+            $finish_guest = [0,1];
+        } else {
+            $finish_guest = [0];
+        }
+
         $v = Validator::make($this->state, [
             'hidden' => 'required|boolean',
             'note' => 'nullable|string|max:50', 
             'group_role' =>  [
                 Rule::In(self::$group_roles),
+            ],
+            'finish_guest_registration' => [
+                Rule::In($finish_guest),
             ],
         ]);
         $v->after(function ($validator) use ($admins, $current_user, $selected_user) {
@@ -261,6 +274,27 @@ class ListUsers extends AppComponent
 
             $user->notify(
                 new UserProfileChangedNotification($data)
+            );
+        }
+        if($validatedData['finish_guest_registration'] == 1 
+                && $selected_user->role === 'registered') {
+            $password = Str::random(10);
+            $selected_user->fill([
+                'password' => Hash::make($password),
+                'role' => 'activated',
+                'email_verified_at' => now()
+            ])->save();
+            $accept = new GroupUserMoves($this->groupId, $selected_user->id);
+            $accept->acceptInvitation();
+
+            $data = [
+                'groupAdmin' => auth()->user()->name,
+                'userMail' => $selected_user->email,
+                'userPassword' => $password
+            ];
+
+            $selected_user->notify(
+                new LoginData($data)
             );
         }
 

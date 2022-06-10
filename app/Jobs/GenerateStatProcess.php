@@ -122,6 +122,8 @@ class GenerateStatProcess implements ShouldQueue
             ];
         }
 
+        if(count($this->date_data) === 0) return false;
+
         $step = $this->date_data['min_time'] * 60;
         
         $slots_array = GenerateSlots::generate($date, $start, $max, $step);
