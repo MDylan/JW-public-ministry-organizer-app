@@ -4,7 +4,9 @@ namespace App\Http\Livewire\Admin;
 
 use App\Classes\setEnvironment;
 use App\Http\Livewire\AppComponent;
+use App\Models\Group;
 use App\Models\Settings as ModelsSettings;
+use App\Models\User;
 use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
@@ -304,9 +306,13 @@ class Settings extends AppComponent
 
         $this->state['default_language'] = $this->settings['default_language'];
 
+
         return view('livewire.admin.settings', [
             'waiting_jobs' => Queue::size(),
-            'failed_jobs' => $failed_jobs
+            'failed_jobs' => $failed_jobs,
+            'stat_users' => User::all()->count(),
+            'stat_online' => User::whereBetween('last_activity', [now()->subMinute(5), now()])->get()->count(),
+            'stat_groups' => Group::all()->count()
         ]);
     }
 }
