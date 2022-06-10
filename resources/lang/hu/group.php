@@ -119,7 +119,7 @@ return [
     'finish_guest_registration' => [
         'label' => 'Vendég regisztráció',
         'help' => 'Ha bejelölöd, akkor a felhasználónak nem kell a regisztrációt megcsinálnia, hanem belépteti a rendszer és bekerül a csoportba is. Új jelszót is kap, melyről emailben értesítjük.',
-        'alert' => 'Ezt a funkciót csak akkor használd, ha olyan hírnököt vettél fel, aki egyébként nem tudna regisztrálni.'
+        'alert' => 'Ezt a funkciót csak olyan hírnöknél használd, aki egyébként nem tudna regisztrálni.'
     ],
     'accept_saved' => 'A meghívást elfogadtad.',
     'accept_log' => 'Belépett a csoportba.',
