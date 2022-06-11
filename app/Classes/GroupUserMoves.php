@@ -14,7 +14,8 @@ class GroupUserMoves {
     private $user;
 
     public function __construct($groupId, $userId) {
-        $this->user = User::findOrFail($userId);
+        $this->user = User::find($userId);
+        if($this->user === null) return;
         $this->setGroup($groupId);
     }
 
@@ -24,7 +25,7 @@ class GroupUserMoves {
 
     //attach a user to the group
     public function attach() {
-
+        if($this->user === null) return;
         $user_sync[$this->user->id] = [
             'group_role' => 'member',
             'note' => '',
@@ -72,6 +73,7 @@ class GroupUserMoves {
 
     //Run when the user accept invitation
     public function acceptInvitation() {
+        if($this->user === null) return;
         $res = $this->user->userGroups()->sync([$this->group->id => [ 'accepted_at' => date('Y-m-d H:i:s')] ], false);
 
         $childs = $this->group->childGroups();
@@ -89,6 +91,7 @@ class GroupUserMoves {
 
     //run when the user reject invitation
     public function rejectInvitation() {
+        if($this->user === null) return;
         $user_sync[$this->user->id] = [
             'group_role' => 'member',
             'note' => '',
@@ -113,6 +116,7 @@ class GroupUserMoves {
 
     //run when a user removed from group
     public function detach() {
+        if($this->user === null) return;
         $user_sync[$this->user->id] = [
             'group_role' => 'member',
             'note' => '',
