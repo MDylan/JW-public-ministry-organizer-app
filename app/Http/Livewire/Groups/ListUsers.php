@@ -388,7 +388,10 @@ class ListUsers extends AppComponent
     }
 
     public function user_admin_groups() {
-        $user_admin_groups = User::find(Auth::id())->userGroupsDeletable()->get(['groups.id', 'groups.name', 'groups.parent_group_id']);
+        $user_admin_groups = User::find(Auth::id())
+        ->userGroupsDeletable()
+        ->whereNull('groups.parent_group_id')
+        ->get(['groups.id', 'groups.name', 'groups.parent_group_id']);
         return $user_admin_groups;
     }
 
