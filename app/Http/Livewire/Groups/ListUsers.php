@@ -677,7 +677,7 @@ class ListUsers extends AppComponent
     }
 
     private function isNotHelper() {
-        return !in_array($this->role, ['admin', 'roler', 'helper']);
+        return !in_array($this->role, ['admin', 'roler']);
     }
 
     private function getRole() {
