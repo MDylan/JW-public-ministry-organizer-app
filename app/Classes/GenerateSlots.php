@@ -16,8 +16,17 @@ class GenerateSlots {
         if($max_hour == 0) $max_hour = 24; // - ($step / 60 / 60);
         $step_hour = ($step / 60 / 60);
 
-        if(date("Gi", $end) == date("G", $end)."30") 
-            $max_hour += $step_hour; //this is for half hours
+        $start_half = false;
+
+        if(date("Gi", $start) == date("G", $start)."30") {
+            $min_hour += 0.5; //this is for half hours
+            $start_half = true;
+        }
+
+        if(date("Gi", $end) == date("G", $end)."30") {
+            if(!$start_half)
+                $max_hour += $step_hour; //this is for half hours
+        }
         
         $times = [];
         for ($hour = $min_hour; $hour < $max_hour; $hour += $step_hour) {
@@ -30,7 +39,7 @@ class GenerateSlots {
             $times[$current_unix] = $current_unix; 
             // $times[$current_unix] = date("Y-m-d H:i", $current_unix);
         }
-        // dd($times);
+        // dd($times, $min_hour, $max_hour);
         return $times;
     }
 
