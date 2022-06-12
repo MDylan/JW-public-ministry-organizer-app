@@ -26,7 +26,7 @@ class GroupDateHelper {
         // dd($this->group->toArray());
     }
 
-    public function generateDate(string $date) {
+    public function generateDate(string $date, $forceRegenerate = false) {
         // Log::debug($date);
         $date = Carbon::parse($date);                       
 
@@ -109,7 +109,7 @@ class GroupDateHelper {
                 $updates
             );
             //if it's updated we will regenerate stat
-            if(!$res->wasRecentlyCreated && $res->wasChanged()){ 
+            if(!$res->wasRecentlyCreated && $res->wasChanged() || $forceRegenerate){ 
                 $this->reGenerateStat[$date_format] = $date_format;
             }
             return $updates;

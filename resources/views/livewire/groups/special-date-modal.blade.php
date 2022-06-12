@@ -14,7 +14,7 @@
                         <div class="row mb-2">
                             <div class="col-md-6">
                                 <label for="state_date">@lang('group.special_dates.date')</label>
-                                <input wire:model="state.date" type="date" id="state_date" class="form-control @error('date') is-invalid @enderror" />
+                                <input @if(isset($state['id'])) disabled @endif wire:model="state.date" type="date" id="state_date" class="form-control @error('date') is-invalid @enderror" />
                                 @error('date')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                             </div>
                             <div class="col-md-6">
