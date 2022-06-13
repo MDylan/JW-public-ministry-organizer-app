@@ -17,6 +17,8 @@ use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
 use App\Http\Controllers\User\TwoFactorSettings;
+use App\Http\Livewire\Admin\AdminNewsletters;
+use App\Http\Livewire\Admin\NewsletterEdit;
 use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
@@ -143,6 +145,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');
             Route::get('/jtc/{group}/{year}/{month}', [jumpToCalendarController::class, 'jump'])->name('jumpToCalendar');
             Route::get('/groups', ListGroups::class)->name('groups'); 
+            Route::get('/newsletters', AdminNewsletters::class)->name('newsletters')->middleware('can:is-groupservant');
 
             //For special roles
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
@@ -151,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
                 Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
+                Route::get('/admin/newsletter_edit/{id?}', NewsletterEdit::class)->name('admin.newsletter_edit');
             });
 
             Route::middleware(['groupMember'])->group(function () {                

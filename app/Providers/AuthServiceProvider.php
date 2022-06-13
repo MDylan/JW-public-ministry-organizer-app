@@ -45,5 +45,16 @@ class AuthServiceProvider extends ServiceProvider
                 return true;
             else return false;
         });
+
+        //admin,translatior or he is a Group servant or Group overseer 
+        Gate::define('is-groupservant', function(User $user) {
+            if($user->hasRole('mainAdmin') || $user->hasRole('translator'))
+                return true;
+            
+            if($user->userGroupsEditable->count() > 0)
+                return true;
+
+            return false;
+        });
     }
 }
