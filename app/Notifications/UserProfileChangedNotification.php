@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Traits\OptOutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Lang;
 
 class UserProfileChangedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use OptOutable, Queueable;
 
     private $data = [];
 
@@ -38,15 +39,10 @@ class UserProfileChangedNotification extends Notification implements ShouldQueue
         $this->data = $data;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function via($notifiable)
+    public function optOut($notifiable)
     {
-        return ['mail'];
+        // Insert opt-out logic that returns a boolean
+        return isset($notifiable->opted_out_of_notifications['UserProfileChangedNotification']);
     }
 
     /**

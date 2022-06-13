@@ -2,16 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Traits\OptOutable;
 use DateTime;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Lang;
 
 class EventDeletedAdminsNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use OptOutable, Queueable;
     private $data;
 
     /**
@@ -36,15 +36,11 @@ class EventDeletedAdminsNotification extends Notification implements ShouldQueue
     {
         $this->data = $data;
     }
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function via($notifiable)
+
+    public function optOut($notifiable)
     {
-        return ['mail'];
+        // Insert opt-out logic that returns a boolean
+        return isset($notifiable->opted_out_of_notifications['EventDeletedAdminsNotification']);
     }
 
     /**
