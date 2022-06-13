@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon" type="image/jpg" href="{{ asset('favicon.png') }}"/>
+  <link rel="shortcut icon" type="image/jpg" href="{{ asset('pmo-favicon.png') }}"/>
   <title>{{ __('app.title') }}</title>
   {!! Packer::css('/plugins/fontawesome-free/css/all.min.css', '/plugins/fontawesome-free/css/cache_fontawesome.css') !!}
   {!! Packer::css('/dist/css/adminlte.min.css', '/dist/css/cache_adminlte.min.css') !!}

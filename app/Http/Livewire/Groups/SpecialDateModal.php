@@ -166,7 +166,7 @@ class SpecialDateModal extends Component
             ->delete();
 
         $helper = new GroupDateHelper($this->groupId);
-        $helper->generateDate($this->date);
+        $helper->generateDate($this->date, true);
         $helper->recalculateDates();
 
         /*

@@ -264,6 +264,7 @@ class Modal extends AppComponent
         $row = 1;
         $peak = 0;
         $slots_array = GenerateSlots::generate($this->date, $start, $max, $step);
+        // dd($slots_array,$this->date, $start, $max, $step);
         foreach($slots_array as $current) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [

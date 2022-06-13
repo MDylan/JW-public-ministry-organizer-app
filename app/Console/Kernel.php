@@ -3,11 +3,13 @@
 namespace App\Console;
 
 use App\Classes\updateGroupFutureChanges;
+use App\Models\AdminNewsletter;
 use App\Models\Event;
 use App\Models\GroupFutureChange;
 use App\Models\LogHistory;
 use App\Models\Settings;
 use App\Models\User;
+use App\Notifications\Newsletter;
 use App\Notifications\UserWillBeAnonymizeNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -93,12 +95,39 @@ class Kernel extends ConsoleKernel
                 )->forceDelete();
         })->daily();
 
-        //check group's future changes
         $schedule->call(function () {
+            //check group's future changes
             $changes = GroupFutureChange::where('change_date', '=', date("Y-m-d"))->get();
             foreach($changes as $change) {
                 $init = new updateGroupFutureChanges();
                 $init->initChanges($change->group_id);
+            }
+
+            $newsletters = AdminNewsletter::where('date', today())
+                ->where('send_newsletter', 1)
+                ->where('status', 1)
+                ->whereNull('sent_time')
+                ->get();
+            foreach($newsletters as $newsletter) {
+                if($newsletter->send_to == 'groupCreators') {
+                    $users = User::whereIn('role', ['groupCreator', 'mainAdmin'])->get();
+                } elseif($newsletter->send_to == 'groupServants') {
+                    $users = User::whereHas('userGroupsEditable')->get();
+                } else {
+                    return;
+                }
+                foreach($users as $user) {
+                    $data = [
+                    'newsletter_id' => $newsletter->id."_".$user->id,
+                    'subject' => $newsletter->getTranslation($user->preferredLocale())->subject,
+                    'content' => $newsletter->getTranslation($user->preferredLocale())->content,
+                    ];
+                    $user->notify(
+                        new Newsletter($data)
+                    );
+                }
+                $newsletter->sent_time = date("Y-m-d H:i:s");
+                $newsletter->save();
             }
         })->everyMinute();
 

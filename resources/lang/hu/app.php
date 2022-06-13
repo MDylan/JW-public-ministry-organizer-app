@@ -11,6 +11,7 @@ return [
     'menu-staticpages' => 'Statikus oldalak',
     'menu-lastevents' => 'Régebbi szolgálataim',
     'menu-translation' => 'Fordítás',
+    'menu-newsletters' => 'Hírlevelek',
     'options' => 'Beállítások',
     'edit' => 'Szerkesztés',
     'delete' => 'Törlés',
@@ -82,4 +83,13 @@ return [
     'update_info' => 'Frissítés előtt kérlek győződj meg róla, hogy készült biztonsági másolat a fájlokról és az adatbázisról. A frissítés a gombra kattintva azonnal elindul, és az oldal karbantartás üzemmódba kapcsol. A frissítés után ismét elérhető lesz.',
     'user_will_be_notified' => 'A felhasználó értesítve lesz róla, ha megváltoztatod.',
     'total' => 'Összesen',
+    'newsletter' => [
+        'not_found' => 'Még nincsenek hírlevelek',
+        'edit' => 'Hírlevél létrehozása és szerkesztése',
+        'subject' => 'Ez lesz a levél tárgya is',
+        'show_to' => 'Ki láthatja és kaphatja meg?',
+        'send_date_helper' => 'Ezen a napon jelenik meg és ekkor is lesz kiküldve hírlevélben',
+        'send_newsletter' => 'Küld ki emailben is',
+        'send_newsletter_helper' => 'Nem esetén csak az oldalon lesz látható, emailben nem küldjük el'
+    ],
 ];
