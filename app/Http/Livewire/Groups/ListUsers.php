@@ -116,7 +116,7 @@ class ListUsers extends AppComponent
         
         $validatedData = $v->validate();
 
-        if(count($validatedData['email'])) {
+        if(count($validatedData['email'] ?? [])) {
             $current_users = $this->group->groupUsers()->pluck('users.id')->toArray();
 
             foreach($validatedData['email'] as $mail) {
