@@ -164,4 +164,5 @@ The authors of the Help Service Organizer page',
     'line_2' => 'Thank you for using this app :)',
     'subject' => 'Test notification.',
   ),
+  'unsubscribe' => 'If you do not wish to receive such emails in the future, you may opt out in the "My Profile" menu.',
 );

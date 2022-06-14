@@ -56,6 +56,17 @@ return array (
   'loginWithUser' => 'I already have an account, I want to log in.',
   'lostPassword' => 'I have forgotten my password',
   'name' => 'Name',
+  'notifications' => 
+  array (
+    'help' => 'You can choose when you do not want to receive email notifications.',
+    'list' => 
+    array (
+      'EventDeletedAdminsNotification' => 'Someone\'s service has been canceled in your group',
+      'EventDeletedNotification' => 'Your service has been canceled',
+      'UserProfileChangedNotification' => 'Someone changed your name and phone number',
+    ),
+    'title' => 'Disable notifications',
+  ),
   'online' => 'Online at the moment',
   'password' => 'Password',
   'passwordConfirmation' => 'Confirm password',
