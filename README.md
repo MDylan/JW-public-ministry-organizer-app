@@ -25,12 +25,16 @@ Monthly calendar
 - You can create multiple groups / places where your congregation will make public ministry
 - Multiple congregation can use it (they can create separate groups [See](screenshots/groups_diagram.jpg) )
 
-- Custom service day and time for each groups
 - Easy to use for publishers
+- Custom service day and time for each groups
+- You can create custom special days (or disable a day)
+- Group owners can approve/decline publisher's services (bulk approval or only one service)
 - Four privilege levels in each group
 - Mobile friendly
 - Multi language support
 - GDPR ready
+- Built in update system
+- Lot of email notification (eg. the service approved/declined/deleted,changed)
 
 Based on [Laravel 8](https://laravel.com/)
 
