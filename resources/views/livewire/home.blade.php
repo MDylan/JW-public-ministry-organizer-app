@@ -119,6 +119,11 @@
                                                     @foreach ($events[$group['id']][$day] as $event)
                                                         <tr>
                                                             <td class="text-center">
+                                                                @if($event['status'] == 0)
+                                                                    <span class="badge badge-warning">
+                                                                        <i class="fas fa-balance-scale-right" title="@lang('event.status_0')"></i>
+                                                                    </span>
+                                                                @endif
                                                                 {{ $event['full_time'] }}
                                                             </td>
                                                         </tr>
