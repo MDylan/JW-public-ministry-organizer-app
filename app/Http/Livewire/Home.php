@@ -2,14 +2,11 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\GroupDayDisabledSlots;
-use App\Models\GroupUser;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Home extends Component
