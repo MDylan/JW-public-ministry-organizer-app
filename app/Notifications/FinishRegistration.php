@@ -72,7 +72,8 @@ class FinishRegistration extends Notification implements ShouldQueue
             ]))
             ->line(Lang::get('email.finishRegistration.line_4'))
             ->line(Lang::get('email.finishRegistration.line_5'))
-            ->action(Lang::get('user.finish.registration'), $this->data['url']);
+            ->action(Lang::get('user.finish.registration'), $this->data['url'])
+            ->line(__('email.footer'));
     }
 
     /**

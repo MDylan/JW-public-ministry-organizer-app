@@ -89,6 +89,7 @@ class EventDeletedNotification extends Notification implements ShouldQueue
         }
        
         $message->action(__('Log in'), url('/'));
+        $message->line(__('email.footer')." ".__('email.unsubscribe'));
 
         return $message;
     }

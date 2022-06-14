@@ -61,7 +61,8 @@ class deletePersonalDataNotification extends Notification implements ShouldQueue
             ->line(Lang::get('email.deletePersonalData.line_1'))
             ->line(Lang::get('email.deletePersonalData.line_2'))
             ->line(Lang::get('email.deletePersonalData.line_3'))
-            ->action(Lang::get('user.delete.button'), $this->data['url']);
+            ->action(Lang::get('user.delete.button'), $this->data['url'])
+            ->line(__('email.footer'));
     }
 
     /**

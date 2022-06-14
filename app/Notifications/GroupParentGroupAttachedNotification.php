@@ -69,7 +69,8 @@ class GroupParentGroupAttachedNotification extends Notification implements Shoul
                         'userName' => $this->data['userName'],
                     ]))
                     ->line(Lang::get('email.ParentGroupAttached.line_5'))
-                    ->action(Lang::get('Log in'), url('/'));
+                    ->action(Lang::get('Log in'), url('/'))
+                    ->line(__('email.footer'));
     }
 
     /**

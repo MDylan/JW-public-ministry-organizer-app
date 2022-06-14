@@ -57,7 +57,8 @@ class FinishRegistrationSuccessNotification extends Notification implements Shou
         return (new MailMessage)
                     ->subject(Lang::get('email.finishRegistration.done.subject'))
                     ->line(Lang::get('email.finishRegistration.done.line_1'))
-                    ->action(__('Log in'), url('/'));
+                    ->action(__('Log in'), url('/'))
+                    ->line(__('email.footer'));
     }
 
     /**

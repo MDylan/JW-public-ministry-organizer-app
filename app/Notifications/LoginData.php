@@ -68,7 +68,8 @@ class LoginData extends Notification implements ShouldQueue
                 'userPassword' => $this->data['userPassword']
             ]))
             ->line(Lang::get('email.loginData.line_5'))
-            ->action(Lang::get('Log in'), url('/login'));
+            ->action(Lang::get('Log in'), url('/login'))
+            ->line(__('email.footer'));
     }
 
     /**
