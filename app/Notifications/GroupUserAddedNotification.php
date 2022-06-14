@@ -63,7 +63,8 @@ class GroupUserAddedNotification extends Notification implements ShouldQueue
                                         'groupAdmin' => $this->data['groupAdmin']
                                     ]))
                     ->line(Lang::get('email.groupUserAdded.line_2'))
-                    ->action(Lang::get('Log in'), url('/'));
+                    ->action(Lang::get('Log in'), url('/'))
+                    ->line(__('email.footer'));
     }
 
     /**

@@ -61,7 +61,8 @@ class NewAdminNotification extends Notification implements ShouldQueue
                     ->subject(Lang::get('email.newadmin.subject'))
                     ->line(Lang::get('email.newadmin.line_1', ['newAdmin' => $this->data['newAdmin']]))
                     ->line(Lang::get('email.newadmin.line_2', ['adminBy' => $this->data['adminBy']]))
-                    ->line(Lang::get('email.newadmin.line_3'));
+                    ->line(Lang::get('email.newadmin.line_3'))
+                    ->line(__('email.footer'));
     }
 
     /**

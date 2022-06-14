@@ -19,7 +19,12 @@ class Profile extends Controller
     public function __invoke()
     {        
         return view('user.profile', [
-            'firstday' => $this->getUserFirstDay()
+            'firstday' => $this->getUserFirstDay(),
+            'notifications' => [
+                'EventDeletedAdminsNotification',
+                'EventDeletedNotification',
+                'UserProfileChangedNotification',
+            ]
         ]);
     }
 }

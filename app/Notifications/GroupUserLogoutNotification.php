@@ -64,7 +64,8 @@ class GroupUserLogoutNotification extends Notification implements ShouldQueue
                     ->line(Lang::get('email.GroupUserLogout.line_2', [
                         'userName' => $this->data['userName'],
                     ]))
-                    ->action(Lang::get('Log in'), url('/'));
+                    ->action(Lang::get('Log in'), url('/'))
+                    ->line(__('email.footer'));
     }
 
     /**

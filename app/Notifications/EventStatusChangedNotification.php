@@ -80,7 +80,8 @@ class EventStatusChangedNotification extends Notification implements ShouldQueue
             ->line(__('email.event.status_changed.'.($status).'.line_2', [
                 'newServiceDate' => $date.": ".$start." - ".$end,
             ]))
-            ->action(__('Log in'), url('/'));
+            ->action(__('Log in'), url('/'))
+            ->line(__('email.footer'));
     }
 
     /**

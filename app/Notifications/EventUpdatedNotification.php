@@ -96,7 +96,8 @@ class EventUpdatedNotification extends Notification implements ShouldQueue
             ->line(__('email.event.modified.line_6', [
                 'userName' => $this->data['userName'],
             ]))
-            ->action(__('Log in'), url('/'));
+            ->action(__('Log in'), url('/'))
+            ->line(__('email.footer'));
     }
 
     /**

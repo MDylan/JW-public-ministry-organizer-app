@@ -2,7 +2,6 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\GroupDayDisabledSlots;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use DateTime;
@@ -20,7 +19,8 @@ class Home extends Component
     public $listeners = [
         'refresh' => 'pollingOn',
         'pollingOn',
-        'pollingOff'
+        'pollingOff',
+        'setOrder'
     ];
     private $groups = [];
     private $group_roles = [];
@@ -173,6 +173,55 @@ class Home extends Component
         $this->polling = false;
     }
 
+    /**
+     * Reposition an array element by its key.
+     *
+     * @param array      $array The array being reordered.
+     * @param string|int $key They key of the element you want to reposition.
+     * @param int        $order The position in the array you want to move the element to. (0 is first)
+     *
+     * @throws \Exception
+     */
+    function repositionArrayElement(array $array, $key, int $order)
+    {
+        if(($a = array_search($key, array_keys($array))) === false){
+            throw new \Exception("The {$key} cannot be found in the given array.");
+        }
+        $p1 = array_splice($array, $a, 1);
+        $p2 = array_splice($array, 0, $order);
+        return array_merge($p2, $p1, $array);
+    }
+
+    public function setOrder($groupId, $type) {
+        $groups = Auth::user()->groupsAccepted()->orderByPivot('list_order')->get();
+        $full_list = [];
+
+        foreach($groups as $group) {
+            $full_list[] = $group->id;
+        }
+        $new_key = $current_key = array_search($groupId, $full_list);
+        if($new_key === false) return;
+
+        if($type == 'up') {
+            $new_key--;
+            if($new_key < 0) $new_key = 0;
+        }
+        if($type == 'down') {
+            $new_key++;
+            if($new_key > count($full_list)) {
+                $new_key = count($full_list);
+            }
+        }
+        $full_list = $this->repositionArrayElement($full_list, $current_key, $new_key);     
+        //update order
+        foreach($full_list as $list_order => $groupId) {
+            Auth::user()->groupsAccepted()->updateExistingPivot($groupId, ['list_order' => $list_order]);
+        }
+
+        $this->dispatchBrowserEvent('success', ['message' => __('app.order_changed')]);
+        
+    }
+
     public function render()
     {
         $this->days = [];
@@ -185,29 +234,31 @@ class Home extends Component
         foreach ($period as $date) {
             $this->days[] = $date->timestamp;
         }
-        $stats = Auth::user()->groupsAccepted()->with([
-            'stats' => function($q) use($start, $end) {
-                $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
-                $q->orderBy('time_slot');
-            },
-            'justEvents' => function($q) use($start, $end) {
-                $q->where('user_id', '=', Auth::id());
-                $q->whereIn('status', [0,1]);
-                $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
-            },
-            'days',
-            'dates' => function($q) use($start, $end) {
-                $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
-            },
-            'posters' => function($q) {
-                $q->where('show_date', '<=', date("Y-m-d"));
-                $q->where(function ($q) {
-                    $q->where('hide_date', '>=', date("Y-m-d"))
-                        ->orWhereNull('hide_date');
-                });
-            },
-            'futureChanges'
-        ])->get()->toArray();
+        $stats = Auth::user()->groupsAccepted()
+                    ->orderByPivot('list_order')
+                    ->with([
+                        'stats' => function($q) use($start, $end) {
+                            $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                            $q->orderBy('time_slot');
+                        },
+                        'justEvents' => function($q) use($start, $end) {
+                            $q->where('user_id', '=', Auth::id());
+                            $q->whereIn('status', [0,1]);
+                            $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                        },
+                        'days',
+                        'dates' => function($q) use($start, $end) {
+                            $q->whereBetween('date', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                        },
+                        'posters' => function($q) {
+                            $q->where('show_date', '<=', date("Y-m-d"));
+                            $q->where(function ($q) {
+                                $q->where('hide_date', '>=', date("Y-m-d"))
+                                    ->orWhereNull('hide_date');
+                            });
+                        },
+                        'futureChanges'
+                    ])->get()->toArray();
         // dd($stats);
         $ids = [];
         foreach($stats as $stat) {

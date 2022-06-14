@@ -90,5 +90,13 @@ return [
         'title' => 'Adataim elrejtése',
         'help' => 'Az email címedet és a telefonszámodat alapértelmezetten mindenki láthatja, akivel egy csoportban szolgálsz. Itt megadhatod, hogy csak azok lássák akik jogosultsággal bírnak a csoportodban (pl. csoportszolga, csoport segítő).',
     ],
-
+    'notifications' => [
+        'title' => 'Értesítések letiltása',
+        'help' => 'Válaszd ki, hogy mely esetekben nem szeretnél email értesítést kapni.',
+        'list' => [
+            'EventDeletedAdminsNotification' => 'Törölték valakinek a szolgálatát a csoportodban',
+            'EventDeletedNotification' => 'Törölték a te szolgálatodat',
+            'UserProfileChangedNotification' => 'Valaki módosította a nevedet és a telefonszámodat',
+        ]
+    ],
 ];

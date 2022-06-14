@@ -60,7 +60,8 @@ class Newsletter extends Notification implements ShouldQueue
         return (new MailMessage)
                     ->subject($this->data['subject'])
                     ->line(new HtmlString($this->data['content']))
-                    ->action(Lang::get('Log in'), url('/login'));
+                    ->action(Lang::get('Log in'), url('/login'))
+                    ->line(__('email.footer'));
     }
 
     /**

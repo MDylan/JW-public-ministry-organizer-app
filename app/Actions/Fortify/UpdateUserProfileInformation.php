@@ -26,7 +26,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         if(isset($input['hidden_fields'])) {
             $input['hidden_fields_keys'] = array_keys($input['hidden_fields']);
         }
-        // dd($input['hidden_fields']);
+        // dd($input['opted_out_of_notifications']);
         Validator::make($input, [
             'name' => ['required', 'string', 'max:50', 'min:2'],
             'email' => [
@@ -39,7 +39,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'phone_number' => ['numeric'],
             'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))],
             'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])],
-            'firstDay' => ['sometimes', 'numeric', 'in:0,1']
+            'firstDay' => ['sometimes', 'numeric', 'in:0,1'],
+            'opted_out_of_notifications' => ['sometimes', 'array']
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
         if ($input['email'] !== $user->email &&
@@ -52,7 +53,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'email' => $input['email'],
                 'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
                 'hidden_fields' => isset($input['hidden_fields']) ? $input['hidden_fields'] : null,
-                'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null
+                'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null,
+                'opted_out_of_notifications' => isset($input['opted_out_of_notifications']) ? $input['opted_out_of_notifications'] : null,
             ])->save();
         }
     }

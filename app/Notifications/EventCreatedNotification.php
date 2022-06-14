@@ -78,7 +78,8 @@ class EventCreatedNotification extends Notification implements ShouldQueue
                 'newServiceDate' => $date.": ".$start." - ".$end,
             ]))
             ->line(__('email.event.created.line_3'))
-            ->action(__('Log in'), url('/'));
+            ->action(__('Log in'), url('/'))
+            ->line(__('email.footer'));
     }
 
     /**

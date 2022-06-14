@@ -39,7 +39,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'phone_number',
         'email_verified_at',
         'hidden_fields',
-        'firstDay'
+        'firstDay',
+        'opted_out_of_notifications'
     ];
 
     /**
@@ -71,6 +72,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'phone_number' => 'encrypted',
         'hidden_fields' => 'array',
         'name' => 'encrypted',
+        'opted_out_of_notifications' => 'array',
     ];
 
     /**
@@ -86,7 +88,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'two_factor_recovery_codes',
         'remember_token',
         'accepted_gdpr',
-        'hidden_fields'
+        'hidden_fields',
+        'opted_out_of_notifications'
     ];
 
     /**
@@ -102,7 +105,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'phone' => '0',
         'role' => 'registered',
         'last_login_ip' => '',
-        'isAnonymized' => 1
+        'isAnonymized' => 1,
+        'opted_out_of_notifications' => ''
     ];
 
 
@@ -137,7 +141,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
     public function userGroups() {
         return $this->belongsToMany(Group::class)
-                    ->withPivot(['group_role', 'note', 'accepted_at'])
+                    ->withPivot(['group_role', 'note', 'accepted_at','list_order'])
                     ->withTimestamps()
                     ->wherePivot('deleted_at', null)
                     ->using(GroupUser::class);

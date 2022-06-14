@@ -6,6 +6,7 @@ return [
     'registerFail' => 'Amennyiben nem te kérted ezt a regisztrációt, regisztrációdat automatikusan törölni fogjuk 48 óra múlva.',
     'signature' => 'Üdvözlettel a Segélyszolgálat Szervező oldal készítői',
     'footer' => 'Ez egy automatikus levél, kérjük ne válaszolj rá.',
+    'unsubscribe' => 'Ha nem szeretnél ilyen emailt kapni a jövőben, akkor kikapcsolhatod a "Profilom" menüben.',
     'newadmin' => [
         'subject' => 'Új adminisztrátor lett kinevezve',
         'line_1' => 'Ez egy automatikus értesítés arról, hogy :newAdmin ki lett nevezve az oldalad adminisztrátornak.',
