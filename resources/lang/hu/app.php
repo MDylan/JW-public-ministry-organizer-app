@@ -92,4 +92,7 @@ return [
         'send_newsletter' => 'Küld ki emailben is',
         'send_newsletter_helper' => 'Nem esetén csak az oldalon lesz látható, emailben nem küldjük el'
     ],
+    'order_changed' => 'A sorrend módosult.',
+    'up' => 'Fel',
+    'down' => 'Le'
 ];

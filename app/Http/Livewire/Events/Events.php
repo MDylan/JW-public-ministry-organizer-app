@@ -203,7 +203,7 @@ class Events extends AppComponent
     // }
 
     public function getGroups() {
-        $this->groups = Auth()->user()->groupsAcceptedFiltered()
+        $this->groups = Auth()->user()->groupsAcceptedFiltered()->orderByPivot('list_order')
                                 ->with(['dates' => function($q) {
                                     $q->whereBetween('date', [$this->first_day, $this->last_day]);
                                 }])

@@ -141,7 +141,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
     public function userGroups() {
         return $this->belongsToMany(Group::class)
-                    ->withPivot(['group_role', 'note', 'accepted_at'])
+                    ->withPivot(['group_role', 'note', 'accepted_at','list_order'])
                     ->withTimestamps()
                     ->wherePivot('deleted_at', null)
                     ->using(GroupUser::class);
