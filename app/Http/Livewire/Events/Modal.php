@@ -132,7 +132,8 @@ class Modal extends AppComponent
         $dayOfWeek = $d->format("w");
         $this->day_data['date'] = $date;
         $this->day_data['dateFormat'] = $d->format(__('app.format.date').'.,')." ".__('event.weekdays_short.'.$dayOfWeek);
-        
+        $now = time();
+
         $next_date = GroupDate::where('group_id', '=', $groupId)
                             ->where('date', '>', $date)
                             ->orderBy('date', 'ASC')
@@ -171,9 +172,18 @@ class Modal extends AppComponent
         $group['users_active'] = $users_active;
         unset($group['group_users_all']);
         $this->group_data = $group; //->toArray();
+
+        if($next_date->date) {
+            //disable next day, if max extend days reached
+            $next = Carbon::parse($next_date->date);
+            if($next->greaterThan(date("Y-m-d", ($now + ($this->group_data['max_extend_days'] * 24 * 60 * 60))))) {
+                $this->day_data['next_date'] = false;
+            }
+        }
+
         // dd($this->group_data);
         //calculate next end previous day
-        $now = time();
+        
         // $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
         // $next_date = $this_date = strtotime($date); 
         // $next = false;
