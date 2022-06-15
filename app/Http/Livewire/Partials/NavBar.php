@@ -28,9 +28,13 @@ class NavBar extends Component
         $this->notifications = [];
         
         if(Auth::user()) {
-            $groups = Auth::user()->userGroups()->with([
+            $groups = Auth::user()->userGroups()
+                ->select('groups.id', 'groups.name', 'groups.need_approval')
+                ->with([
                 // 'userGroups',
-                'latest_news',
+                'latest_news' => function($q) {
+                    $q->select('id', 'updated_at');
+                },
                 'news_log'  => function($q) {
                     $q->where('user_id', '=', Auth::id()); 
                 }

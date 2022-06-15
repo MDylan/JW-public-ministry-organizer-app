@@ -151,6 +151,14 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         return $this->userGroups()->wherePivotNotNull('accepted_at');
     }
 
+    public function userGroupsAcceptedOnly() {
+        return $this->belongsToMany(Group::class)
+                    ->withPivot(['group_role',])
+                    ->wherePivot('deleted_at', null)
+                    ->wherePivotNotNull('accepted_at')
+                    ->using(GroupUser::class);
+    }
+
     public function groupsAcceptedFiltered() {
         return $this->belongsToMany(Group::class)
                         ->withPivot(['group_role', 'note', 'accepted_at'])

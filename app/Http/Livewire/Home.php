@@ -34,7 +34,7 @@ class Home extends Component
         }        
     }
 
-    public function getStat($group_stats) {
+    public function getStat($group_stats, $day_stats_array) {
         foreach($group_stats as $group) {
             $this->groups[] = $group['id'];
             $this->group_roles[$group['id']] = $group['pivot']['group_role'];
@@ -107,7 +107,8 @@ class Home extends Component
 
             //loading stats from db
             $colors = [];
-            foreach($group["stats"] as $stat) {
+            // foreach($group["stats"] as $stat) {
+            foreach($day_stats_array[$group['id']] as $stat) {
                 $day = strtotime($stat['day']);
                 //if it's a disabled day, skip this
                 if(!$this->available_days[$group['id']][$day]) continue;
@@ -234,17 +235,20 @@ class Home extends Component
         foreach ($period as $date) {
             $this->days[] = $date->timestamp;
         }
-        $stats = Auth::user()->groupsAccepted()
+        $stats = Auth::user()->userGroupsAcceptedOnly()
+                    ->select('groups.id', 'groups.name', 
+                                'groups.color_default', 'groups.color_empty', 'groups.color_someone', 'groups.color_minimum', 'groups.color_maximum')                       
                     ->orderByPivot('list_order')
                     ->with([
-                        'stats' => function($q) use($start, $end) {
-                            $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
-                            $q->orderBy('time_slot');
-                        },
+                        // 'stats' => function($q) use($start, $end) {
+                        //     $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                        //     $q->orderBy('time_slot');
+                        // },
                         'justEvents' => function($q) use($start, $end) {
                             $q->where('user_id', '=', Auth::id());
                             $q->whereIn('status', [0,1]);
                             $q->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)]);
+                            $q->select('id', 'group_id', 'status', 'day', 'start', 'end');
                         },
                         'days',
                         'dates' => function($q) use($start, $end) {
@@ -265,7 +269,22 @@ class Home extends Component
             $ids[] = $stat['id'];
         }
 
-        $this->getStat($stats);
+        $day_stats = DB::table('day_stats')
+                        ->whereIn('group_id', $ids)
+                        ->whereBetween('day', [date("Y-m-d", $start), date("Y-m-d", $end)])
+                        ->orderBy('time_slot')
+                        ->get();
+        // dd($day_stats);
+        $day_stats_array = [];
+        foreach($day_stats as $day_stat) {
+            $day_stats_array[$day_stat->group_id][] = [
+                'time_slot' => $day_stat->time_slot,
+                'day' => $day_stat->day,
+                'events' => $day_stat->events,
+            ];
+        }
+
+        $this->getStat($stats, $day_stats_array);
         
         $notAcceptedEvents = DB::table('events')
                                 ->groupBy('group_id', 'day')
