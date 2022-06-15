@@ -108,7 +108,7 @@ class Home extends Component
             //loading stats from db
             $colors = [];
             // foreach($group["stats"] as $stat) {
-            foreach($day_stats_array[$group['id']] as $stat) {
+            foreach($day_stats_array[$group['id']] ?? [] as $stat) {
                 $day = strtotime($stat['day']);
                 //if it's a disabled day, skip this
                 if(!$this->available_days[$group['id']][$day]) continue;
