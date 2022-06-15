@@ -16,7 +16,7 @@
   @yield('header_style')
   @livewireStyles
 </head>
-<body class="sidebar-mini" style="height:auto;">
+<body class="sidebar-mini dark-mode" style="height:auto;">
   <div class="wrapper">
     <!-- Navbar -->
     @livewire('partials.nav-bar')
