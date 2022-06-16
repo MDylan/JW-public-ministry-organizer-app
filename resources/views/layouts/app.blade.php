@@ -16,7 +16,7 @@
   @yield('header_style')
   @livewireStyles
 </head>
-<body class="sidebar-mini dark-mode" style="height:auto;">
+<body class="sidebar-mini @if($_COOKIE['currentTheme'] == 'dark') dark-mode @endif" style="height:auto;">
   <div class="wrapper">
     <!-- Navbar -->
     @livewire('partials.nav-bar')
@@ -41,6 +41,7 @@
     <!-- /.content-wrapper -->
     <!-- Main Footer -->
     @include('layouts.partials.footer')
+    {{-- @livewire('partials.footer') --}}
     <!-- Control Sidebar -->
     <aside class="control-sidebar control-sidebar-dark" id="control_sidebar">
       <!-- Control sidebar content goes here -->
