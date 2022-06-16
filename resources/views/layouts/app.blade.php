@@ -16,7 +16,7 @@
   @yield('header_style')
   @livewireStyles
 </head>
-<body class="sidebar-mini @if($_COOKIE['currentTheme'] == 'dark') dark-mode @endif" style="height:auto;">
+<body class="sidebar-mini @if(($_COOKIE['currentTheme'] ?? 'light') == 'dark') dark-mode @endif" style="height:auto;">
   <div class="wrapper">
     <!-- Navbar -->
     @livewire('partials.nav-bar')
