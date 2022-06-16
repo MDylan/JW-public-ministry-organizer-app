@@ -41,7 +41,6 @@
     <!-- /.content-wrapper -->
     <!-- Main Footer -->
     @include('layouts.partials.footer')
-    {{-- @livewire('partials.footer') --}}
     <!-- Control Sidebar -->
     <aside class="control-sidebar control-sidebar-dark" id="control_sidebar">
       <!-- Control sidebar content goes here -->
