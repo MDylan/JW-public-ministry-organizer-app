@@ -7,35 +7,19 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
-use Illuminate\Support\HtmlString;
 
-class Newsletter extends Notification implements ShouldQueue
+class UserRoleIsGroupCreatorNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    private $data = [];
-
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 2880;
-    /**
-     * The number of seconds to wait before retrying the job.
-     *
-     * @var int
-     */
-    public $backoff = 60;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct()
     {
-        $this->data = $data;
+        //
     }
 
     /**
@@ -58,9 +42,11 @@ class Newsletter extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->subject($this->data['subject'])
-                    ->line(new HtmlString($this->data['content']))
-                    ->action(Lang::get('Log in'), url('/login'));
+            ->subject(Lang::get('email.groupCreator.subject'))
+            ->line(Lang::get('email.groupCreator.line_1'))
+            ->line(Lang::get('email.groupCreator.line_2'))
+            ->action(Lang::get('Log in'), url('/login'))
+            ->line(__('email.footer'));
     }
 
     /**

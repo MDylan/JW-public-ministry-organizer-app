@@ -139,6 +139,7 @@ return array(
     'App\\Notifications\\TestNotification' => $baseDir . '/app/Notifications/TestNotification.php',
     'App\\Notifications\\UserProfileChangedNotification' => $baseDir . '/app/Notifications/UserProfileChangedNotification.php',
     'App\\Notifications\\UserRegisteredNotification' => $baseDir . '/app/Notifications/UserRegisteredNotification.php',
+    'App\\Notifications\\UserRoleIsGroupCreatorNotification' => $baseDir . '/app/Notifications/UserRoleIsGroupCreatorNotification.php',
     'App\\Notifications\\UserWillBeAnonymizeNotification' => $baseDir . '/app/Notifications/UserWillBeAnonymizeNotification.php',
     'App\\Notifications\\deletePersonalDataNotification' => $baseDir . '/app/Notifications/deletePersonalDataNotification.php',
     'App\\Observers\\EventObserver' => $baseDir . '/app/Observers/EventObserver.php',

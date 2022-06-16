@@ -33,7 +33,8 @@ class Settings extends AppComponent
         'maintenance' => false,
         'gdpr' => false,
         'use_https' => false,
-        'use_recaptcha' => false,        
+        'use_recaptcha' => false,
+        'show_homepage_alert' => false
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
@@ -73,6 +74,7 @@ class Settings extends AppComponent
 
         $this->state['recaptcha']['site_key'] = env('RECAPTCHA_SITE_KEY', '');
         $this->state['recaptcha']['secret_key'] = env('RECAPTCHA_SECRET_KEY', '');
+        $this->state['homepage_message'] = $this->settings['homepage_message'] ?? '';
         foreach($this->from_env as $key) {
             $this->state['env'][$key] = env($key, '');
         }        
@@ -169,12 +171,19 @@ class Settings extends AppComponent
     }
 
     public function saveOthers() {
-        // dd($this->state['others']);
+        // dd($this->state);
         if(isset($this->state['others'])) {
             foreach($this->state['others'] as $key => $value) {
                 ModelsSettings::updateOrCreate(
                     ['name' => $key],
                     ['value' => $value]
+                ); 
+            }
+
+            if(isset($this->state['homepage_message'])) {
+                ModelsSettings::updateOrCreate(
+                    ['name' => 'homepage_message'],
+                    ['value' => $this->state['homepage_message']]
                 ); 
             }
 

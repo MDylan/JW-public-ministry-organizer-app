@@ -1,4 +1,4 @@
-<nav wire:ignore.self class="main-header navbar navbar-expand navbar-light navbar-white">
+<nav wire:ignore.self class="main-header navbar navbar-expand navbar-light  @if(($_COOKIE['currentTheme'] ?? 'light') == 'dark') navbar-dark @else navbar-wight @endif">
     <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">

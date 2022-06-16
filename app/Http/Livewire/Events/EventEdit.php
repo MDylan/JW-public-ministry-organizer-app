@@ -132,7 +132,7 @@ class EventEdit extends AppComponent
         }])->findOrFail($groupId);
         // dd($group);
         if(in_array($this->role, ['admin', 'roler', 'helper'])) {
-            $this->users = $group->users()->get()->toArray();
+            $this->users = $group->users()->select('users.id', 'users.name')->get()->toArray();
         }
     
         $this->day_data = [];

@@ -343,13 +343,19 @@
                                                     </div>
                                                 </div>
                                             @endif
+                                            <div class="@if(!$state['others']['show_homepage_alert']) d-none @endif">
+                                                <div class="form-group" wire:ignore>
+                                                    <label for="homepage_message">@lang('settings.homepage_message')</label><br/>
+                                                    <textarea wire:model="state.homepage_message" name="homepage_message" id="" cols="30" rows="10" class="form-control summernote"></textarea>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>                                    
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button type="button" class="btn btn-primary" wire:click="saveOthers">
+                            <button wire:loading.attr="disabled" type="button" class="btn btn-primary" wire:click="saveOthers">
                                 <i class="fa fa-save mr-1"></i>
                                 @lang('app.saveChanges')
                             </button>
@@ -399,7 +405,15 @@
             </div>
         </div>
     </div>
+    @section('header_style') 
+        <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
+    @endsection
     @section('footer_scripts')
+    {{-- <script src="{{ asset('js/alpine.min.js') }}"></script> --}}
+    <script src="{{ asset('plugins/summernote/summernote-bs4.min.js') }}"></script>
+    @if (trans('news.editor_lang') !== null)
+        <script src="{{ asset('plugins/summernote/lang/summernote-' . __('news.editor_lang') . '.min.js') }}"></script>            
+    @endif
     <script src="{{ asset('plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script>
     <script>
         $(document).ready(function() {
@@ -434,7 +448,28 @@
                     }
                 });
             })
-
+            $('.summernote').summernote({
+                    height: 200,
+                    @if (trans('news.editor_lang') !== null)
+                        lang: '@lang('news.editor_lang')', // default: 'en-US'
+                    @endif
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'italic', 'underline', 'clear']],
+                        ['fontsize', ['fontsize']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link']],
+                        ],
+                        callbacks: {
+                            //save into livewire model when leave texteditor
+                            onBlur: function(e) {
+                                code = $(this).summernote('code');
+                                @this.set('state.homepage_message', code);
+                            }
+                        }
+                });
         });
     </script>
     

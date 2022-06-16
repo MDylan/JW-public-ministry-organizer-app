@@ -124,6 +124,12 @@ return array (
     'subject' => 'You have been invited to become the user of the :appName page.',
   ),
   'footer' => 'This is an automatically generated email. Please, do not reply.',
+  'groupCreator' => 
+  array (
+    'line_1' => 'We are informing you that you have been given the opportunity to create a new group. You can do this in the "Groups" menu.',
+    'line_2' => 'Please review the videos in the Help menu for see your options. Also, where possible, descriptions will help you so please read these when using for the first time.',
+    'subject' => 'You have been granted "Group creator" permission',
+  ),
   'groupUserAdded' => 
   array (
     'line_1' => 'This is an automatically generated notification about :groupAdmin inviting you to join the :groupName group.',

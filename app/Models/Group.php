@@ -74,6 +74,11 @@ class Group extends Model
                         ->using(GroupUser::class);
     }
 
+    public function groupUsersAllOnly() {
+        return $this->belongsToMany(User::class)
+                        ->using(GroupUser::class);
+    }
+
     public function currentUser() {
         return $this->belongsToMany(User::class)
                         ->withPivot('group_role')

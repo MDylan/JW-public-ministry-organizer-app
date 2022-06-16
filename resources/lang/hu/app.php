@@ -94,5 +94,6 @@ return [
     ],
     'order_changed' => 'A sorrend módosult.',
     'up' => 'Fel',
-    'down' => 'Le'
+    'down' => 'Le',
+    'system_message' => 'Fontos rendszer üzenet',
 ];

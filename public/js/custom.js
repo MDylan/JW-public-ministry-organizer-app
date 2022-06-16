@@ -50,6 +50,7 @@ function switchTheme2(e) {
             mainHeader.classList.remove('navbar-light');
             mainHeader.classList.remove('navbar-white');
         }
+        setCookie("currentTheme", 'dark', 180);
     } else {
         if (document.body.classList.contains('dark-mode')) {
             document.body.classList.remove("dark-mode");
@@ -59,8 +60,16 @@ function switchTheme2(e) {
             mainHeader.classList.add('navbar-white');
             mainHeader.classList.remove('navbar-dark');
         }
+        setCookie("currentTheme", 'light', 180);
     }
 }
+
+function setCookie(cname, cvalue, exdays) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    let expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
 
 $(function () {
     $('[data-toggle="tooltip"]').tooltip()

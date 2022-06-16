@@ -95,7 +95,9 @@ class Modal extends AppComponent
                         'current_date' => function($q) use ($date) {
                             $q->where('date', '=', $date);
                         },
-                        'groupUsersAll', //we will unset this later!
+                        'groupUsersAllOnly' => function($q) { //we will unset this later!
+                            $q->select('users.id', 'group_user.signs', 'group_user.accepted_at');
+                        }, 
                         // 'dates',
                         'posters' => function($q) use ($date) {
                             $q->where('show_date', '<=', $date);
@@ -132,7 +134,8 @@ class Modal extends AppComponent
         $dayOfWeek = $d->format("w");
         $this->day_data['date'] = $date;
         $this->day_data['dateFormat'] = $d->format(__('app.format.date').'.,')." ".__('event.weekdays_short.'.$dayOfWeek);
-        
+        $now = time();
+
         $next_date = GroupDate::where('group_id', '=', $groupId)
                             ->where('date', '>', $date)
                             ->orderBy('date', 'ASC')
@@ -159,21 +162,30 @@ class Modal extends AppComponent
         //     }
         // }
         $user_signs = $users_active = [];
-        if(is_array($group['group_users_all'])) {
-            foreach($group['group_users_all'] as $user) {
-                if(isset($user['pivot']['signs'])) {
-                    $user_signs[$user['id']] = $user['pivot']['signs'];
+        if(is_array($group['group_users_all_only'])) {
+            foreach($group['group_users_all_only'] as $user) {
+                if(isset($user['signs'])) {
+                    $user_signs[$user['id']] = json_decode($user['signs'], true);
                 }
-                $users_active[$user['id']] = $user['pivot']['accepted_at'] ? true : false;
+                $users_active[$user['id']] = $user['accepted_at'] ? true : false;
             }
         }
         $group['users_signs'] = $user_signs;
         $group['users_active'] = $users_active;
-        unset($group['group_users_all']);
+        unset($group['group_users_all_only']);
         $this->group_data = $group; //->toArray();
+
+        if($next_date->date) {
+            //disable next day, if max extend days reached
+            $next = Carbon::parse($next_date->date);
+            if($next->greaterThan(date("Y-m-d", ($now + ($this->group_data['max_extend_days'] * 24 * 60 * 60))))) {
+                $this->day_data['next_date'] = false;
+            }
+        }
+
         // dd($this->group_data);
         //calculate next end previous day
-        $now = time();
+        
         // $max_time = $now + ($this->group_data['max_extend_days'] * 24 * 60 * 60);
         // $next_date = $this_date = strtotime($date); 
         // $next = false;

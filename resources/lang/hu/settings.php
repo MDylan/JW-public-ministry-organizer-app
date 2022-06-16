@@ -43,7 +43,9 @@ return [
         'gdpr' => 'GDPR bekapcsolása (Akkor kapcsold be, ha az EU-n belül üzemelteted az oldalt). A felhasználók lementhetik a személyes adataikat egy .json fájlba.',
         'use_recaptcha' => 'reCaptcha használata (spam védelem). Bekapcsolásával jelentősen megerősítheted az oldal robotok elleni védelmét. Google recaptchat fog használni a belépésnél és a regisztrációnál az oldal.',
         'use_https' => 'https titkosítás bekapcsolása (Figyelem! Akkor kapcsold be, ha a tárhely szolgáltatód aktiválta a https kapcsolatot. Téves bekapcsolás esetén az oldal nem fog betöltődni!)',
+        'show_homepage_alert' => 'Üzenet mutatása a nyitólapon',
     ],
+    'homepage_message' => 'A nyitólapi üzenet tartalma',
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
     'run' => [
         'title'    => 'Artisan parancsok futtatása',

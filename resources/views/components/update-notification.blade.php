@@ -25,7 +25,7 @@
                     <h5><i class="icon fas fa-exclamation-triangle"></i>@lang('app.urgent')!</h5>
                     @lang('app.update_info')
                 </div>
-                <a role="button" href="updater.update" class="btn btn-warning">
+                <a role="button" href="/updater.update" class="btn btn-warning">
                     <i class="far fa-check-circle mr-1"></i>
                     {{ __('laraupdater.Update_Now') }}</a>
             </div>

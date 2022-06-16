@@ -19,12 +19,12 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-        {{-- @if (count($groups))
-            <div class="p-3 mb-2 bg-primary text-white rounded">
-                <i class="fas fa-list mr-1"></i>
-                
+        @if (config('show_homepage_alert') == 1)
+            <div class="callout callout-info">
+                <h5><i class="far fa-bell mr-1"></i> <b>@lang('app.system_message')</b></h5>
+                {!! config('homepage_message') !!}
             </div>
-        @endif --}}
+        @endif
         <div class="row">
             
         {{-- <div class="card-columns"> --}}

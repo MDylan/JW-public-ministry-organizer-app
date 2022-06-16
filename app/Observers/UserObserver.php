@@ -6,6 +6,7 @@ use App\Jobs\CalulcateUserNameIndexProcess;
 use App\Models\User;
 use App\Notifications\NewAdminNotification;
 use App\Notifications\UserRegisteredNotification;
+use App\Notifications\UserRoleIsGroupCreatorNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
 
@@ -40,6 +41,11 @@ class UserObserver
         if($user->wasChanged('role')) {
             if($user->getOriginal('name') !== 'mainAdmin' && $user->role === 'mainAdmin') {
                 $this->adminAdded($user);
+            }
+            if($user->getOriginal('name') !== 'groupCreator' && $user->role === 'groupCreator') {
+                $user->notify(
+                    new UserRoleIsGroupCreatorNotification()
+                );
             }
         }
         if($user->wasChanged('name')) {
