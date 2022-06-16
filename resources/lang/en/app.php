@@ -71,6 +71,7 @@ return array (
   'send' => 'Send',
   'sendVerifyEmail' => 'Click here, and we will resend the email which contains the link for verifying your email address.',
   'show' => 'Show',
+  'system_message' => 'Important sytem message',
   'terms' => 'Terms & Conditions',
   'theme' => 
   array (

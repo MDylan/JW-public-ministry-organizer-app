@@ -4,6 +4,7 @@ return array (
   'app_name' => 'Site name (This will appear as the sender of the mail.)',
   'app_url' => 'Web address of the site (URL)',
   'failed_jobs_retry' => 'Run failed tasks again',
+  'homepage_message' => 'Homepage message\'s content',
   'languages' => 
   array (
     'confirmDelete' => 
@@ -60,6 +61,7 @@ return array (
     'gdpr' => 'Enable GDPR (Enable it only if you operate the website inside the EU.) Users will be able to download their data into a .json file.',
     'maintenance' => 'Maintenance mode (Only administrators will be able to log in.)',
     'registration' => 'Registration available. (If you disable it, only signed-in member - e.g. group overseer - can add new user.)',
+    'show_homepage_alert' => 'Show message on homepage',
     'terms_checkbox' => 'Terms of use for registration (If you disable it, no accepting of any terms of use will be required.)',
     'title' => 'Other Settings',
     'use_https' => 'Enable https encryption (Warning! You shall enable it only if https connection has been activated by your hosting service provider. If you enable it mistakenly, the site will not be able to load.)',

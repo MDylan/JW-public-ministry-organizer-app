@@ -40,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
             'registration'  => true,
             'claim_group_creator' => true,
             'default_language' => $default_language,
+            'show_homepage_alert' => false,
+            'homepage_message' => '',
         ];
         try {
             $settings = ModelsSettings::all();
@@ -65,8 +67,12 @@ class AppServiceProvider extends ServiceProvider
                 'available_languages' => $available_languages,
                 'translatable.fallback_locale' => $defaults['default_language'],
                 'translatable.locales' => $locales,
+                'show_homepage_alert' => $defaults['show_homepage_alert'],
                 // 'app.fallback_locale' => $defaults['default_language'],
             ]);
+            if($defaults['show_homepage_alert'] == 1) {
+                Config::set(['homepage_message' => $defaults['homepage_message']]);
+            }
 
             if(isset($defaults['debugbar'])) {
                 if($defaults['debugbar'] == 1)
