@@ -1,4 +1,12 @@
 <div>
+    @section('title')
+    @if (isset($state['id']))
+        @lang('news.edit')
+    @else
+        @lang('news.create')
+    @endif
+    ({{ $group->name }})
+    @endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

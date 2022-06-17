@@ -1,4 +1,7 @@
 <div>
+@section('title')
+{{ __('group.users') }} ({{$group_name}})
+@endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

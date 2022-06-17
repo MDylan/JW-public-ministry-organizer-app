@@ -1,4 +1,7 @@
 <div>
+    @section('title')
+    @lang('app.menu-settings')
+    @endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

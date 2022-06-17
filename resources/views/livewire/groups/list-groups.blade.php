@@ -1,4 +1,7 @@
 <div>
+@section('title')
+{{ __('app.menu-groups') }}
+@endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

@@ -1,4 +1,7 @@
 <div @if($polling) wire:poll.30000ms wire:key="home-polling" @endif>
+@section('title')
+{{__('app.menu-home')}}
+@endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
