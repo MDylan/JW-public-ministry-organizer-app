@@ -175,9 +175,9 @@ class Modal extends AppComponent
         unset($group['group_users_all_only']);
         $this->group_data = $group; //->toArray();
 
-        if($next_date->date) {
+        if($this->day_data['next_date']) {
             //disable next day, if max extend days reached
-            $next = Carbon::parse($next_date->date);
+            $next = Carbon::parse($this->day_data['next_date']);
             if($next->greaterThan(date("Y-m-d", ($now + ($this->group_data['max_extend_days'] * 24 * 60 * 60))))) {
                 $this->day_data['next_date'] = false;
             }
