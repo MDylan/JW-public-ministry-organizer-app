@@ -37,7 +37,6 @@
       @endcan
       {{ $slot }}
     </div>
-    @include('cookie-consent::index')
     <!-- /.content-wrapper -->
     <!-- Main Footer -->
     @include('layouts.partials.footer')
