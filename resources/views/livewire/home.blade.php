@@ -2,6 +2,7 @@
 @section('title')
 {{__('app.menu-home')}}
 @endsection
+    <x-loading-indicator target="openEventsModal,openModal" />
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -98,7 +99,7 @@
                                         <td class="text-center position-relative">
                                             @if($available_days[$group['id']][$day]) 
                                                 {{-- <a href="javascript:void(0);" onclick="modal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')"> --}}
-                                                <a href="javascript:void(0);" wire:click="openEventsModal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
+                                                <a wire:loading.class="text-secondary" wire:loading.attr="disabled" href="javascript:void(0);" wire:click="openEventsModal({{$group['id']}}, '{{ date("Y-m-d", $day) }}')">
                                                     @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
                                                         @if(isset($notAccepts[$group['id']][date("Y-m-d", $day)]))
                                                             <i class="fas fa-balance-scale-right mr-1 mt-1 position-absolute" style="margin-left: -26px"></i>

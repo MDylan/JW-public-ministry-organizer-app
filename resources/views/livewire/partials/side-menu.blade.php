@@ -1,4 +1,5 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <x-offline />
     <a href="/" class="brand-link overflow-hidden">
       <span class="brand-text font-weight-light ml-1">
         <img src="{{ asset('pmo-favicon.png') }} " alt="@lang('app.title')" class="brand-image img-circle elevation-3" style="opacity: .8">

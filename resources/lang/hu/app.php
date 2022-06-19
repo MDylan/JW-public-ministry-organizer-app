@@ -96,4 +96,5 @@ return [
     'up' => 'Fel',
     'down' => 'Le',
     'system_message' => 'Fontos rendszer üzenet',
+    'offline' => 'Nincs internet',
 ];
