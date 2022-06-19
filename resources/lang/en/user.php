@@ -71,6 +71,7 @@ return array (
   'password' => 'Password',
   'passwordConfirmation' => 'Confirm password',
   'password_info' => 'Min. 8 characters. It is mandatory to include lowercase and uppercase letters and at least one number.',
+  'password_recovery_info' => 'Here you can set a new password to login your profile.',
   'password_updated' => 'Your password has been successfully updated.',
   'phone' => 'Phone number',
   'phone_helper' => 'Can contain only numbers, starting with the country code, e.g.:',
