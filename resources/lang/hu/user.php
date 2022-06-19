@@ -31,6 +31,7 @@ return [
     'profile_empty' => 'Kérjük add meg a hiányzó adataidat ahhoz, hogy továbbléphess.',
     'last_login' => 'Legutóbbi belépés',
     'phone_helper' => 'Csak szám lehet országhívóval az elején, pl:',
+    'password_recovery_info' => 'Itt beállíthatsz egy új jelszót, amivel ezentúl be tudsz majd lépni a fiókodba.',
     'finish' => [
         'registration' => 'Regisztráció véglegesítése',
         'helper' => 'Kérjük véglegesítsd a regisztrációdat, a lenti adatok megadásával.',
