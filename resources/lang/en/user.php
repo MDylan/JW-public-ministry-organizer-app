@@ -52,8 +52,12 @@ return array (
     'title' => 'Hide my data',
   ),
   'last_login' => 'Last login',
+  'logged_back' => 'You have logged back your profile successfully.',
+  'logged_to' => 'You have logged as :name successfully',
   'login' => 'Login',
   'loginWithUser' => 'I already have an account, I want to log in.',
+  'login_back' => 'Back to myself',
+  'login_to' => 'Login as',
   'lostPassword' => 'I have forgotten my password',
   'name' => 'Name',
   'notifications' => 

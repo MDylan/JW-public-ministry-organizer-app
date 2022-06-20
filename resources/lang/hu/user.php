@@ -100,4 +100,8 @@ return [
             'UserProfileChangedNotification' => 'Valaki módosította a nevedet és a telefonszámodat',
         ]
     ],
+    'login_to' => 'Átlépés hozzá',
+    'logged_to' => 'Sikeresen átléptél :name fiókjába.',
+    'login_back' => 'Vissza a saját fiókba',
+    'logged_back' => 'Sikeresen visszaléptél a fiókodba.',
 ];

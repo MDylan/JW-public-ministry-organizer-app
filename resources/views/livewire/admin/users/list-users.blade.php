@@ -111,6 +111,9 @@
                                     <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                         <i class="fa fa-edit mr-2"></i>
                                     </a>
+                                    <a href="{{ route('admin.users.login', ['user' => $user]) }}" title="@lang('user.login_to')">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>
+                                    </a>
                                     <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmUserRemoval({{$user->id}})">
                                         <i class="fa fa-trash text-danger"></i>
                                     </a>
