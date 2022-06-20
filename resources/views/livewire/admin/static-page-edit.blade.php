@@ -1,4 +1,11 @@
 <div>
+    @section('title')
+    @if (isset($state['id']))
+        @lang('staticpage.edit')
+    @else
+        @lang('staticpage.create_new')
+    @endif
+    @endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

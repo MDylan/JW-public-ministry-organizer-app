@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" type="image/jpg" href="{{ asset('pmo-favicon.png') }}"/>
-  <title>@lang('app.title') | @yield('title')</title>
+  <title>@lang('app.title') |@yield('title')</title>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
   <!-- Theme style -->

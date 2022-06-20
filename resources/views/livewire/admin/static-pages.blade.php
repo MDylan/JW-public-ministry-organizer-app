@@ -1,4 +1,7 @@
 <div>
+    @section('title')
+    @lang('app.menu-staticpages')
+    @endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">

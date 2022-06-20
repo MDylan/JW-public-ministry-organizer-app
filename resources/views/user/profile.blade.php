@@ -1,4 +1,7 @@
 <x-admin-layout>
+    @section('title')
+    {{__('user.updateProfile')}}
+    @endsection
     <div>
         <!-- Content Header (Page header) -->
         <div class="content-header">

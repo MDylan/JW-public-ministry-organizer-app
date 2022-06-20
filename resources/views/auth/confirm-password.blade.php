@@ -1,4 +1,7 @@
 <x-admin-layout>
+@section('title')
+@lang('app.authentication_needed')
+@endsection
 <div class="content my-auto">
     <div class="d-flex align-items-center justify-content-center text-center" style="height:400px;">
         <div class="card card-outline card-warning" style="width: 400px;">

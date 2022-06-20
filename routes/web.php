@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\LoginToUserController;
 use App\Http\Controllers\deletePersonalDataController;
 use App\Http\Controllers\FinishRegistration;
 use App\Http\Controllers\GroupDelete;
@@ -107,6 +108,10 @@ if (!Storage::exists('installed.txt')) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
 
+    //only for admin login back
+    Route::get('/loginback/{id}', [LoginToUserController::class, 'loginback'])
+            ->name('admin.loginback')->middleware(['signed']);
+
     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
         $result = $request->fulfill();
         return redirect('/home');
@@ -150,6 +155,7 @@ Route::middleware(['auth'])->group(function () {
             //For special roles
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');
+                Route::get('/admin/users/login/{user}', [LoginToUserController::class, 'login'])->name('admin.users.login');
                 Route::get('/admin/settings', Settings::class)->name('admin.settings');
                 Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');

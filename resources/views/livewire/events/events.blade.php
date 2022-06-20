@@ -1,4 +1,8 @@
 <div @if($polling) wire:poll.visible.30000ms wire:key="events-polling" @endif>
+@section('title')
+{{ __('app.menu-calendar') }} - {{ $cal_group_data['name'] }}
+@endsection
+<x-loading-indicator />
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -114,8 +118,9 @@
                             </table>
                             <script>
                                 function modal(groupId, date) {
-                                    livewire.emitTo('events.modal', 'openModal', date, groupId, 'events.events');
-                                    livewire.emit('pollingOff');
+                                    // livewire.emitTo('events.modal', 'openModal', date, groupId, 'events.events');
+                                    // livewire.emit('pollingOff');
+                                    livewire.emit('openEventsModal', date);                                    
                                 }
                             </script>
                         </div>

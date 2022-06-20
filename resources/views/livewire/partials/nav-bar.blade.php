@@ -7,6 +7,13 @@
       <li class="nav-item d-none d-sm-inline-block">
         <a href="{{route('home.home')}}" class="nav-link">{{__('app.menu-home')}}</a>
       </li>
+      @if (session('loginback_url'))
+      <li class="nav-item">
+        <a href="{{ session('loginback_url') }}" class="nav-link btn btn-sm btn-warning">
+          <i class="fas fa-backspace mr-1"></i>
+          {{__('user.login_back')}}</a>
+      </li>
+      @endif
     </ul>
     @if (config('settings_maintenance') == 1) 
       <span class="navbar-text text-danger">

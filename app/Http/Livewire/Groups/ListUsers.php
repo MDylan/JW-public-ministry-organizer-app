@@ -452,6 +452,14 @@ class ListUsers extends AppComponent
                 ];
                 Notification::send($admins, new GroupParentGroupAttachedNotification($data));
                 
+                $current_users = $group->groupUsers()->get()->toArray();
+                $current_list = [];
+                foreach($current_users as $user) {
+                    if($user['pivot']['accepted_at'] !== null && $user['pivot']['deleted_at'] === null) {
+                        $current_list[$user['id']] = true;
+                    }
+                }
+
                 $new_users = $new_group->groupUsers()->get()->toArray();
                 $user_sync = [];
                 foreach($new_users as $new_user) {
@@ -460,8 +468,12 @@ class ListUsers extends AppComponent
                         'hidden' => $new_user['pivot']['hidden'] == 1 ? 1 : 0,
                         'deleted_at' => null, //because maybe we try to reattach logged out user
                         //automatically accept invitation if user is already member of the parent group
-                        'accepted_at' => $new_user['pivot']['accepted_at'] ? date("Y-m-d H:i:s") : null
+                        // 'accepted_at' => $new_user['pivot']['accepted_at'] ? date("Y-m-d H:i:s") : null
                     ];
+                    if(!isset($current_list[$new_user['id']])) {
+                        $user_sync[$new_user['id']]['accepted_at'] = $new_user['pivot']['accepted_at'] ? date("Y-m-d H:i:s") : null;
+                    }
+
                     if($copy_from_parent['signs'] == true) {
                         $user_sync[$new_user['id']]['signs'] = $new_user['pivot']['signs'];
                     }
@@ -469,8 +481,9 @@ class ListUsers extends AppComponent
                 $res = $group->groupUsersAll()->sync($user_sync);
                 $data = [
                     'groupAdmin' => auth()->user()->name, 
-                    'groupName' => $new_group->name
+                    'groupName' => $group->name
                 ];
+                // dd($res, $current_users, $current_list);
                 //new users notification
                 if(isset($res['attached'])) {
                     $attached_users = User::whereIn('id', $res['attached'])

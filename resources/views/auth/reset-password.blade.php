@@ -11,7 +11,8 @@
             </div>
 
             <div class="card-body">
-                <p class="text-center">{{ __('Reset Password') }}</p>
+                <p class="text-center">{{ __('Reset Password') }}<br/>
+                @lang('user.password_recovery_info')</p>
                 <form method="POST" action="{{ route('password.update') }}">
                     @csrf
 
@@ -21,7 +22,7 @@
                         <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
 
                         <div class="col-md-8">
-                            <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ Request::get('email') ?? Request::get('email') }}" required autocomplete="email" autofocus>
+                            <input disabled id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ Request::get('email') ?? Request::get('email') }}" required autocomplete="email" autofocus>
 
                             @error('email')
                                 <span class="invalid-feedback" role="alert">

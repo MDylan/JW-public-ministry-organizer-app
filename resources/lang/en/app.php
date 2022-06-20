@@ -57,6 +57,7 @@ return array (
   'no_notification' => 'No notifications.',
   'notAllowed' => 'You do not have access permission for this.',
   'off' => 'Off',
+  'offline' => 'You are now offline.',
   'on' => 'On',
   'options' => 'Settings',
   'order_changed' => 'Order changed',

@@ -1,4 +1,7 @@
 <x-admin-layout>
+    @section('title')
+    {{ $page->title }}
+    @endsection
     <div>
         <!-- Content Header (Page header) -->
         <div class="content-header">
