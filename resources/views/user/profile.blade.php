@@ -199,7 +199,7 @@
                                     <label for="password" class="col-md-4 col-form-label text-md-right">@lang('New Password'):</label>
 
                                     <div class="col-md-8">
-                                        <input id="password" type="password" class="form-control @error('password', 'updatePassword') is-invalid @enderror" name="password" required autocomplete="new-password" aria-describedby="passwordHelpBlock">
+                                        <input id="new_password" type="password" class="form-control @error('password', 'updatePassword') is-invalid @enderror" name="password" required autocomplete="new-password" aria-describedby="passwordHelpBlock">
                                         <small id="passwordHelpBlock" class="form-text text-muted">
                                             @lang('user.password_info')
                                         </small>
