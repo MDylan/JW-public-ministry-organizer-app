@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '2cd4ecf04cb7bc85d574070555f03eba33d32a57',
+    'reference' => '84439754eeac6ffae3754d26ec98d8c8af25be8e',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -585,7 +585,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '2cd4ecf04cb7bc85d574070555f03eba33d32a57',
+      'reference' => '84439754eeac6ffae3754d26ec98d8c8af25be8e',
     ),
     'laravel/sail' => 
     array (
@@ -1070,6 +1070,15 @@ private static $installed = array (
       array (
       ),
       'reference' => 'fc9bb7fb5388691fd7373cd44dcb4d63bbcf24df',
+    ),
+    'renatomarinho/laravel-page-speed' => 
+    array (
+      'pretty_version' => '2.1.0',
+      'version' => '2.1.0.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'ac71e0aa2882bfc10d170dc67e591216d02ab859',
     ),
     'rhumsaa/uuid' => 
     array (
