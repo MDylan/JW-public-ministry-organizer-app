@@ -150,7 +150,7 @@
                                     @endphp
                                     <li class="list-group-item p-2">
                                         @if ($group_editor)
-                                            <button wire:click="$emitTo('groups.special-date-modal', 'openModal', '{{ $carbon_date->format("Y-m-d") }}')" class="btn btn-primary btn-sm">
+                                            <button wire:click="$emitTo('groups.special-date-modal', 'openModal', '{{ $carbon_date->format("Y-m-d") }}')" class="btn btn-primary btn-sm mr-1">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         @endif

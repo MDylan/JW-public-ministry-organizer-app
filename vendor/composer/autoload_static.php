@@ -100,7 +100,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         ),
         'R' => 
         array (
-            'RenatoMarinho\\LaravelPageSpeed\\' => 31,
             'Ramsey\\Uuid\\' => 12,
             'Ramsey\\Collection\\' => 18,
         ),
@@ -370,10 +369,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Spatie\\Activitylog\\' => 
         array (
             0 => __DIR__ . '/..' . '/spatie/laravel-activitylog/src',
-        ),
-        'RenatoMarinho\\LaravelPageSpeed\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src',
         ),
         'Ramsey\\Uuid\\' => 
         array (
@@ -5453,17 +5448,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Ramsey\\Uuid\\UuidInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/UuidInterface.php',
         'Ramsey\\Uuid\\Validator\\GenericValidator' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/GenericValidator.php',
         'Ramsey\\Uuid\\Validator\\ValidatorInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/ValidatorInterface.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Entities\\HtmlSpecs' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Entities/HtmlSpecs.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\CollapseWhitespace' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/CollapseWhitespace.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\DeferJavascript' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/DeferJavascript.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\ElideAttributes' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/ElideAttributes.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\InlineCss' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/InlineCss.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\InsertDNSPrefetch' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/InsertDNSPrefetch.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\PageSpeed' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/PageSpeed.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\RemoveComments' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/RemoveComments.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\RemoveQuotes' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/RemoveQuotes.php',
-        'RenatoMarinho\\LaravelPageSpeed\\Middleware\\TrimUrls' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/Middleware/TrimUrls.php',
-        'RenatoMarinho\\LaravelPageSpeed\\ServiceProvider' => __DIR__ . '/..' . '/renatomarinho/laravel-page-speed/src/ServiceProvider.php',
         'ReturnTypeWillChange' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/ReturnTypeWillChange.php',
         'SebastianBergmann\\CliParser\\AmbiguousOptionException' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/AmbiguousOptionException.php',
         'SebastianBergmann\\CliParser\\Exception' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/Exception.php',

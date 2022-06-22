@@ -32,25 +32,25 @@
                             @lang('app.back')
                         </a>
                         @if($editor && !isset($current_parent_group_id)) 
-                            <a wire:click="$emitSelf('openModal', 'UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary mb-2 mb-md-0">
+                            <a wire:click="$emitSelf('openModal', 'UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary mb-2 mb-md-0 ml-1">
                                 <i class="fa fa-plus mr-1"></i>
                                 @lang('group.user.add.title')</a>
                         @endif
                         @if($admin) 
                             @if (count($child_groups) > 0)
                                 {{-- this is a parent group --}}
-                                <a wire:click="$emitSelf('openModal', 'ChildGroupsModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                <a wire:click="$emitSelf('openModal', 'ChildGroupsModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                     <i class="fa fa-unlink mr-1"></i>
                                     @lang('group.link.parent.detach.button')</a>
                             @else
 
                                 @if ($current_parent_group_id > 0)
                                     {{-- this is a child group --}}
-                                    <a wire:click="$emitSelf('openModal', 'ParentGroupModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                    <a wire:click="$emitSelf('openModal', 'ParentGroupModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                         <i class="fa fa-unlink mr-1"></i>
                                         @lang('group.link.child.detach.button')</a>
                                 @else
-                                    <a wire:click="$emitSelf('openModal', 'LinkToModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0">
+                                    <a wire:click="$emitSelf('openModal', 'LinkToModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                         <i class="fa fa-link mr-1"></i>
                                         @lang('group.link.button')</a>
                                 @endif

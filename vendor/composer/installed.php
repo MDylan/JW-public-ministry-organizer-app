@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '84439754eeac6ffae3754d26ec98d8c8af25be8e',
+    'reference' => '439e390348462aed3514ea501c3bf0fa5c7e6b37',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -562,7 +562,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '84439754eeac6ffae3754d26ec98d8c8af25be8e',
+      'reference' => '439e390348462aed3514ea501c3bf0fa5c7e6b37',
     ),
     'laravel/sail' => 
     array (
@@ -1047,15 +1047,6 @@
       array (
       ),
       'reference' => 'fc9bb7fb5388691fd7373cd44dcb4d63bbcf24df',
-    ),
-    'renatomarinho/laravel-page-speed' => 
-    array (
-      'pretty_version' => '2.1.0',
-      'version' => '2.1.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'ac71e0aa2882bfc10d170dc67e591216d02ab859',
     ),
     'rhumsaa/uuid' => 
     array (

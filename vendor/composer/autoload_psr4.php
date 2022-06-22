@@ -45,7 +45,6 @@ return array(
     'Spatie\\CookieConsent\\' => array($vendorDir . '/spatie/laravel-cookie-consent/src'),
     'Spatie\\CalendarLinks\\' => array($vendorDir . '/spatie/calendar-links/src'),
     'Spatie\\Activitylog\\' => array($vendorDir . '/spatie/laravel-activitylog/src'),
-    'RenatoMarinho\\LaravelPageSpeed\\' => array($vendorDir . '/renatomarinho/laravel-page-speed/src'),
     'Ramsey\\Uuid\\' => array($vendorDir . '/ramsey/uuid/src'),
     'Ramsey\\Collection\\' => array($vendorDir . '/ramsey/collection/src'),
     'Psy\\' => array($vendorDir . '/psy/psysh/src'),
