@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Classes\GenerateSlots;
 use App\Helpers\GroupDateHelper;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+// use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,8 +13,8 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\DayStat;
 use App\Models\Group;
 use App\Models\GroupDate;
-use App\Models\GroupDayDisabledSlots;
-use Carbon\Carbon;
+// use App\Models\GroupDayDisabledSlots;
+// use Carbon\Carbon;
 use DateTime;
 
 class GenerateStatProcess implements ShouldQueue
