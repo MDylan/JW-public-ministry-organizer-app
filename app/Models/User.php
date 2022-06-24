@@ -14,10 +14,11 @@ use Dialect\Gdpr\Anonymizable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, AuthenticationLoggable;
 
     /**
      * The attributes that are mass assignable.
@@ -290,6 +291,13 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         }
 
         return false;
+    }
+
+    //Notify only mainAdmin users from new login
+    public function notifyAuthenticationLogVia()
+    {
+        if($this->role == 'mainAdmin') return ['mail'];
+        else return [];
     }
 
 }

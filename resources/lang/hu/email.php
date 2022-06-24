@@ -146,5 +146,14 @@ return [
         'subject' => 'Csoport létrehozó jogosultságot kaptál',
         'line_1' => 'Szeretnénk értesíteni, hogy az oldalon megkaptad a lehetőséget, hogy új csoportot hozz létre. Ezt a "Csoportok" menüpontban tudod megtenni.',
         'line_2' => 'Kérjük nézd át a Súgó menüben lévő videókat, hogy átlásd a beállítási lehetőségeket. Továbbá ahol lehet, leírások segítik a beállítást, első használatkor kérjük ezeket is olvasd át.',
+    ],
+    'new_login' => [
+        'subject' => 'Új eszközről léptek be a fiókodba',
+        'line_1' => 'Egy új eszközről léptek be a fiókodba az oldalon.',
+        'account' => 'Fiók',
+        'time' => 'Időpont',
+        'ip_address' => 'IP cím',
+        'browser' => 'Böngésző',
+        'line_2' => 'Ha ez te voltál, akkor hagyd figyelmen kívül ezt az értesítést. Ha gyanús ez az esemény, akkor változtass jelszót amint lehet.',
     ]
 ];
