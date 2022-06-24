@@ -79,6 +79,8 @@ class SpecialDateModal extends Component
     public function saveDate() {
         $this->getGroupData();
 
+        if(!isset($this->state['date'])) return false;
+        
         $start = $this->state['date']." ".$this->state['date_start'];
         $end_date = $this->state['date'];
         if($this->state['date_end'] == "00:00") {
