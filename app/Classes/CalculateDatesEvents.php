@@ -48,13 +48,13 @@ class CalculateDatesEvents {
         $days_slots = [];
         $days_disabled_slots = [];
         foreach($events as $event) {
+            $original_data[$event->id] = json_decode(json_encode($event), true);
             if($event->date_status == 0) {
                 //it's a disabled day, delete event
                 $deletes[$event->id] = $event->id;
                 $modifies[$event->id]['delete'][] = "disabled day";
                 continue;
-            }
-            $original_data[$event->id] = json_decode(json_encode($event), true);
+            }            
 
             if(!isset($dayOfWeeks[$event->day])) {
                 $d = new DateTime( $event->day );
