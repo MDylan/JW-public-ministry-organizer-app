@@ -276,6 +276,39 @@
                             </div>
                         </div>                                 
                     @endif
+
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                        <h5 class="m-0">@lang('user.logout_other_devices')</h5>
+                        </div>
+                        <div class="card-body">
+                            @lang('user.logout_info')
+                            <form action="{{ route('user.logout_other_devices') }}" method="POST">
+                                @csrf
+                                <div class="form-group row">
+                                    <label for="password" class="col-md-4 col-form-label text-md-right">@lang('Current Password'):</label>
+
+                                    <div class="col-md-8">
+                                        <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="off">
+                                        @error('password')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="form-group row mb-0">
+                                    <div class="col-md-8 offset-md-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sign-out-alt mr-1"></i>
+                                            @lang('user.logout_other_devices')
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>  
+
                 </div>
                 <!-- /.col-md-6 -->
             </div>

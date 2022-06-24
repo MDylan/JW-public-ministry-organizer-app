@@ -104,4 +104,8 @@ return [
     'logged_to' => 'Sikeresen átléptél :name fiókjába.',
     'login_back' => 'Vissza a saját fiókba',
     'logged_back' => 'Sikeresen visszaléptél a fiókodba.',
+    'logout_other_devices' => 'Kilépés más eszközökről',
+    'logout_info' => 'A jelszavad megadása után kiléphetsz minden más eszközről, amire beléptél korábban.',
+    'logout_other_devices_success' => 'Sikeresen kiléptél a többi eszközről',
+    'logout_other_devices_error' => 'Hiba a kilépés során, próbáld újra!',
 ];
