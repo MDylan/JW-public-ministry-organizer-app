@@ -100,8 +100,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         ),
         'R' => 
         array (
-            'Rappasoft\\LaravelAuthenticationLog\\Database\\Factories\\' => 54,
-            'Rappasoft\\LaravelAuthenticationLog\\' => 35,
             'Ramsey\\Uuid\\' => 12,
             'Ramsey\\Collection\\' => 18,
         ),
@@ -371,14 +369,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Spatie\\Activitylog\\' => 
         array (
             0 => __DIR__ . '/..' . '/spatie/laravel-activitylog/src',
-        ),
-        'Rappasoft\\LaravelAuthenticationLog\\Database\\Factories\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/database/factories',
-        ),
-        'Rappasoft\\LaravelAuthenticationLog\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src',
         ),
         'Ramsey\\Uuid\\' => 
         array (
@@ -687,6 +677,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Controllers\\GroupLogout' => __DIR__ . '/../..' . '/app/Http/Controllers/GroupLogout.php',
         'App\\Http\\Controllers\\GroupNewsDelete' => __DIR__ . '/../..' . '/app/Http/Controllers/GroupNewsDelete.php',
         'App\\Http\\Controllers\\GroupNewsFileDownloadController' => __DIR__ . '/../..' . '/app/Http/Controllers/GroupNewsFileDownloadController.php',
+        'App\\Http\\Controllers\\LogoutOtherDevicesController' => __DIR__ . '/../..' . '/app/Http/Controllers/LogoutOtherDevicesController.php',
         'App\\Http\\Controllers\\Setup\\AccountController' => __DIR__ . '/../..' . '/app/Http/Controllers/Setup/AccountController.php',
         'App\\Http\\Controllers\\Setup\\BasicsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Setup/BasicsController.php',
         'App\\Http\\Controllers\\Setup\\DatabaseController' => __DIR__ . '/../..' . '/app/Http/Controllers/Setup/DatabaseController.php',
@@ -744,6 +735,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Requests\\SetupBasicsRequest' => __DIR__ . '/../..' . '/app/Http/Requests/SetupBasicsRequest.php',
         'App\\Http\\Requests\\SetupDatabaseRequest' => __DIR__ . '/../..' . '/app/Http/Requests/SetupDatabaseRequest.php',
         'App\\Http\\Requests\\SetupMailRequest' => __DIR__ . '/../..' . '/app/Http/Requests/SetupMailRequest.php',
+        'App\\Http\\Requests\\UserPasswordRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UserPasswordRequest.php',
         'App\\Jobs\\CalculateDateProcess' => __DIR__ . '/../..' . '/app/Jobs/CalculateDateProcess.php',
         'App\\Jobs\\CalulcateUserNameIndexProcess' => __DIR__ . '/../..' . '/app/Jobs/CalulcateUserNameIndexProcess.php',
         'App\\Jobs\\GenerateStatProcess' => __DIR__ . '/../..' . '/app/Jobs/GenerateStatProcess.php',
@@ -789,6 +781,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Notifications\\GroupUserAddedNotification' => __DIR__ . '/../..' . '/app/Notifications/GroupUserAddedNotification.php',
         'App\\Notifications\\GroupUserLogoutNotification' => __DIR__ . '/../..' . '/app/Notifications/GroupUserLogoutNotification.php',
         'App\\Notifications\\LoginData' => __DIR__ . '/../..' . '/app/Notifications/LoginData.php',
+        'App\\Notifications\\LoginNewDeviceNotification' => __DIR__ . '/../..' . '/app/Notifications/LoginNewDeviceNotification.php',
         'App\\Notifications\\NewAdminNotification' => __DIR__ . '/../..' . '/app/Notifications/NewAdminNotification.php',
         'App\\Notifications\\Newsletter' => __DIR__ . '/../..' . '/app/Notifications/Newsletter.php',
         'App\\Notifications\\TestNotification' => __DIR__ . '/../..' . '/app/Notifications/TestNotification.php',
@@ -5458,17 +5451,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Ramsey\\Uuid\\UuidInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/UuidInterface.php',
         'Ramsey\\Uuid\\Validator\\GenericValidator' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/GenericValidator.php',
         'Ramsey\\Uuid\\Validator\\ValidatorInterface' => __DIR__ . '/..' . '/ramsey/uuid/src/Validator/ValidatorInterface.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Commands\\PurgeAuthenticationLogCommand' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Commands/PurgeAuthenticationLogCommand.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Database\\Factories\\AuthenticationLogFactory' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/database/factories/AuthenticationLogFactory.php',
-        'Rappasoft\\LaravelAuthenticationLog\\LaravelAuthenticationLogServiceProvider' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/LaravelAuthenticationLogServiceProvider.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Listeners\\FailedLoginListener' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Listeners/FailedLoginListener.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Listeners\\LoginListener' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Listeners/LoginListener.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Listeners\\LogoutListener' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Listeners/LogoutListener.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Listeners\\OtherDeviceLogoutListener' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Listeners/OtherDeviceLogoutListener.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Models\\AuthenticationLog' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Models/AuthenticationLog.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Notifications\\FailedLogin' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Notifications/FailedLogin.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Notifications\\NewDevice' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Notifications/NewDevice.php',
-        'Rappasoft\\LaravelAuthenticationLog\\Traits\\AuthenticationLoggable' => __DIR__ . '/..' . '/rappasoft/laravel-authentication-log/src/Traits/AuthenticationLoggable.php',
         'ReturnTypeWillChange' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/ReturnTypeWillChange.php',
         'SebastianBergmann\\CliParser\\AmbiguousOptionException' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/AmbiguousOptionException.php',
         'SebastianBergmann\\CliParser\\Exception' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/Exception.php',

@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'b5fa2c104078eac586fe6b9de436b81a9af41223',
+    'reference' => '61e2bad539adfb06320005ae555225d7591756e9',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -585,7 +585,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'b5fa2c104078eac586fe6b9de436b81a9af41223',
+      'reference' => '61e2bad539adfb06320005ae555225d7591756e9',
     ),
     'laravel/sail' => 
     array (
@@ -1070,15 +1070,6 @@ private static $installed = array (
       array (
       ),
       'reference' => 'fc9bb7fb5388691fd7373cd44dcb4d63bbcf24df',
-    ),
-    'rappasoft/laravel-authentication-log' => 
-    array (
-      'pretty_version' => 'v1.3.0',
-      'version' => '1.3.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '616bf9f411a9bd0752ac3646931d463b3cb4620f',
     ),
     'rhumsaa/uuid' => 
     array (
