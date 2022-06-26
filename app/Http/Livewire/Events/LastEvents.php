@@ -112,6 +112,9 @@ class LastEvents extends AppComponent
                 '*.bible_studies' => 'digits_between:0,2',
             ])->validate();
             foreach($validatedData as $literatureId => $report) {
+                foreach($report as $k => $v) {
+                    $report[$k] = intval($v);
+                }
                 $this->eventForm->serviceReports()->updateOrCreate(
                     ['group_literature_id' => $literatureId],
                     $report
