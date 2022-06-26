@@ -131,8 +131,6 @@ class Kernel extends ConsoleKernel
             }
         })->everyMinute();
 
-        $schedule->command('authentication-log:purge')->monthly();
-
         //store last schedule run
         $schedule->call(function () {
             Settings::updateOrInsert(
