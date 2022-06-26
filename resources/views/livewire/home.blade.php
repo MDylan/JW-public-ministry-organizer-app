@@ -154,7 +154,7 @@
                                             <i class="fa fa-file mr-1"></i>
                                             @lang('group.news')</a>
                                         @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
-                                            <a wire:ignore.self href="javascript:void(0);" wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }})" class="btn btn-info mb-2">
+                                            <a wire:ignore.self href="javascript:void(0);" wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }})" class="btn btn-info mb-2 ml-1">
                                                 <i class="fa fa-plus mr-1"></i>
                                                 @lang('group.poster.button')</a>
                                         @endif

@@ -58,6 +58,10 @@ return array (
   'loginWithUser' => 'I already have an account, I want to log in.',
   'login_back' => 'Back to myself',
   'login_to' => 'Login as',
+  'logout_info' => 'After entering your current password, you will be able to logging out other devices',
+  'logout_other_devices' => 'Logging out on other devices',
+  'logout_other_devices_error' => 'Error, please try again.',
+  'logout_other_devices_success' => 'You have successfully logged out of the other devices',
   'lostPassword' => 'I have forgotten my password',
   'name' => 'Name',
   'notifications' => 

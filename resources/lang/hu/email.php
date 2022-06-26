@@ -146,5 +146,5 @@ return [
         'subject' => 'Csoport létrehozó jogosultságot kaptál',
         'line_1' => 'Szeretnénk értesíteni, hogy az oldalon megkaptad a lehetőséget, hogy új csoportot hozz létre. Ezt a "Csoportok" menüpontban tudod megtenni.',
         'line_2' => 'Kérjük nézd át a Súgó menüben lévő videókat, hogy átlásd a beállítási lehetőségeket. Továbbá ahol lehet, leírások segítik a beállítást, első használatkor kérjük ezeket is olvasd át.',
-    ]
+    ],
 ];

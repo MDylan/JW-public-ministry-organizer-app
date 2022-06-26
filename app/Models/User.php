@@ -291,5 +291,4 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
         return false;
     }
-
 }

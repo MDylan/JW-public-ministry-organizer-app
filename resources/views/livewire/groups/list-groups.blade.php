@@ -57,7 +57,7 @@
                                                 <i class="fa fa-user-friends mr-1"></i>
                                                 @lang('group.users')
                                             </a>
-                                            <a class="btn btn-outline-info" href="{{ route('groups.news', ['group' => $group->id]) }}">
+                                            <a class="btn btn-outline-info ml-1" href="{{ route('groups.news', ['group' => $group->id]) }}">
                                                 <i class="fa fa-file mr-1"></i>
                                                 @lang('group.news')</a>
 

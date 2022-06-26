@@ -8,6 +8,7 @@ use App\Http\Controllers\GroupLogout;
 use App\Http\Controllers\GroupNewsDelete;
 use App\Http\Controllers\GroupNewsFileDownloadController;
 use App\Http\Controllers\jumpToCalendarController;
+use App\Http\Controllers\LogoutOtherDevicesController;
 use App\Http\Controllers\Setup\AccountController;
 use App\Http\Controllers\Setup\BasicsController;
 use App\Http\Controllers\Setup\DatabaseController;
@@ -145,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
                                     ->name('user.askToDelete')->middleware(['password.confirm']);
             Route::get('/user/deletepersonaldata/{id}', [deletePersonalDataController::class, 'deletePersonalData'])
                                     ->name('user.deletepersonaldata')->middleware(['signed']);
+            Route::post('/user/logout_other_devices', [LogoutOtherDevicesController::class, 'logout'])->name('user.logout_other_devices');
             
             Route::get('/lastevents', LastEvents::class)->name('lastevents');
             Route::get('/calendar/{year?}/{month?}', Events::class)->name('calendar');

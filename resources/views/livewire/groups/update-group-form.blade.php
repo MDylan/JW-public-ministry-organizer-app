@@ -488,7 +488,7 @@
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                                     <i class="fa fa-times mr-1"></i>{{ __('app.cancel') }}</button>
                                 </a>        
-                                <button type="submit" class="btn btn-primary"><i class="fa fa-save mr-1"></i>
+                                <button type="submit" class="btn btn-primary ml-1"><i class="fa fa-save mr-1"></i>
                                     {{__('app.saveChanges')}}</button>
                                 </div>
                             </div>

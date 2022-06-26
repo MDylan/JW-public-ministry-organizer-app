@@ -72,10 +72,9 @@ class FortifyServiceProvider extends ServiceProvider
         * https://github.com/laravel/fortify/issues/201
         * https://dev.to/nicolus/laravel-fortify-implement-2fa-in-a-way-that-won-t-let-users-lock-themselves-out-2ejk
         */        
-        Fortify::authenticateThrough(function(){
+        Fortify::authenticateThrough(function() {
             return array_filter([
                 config('fortify.limiters.login') ? null : EnsureLoginIsNotThrottled::class,
-        
             Features::enabled(Features::twoFactorAuthentication()) ? RedirectIfTwoFactorConfirmed::class : null,
                 AttemptToAuthenticate::class,
                 PrepareAuthenticatedSession::class,
