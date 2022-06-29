@@ -61,6 +61,7 @@ return array (
   'on' => 'On',
   'options' => 'Settings',
   'order_changed' => 'Order changed',
+  'page_expired' => 'Page expired, please refresh it.',
   'pleaseFixErrors' => 'Please correct the mistakes.',
   'profile' => 'My profile',
   'registration_disabled' => 'Registration has been disabled.',
