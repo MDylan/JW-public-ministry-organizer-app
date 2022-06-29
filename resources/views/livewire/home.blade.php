@@ -177,14 +177,13 @@
             @endforelse
             <!-- /.col-md-6 -->
         </div>
-        {{-- @if(count($groups) > 0)
+        @if(count($groups) > 0)
             <script>
                 function modal(groupId, date) {
-                    livewire.emitTo('events.modal', 'openModal', date, groupId, 'home');
-                    // livewire.emit('pollingOff');
+                    @this.call('openEventsModal', groupId,  date);
                 }
             </script>
-        @endif --}}
+        @endif
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
