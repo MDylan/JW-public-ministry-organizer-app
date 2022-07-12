@@ -330,6 +330,7 @@ class EventEdit extends AppComponent
                             ->join('groups', 'events.group_id', '=', 'groups.id')
                             ->select('events.start', 'events.end', 'groups.name', 'events.status')
                             ->whereNull('events.deleted_at')
+                            ->whereNull('groups.deleted_at')
                             ->where('events.user_id', '=', $this->state['user_id'])
                             ->where(function($query) {
                                 $query->where('groups.id', '=', $this->groupId);                                
