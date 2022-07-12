@@ -137,7 +137,6 @@ return array(
     'App\\Notifications\\GroupUserAddedNotification' => $baseDir . '/app/Notifications/GroupUserAddedNotification.php',
     'App\\Notifications\\GroupUserLogoutNotification' => $baseDir . '/app/Notifications/GroupUserLogoutNotification.php',
     'App\\Notifications\\LoginData' => $baseDir . '/app/Notifications/LoginData.php',
-    'App\\Notifications\\LoginNewDeviceNotification' => $baseDir . '/app/Notifications/LoginNewDeviceNotification.php',
     'App\\Notifications\\NewAdminNotification' => $baseDir . '/app/Notifications/NewAdminNotification.php',
     'App\\Notifications\\Newsletter' => $baseDir . '/app/Notifications/Newsletter.php',
     'App\\Notifications\\TestNotification' => $baseDir . '/app/Notifications/TestNotification.php',
