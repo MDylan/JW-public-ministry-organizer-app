@@ -37,6 +37,8 @@ return array (
   ),
   'days_head' => 'Service days',
   'days_info' => 'If someone already has a service scheduled that falls outside of the new time interval, that service will be modified or deleted - depending on whether it fits or does not fit into the new time interval. Old service days and the special days will not be affected.',
+  'deleteUsers' => 'Delete publisher\'s data too',
+  'deleteUsersInfo' => 'If you check it, the registration and personal data of all publishers in the group will be deleted, including you. Except for those who serve in other groups. The deletion takes place within a few minutes and is irreversible.',
   'deletegroup' => 'Delete group',
   'disabled_time_slots' => 'Disabled time slots',
   'disabled_time_slots_info' => 'Warning! The chosen time slots will not be available for booking.',
