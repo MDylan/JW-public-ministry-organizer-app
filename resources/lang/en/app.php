@@ -56,6 +56,7 @@ return array (
   'no_any_groups' => 'Currently you are not the member of any service group. If you join one, an overview of your upcoming assigments will appear here.',
   'no_notification' => 'No notifications.',
   'notAllowed' => 'You do not have access permission for this.',
+  'not_required' => 'Not required',
   'off' => 'Off',
   'offline' => 'You are now offline.',
   'on' => 'On',

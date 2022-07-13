@@ -98,4 +98,5 @@ return [
     'system_message' => 'Fontos rendszer üzenet',
     'offline' => 'Nincs internet',
     'page_expired' => 'Az oldal lejárt, kérlek frissítsd.',
+    'not_required' => 'Nem kötelező',
 ];
