@@ -12,7 +12,6 @@ class DeleteGroup extends Component
 
     public $group;
     public $deleteUsers = false;
-    private $groupId;
 
     public function mount(Group $group) {
         $this->group = $group;
@@ -24,20 +23,7 @@ class DeleteGroup extends Component
     }
 
     public function deleteGroup() {
-        // $this->groupId = $this->group->id;
-        // $users = GroupUser::with('user')->where('group_id', $this->groupId)->get();
-        // dump($users->toArray());
-        // foreach($users as $user) {
-        //     $groups = $user->user->userGroups()->get(['groups.id'])->toArray();
-        //     dump($groups);
-        //     if(count($groups) == 0) {
-        //         $user->user->anonymize();
-        //     }
-        // }
-
-        // dd('na', $this->group->id, $this->deleteUsers);
         $del = new GroupDelete();
         $del->index($this->group->id, $this->deleteUsers);
-
     }
 }
