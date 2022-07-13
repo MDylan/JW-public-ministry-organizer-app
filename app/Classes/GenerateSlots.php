@@ -29,16 +29,31 @@ class GenerateSlots {
         }
         
         $times = [];
-        for ($hour = $min_hour; $hour < $max_hour; $hour += $step_hour) {
+        $current_unix = $start;
+        $hour = $min_hour;
+        while($current_unix < $end) {
+            // $times[$current_unix] = date("Y-m-d H:i", $current_unix);
+            $times[$current_unix] = $current_unix; 
+            $hour += $step_hour;
             if(self::isInt($hour)) {
                 $current = $hour.":00";
             } else {
                 $current = floor($hour).":30";
             }
             $current_unix = strtotime($date." ".$current);
-            $times[$current_unix] = $current_unix; 
+            // $times[$current_unix] = $current_unix; 
             // $times[$current_unix] = date("Y-m-d H:i", $current_unix);
         }
+        // for ($hour = $min_hour; $hour < $max_hour; $hour += $step_hour) {
+        //     if(self::isInt($hour)) {
+        //         $current = $hour.":00";
+        //     } else {
+        //         $current = floor($hour).":30";
+        //     }
+        //     $current_unix = strtotime($date." ".$current);
+        //     // $times[$current_unix] = $current_unix; 
+        //     $times[$current_unix] = date("Y-m-d H:i", $current_unix);
+        // }
         // dd($times, $min_hour, $max_hour);
         return $times;
     }

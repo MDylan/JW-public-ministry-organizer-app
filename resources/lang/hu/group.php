@@ -39,11 +39,13 @@ return [
     'min_time_options' => [
         30 => 'Fél óra',
         60 => '1 óra',
+        90 => '1,5 óra',
         120 => '2 óra',
     ],
     'max_time' => 'Legtöbbet eltölthető idő',
     'max_time_options' => [
         60 => '1 óra',
+        90 => '1,5 óra',
         120 => '2 óra',
         180 => '3 óra',
         240 => '4 óra',

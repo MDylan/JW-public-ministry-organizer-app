@@ -204,8 +204,8 @@ class UpdateGroupForm extends AppComponent
             'max_extend_days' => 'required|numeric|digits_between:1,365',
             'min_publishers' => 'required|numeric|digits_between:1,12|lte:max_publishers',
             'max_publishers' => 'required|numeric|digits_between:1,12|gte:min_publishers',
-            'min_time' => 'required|numeric|in:30,60,120|lte:max_time',
-            'max_time' => 'required|numeric|in:60,120,180,240,320,360,420,480|gte:min_time',            
+            'min_time' => 'required|numeric|in:30,60,90,120|lte:max_time',
+            'max_time' => 'required|numeric|in:60,90,120,180,240,320,360,420,480|gte:min_time',            
             'need_approval' => 'required|numeric|in:0,1',
             'color_default' => ['sometimes', 'regex:'.$pattern],
             'color_empty' => ['sometimes', 'regex:'.$pattern],
@@ -514,8 +514,8 @@ class UpdateGroupForm extends AppComponent
         //     ksort($this->dates);
 
         return view('livewire.groups.update-group-form', [
-            'min_time_options' => [30,60,120],
-            'max_time_options' => [60, 120, 180, 240, 320, 360, 420, 480],
+            'min_time_options' => [30, 60, 90, 120],
+            'max_time_options' => [60, 90, 120, 180, 240, 320, 360, 420, 480],
             'group_days' => range(0,6,1),
             'group_times' => $group_times,
             'group_roles' => [
