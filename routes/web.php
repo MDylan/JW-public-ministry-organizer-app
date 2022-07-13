@@ -28,6 +28,7 @@ use App\Http\Livewire\Admin\Translation;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
 use App\Http\Livewire\Events\LastEvents;
+use App\Http\Livewire\Groups\DeleteGroup;
 use App\Http\Livewire\Groups\History;
 use App\Http\Livewire\Groups\ListGroups;
 use App\Http\Livewire\Groups\ListUsers as GroupsListUsers;
@@ -174,7 +175,8 @@ Route::middleware(['auth'])->group(function () {
 
             Route::middleware(['groupAdmin'])->group(function () {
                 Route::get('/groups/{group}/edit', UpdateGroupForm::class)->name('groups.edit')->middleware(['password.confirm']);
-                Route::get('/groups/{group}/delete', [GroupDelete::class, 'index'])->name('groups.delete')->middleware(['password.confirm']);
+                // Route::get('/groups/{group}/delete', [GroupDelete::class, 'index'])->name('groups.delete')->middleware(['password.confirm']);
+                Route::get('/groups/{group}/delete', DeleteGroup::class)->name('groups.delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/news/create', NewsEdit::class)->name('groups.news_create');
                 Route::get('/groups/{group}/news/edit/{new}', NewsEdit::class)->name('groups.news_edit');
                 Route::get('/groups/{group}/news/delete/{new}', [GroupNewsDelete::class, 'delete'])->name('groups.news_delete')->middleware(['password.confirm']);

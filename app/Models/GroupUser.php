@@ -25,4 +25,8 @@ final class GroupUser extends Pivot
     {
         return $this->morphMany(LogHistory::class, 'model');
     }
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 }
