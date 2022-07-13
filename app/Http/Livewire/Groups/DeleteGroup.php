@@ -4,7 +4,6 @@ namespace App\Http\Livewire\Groups;
 
 use App\Http\Controllers\GroupDelete;
 use App\Models\Group;
-use App\Models\GroupUser;
 use Livewire\Component;
 
 class DeleteGroup extends Component
