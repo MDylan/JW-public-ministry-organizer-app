@@ -64,7 +64,7 @@
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group mb-3">
-                                                <label for="phone">@lang('user.phone'):</label>
+                                                <label for="phone">@lang('user.phone'): (@lang('app.not_required'))</label>
                                                 <input name="phone_number" type="number" class="form-control @error('phone_number') is-invalid @enderror" id="phone" value="{{ auth()->user()->phone_number }}" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock" />
                             
                                                 <span class="w-100"></span>

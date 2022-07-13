@@ -36,7 +36,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'phone_number' => ['numeric'],
+            'phone_number' => ['nullable', 'numeric'],
             'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))],
             'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])],
             'firstDay' => ['sometimes', 'numeric', 'in:0,1'],
