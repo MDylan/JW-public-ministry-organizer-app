@@ -21,9 +21,9 @@ class ListGroups extends AppComponent
     protected $listeners = [
         'rejectConfirmed' => 'rejectConfirmed',
         'logoutConfirmed' => 'logoutConfirmed',
-        'deleteGroup'
+        // 'deleteGroup'
     ];
-
+    /*
     public function confirmGroupRemoval($groupId) {
 
         $group_check = auth()->user()->userGroupsDeletable()->where('group_id', $groupId)->first();
@@ -46,6 +46,7 @@ class ListGroups extends AppComponent
             ]);
         }
     }
+    */
 
     /**
      * Show modal

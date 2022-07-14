@@ -105,5 +105,10 @@
   </script>
   @yield('footer_scripts')
   @livewireScripts  
+  <script>
+    document.addEventListener('livewire:load', () => {
+        Livewire.onPageExpired((response, message) => confirm('{{ __('app.page_expired') }}'))
+    })
+  </script>
 </body>
 </html>

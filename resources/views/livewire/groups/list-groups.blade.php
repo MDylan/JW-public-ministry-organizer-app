@@ -99,7 +99,7 @@
                                                         @endif
         
                                                         @if(in_array($group->pivot->group_role, ['admin']))
-                                                            <a class="dropdown-item text-danger" href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmGroupRemoval({{$group->id}})">
+                                                            <a class="dropdown-item text-danger" href="{{ route('groups.delete', $group) }}" title="{{ __('app.delete') }}">
                                                                 <i class="fa fa-trash mr-1"></i>
                                                                 @lang('app.delete')
                                                             </a>

@@ -9,6 +9,8 @@ return [
     'deletegroup' => 'Csoport törlése',
     'notInGroup' => 'Jelenleg még egyetlen csoportnak sem vagy a tagja. Vedd fel a kapcsolatot a gyülekezeted/csoportod felvigyázójával, hogy meg tudjon hívni a helyi csoportba.',
     'areYouSureDelete' => 'Biztosan törlöd ezt a csoportot (:groupName)? A művelet nem vonható vissza! A csoporthoz tartozó minden adat elvész!',
+    'deleteUsers' => 'Töröld a hírnököket is a programból.',
+    'deleteUsersInfo' => 'Ha bejelölöd, akkor a csoportban lévő minden hírnök regisztrációja és személyes adata is törölve lesz, téged is beleértve. Kivéve azokat, akik más csoportban is szolgálnak. A törlés pár percen belül megtörténik, és visszavonhatatlan.',
     'groupCreated' => 'A csoport létrejött!',
     'create_info' => 'A létrehozás után tudod majd a csoport adatait szerkeszteni. Téged automatikusan hozzá fog adni csoportfelvigyázó jogkörrel. Mindenki mást majd a Hírnökök menüben tudsz hozzáadni.',
     'groupUpdated' => 'A csoport sikeresen módosult!',
@@ -37,11 +39,13 @@ return [
     'min_time_options' => [
         30 => 'Fél óra',
         60 => '1 óra',
+        90 => '1,5 óra',
         120 => '2 óra',
     ],
     'max_time' => 'Legtöbbet eltölthető idő',
     'max_time_options' => [
         60 => '1 óra',
+        90 => '1,5 óra',
         120 => '2 óra',
         180 => '3 óra',
         240 => '4 óra',

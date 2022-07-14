@@ -67,6 +67,11 @@
                     </div>
                 </div>
                 <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info"><i class="fas fa-info mx-1"></i> @lang('user.finish.info')</div>
+                    </div>
+                </div>
+                <div class="row">
                 <div class="col-sm-8">
                     @if (config('settings_terms_checkbox') == 1)
                         <div class="icheck-primary">

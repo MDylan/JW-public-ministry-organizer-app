@@ -37,7 +37,7 @@ class FinishRegistration extends Controller
 
         Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:50', 'min:2'],
-            'phone_number' => ['numeric'],
+            'phone_number' => ['nullable','numeric'],
             'password' => $this->passwordRules(),
             'terms' => config('settings_terms_checkbox') ? 'required' : 'sometimes|required'
         ])->validate();

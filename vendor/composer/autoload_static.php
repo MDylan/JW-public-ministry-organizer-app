@@ -781,7 +781,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Notifications\\GroupUserAddedNotification' => __DIR__ . '/../..' . '/app/Notifications/GroupUserAddedNotification.php',
         'App\\Notifications\\GroupUserLogoutNotification' => __DIR__ . '/../..' . '/app/Notifications/GroupUserLogoutNotification.php',
         'App\\Notifications\\LoginData' => __DIR__ . '/../..' . '/app/Notifications/LoginData.php',
-        'App\\Notifications\\LoginNewDeviceNotification' => __DIR__ . '/../..' . '/app/Notifications/LoginNewDeviceNotification.php',
         'App\\Notifications\\NewAdminNotification' => __DIR__ . '/../..' . '/app/Notifications/NewAdminNotification.php',
         'App\\Notifications\\Newsletter' => __DIR__ . '/../..' . '/app/Notifications/Newsletter.php',
         'App\\Notifications\\TestNotification' => __DIR__ . '/../..' . '/app/Notifications/TestNotification.php',
