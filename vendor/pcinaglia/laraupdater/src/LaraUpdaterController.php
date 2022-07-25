@@ -48,8 +48,8 @@ class LaraUpdaterController extends Controller
         $this->cache = false;
         $lastVersionInfo = $this->getLastVersion();
 
-        if ( $lastVersionInfo['version'] <= $this->getCurrentVersion() ){
-            echo '<p>&raquo; '.trans("laraupdater.Your_System_IS_ALREADY_UPDATED_to_last version").' !</p>';
+        if( version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), "<=") ) {
+            echo '<p>&raquo; '.trans("laraupdater.Your_System_IS_ALREADY_UPDATED_to_last version").' ! '.($lastVersionInfo['version']." <= ".$this->getCurrentVersion()).'</p>';
             exit;
         }
 
