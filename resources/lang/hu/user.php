@@ -40,7 +40,7 @@ return [
         'done' => 'A regisztrációd elkészült! :) Az alábbi oldalon tudod elfogadni vagy elutasítani a csoport meghívásaidat.',
         'cancelAlert' => 'Biztosan törlöd az email címedet?',
         'cancelDone' => 'Az email címedet töröltük az adatbázisunkból.',
-        'info' => 'Tájékoztatás az adataid védelméről: Személyes adataidat csak jelen oldalon használjuk fel. Az email címedet és a telefonszámodat alapértelmezetten mindenki láthatja, akivel egy csoportban szolgálsz, de a regisztráció után a "Profilom" menüben beállíthatod, hogy csak a Csoportszolgák és Csoport segítők láthassák.',
+        'info' => 'Tájékoztatás az adataid védelméről: Személyes adataidat csak jelen oldalon használjuk fel. Az email címedet és a telefonszámodat alapértelmezetten csak a csoport felvigyázók és a csoport szolgák láthatják, akikkel egy csoportban szolgálsz. A regisztráció után a "Profilom" menüben beállíthatod, hogy a csoportod bármely tagja láthassa, ha szeretnéd.',
     ],
     'gdpr' => [
         'my_personal_datas' => 'Személyes adataim',
@@ -87,9 +87,9 @@ return [
         'copy_success' => 'A kódok a vágólapra kerültek.',
     ],
     'online' => 'Épp online',
-    'hidden' => [
-        'title' => 'Adataim elrejtése',
-        'help' => 'Az email címedet és a telefonszámodat alapértelmezetten mindenki láthatja, akivel egy csoportban szolgálsz. Itt megadhatod, hogy csak azok lássák akik jogosultsággal bírnak a csoportodban (pl. csoportszolga, csoport segítő).',
+    'show_fields' => [
+        'title' => 'Adataim megjelenítése',
+        'help' => 'Az alábbi adataidat alapértelmezetten senki sem láthatja, csak a csoportszolgák és a felvigyázók, ahol szolgálsz. Ha bejelölöd, akkor mindenki láthatja az adataidat, akivel egy csoportban szolgálsz.',
     ],
     'notifications' => [
         'title' => 'Értesítések letiltása',
@@ -108,4 +108,5 @@ return [
     'logout_info' => 'A jelszavad megadása után kiléphetsz minden más eszközről, amire beléptél korábban.',
     'logout_other_devices_success' => 'Sikeresen kiléptél a többi eszközről',
     'logout_other_devices_error' => 'Hiba a kilépés során, próbáld újra!',
+    'congregation' => 'Gyülekezet',
 ];

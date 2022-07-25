@@ -572,12 +572,14 @@ class EventEdit extends AppComponent
                 }
             }
             $busy = DB::table('events')
-                        ->whereNull('deleted_at')
-                        ->where('status', '=', 1)
-                        ->where('user_id', '=', $data['user_id'])
-                        ->where('group_id', '!=', $this->groupId)
-                        ->where('start', '<', date("Y-m-d H:i", $data['end']))
-                        ->where('end', '>', date("Y-m-d H:i", $data['start']))
+                        ->join('groups', 'events.group_id', '=', 'groups.id')
+                        ->whereNull('groups.deleted_at')
+                        ->whereNull('events.deleted_at')
+                        ->where('events.status', '=', 1)
+                        ->where('events.user_id', '=', $data['user_id'])
+                        ->where('events.group_id', '!=', $this->groupId)
+                        ->where('events.start', '<', date("Y-m-d H:i", $data['end']))
+                        ->where('events.end', '>', date("Y-m-d H:i", $data['start']))
                         ->first();
             // dd($busy->start);
             if($busy !== null) {

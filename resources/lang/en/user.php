@@ -36,7 +36,7 @@ return array (
     'cancelDone' => 'Your email address has been deleted from our database.',
     'done' => 'Your registration has been finished! :) You can accept or decline group invitations on the following page.',
     'helper' => 'Please finish your registration by filling in the following data.',
-    'info' => 'Information about how your data is protected: We use your personal data only on this site. As a default setting, your email address and telephone number are visible to everybody who is in the same group with you. But after registration, you will be able to change this setting under the "My profile" menu so that only group servants and group helpers might see these.',
+    'info' => 'Information about how your data is protected: We use your personal data only on this site. As a default setting, no one visible your email address and telephone number only the group overseers and group servants who is in the same group with you. After registration, you will be able to change this setting under the "My profile" menu.',
     'registration' => 'Finish registration',
   ),
   'first_day_of_week' => 'First day of the week',
@@ -89,6 +89,11 @@ return array (
   'registerMessage' => 'Create new account',
   'registered' => 'Registered',
   'rememberMe' => 'Remember me',
+  'show_fields' => 
+  array (
+    'help' => 'By default settings, no one can see your data below, only the group servants and group overseers where you serve. If you check it, everyone with whom you serve in the same group can see your data.',
+    'title' => 'Display my personal data',
+  ),
   'two_factor' => 
   array (
     'add_code' => 'Enter verification code',

@@ -46,13 +46,20 @@
                                 @method("PUT")
                                 <div class="border border-secondary border-left-0 border-right-0 rounded p-2">
                                     <div class="row">                                    
-                                    <div class="col-sm-12">
-                                        <div class="form-group mb-3">
-                                            <label for="name">@lang('Full name')</label>
-                                            <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ auth()->user()->name }}" placeholder="@lang('Full name')" />
-                                            @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                        <div class="col-sm-6">
+                                            <div class="form-group mb-3">
+                                                <label for="name">@lang('Full name')</label>
+                                                <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ auth()->user()->name }}" placeholder="@lang('Full name')" />
+                                                @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div class="col-sm-6">
+                                            <div class="form-group mb-3">
+                                                <label for="congregation">@lang('user.congregation'):  (@lang('app.not_required'))</label>
+                                                <input name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" value="{{ auth()->user()->congregation }}" placeholder="@lang('user.congregation')" />
+                                                @error('congregation')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-sm-6">
@@ -109,29 +116,38 @@
                                 <div class="border border-secondary border-left-0 border-right-0 rounded mt-2 p-2">
                                     <div class="row">
                                         <div class="col-12">
-                                            <h5><i class="fas fa-eye-slash mr-1"></i> @lang('user.hidden.title'):</h5>
-                                            @lang('user.hidden.help')
+                                            <h5><i class="fas fa-eye mr-1"></i> @lang('user.show_fields.title'):</h5>
+                                            @lang('user.show_fields.help')
                                         </div>
                                     </div>
                                     <div class="ml-2 form-check">
-                                        <input class="form-check-input" type="checkbox" name="hidden_fields[phone]" value="1" id="hidden_phone"
-                                        @if (isset(auth()->user()->hidden_fields['phone']) || old('hidden_fields.phone'))
+                                        <input class="form-check-input" type="checkbox" name="show_fields[congregation]" value="1" id="show_congregation"
+                                        @if (isset(auth()->user()->show_fields['congregation']) || old('show_fields.congregation'))
                                             checked
                                         @endif>
-                                        <label class="form-check-label" for="hidden_phone" role="button">
+                                        <label class="form-check-label" for="show_congregation" role="button">
+                                            {{ __('user.congregation') }}
+                                        </label>
+                                    </div>
+                                    <div class="ml-2 form-check">
+                                        <input class="form-check-input" type="checkbox" name="show_fields[phone]" value="1" id="show_phone"
+                                        @if (isset(auth()->user()->show_fields['phone']) || old('show_fields.phone'))
+                                            checked
+                                        @endif>
+                                        <label class="form-check-label" for="show_phone" role="button">
                                             {{ __('user.phone') }}
                                         </label>
                                     </div>
                                     <div class="ml-2 form-check">
-                                        <input class="form-check-input" type="checkbox" name="hidden_fields[email]" value="1" id="hidden_email"
-                                        @if (isset(auth()->user()->hidden_fields['email']) || old('hidden_fields.email'))
+                                        <input class="form-check-input" type="checkbox" name="show_fields[email]" value="1" id="show_email"
+                                        @if (isset(auth()->user()->show_fields['email']) || old('show_fields.email'))
                                             checked
                                         @endif>
-                                        <label class="form-check-label" for="hidden_email" role="button">
+                                        <label class="form-check-label" for="show_email" role="button">
                                             {{ __('user.email') }}
                                         </label>
                                     </div>
-                                    @error('hidden_fields_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
+                                    @error('show_fields_keys')<div class="alert alert-danger">{{ __($message) }}</div>@enderror
                                 </div>
                                 {{-- Opt out notifications --}}
                                 <div class="border border-secondary border-left-0 border-right-0 rounded mt-2 p-2">

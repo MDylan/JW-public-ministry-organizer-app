@@ -68,7 +68,7 @@ class EventStatusChangedNotification extends Notification implements ShouldQueue
         $status = $this->data['status'];
 
         return (new MailMessage)
-            ->replyTo($this->data['replyTo'] ?? env('MAIL_FROM_ADDRESS'))
+            ->replyTo( strlen(trim($this->data['replyTo'])) > 0 ? $this->data['replyTo'] : env('MAIL_FROM_ADDRESS') )
             ->subject(__('email.event.status_changed.'.($status).'.subject', [
                 'date' => $date,
                 'groupName' => $this->data['groupName']

@@ -197,8 +197,8 @@
                                                             <div wire:ignore id="phone_event_{{ $event['id'] }}" class="badge badge-info p-2 font-weight-normal" onclick="showChild(this, 'hidden_child');">
                                                                 <i class="fas fa-phone"></i>
                                                                 <span class="ml-1 hidden_child">
-                                                                    @if(($event['user']['hidden_fields']['phone'] ?? false) == false || $editor) 
-                                                                        @if(($event['user']['hidden_fields']['phone'] ?? false) == true)
+                                                                    @if(($event['user']['show_fields']['phone'] ?? false) == true || $editor) 
+                                                                        @if(($event['user']['show_fields']['phone'] ?? false) == false)
                                                                             <i class="fas fa-eye-slash mr-1 text-warning"></i>
                                                                         @endif
                                                                     {{ $event['user']['phone_number'] }}

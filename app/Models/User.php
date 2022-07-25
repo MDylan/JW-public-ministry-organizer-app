@@ -38,9 +38,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'name',
         'phone_number',
         'email_verified_at',
-        'hidden_fields',
+        // 'hidden_fields',
         'firstDay',
-        'opted_out_of_notifications'
+        'opted_out_of_notifications',
+        'show_fields',
+        'congregation'
     ];
 
     /**
@@ -70,9 +72,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'email_verified_at' => 'datetime',
         'calendars' => 'array',
         'phone_number' => 'encrypted',
-        'hidden_fields' => 'array',
+        // 'hidden_fields' => 'array',
         'name' => 'encrypted',
         'opted_out_of_notifications' => 'array',
+        'show_fields' => 'array',
+        'congregation' => 'encrypted',
     ];
 
     /**
@@ -88,7 +92,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'two_factor_recovery_codes',
         'remember_token',
         'accepted_gdpr',
-        'hidden_fields',
+        // 'hidden_fields',
+        'show_fields',
         'opted_out_of_notifications'
     ];
 
@@ -106,7 +111,9 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'role' => 'registered',
         'last_login_ip' => '',
         'isAnonymized' => 1,
-        'opted_out_of_notifications' => ''
+        'opted_out_of_notifications' => '',
+        'show_fields' => '',
+        'congregation' => '',
     ];
 
 

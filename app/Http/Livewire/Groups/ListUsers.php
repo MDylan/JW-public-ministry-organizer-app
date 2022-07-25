@@ -173,6 +173,7 @@ class ListUsers extends AppComponent
             'user' => [
                 'name' => $user->name,
                 'phone_number' => $user->phone_number,
+                'congregation' => $user->congregation,
             ],
             'email' => $user->email,
         ];
@@ -183,6 +184,7 @@ class ListUsers extends AppComponent
             'user' => [
                 'name' => $user->name,
                 'phone_number' => $user->phone_number,
+                'congregation' => $user->congregation,
                 'email_verified_at' => $user->email_verified_at,
             ],
             'finish_guest_registration' => 0
@@ -249,11 +251,13 @@ class ListUsers extends AppComponent
         $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
 
         if($selected_user->name !== $this->state['user']['name'] 
-            || $selected_user->phone_number !== $this->state['user']['phone_number']) 
+            || $selected_user->phone_number !== $this->state['user']['phone_number']
+            || $selected_user->congregation !== $this->state['user']['congregation']) 
         {
             $userValidatedData = Validator::make($this->state['user'], [
                 'name' => 'required|string|max:50|min:2',
-                'phone_number' => 'nullable|numeric', 
+                'phone_number' => 'nullable|numeric',
+                'congregation' => 'sometimes|string|max:50|min:2',
             ])->validate();
     
             
@@ -263,11 +267,13 @@ class ListUsers extends AppComponent
             $data = [
                 'old' => [
                     'name' => $selected_user->name,
-                    'phone_number' => $selected_user->phone_number
+                    'phone_number' => $selected_user->phone_number,
+                    'congregation' => $selected_user->congregation
                 ],
                 'new' => [
                     'name' => $userValidatedData['name'],
-                    'phone_number' => $userValidatedData['phone_number']
+                    'phone_number' => $userValidatedData['phone_number'],
+                    'congregation' => $userValidatedData['congregation']
                 ],
                 'userName' => auth()->user()->name
             ];
