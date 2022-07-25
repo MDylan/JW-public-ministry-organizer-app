@@ -29,7 +29,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         // dd($input['opted_out_of_notifications']);
         Validator::make($input, [
             'name' => ['required', 'string', 'max:50', 'min:2'],
-            'congregation' => ['sometimes', 'string', 'max:50', 'min:2'],
+            'congregation' => ['nullable', 'string', 'max:50', 'min:2'],
             'email' => [
                 'required',
                 'string',
