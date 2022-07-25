@@ -22,13 +22,14 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         if(isset($input['calendars'])) {
             $input['calendars_keys'] = array_keys($input['calendars']);
         }
-        $input['hidden_fields_keys'] = [];
-        if(isset($input['hidden_fields'])) {
-            $input['hidden_fields_keys'] = array_keys($input['hidden_fields']);
+        $input['show_fields_keys'] = [];
+        if(isset($input['show_fields'])) {
+            $input['show_fields_keys'] = array_keys($input['show_fields']);
         }
         // dd($input['opted_out_of_notifications']);
         Validator::make($input, [
             'name' => ['required', 'string', 'max:50', 'min:2'],
+            'congregation' => ['sometimes', 'string', 'max:50', 'min:2'],
             'email' => [
                 'required',
                 'string',
@@ -38,7 +39,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             ],
             'phone_number' => ['nullable', 'numeric'],
             'calendars_keys' => ['sometimes', 'array', Rule::In(config('events.calendars'))],
-            'hidden_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone'])],
+            'show_fields_keys' => ['sometimes', 'array', Rule::In(['email', 'phone', 'congregation'])],
             'firstDay' => ['sometimes', 'numeric', 'in:0,1'],
             'opted_out_of_notifications' => ['sometimes', 'array']
         ])->validate(); //->validateWithBag('updateProfileInformation');
@@ -49,10 +50,11 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         } else {
             $user->forceFill([
                 'name' => $input['name'],
+                'congregation' => $input['congregation'],
                 'phone_number' => $input['phone_number'],
                 'email' => $input['email'],
                 'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
-                'hidden_fields' => isset($input['hidden_fields']) ? $input['hidden_fields'] : null,
+                'show_fields' => isset($input['show_fields']) ? $input['show_fields'] : null,
                 'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null,
                 'opted_out_of_notifications' => isset($input['opted_out_of_notifications']) ? $input['opted_out_of_notifications'] : null,
             ])->save();

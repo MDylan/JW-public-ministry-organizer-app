@@ -60,10 +60,12 @@ class UserProfileChangedNotification extends Notification implements ShouldQueue
             ]))
             ->line(Lang::get('email.profileChanged.line_2'))
                 ->line(Lang::get('user.name').": ".$this->data['old']['name']."; "
-                    .Lang::get('user.phone').": ".$this->data['old']['phone_number'])
+                    .Lang::get('user.phone').": ".$this->data['old']['phone_number']."; "
+                    .Lang::get('user.congregation').": ".$this->data['old']['congregation'])
             ->line(Lang::get('email.profileChanged.line_3'))
                 ->line(Lang::get('user.name').": ".$this->data['new']['name']."; "
-                    .Lang::get('user.phone').": ".$this->data['new']['phone_number'])
+                    .Lang::get('user.phone').": ".$this->data['new']['phone_number']."; "
+                    .Lang::get('user.congregation').": ".$this->data['new']['congregation'])
             ->line(Lang::get('email.profileChanged.line_4'))
             ->action(Lang::get('Log in'), url('/login'))
             ->line(__('email.footer')." ".__('email.unsubscribe'));

@@ -198,14 +198,23 @@
                                     @if($editor && $user->pivot->note) 
                                         <span class="badge badge-info"> {{ $user->pivot->note }} </span>
                                     @endif
+                                    @if((($user->show_fields['congregation'] ?? false) == true || $editor) && $user->congregation) 
+                                        <span class="badge badge-primary"> 
+                                            <i class="fas fa-house-user mr-1"></i> 
+                                            @if(($user->show_fields['congregation'] ?? false) == false)
+                                                <i class="fas fa-eye-slash mr-1 text-danger"></i>
+                                            @endif
+                                            {{ $user->congregation }} 
+                                        </span>
+                                    @endif
                                 </div>
                                     <div class="d-md-none col-4 text-right text-bold">
                                         @lang('user.email'):
                                     </div>
                                 <div class="col-8  @if($editor) col-md-2 @else col-md-4 @endif text-left my-auto align-middle">
-                                    @if(($user->hidden_fields['email'] ?? false) == false || $editor) 
+                                    @if(($user->show_fields['email'] ?? false) == true || $editor) 
                                         <a href="mailto:{{ $user->email }}">
-                                            @if(($user->hidden_fields['email'] ?? false) == true)
+                                            @if(($user->show_fields['email'] ?? false) == false)
                                                 <i class="fas fa-eye-slash mr-1 text-danger"></i>
                                             @endif
                                         {{ $user->email }}</a>
@@ -218,9 +227,9 @@
                                         @lang('user.phone'):
                                     </div>
                                 <div class="col-8 col-md-2 text-left text-md-center my-auto align-middle">
-                                    @if(($user->hidden_fields['phone'] ?? false) == false || $editor) 
+                                    @if(($user->show_fields['phone'] ?? false) == true || $editor) 
                                         <a href="tel:+{{ $user->phone_number }}">
-                                            @if(($user->hidden_fields['phone'] ?? false) == true)
+                                            @if(($user->show_fields['phone'] ?? false) == false)
                                                 <i class="fas fa-eye-slash mr-1 text-danger"></i>
                                             @endif
                                         {{ $user->phone_number }}</a>
@@ -301,6 +310,18 @@
                                 <input wire:model.defer="state.user.name" wire:ignore
                                     type="text" class="form-control" name="name" id="" aria-describedby="name_help">
                                 <small id="name_help" class="form-text text-muted">
+                                   @lang('app.user_will_be_notified')
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 text-bold text-right">
+                                @lang('user.congregation'): 
+                            </div>
+                            <div class="col-8">
+                                <input wire:model.defer="state.user.congregation" wire:ignore
+                                    type="text" class="form-control" name="congregation" id="" aria-describedby="congregation_help">
+                                <small id="congregation_help" class="form-text text-muted">
                                    @lang('app.user_will_be_notified')
                                 </small>
                             </div>
