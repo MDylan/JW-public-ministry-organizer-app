@@ -27,7 +27,7 @@
         <a href="{{route('user.profile')}}" class="nav-link dropdown-toggle">
           <i class="far fa-user mr-1"></i>
           <span class="d-none d-md-inline">
-            {{ auth()->user()->name }}
+            {{ auth()?->user()?->name }}
             </span>
         </a>
       </li>
