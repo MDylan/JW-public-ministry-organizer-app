@@ -138,12 +138,14 @@ class Modal extends AppComponent
 
         $next_date = GroupDate::where('group_id', '=', $groupId)
                             ->where('date', '>', $date)
+                            ->where('date_status', 1)
                             ->orderBy('date', 'ASC')
                             ->first('date');
         $this->day_data['next_date'] = $next_date->date ?? false;
 
         $prev_date = GroupDate::where('group_id', '=', $groupId)
                             ->where('date', '<', $date)
+                            ->where('date_status', 1)
                             ->orderBy('date', 'DESC')
                             ->first('date');
         $this->day_data['prev_date'] = $prev_date->date ?? false;
