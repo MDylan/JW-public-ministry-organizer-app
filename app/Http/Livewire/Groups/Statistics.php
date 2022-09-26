@@ -104,6 +104,7 @@ class Statistics extends AppComponent
         $hours = [
             30 => 0.5,
             60 => 1,
+            90 => 1.5,
             120 => 2
         ];
 
