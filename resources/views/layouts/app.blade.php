@@ -109,8 +109,11 @@
     document.addEventListener('livewire:load', () => {
         Livewire.onPageExpired(
           (response, message) => {
-            if(confirm('{{ __('app.page_expired') }}') == true) {
+            res = confirm('{{ __('app.page_expired') }}');
+            if(res == true) {
               location.reload();
+            } else {
+              return res;
             }
           }
         );
