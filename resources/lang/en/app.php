@@ -100,4 +100,5 @@ return array (
   'user_will_be_notified' => 'If you modify, the user will be notified.',
   'verifyEmail' => 'You have not verified your email address yet. Please check your inbox, and click on the link that you received. <br/> You need to perform this step first, <strong>and only after that you will have full access</strong>.<br/> If you did not receive the email, click <a href=":url">here to request resending  the email</a>.',
   'yesDelete' => 'Yes, delete',
+  'unknown' => 'unknown',
 );

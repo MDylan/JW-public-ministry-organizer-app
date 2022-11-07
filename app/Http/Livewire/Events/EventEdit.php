@@ -494,7 +494,9 @@ class EventEdit extends AppComponent
                 'accepted_at' => null,
                 'accepted_by' => null, //$group->need_approval ? null : Auth::id()
                 'status' => 0,
-                'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
+                'comment' => isset($this->state['comment']) 
+                                ? (!empty($this->state['comment']) ? trim($this->state['comment']) : null)
+                                : null
             ];
         } else {
             //this set, if we edit an existing event and deny it. 
@@ -506,7 +508,9 @@ class EventEdit extends AppComponent
                 'accepted_at' => null,
                 'accepted_by' => null,
                 'status' => 2,
-                'comment' => isset($this->state['comment']) ? $this->state['comment'] : null
+                'comment' => isset($this->state['comment']) 
+                                ? (!empty($this->state['comment']) ? trim($this->state['comment']) : null)
+                                : null
             ];
         }
         $group = Group::findOrFail($this->groupId);
