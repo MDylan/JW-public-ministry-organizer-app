@@ -193,7 +193,7 @@
                         <div class="row mx-2 mb-sm-2">
                             <div class="col-md-4">
                                 {{ __('loghistory.events.'.$history['event'], [ 
-                                    'userName' => $history['user']['name'],
+                                    'userName' => $history['user']['name'] ?? __('app.unknown'),
                                     'date' => $history['created_at_format']
                                 ]) }}
                             </div>
