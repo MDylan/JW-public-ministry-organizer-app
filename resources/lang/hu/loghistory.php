@@ -4,9 +4,9 @@ return [
     'history_title' => 'Módosítási előzmények',
     'history_button' => 'Előzmények',
     'events' => [
-        'created' => ':userName létrehozta :date -kor',
-        'updated' => ':userName módosította :date -kor',
-        'deleted' => ':userName törölte :date -kor'
+        'created' => ':UserName létrehozta :date -kor',
+        'updated' => ':UserName módosította :date -kor',
+        'deleted' => ':UserName törölte :date -kor'
     ],
     'change_type' => [
         'new' => 'új',
