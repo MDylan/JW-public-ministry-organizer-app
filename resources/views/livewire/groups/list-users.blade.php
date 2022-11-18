@@ -98,7 +98,7 @@
                                                     btn-success
                                                 @else btn-outline-secondary
                                                 @endif">
-                                                <i class="fas fa-portrait mr-1"></i> @lang('group.filter.myself')
+                                                <i class="fas fa-portrait mx-1"></i> @lang('group.filter.myself')
                                             </button>
                                 @if($group_signs) 
                                     @foreach ($group_signs as $icon => $sign)
@@ -120,11 +120,20 @@
                                         btn-success
                                     @else btn-outline-secondary
                                     @endif">
-                                    <i class="fas fa-street-view mr-1"></i>
+                                    <i class="fas fa-street-view mx-1"></i>
                                     @lang('user.online')
                                 </button>
+                                @if ($editor)
+                                <button wire:click="filterInactive" class="btn btn-sm p-1 mr-1 @if (($filter['inactive'] ?? null) == true)
+                                        btn-success
+                                    @else btn-outline-secondary
+                                    @endif">
+                                    <i class="fas fa-user-clock mx-1"></i>
+                                    @lang('user.inactive')
+                                </button>
+                                @endif
                                 <button wire:click="filterOff" class="btn btn-sm p-1 mr-1 btn-info">
-                                    <i class="fas fa-times mr"></i> 
+                                    <i class="fas fa-times mx-1"></i> 
                                     @lang('group.filter.off_all')
                                 </button>
                             </div>
@@ -241,6 +250,18 @@
                                 <div class="col-8 col-md-2 text-md-center text-left my-auto align-middle">
                                     @if($user->last_activity)
                                     {{  \Carbon\Carbon::parse($user->last_activity)->format(__('app.format.datetime')) }}
+
+                                        
+                                        @if ($editor)
+                                            @if (\Carbon\Carbon::parse($user->last_activity)->lt(now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14)))
+                                                <button  wire:click="$emitSelf('openUserRenewalModal', {{$user->id}})" class="btn btn-sm btn-warning mx-1 mb-1">
+                                                    <i class="fas fa-user-clock mr-1"></i>
+                                                    @lang('user.inactive')!
+                                                </button>
+                                            @endif
+                                            
+                                        @endif                                        
+
                                     @else
                                     -
                                     @endif
@@ -507,6 +528,45 @@
                     </x-slot>
                 </x-modal>
             </form>
+
+            {{-- Inactive user profile renewal modal --}}
+
+            <form autocomplete="off" wire:submit.prevent="userRenewal">
+                <x-modal modalId="userRenewalModal">
+                    <x-slot name="title">
+                        <i class="fas fa-user-clock mr-1"></i> 
+                        @lang('user.inactiveModal.title')
+                    </x-slot>
+                
+                    <x-slot name="content">
+                        <div class="row">
+                            <div class="col-12">
+                                @lang('user.inactiveModal.info', [
+                                        'userName' => $selected_user['user']['name'] ?? '', 
+                                        'lastActivity' => \Carbon\Carbon::parse($selected_user['user']['last_activity'] ?? null)->format(__('app.format.datetime'))
+                                ])
+                                <div class="alert alert-warning">
+                                    @lang('user.inactiveModal.deletion_time', [
+                                        'lastDate' => \Carbon\Carbon::parse($selected_user['user']['last_date'] ?? null)->format(__('app.format.date'))
+                                    ])<br/>
+                                    @lang('user.inactiveModal.deletion_info', [
+                                        'gdprMonths' => config('gdpr.settings.ttl') ?? 6
+                                    ])
+                                </div>
+                            </div>
+                        </div>
+                    </x-slot>
+                
+                    <x-slot name="buttons">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-1"></i>@lang('app.cancel')</button>
+                        <button wire:loading.attr="disabled" type="submit" class="btn btn-primary">
+                            <i class="fas fa-hand-holding-medical mr-1"></i>
+                                @lang('user.inactiveModal.button')</button>
+                    </x-slot>
+                </x-modal>
+            </form>
+
         @endif
 
         @if ($admin)

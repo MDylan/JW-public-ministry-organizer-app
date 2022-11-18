@@ -87,6 +87,7 @@ return [
         'copy_success' => 'A kódok a vágólapra kerültek.',
     ],
     'online' => 'Épp online',
+    'inactive' => 'Inaktív',
     'show_fields' => [
         'title' => 'Adataim megjelenítése',
         'help' => 'Az alábbi adataidat alapértelmezetten senki sem láthatja, csak a csoportszolgák és a felvigyázók, ahol szolgálsz. Ha bejelölöd, akkor mindenki láthatja az adataidat, akivel egy csoportban szolgálsz.',
@@ -109,4 +110,12 @@ return [
     'logout_other_devices_success' => 'Sikeresen kiléptél a többi eszközről',
     'logout_other_devices_error' => 'Hiba a kilépés során, próbáld újra!',
     'congregation' => 'Gyülekezet',
+    'inactiveModal' => [
+        'title' => 'Inaktív hírnök',
+        'info' => ':userName legutóbb ekkor lépett be (:lastActivity).',
+        'deletion_time' => 'Adatvédelmi okokból, ha nem lép be legkésőbb :lastDate -ig, akkor a fiókja törölve lesz.',
+        'deletion_info' => 'Ha ezt nem szeretnéd, akkor a lenti gomb megadásával, te is kérheted az adatai megtartását újabb :gdprMonths hónapig. A hírnök erről értesítve lesz emailben.',
+        'button' => 'Kérem a hírnök adatainak megtartását.',
+        'error' => 'Lehet, hogy időközben változtak a felhasználó adatai.',
+    ],
 ];

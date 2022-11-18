@@ -17,6 +17,8 @@ use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
 use App\Notifications\UserProfileChangedNotification;
+use App\Notifications\UserProfileRenewalAdminNotification;
+use App\Notifications\UserProfileRenewalNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
@@ -61,7 +63,8 @@ class ListUsers extends AppComponent
         'deleteUser',
         'detachChildGroup',
         'detachParentGroup',
-        'setCopyInfo'
+        'setCopyInfo',
+        'openUserRenewalModal'
     ];
 
     private $copy_datas = [];
@@ -362,6 +365,7 @@ class ListUsers extends AppComponent
             $this->filter['signs'] = [];
         }
         $this->filter['online'] = false;
+        $this->filter['inactive'] = false;
         $this->resetPage();
     }
 
@@ -387,10 +391,80 @@ class ListUsers extends AppComponent
         if(($this->filter['myself'] ?? null) == true) {
             $this->filter['myself'] = false;
         }
+        $this->filter['inactive'] = false;
+    }
+
+    public function filterInactive() {
+        $this->filter['inactive'] = !($this->filter['inactive'] ?? false);
+        if(($this->filter['myself'] ?? null) == true) {
+            $this->filter['myself'] = false;
+        }
+        $this->filter['online'] = false;
     }
 
     public function clearSearch() {
         $this->searchTerm = null;
+    }
+
+    public function openUserRenewalModal($UserId) {
+        $this->getGroupInfo();
+        if($this->isNotHelper()) {
+            abort(403);
+        }
+
+        $user = $this->group->groupUsers()->where('user_id', '=', $UserId)->first();
+        $this->selected_user = [
+            'id' => $user->id,
+            'user' => [
+                'name' => $user->name,
+                'last_activity' => $user->last_activity,
+                'last_date' => \Carbon\Carbon::parse($user->last_activity)->addMonths(config('gdpr.settings.ttl') ?? 6)
+            ]
+        ];
+
+        $this->dispatchBrowserEvent('show-modal', ['id' => 'userRenewalModal']);
+    }
+
+    public function userRenewal() {
+        $this->getGroupInfo();
+        if($this->isNotHelper()) {
+            abort(403);
+        }
+
+        $error = false;
+        $userExists = $this->group->groupUsers()->where('user_id', '=', $this->selected_user['id'])->first();
+        if($userExists) {
+            if(\Carbon\Carbon::parse($userExists->last_activity)->lt(now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14))) {
+                //update user last_activity to now
+                $user = User::find($this->selected_user['id']);
+                $user->update(['last_activity' => now()]);
+
+                $data = [
+                    'userName' => $userExists->name,
+                    'adminName' => auth()->user()->name
+                ];
+
+                $user->notify(
+                    new UserProfileRenewalNotification($data)
+                );
+
+                Notification::send($this->group->editors, new UserProfileRenewalAdminNotification($data));
+
+                $this->dispatchBrowserEvent('hide-modal', [
+                    'id' => 'userRenewalModal',
+                    'message' => __('group.user.saved').' ('.$user->name.')',
+                    'savedMessage' => __('app.saved')
+                ]);
+            } else {
+                $error = true;
+            }
+        } else $error = true;
+
+        if($error) {
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('user.inactiveModal.error')
+            ]);
+        }
     }
 
     public function user_admin_groups() {
@@ -781,6 +855,9 @@ class ListUsers extends AppComponent
                     ->where(function($query) {
                         if(($this->filter['online'] ?? null) == true) {
                             $query->whereBetween('users.last_activity', [now()->subMinute(5), now()]);
+                        }
+                        if(($this->filter['inactive'] ?? null) == true) {
+                            $query->where('users.last_activity', '<=', now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14));
                         }
                     })
                     ->where(function($query) use ($editor) {
