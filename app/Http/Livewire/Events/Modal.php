@@ -31,7 +31,8 @@ class Modal extends AppComponent
         'cancelEdit',
         'setGroup' => 'mount',
         'hiddenModal',
-        'rejectBulkFinal'
+        'rejectBulkFinal',
+        'togglePosterRead'
     ];
     public $active_tab = '';
     public $date = null;
@@ -387,6 +388,10 @@ class Modal extends AppComponent
         $this->day_data['selects'] = $day_selects;
         $this->date_data['peak'] = max($peak, $this->date_data['max_publishers']);
         $this->day_events = $day_events;
+    }
+
+    public function togglePosterRead($poster_id) {
+        pwbs_poster_set_read($poster_id);
     }
 
     public function openModal($date, $groupId = 0, $refreshUp = false) {

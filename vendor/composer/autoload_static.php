@@ -761,6 +761,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Models\\GroupNewsFile' => __DIR__ . '/../..' . '/app/Models/GroupNewsFile.php',
         'App\\Models\\GroupNewsTranslation' => __DIR__ . '/../..' . '/app/Models/GroupNewsTranslation.php',
         'App\\Models\\GroupNewsUserLogs' => __DIR__ . '/../..' . '/app/Models/GroupNewsUserLogs.php',
+        'App\\Models\\GroupPosterRead' => __DIR__ . '/../..' . '/app/Models/GroupPosterRead.php',
         'App\\Models\\GroupPosters' => __DIR__ . '/../..' . '/app/Models/GroupPosters.php',
         'App\\Models\\GroupSurvey' => __DIR__ . '/../..' . '/app/Models/GroupSurvey.php',
         'App\\Models\\GroupSurveyAnswer' => __DIR__ . '/../..' . '/app/Models/GroupSurveyAnswer.php',

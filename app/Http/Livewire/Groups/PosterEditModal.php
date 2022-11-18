@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use App\Models\GroupPosters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PosterEditModal extends AppComponent
@@ -89,7 +90,10 @@ class PosterEditModal extends AppComponent
             $save = GroupPosters::where('id', '=', $this->posterId)
                             ->where('group_id', '=', $this->groupId)                            
                             ->first();
-            $save->update($validatedData);
+            $res = $save->update($validatedData);
+            if($res) {
+                DB::table('group_poster_reads')->where('poster_id', $this->posterId)->delete();
+            }
         } else {
             $validatedData['group_id'] = $this->groupId;
             $save = GroupPosters::create($validatedData);

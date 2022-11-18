@@ -117,6 +117,7 @@ return array(
     'App\\Models\\GroupNewsFile' => $baseDir . '/app/Models/GroupNewsFile.php',
     'App\\Models\\GroupNewsTranslation' => $baseDir . '/app/Models/GroupNewsTranslation.php',
     'App\\Models\\GroupNewsUserLogs' => $baseDir . '/app/Models/GroupNewsUserLogs.php',
+    'App\\Models\\GroupPosterRead' => $baseDir . '/app/Models/GroupPosterRead.php',
     'App\\Models\\GroupPosters' => $baseDir . '/app/Models/GroupPosters.php',
     'App\\Models\\GroupSurvey' => $baseDir . '/app/Models/GroupSurvey.php',
     'App\\Models\\GroupSurveyAnswer' => $baseDir . '/app/Models/GroupSurveyAnswer.php',

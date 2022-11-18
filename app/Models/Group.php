@@ -261,6 +261,7 @@ class Group extends Model
 
     public function posters() {
         return $this->hasMany(GroupPosters::class)
+                    ->with('userRead')
                     ->orderBy('show_date', 'asc');
     }
 

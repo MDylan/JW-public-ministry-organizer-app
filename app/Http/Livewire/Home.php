@@ -22,11 +22,16 @@ class Home extends Component
         'refresh' => 'pollingOn',
         'pollingOn',
         'pollingOff',
-        'setOrder'
+        'setOrder',
+        'togglePosterRead'
     ];
     private $groups = [];
     private $group_roles = [];
     public $polling = true;
+
+    public function togglePosterRead($poster_id) {
+        pwbs_poster_set_read($poster_id);
+    }
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();

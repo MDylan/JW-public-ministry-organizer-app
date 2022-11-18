@@ -283,6 +283,7 @@ return [
             'success' => 'Az információ törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+        'i_have_read' => 'Elolvastam',
     ],
     'filter' => [
         'title' => 'Szűrés',

@@ -224,6 +224,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
                     ->using(GroupUser::class);
     }
 
+    public function posterReads() {
+        return $this->hasMany(GroupPosterRead::class);
+    }
+
     /**
      * Get the user's preferred locale.
      *
