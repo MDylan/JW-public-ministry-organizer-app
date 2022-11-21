@@ -138,7 +138,7 @@ return [
         'message' => 'Ezentúl nem fogod látni a csoport eseményeit.',
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
-        'no_admin' => 'Te vagy az egyedüli csoportfelvigyázó a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
+        'no_admin' => 'Te vagy az egyedüli csoportfelvigyázója ennek csoportnak és az alcsoportjainak. Csak akkor léphetsz ki, ha valakit mindegyik érintett csoportban kijelölsz csoportfelvigyázónak.',
         'no_other_admin' => 'Nincs más csoportfelvigyázó, jelölj ki valakit helyette.',
         'log' => 'Kilépett a csoportból',
         'self_delete_error' => 'Magadat nem törölheted a csoportból. A Csoportok oldalon lépj ki, ha szeretnél.'

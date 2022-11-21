@@ -137,15 +137,31 @@ class ListGroups extends AppComponent
     public function confirmLogoutModal($groupId) {
         $userId = Auth::id();
         $group = Group::findOrFail($groupId);
-        $users = $group->groupUsers()->get()->toArray();
+        $users = $group->groupAdmins()->get()->toArray();
+        $total_group = 1;
         $admins = 0;
+        $main_admins = [];
         foreach($users as $user) {
-            $pivot = $user['pivot'];
-            if($pivot['group_role'] == 'admin' && $user['id'] != $userId) {
+            if($user['id'] != $userId) {
                 $admins++;
+                $main_admins[$user['id']] = 1;
             }
         }
-        if($admins == 0) {
+        //check child groups too!
+        $child_groups = $group->childGroups()->with('groupAdmins')->get()->toArray();
+        if(count($child_groups) > 0) {
+            $total_group += count($child_groups);
+            foreach($child_groups as $child_group) {
+                foreach($child_group['group_admins'] as $user) {
+                    if($user['id'] != $userId) {
+                        $admins++;
+                        $main_admins[$user['id']]++;
+                    }
+                }
+            }
+        }
+
+        if(array_search($total_group, $main_admins, true) === false) {
             //no other admin
             $this->dispatchBrowserEvent('sweet-error', [
                 'title' => __('group.logout.error'),
