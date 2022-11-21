@@ -1,4 +1,4 @@
-<div @if($privilege['read']) wire:poll.15000ms @else wire:poll.30000ms @endif>
+<div @if($privilege['read']) wire:poll.5000ms @else wire:poll.30000ms @endif>
     <div wire:ignore.self class="card card-warning card-outline direct-chat direct-chat-warning mx-2">
         <div class="card-header">
             <h3 class="card-title">@lang('group.messages.title') <span class="badge badge-secondary">Beta</span></h3>
