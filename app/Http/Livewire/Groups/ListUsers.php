@@ -190,7 +190,9 @@ class ListUsers extends AppComponent
                 'congregation' => $user->congregation,
                 'email_verified_at' => $user->email_verified_at,
             ],
-            'finish_guest_registration' => 0
+            'finish_guest_registration' => 0,
+            'message_use' => $user->pivot->message_use,
+            'message_send_priority' => $user->pivot->message_send_priority,
         ];
 
         $this->dispatchBrowserEvent('show-modal', ['id' => 'UserModal']);
@@ -226,6 +228,8 @@ class ListUsers extends AppComponent
             'finish_guest_registration' => [
                 Rule::In($finish_guest),
             ],
+            'message_use' => 'sometimes|numeric|in:0,1,2',
+            'message_send_priority' => 'sometimes|boolean',
         ]);
         $v->after(function ($validator) use ($admins, $current_user, $selected_user) {
             //if modified user rule
@@ -909,7 +913,12 @@ class ListUsers extends AppComponent
             'group_signs' => $this->group->signs,
             'user_admin_groups' => $this->user_admin_groups(),
             'user_role' => $this->role,
-            'copy_datas' => $this->copy_datas
+            'copy_datas' => $this->copy_datas,
+            'messages' => [
+                'on' => $this->group->messages_on,
+                'priority' => $this->group->messages_priority,
+                'write' => $this->group->messages_write,
+            ] 
         ]);
     }
 }

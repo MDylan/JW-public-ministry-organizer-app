@@ -509,3 +509,23 @@
 .bulk_selected {
   border: 4px solid #00ff00 !important;
 }
+
+.direct-chat-messages {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.initial-avatar {
+  /* Center the content */
+  align-items: center;
+  display: flex;
+  justify-content: center;
+
+  /* Colors */
+  background-color: #d1d5db;
+  color: #fff;
+
+  /* Rounded border */
+  /* border-radius: 50%;
+  height: 3rem;
+  width: 3rem; */
+}

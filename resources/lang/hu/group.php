@@ -303,5 +303,35 @@ return [
             'success' => 'A jövőbeli változtatás törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+    ],
+    'messages' => [
+        'title' => 'Üzenőfal',
+        'type' => 'Üzenet írása',
+        'urgent' => 'Sürgős',
+        'urgent_info' => 'Sürgős esetben a csoportszolgák és csoportfelvigyázók emailben is megkapják az üzenetedet. Kérjük csak tényleg sürgős esetben használd ezt a funkciót.',
+        'no_messages' => 'Nincsenek üzenetek.',
+        'info' => 'Az üzenőfal azoknak érhető el, akiknek szolgálatuk lesz a következő 24 órában, vagy szolgálatuk volt az elmúlt 2 órában. ',
+        'be_short' => 'Ha üzenetet írsz, kérjük fogalmazz röviden és csak a lényeges információkat írd le.',
+        'limit' => 'Túl sok próbálkozás, kérlek várj.',
+        'deleted' => 'Törölve.',
+        'cant_write' => 'Jelenleg nem küldhetsz üzenetet.',
+        'admin' => [
+            'info' => 'Ha bekapcsolod, akkor a Főoldalon az adott csoportnál elérhető lesz az üzenőfal funkció. A Hírnökök menüben további jogosultságot tudsz adni majd egyes hírnököknek, illetve meg is tilthatod, hogy valaki üzenetet tudjon írni (ettől még látni fogja az üzeneteket). Az üzeneteket maximum 7 napig őrizzük, utána törli a rendszer.',
+            'activate' => 'Bekapcsolod ezt a funkciót?',
+            'who_can_write' => 'Ki írhat üzenetet?',
+            'anyone' => 'Bármely hírnök a csoportban',
+            'authorized_only' => 'Csak akinek jogosultságot adunk',
+            'priority' => 'Szeretnéd használni a sürgős üzenet funkciót?',
+            'priority_info' => 'Igen esetén az üzenet írásakor megadható, hogy egy üzenet sürgős, ekkor a csoportszolgák és a jogosultsággal rendelkezők értesítést kapnak emailben az adott üzenetről.',
+        ],
+        'user' => [
+            'title' => 'Üzenőfal beállítások',
+            'when_use' => 'Mikor használhatja az üzenőfalat?',
+            'default' => 'Amikor szolgálata van',
+            'cant_write' => 'Nem írhat az üzenőfalra, csak láthatja',
+            'can_write' => 'Bármikor írhat az üzenőfalra',            
+            'catch_urgent' => 'Továbbítsd neki sürgős üzeneteket',
+            
+        ]
     ]
 ];

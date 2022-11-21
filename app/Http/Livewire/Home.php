@@ -244,7 +244,7 @@ class Home extends Component
         }
         $stats = Auth::user()->userGroupsAcceptedOnly()
                     ->select('groups.id', 'groups.name', 
-                                'groups.color_default', 'groups.color_empty', 'groups.color_someone', 'groups.color_minimum', 'groups.color_maximum')                       
+                                'groups.color_default', 'groups.color_empty', 'groups.color_someone', 'groups.color_minimum', 'groups.color_maximum', 'groups.messages_on')                       
                     ->orderByPivot('list_order')
                     ->with([
                         // 'stats' => function($q) use($start, $end) {

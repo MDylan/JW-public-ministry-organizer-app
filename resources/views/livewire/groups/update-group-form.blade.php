@@ -460,6 +460,56 @@
                                     </div>
                             </div>
                         </div> <!-- end of days section -->
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <div class="card-title">@lang('group.messages.title')</div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                      <i class="fas fa-minus"></i>
+                                    </button>
+                                  </div>
+                            </div>
+                            <div class="card-body">
+                                @lang('group.messages.admin.info')<br/>
+                                @lang('group.messages.info')
+                                <div class="border border-secondary rounded mx-1 p-2">
+
+                                    <div class="form-group row">
+                                        <label for="messages_on" class="col-md-6 col-form-label">@lang('group.messages.admin.activate')</label>
+                                        <div class="col-md-6">
+                                            <select wire:model="state.messages_on" id="messages_on" class="form-control">
+                                                <option value="0">@lang('No')</option>
+                                                <option value="1">@lang('Yes')</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    @if (($state['messages_on'] ?? 0) == 1)
+                                        <div class="form-group row">
+                                            <label for="messages_write" class="col-md-6 col-form-label">@lang('group.messages.admin.who_can_write')</label>
+                                            <div class="col-md-6">
+                                                <select id="messages_write" wire:model.defer="state.messages_write" class="form-control">
+                                                    <option value="0">@lang('group.messages.admin.anyone')</option>
+                                                    <option value="1">@lang('group.messages.admin.authorized_only')</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label for="messages_priority" class="col-md-6 col-form-label">@lang('group.messages.admin.priority')</label>
+                                            <div class="col-md-6">
+                                                <select wire:model.defer="state.messages_priority" id="messages_priority" class="form-control" aria-describedby="priority_help">
+                                                    <option value="0">@lang('No')</option>
+                                                    <option value="1">@lang('Yes')</option>
+                                                </select>
+                                                
+                                            </div>
+                                            <small id="priority_help" class="form-text text-muted mx-2">
+                                                @lang('group.messages.admin.priority_info')
+                                            </small>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     @endif
                 </div>

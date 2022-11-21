@@ -166,4 +166,10 @@ return [
         'line_1' => 'Szeretnénk értesíteni, hogy az oldalon megkaptad a lehetőséget, hogy új csoportot hozz létre. Ezt a "Csoportok" menüpontban tudod megtenni.',
         'line_2' => 'Kérjük nézd át a Súgó menüben lévő videókat, hogy átlásd a beállítási lehetőségeket. Továbbá ahol lehet, leírások segítik a beállítást, első használatkor kérjük ezeket is olvasd át.',
     ],
+    'messages' => [
+        'subject' => 'Sürgős üzenet :userName hírnöktől',
+        'line_1' => 'A(z) :groupName csoportban :userName hírnöktől sürgős üzenet érkezett az Üzenőfalra.',
+        'line_2' => 'Az üzenet tartalma:',
+        'line_3' => 'Vagy az üzenőfalon vagy a megadott elérhetőségein tudsz neki válaszolni. Kérjük erre az emailre NE válaszolj, mert nem neki lesz továbbítva.',
+    ],
 ];

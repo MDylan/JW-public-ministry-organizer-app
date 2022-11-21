@@ -446,6 +446,27 @@
                                 </div>
                             </div> 
                         </div>
+                        @if(($messages['on'] ?? false) && !in_array($state['group_role'], ['admin', 'roler']))
+                            <div class="rounded border border-secondary p-2">
+                                <div class="row">
+                                    <div class="form-group col-12">
+                                        <label for="message_use">@lang('group.messages.user.when_use')</label>
+                                        <select wire:model.defer="state.message_use" id="message_use" class="form-control">
+                                            <option value="0">@lang('group.messages.user.default')</option>
+                                            <option value="1">@lang('group.messages.user.cant_write')</option>
+                                            <option value="2">@lang('group.messages.user.can_write')</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <input wire:model.defer="state.message_send_priority" name="hidden" wire:ignore.self type="checkbox" id="message_send_priority" value="1">
+                                        <label for="message_send_priority">
+                                            @lang('group.messages.user.catch_urgent') 
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul>

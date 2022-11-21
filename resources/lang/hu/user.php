@@ -99,6 +99,7 @@ return [
             'EventDeletedAdminsNotification' => 'Törölték valakinek a szolgálatát a csoportodban',
             'EventDeletedNotification' => 'Törölték a te szolgálatodat',
             'UserProfileChangedNotification' => 'Valaki módosította a nevedet és a telefonszámodat',
+            'GroupPriorityMessageNotification' => 'Sürgős üzenet értesítés (az üzenőfalról)',
         ]
     ],
     'login_to' => 'Átlépés hozzá',

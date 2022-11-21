@@ -96,6 +96,14 @@
                                         @endforeach
                                 </div>
                             @endif
+
+                            @if ($group['messages_on'])
+                                {{-- @livewire('groups.messages', ['group' => $group['id']], key("messages-board_".$group['id'])) --}}
+                                <livewire:groups.messages :group="$group['id']" :wire:key="'messages_'.$group['id']">
+                            @endif                            
+
+
+
                         <table class="table table-sm m-0">
                             <thead>
                                 <tr>
