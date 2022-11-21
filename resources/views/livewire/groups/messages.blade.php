@@ -17,12 +17,12 @@
                             <div class="direct-chat-infos clearfix">
                                 <span class="direct-chat-name @if(auth()->id() == $message->user_id) float-right @else float-left @endif">
                                     {{ $message->user->name }}
-                                    @if(!is_null($message->message))
-                                    <span class="badge badge-danger @if(auth()->id() == $message->user_id) float-left @else float-right @endif mx-1 mt-1">
-                                        <a href="javascript:void(0);" wire:click="$emitSelf('deleteMessage', {{ $message->id }})" class="text-white" >
-                                            @lang('Delete')
-                                        </a>
-                                    </span>
+                                    @if(!is_null($message->message) && ($privilege['delete'] || auth()->id() == $message->user_id))
+                                        <span class="badge badge-danger @if(auth()->id() == $message->user_id) float-left @else float-right @endif mx-1 mt-1">
+                                            <a href="javascript:void(0);" wire:click="$emitSelf('deleteMessage', {{ $message->id }})" class="text-white" >
+                                                @lang('Delete')
+                                            </a>
+                                        </span>
                                     @endif
                                 </span>
                                 <span class="direct-chat-timestamp @if(auth()->id() == $message->user_id) float-left @else float-right @endif">
@@ -39,15 +39,21 @@
                                     {{ $message->message }}
                                 @else
                                     <i>@lang('group.messages.deleted')</i>
-                                @endif                           
-                                
+                                @endif
                             </div>
                         
                         </div>
                     @empty
                         <div class="my-2 text-center">@lang('group.messages.no_messages')</div>
                     @endforelse
-                
+                    @if($messages_count > 0)
+                        <div class="direct-chat-msg">
+                            <div class="text-sm text-center">
+                                <a href="javascript:void(0);" wire:click="increaseMessages()">
+                                    @lang('group.history')
+                                </a></div>
+                        </div>
+                    @endif
                 </div>
             </div>
             <div class="card-footer">

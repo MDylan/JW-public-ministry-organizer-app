@@ -19,18 +19,21 @@ class Messages extends Component
 
     public $group_id;
     public $message = '';
-    public $message_priority = 0;
-    public $group_write = 0;
-    public $group_priority = 0;
+    public int $message_priority = 0;
+    public int $group_write = 0;
+    public int $group_priority = 0;
     public $group_name = '';
     public $privilege = [
         'read' => false,
-        'write' => false
+        'write' => false,
+        'delete' => false
     ];
+    public int $message_number = 30;
 
     public $listeners = [
         'sendMessage',
-        'deleteMessage'
+        'deleteMessage',
+        'increaseMessages'
     ];
 
     public function mount(Group $group) {
@@ -38,6 +41,10 @@ class Messages extends Component
         $this->group_priority = $group->messages_priority;
         $this->group_write = $group->messages_write;
         $this->group_name = $group->name;
+    }
+
+    public function increaseMessages() {
+        $this->message_number += 30;
     }
 
     protected function rules()
@@ -103,9 +110,12 @@ class Messages extends Component
     }
 
     public function deleteMessage(GroupMessage $groupMessage) {
-        $groupMessage->update([
-            'message' => null
-        ]);
+        $this->checkPrivilege();
+        if($groupMessage->user_id == auth()->id() || $this->privilege['delete']) {
+            $groupMessage->update([
+                'message' => null
+            ]);
+        }
     }
 
     public function checkPrivilege() {
@@ -142,7 +152,7 @@ class Messages extends Component
 
         //if he has high privilege, he can read and write
         if(auth()->user()->userGroupsEditable->contains('id', $this->group_id)) {
-            $this->privilege['read'] = $this->privilege['write'] = true;
+            $this->privilege['read'] = $this->privilege['write'] = $this->privilege['delete'] = true;
         }
     }
 
@@ -152,7 +162,7 @@ class Messages extends Component
         $messages = GroupMessage::where('group_id', $this->group_id)
                             ->with('user')
                             ->orderBy('created_at', 'DESC')
-                            ->take(30)
+                            ->take($this->message_number)
                             ->get();
         $this->checkPrivilege();
 
@@ -167,7 +177,8 @@ class Messages extends Component
         }
 
         return view('livewire.groups.messages', [
-            'messages' => $messages
+            'messages' => $messages,
+            'messages_count' => $messages->count()
         ]);
     }
 }
