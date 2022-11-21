@@ -46,10 +46,10 @@
                     @empty
                         <div class="my-2 text-center">@lang('group.messages.no_messages')</div>
                     @endforelse
-                    @if($messages_count > 0)
+                    @if($messages_count > 0 && $message_number < $total)
                         <div class="direct-chat-msg">
                             <div class="text-sm text-center">
-                                <a href="javascript:void(0);" wire:click="increaseMessages()">
+                                <a href="javascript:void(0);" wire:click="increaseMessages()"  wire:loading.attr="disabled" wire:target="increaseMessages">
                                     @lang('group.history')
                                 </a></div>
                         </div>

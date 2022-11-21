@@ -125,7 +125,6 @@ class Messages extends Component
             ->where('end', '>=', now()->subHours(2))
             ->where('group_id', $this->group_id)
             ->whereIn('status', [0,1])
-            // ->toSql();
             ->count();
 
         //if he has future events, he can read & write
@@ -166,6 +165,8 @@ class Messages extends Component
                             ->get();
         $this->checkPrivilege();
 
+        $total = GroupMessage::where('group_id', $this->group_id)->count();
+
         foreach($messages as $message) {
             $file = "avatar-".$message->user_id.".png";
             $path = 'avatars/';
@@ -178,7 +179,8 @@ class Messages extends Component
 
         return view('livewire.groups.messages', [
             'messages' => $messages,
-            'messages_count' => $messages->count()
+            'messages_count' => $messages->count(),
+            'total' => $total
         ]);
     }
 }
