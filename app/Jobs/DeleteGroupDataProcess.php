@@ -8,7 +8,9 @@ use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupDay;
 use App\Models\GroupDayDisabledSlots;
+use App\Models\GroupFutureChange;
 use App\Models\GroupLiterature;
+use App\Models\GroupMessage;
 use App\Models\GroupNews;
 use App\Models\GroupNewsFile;
 use App\Models\GroupNewsUserLogs;
@@ -60,6 +62,8 @@ class DeleteGroupDataProcess implements ShouldQueue
         GroupNewsUserLogs::where('group_id', $this->groupId)->delete();
         GroupPosters::where('group_id', $this->groupId)->delete();
         GroupSurvey::where('group_id', $this->groupId)->delete();
+        GroupMessage::where('group_id', $this->groupId)->delete();
+        GroupFutureChange::where('group_id', $this->groupId)->delete();
         
         GroupUser::withoutEvents(function () {
             $users = GroupUser::with('user')->where('group_id', $this->groupId)->get();
