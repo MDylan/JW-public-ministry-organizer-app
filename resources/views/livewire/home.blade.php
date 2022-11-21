@@ -50,7 +50,7 @@
                                     <i class="fas fa-chevron-down"></i>
                                 </a> 
                                 @endif
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse" wire:ignore>
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="@lang('app.collapse')" wire:ignore>
                                 <i class="fas fa-minus"></i>
                                 </button>
                             </div>
