@@ -110,10 +110,14 @@ class Messages extends Component
 
     public function checkPrivilege() {
         $userEvents = auth()->user()
-            ->feature_events(now()->subHours(2))
-            ->where('end', '<', now()->addHours(24))
+            ->eventsOnly()
+            ->where('start', '<', now()->addHours(24))
+            ->where('end', '>=', now()->subHours(2))
             ->where('group_id', $this->group_id)
+            ->whereIn('status', [0,1])
+            // ->toSql();
             ->count();
+
         //if he has future events, he can read & write
         $this->privilege['read'] = $this->privilege['write'] = $userEvents > 0 ? true : false;
 
