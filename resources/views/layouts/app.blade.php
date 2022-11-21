@@ -12,7 +12,7 @@
     'plugins/toastr/toastr.min.css',
     'css/public_style.css'
   ], 
-  '/storage/cache/css/all_style.css') !!}
+  '/cache/css/all_style.css') !!}
   @yield('header_style')
   @livewireStyles
 </head>
@@ -53,7 +53,7 @@
   </div>
   <!-- ./wrapper -->
   <!-- REQUIRED SCRIPTS -->
-  {!! Packer::js('/plugins/jquery/jquery.min.js', '/storage/cache/js/jquery.js') !!}  
+  {!! Packer::js('/plugins/jquery/jquery.min.js', '/cache/js/jquery.js') !!}  
   {!! Packer::js('/plugins/bootstrap/js/bootstrap.bundle.min.js', '/plugins/bootstrap/js/cache_bootstrap.js') !!}
   {!! Packer::js('/dist/js/adminlte.min.js', '/dist/js/cache_adminlte.js') !!}
   {!! Packer::js('/plugins/toastr/toastr.min.js', '/plugins/toastr/cache_toastr.js') !!}
@@ -62,7 +62,7 @@
     '/js/custom.js',
     '/js/modal.js',
   ], 
-  '/storage/cache/js/all.js') !!}
+  '/cache/js/all.js') !!}
   <script>
     $(document).ready(function() {
       toastr.options = {

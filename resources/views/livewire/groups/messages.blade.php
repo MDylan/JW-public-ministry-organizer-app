@@ -29,8 +29,7 @@
                                     {{ $message->created_at->format(__('app.format.datetime')) }}
                                 </span>
                             </div>
-                            {{-- <img class="direct-chat-img" src="../dist/img/user1-128x128.jpg" alt="{{ $message->user->name }}"> --}}
-                            {{-- <div class="initial-avatar direct-chat-img">MD</div> --}}
+                            <img class="direct-chat-img" src="{{ asset('public/avatars/avatar-'.$message->user_id.'.png') }}" alt="{{ $message->user->name }}">
 
                             <div class="direct-chat-text">
                                 @if(!is_null($message->message))

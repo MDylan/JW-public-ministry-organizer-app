@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '61e2bad539adfb06320005ae555225d7591756e9',
+    'reference' => '60dc8382150fb555af1d90319fb106a1a8f5378f',
     'name' => 'laravel/laravel',
   ),
   'versions' => 
@@ -544,6 +544,15 @@ private static $installed = array (
       ),
       'reference' => 'bcf60d475683a36a40cb2343a102aa79114b4525',
     ),
+    'intervention/image' => 
+    array (
+      'pretty_version' => '2.7.2',
+      'version' => '2.7.2.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '04be355f8d6734c826045d02a1079ad658322dad',
+    ),
     'joedixon/laravel-translation' => 
     array (
       'pretty_version' => 'v1.1.2',
@@ -585,7 +594,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '61e2bad539adfb06320005ae555225d7591756e9',
+      'reference' => '60dc8382150fb555af1d90319fb106a1a8f5378f',
     ),
     'laravel/sail' => 
     array (
@@ -622,6 +631,15 @@ private static $installed = array (
       array (
       ),
       'reference' => '78c3cb516ac9e6d3d76cad9191f81d217302dea6',
+    ),
+    'laravolt/avatar' => 
+    array (
+      'pretty_version' => '4.1.7',
+      'version' => '4.1.7.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '2c11878524e19032793effa67f09df0682e5775b',
     ),
     'league/commonmark' => 
     array (

@@ -7,10 +7,11 @@ use App\Models\GroupMessage;
 use App\Models\GroupUser;
 use App\Models\User;
 use App\Notifications\GroupPriorityMessageNotification;
-use App\Notifications\GroupPriorityMessageNotificationTest;
 use App\Rules\Throttle;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
+use Laravolt\Avatar\Facade as Avatar;
 use Livewire\Component;
 
 class Messages extends Component
@@ -23,7 +24,7 @@ class Messages extends Component
     public $group_priority = 0;
     public $group_name = '';
     public $privilege = [
-        'see' => false,
+        'read' => false,
         'write' => false
     ];
 
@@ -151,9 +152,15 @@ class Messages extends Component
                             ->get();
         $this->checkPrivilege();
 
-
-        // dump($userEvents->count());
-        // dump($messages->toArray());
+        foreach($messages as $message) {
+            $file = "avatar-".$message->user_id.".png";
+            $path = 'avatars/';
+            if(!Storage::disk('web')->exists($path.$file)) {
+                $avatar = Avatar::create($message->user->name);
+                $image = $avatar->getImageObject();
+                Storage::disk('web')->put($path.$file, $image->stream("png"));
+            }
+        }
 
         return view('livewire.groups.messages', [
             'messages' => $messages
