@@ -2,6 +2,7 @@
 /public/hot
 /public/storage
 /public/public/avatars/*
+/public/cache
 /storage/*.key
 .env
 .env.backup
