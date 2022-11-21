@@ -6,6 +6,7 @@ use App\Classes\updateGroupFutureChanges;
 use App\Models\AdminNewsletter;
 use App\Models\Event;
 use App\Models\GroupFutureChange;
+use App\Models\GroupMessage;
 use App\Models\LogHistory;
 use App\Models\Settings;
 use App\Models\User;
@@ -149,6 +150,9 @@ class Kernel extends ConsoleKernel
                 ->where(
                     'day', '<=', $date
                 )->forceDelete();
+
+            //delete old group messages
+            GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
         })->daily();
 
         $schedule->call(function () {
