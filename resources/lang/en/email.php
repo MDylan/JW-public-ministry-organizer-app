@@ -32,6 +32,17 @@ return array (
     'line_3' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest.',
     'subject' => 'IMPORTANT: Your access will soon be revoked.',
   ),
+  'anonymizeAdmin' => 
+  array (
+    'line_1' => 'We are informing you that the following (inactive) publisher\'s account and data soon will be deleted due to GDPR regulations. The publisher will not be able to log in after deletion. The publisher has also received an email notification about this.',
+    'line_2' => 'This is necessary because it has been too long since they have last logged in.',
+    'line_3' => 'There are two options to prevent this from happening:',
+    'line_4' => '1. The publisher performs a login before the given due date.',
+    'line_5' => '2. In the "Publishers" menu, you request to preserve the data of the publisher.',
+    'line_6' => 'Group: :group',
+    'line_7' => 'Affected publishers (with due date):',
+    'subject' => 'IMPORTANT: Some users soon will be deleted from your group.',
+  ),
   'dear' => 'Dear',
   'deletePersonalData' => 
   array (
@@ -69,7 +80,7 @@ return array (
     array (
       'modified_service_time' => 'The time of the service on this day has been modified, and your planned service did not fit into the new service time.',
       'service_day_deleted' => 'No further services can be scheduled for this day, so the service of all members have been deleted.',
-      'unknown' => 'Unknown.',
+      'unknown' => 'Unknown',
       'user_logout' => 'You have left the group, and so your future services in the group have been deleted.',
     ),
     'modified' => 
@@ -145,6 +156,13 @@ return array (
     'line_5' => 'After login, please make sure to change this password under the "My profile" menu.',
     'subject' => 'Login data',
   ),
+  'messages' => 
+  array (
+    'line_1' => 'An urgent message has been posted on the message board by :userName in the :groupName group.',
+    'line_2' => 'The content of the message:',
+    'line_3' => 'You can reply to the message on the message board or by using the personal contact details of the publisher. Please DO NOT reply to this email because it is not the publisher who will receive the reply.',
+    'subject' => 'Urgent message of the following publisher: :userName',
+  ),
   'newadmin' => 
   array (
     'line_1' => 'This is an automatically generated notification about :newAdmin being assigned to be the administrator of your page.',
@@ -171,4 +189,15 @@ The authors of the Help Service Organizer page',
     'subject' => 'Test notification.',
   ),
   'unsubscribe' => 'If you do not wish to receive such emails in the future, you may opt out in the "My Profile" menu.',
+  'userProfileRenewal' => 
+  array (
+    'line_1' => 'We are informing you that :adminName has requested that your data should be preserved on the :appName site, though you have not logged in for a long time. As a result of this request, your account will not be deleted and your data will continue to be preserved.',
+    'line_2' => 'If this is againts your will, then you can delete your personal data in the "My profile" menu after login.',
+    'subject' => 'The preservation period of your user data has been extended.',
+  ),
+  'userProfileRenewalAdmin' => 
+  array (
+    'line_1' => 'We are informing you that :adminName has extended the preservation period of the personal data of :userName. The publisher has also been informed about this in email. You do not need to take any actions.',
+    'subject' => 'The preservation period of the user\'s data has been extended.',
+  ),
 );
