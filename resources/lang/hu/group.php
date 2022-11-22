@@ -138,12 +138,12 @@ return [
         'message' => 'Ezentúl nem fogod látni a csoport eseményeit.',
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
-        'no_admin' => 'Te vagy az egyedüli csoportfelvigyázója ennek csoportnak és az alcsoportjainak. Csak akkor léphetsz ki, ha valakit mindegyik érintett csoportban kijelölsz csoportfelvigyázónak.',
+        'no_admin' => 'Nincs másik csoportfelvigyázója ennek csoportnak vagy az alcsoportjainak. A folytatáshoz valaki mást ki kell jelölnöd csoportfelvigyázónak mindegyik csoportban.',
         'no_other_admin' => 'Nincs más csoportfelvigyázó, jelölj ki valakit helyette.',
         'log' => 'Kilépett a csoportból',
         'self_delete_error' => 'Magadat nem törölheted a csoportból. A Csoportok oldalon lépj ki, ha szeretnél.'
     ],
-    'error_no_admin_user' => 'Nem jelöltél ki senkit csoportfelvigyázónak!',
+    'error_no_admin_user' => 'Legalább egy közös csoportfelvigyázója kell legyen ennek a csoportnak és az alcsoportjainak.',
     'error_no_right' => 'Nincs jogosultságod új csoportfelvigyázót kinevezni.',
     'error_no_right_to_remove_admin' => 'Nem veheted el a csoportfelvigyázó jogosultságát.',
     'user' => [

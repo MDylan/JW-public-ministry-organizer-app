@@ -234,7 +234,8 @@ class ListUsers extends AppComponent
         $v->after(function ($validator) use ($admins, $current_user, $selected_user) {
             //if modified user rule
             if($selected_user->pivot->group_role != $this->state['group_role']) {
-                if ($admins <= 1 && $selected_user->pivot->group_role == 'admin') {
+                // if ($admins <= 1 && $selected_user->pivot->group_role == 'admin') {
+                if(pwbs_check_group_other_admins($this->group->id, $this->selected_user['id']) === false) {
                     $validator->errors()->add(
                         'users', __('group.error_no_admin_user')
                     );
@@ -329,6 +330,16 @@ class ListUsers extends AppComponent
         $selected_user = $this->group->groupUsers()->where('user_id', $userId)->first();
         if(!$selected_user->id) abort(403);
 
+
+        if(pwbs_check_group_other_admins($this->group->id, $userId) === false) {
+            //no other admin
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
+            return;
+        } 
+
         $this->dispatchBrowserEvent('show-deletion-confirmation', [
             'title' => __('group.user.confirmDelete.question', ['name' => $selected_user->name]),
             'text' => __('group.user.confirmDelete.message'),
@@ -348,6 +359,15 @@ class ListUsers extends AppComponent
             ]);
             return;
         }
+
+        if(pwbs_check_group_other_admins($this->group->id, $this->userIdBeeingRemoved) === false) {
+            //no other admin
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
+            return;
+        } 
 
         $detach = new GroupUserMoves($this->group->id, $this->userIdBeeingRemoved);
         $detach->detach();

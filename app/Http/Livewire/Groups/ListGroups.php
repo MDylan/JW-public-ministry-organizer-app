@@ -135,33 +135,33 @@ class ListGroups extends AppComponent
      * Modal before quit
      */
     public function confirmLogoutModal($groupId) {
-        $userId = Auth::id();
-        $group = Group::findOrFail($groupId);
-        $users = $group->groupAdmins()->get()->toArray();
-        $total_group = 1;
-        $admins = 0;
-        $main_admins = [];
-        foreach($users as $user) {
-            if($user['id'] != $userId) {
-                $admins++;
-                $main_admins[$user['id']] = 1;
-            }
-        }
-        //check child groups too!
-        $child_groups = $group->childGroups()->with('groupAdmins')->get()->toArray();
-        if(count($child_groups) > 0) {
-            $total_group += count($child_groups);
-            foreach($child_groups as $child_group) {
-                foreach($child_group['group_admins'] as $user) {
-                    if($user['id'] != $userId) {
-                        $admins++;
-                        $main_admins[$user['id']]++;
-                    }
-                }
-            }
-        }
+        // $userId = Auth::id();
+        // $group = Group::findOrFail($groupId);
+        // $users = $group->groupAdmins()->get()->toArray();
+        // $total_group = 1;
+        // $admins = 0;
+        // $main_admins = [];
+        // foreach($users as $user) {
+        //     if($user['id'] != $userId) {
+        //         $admins++;
+        //         $main_admins[$user['id']] = 1;
+        //     }
+        // }
+        // //check child groups too!
+        // $child_groups = $group->childGroups()->with('groupAdmins')->get()->toArray();
+        // if(count($child_groups) > 0) {
+        //     $total_group += count($child_groups);
+        //     foreach($child_groups as $child_group) {
+        //         foreach($child_group['group_admins'] as $user) {
+        //             if($user['id'] != $userId) {
+        //                 $admins++;
+        //                 $main_admins[$user['id']]++;
+        //             }
+        //         }
+        //     }
+        // }
 
-        if(array_search($total_group, $main_admins, true) === false) {
+        if(pwbs_check_group_other_admins($groupId, auth()->id()) === false) {
             //no other admin
             $this->dispatchBrowserEvent('sweet-error', [
                 'title' => __('group.logout.error'),
@@ -178,12 +178,20 @@ class ListGroups extends AppComponent
      */
     public function logoutConfirmed() {
 
-        $logout = new GroupUserMoves($this->groupBeeingLogout, Auth::id());
-        $res = $logout->detach();
-        if($res) {
-            $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
+        if(pwbs_check_group_other_admins($this->groupBeeingLogout, auth()->id()) === false) {
+            //no other admin
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
         } else {
-            $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
+            $logout = new GroupUserMoves($this->groupBeeingLogout, auth()->id());
+            $res = $logout->detach();
+            if($res) {
+                $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
+            } else {
+                $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
+            }
         }
     }
 
