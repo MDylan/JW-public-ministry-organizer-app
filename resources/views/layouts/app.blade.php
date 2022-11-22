@@ -49,7 +49,8 @@
       </div>
     </aside>
     <!-- /.control-sidebar -->
-    @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))  
+    {{-- @livewire('events.modal', ['groupId' => 0], key('eventsmodal'))   --}}
+    <livewire:events.modal :groupId="0" :wire:key="events_modal">
   </div>
   <!-- ./wrapper -->
   <!-- REQUIRED SCRIPTS -->

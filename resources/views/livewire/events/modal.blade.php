@@ -238,11 +238,12 @@
                             <div class="tab-pane fade @if ($active_tab == 'event') show active @endif" id="custom-tabs-event" role="tabpanel" aria-labelledby="custom-tabs-event-tab">
                                 <div class="m-4">
                                     @if ($active_tab == 'event')
-                                        @livewire('events.event-edit', 
+                                        {{-- @livewire('events.event-edit', 
                                             [
                                                 'groupId' => $form_groupId, 
                                                 'date' => $date
-                                            ], key('eventEdit-'.$form_groupId.'-'.$date))
+                                            ], key('eventEdit-'.$form_groupId.'-'.$date)) --}}
+                                            <livewire:events.event-edit :groupId="$form_groupId" :date="$date" :wire:key="'eventEdit-'.$form_groupId.'-'.$date">
                                         @endif
                                 </div>
                             </div>
