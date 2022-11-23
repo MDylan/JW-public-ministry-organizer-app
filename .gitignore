@@ -1,6 +1,7 @@
 /node_modules
 /public/hot
 /public/storage
+/public/storages/cache/*
 /public/public/avatars/*
 /public/cache
 /storage/*.key
