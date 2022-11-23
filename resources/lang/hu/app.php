@@ -100,4 +100,5 @@ return [
     'page_expired' => 'Az oldal lejárt, kérlek frissítsd.',
     'not_required' => 'Nem kötelező',
     'unknown' => 'ismeretlen',
+    'collapse' => 'Bezár vagy Kinyit',
 ];

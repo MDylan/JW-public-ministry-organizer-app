@@ -80,7 +80,7 @@ class LaraUpdaterController extends Controller
                     }
                 }
                 $this->setCurrentVersion($lastVersionInfo['version']); //update system version
-                Artisan::call('view:clear'); //clear view after update
+                Artisan::call('optimize:clear'); //clear the cache after update
                 Artisan::call('up'); //restore system UP status
                 echo '<p>&raquo; '.trans("laraupdater.SYSTEM_Mantence_Mode").' => '.trans("laraupdater.OFF").'</p>';
                 echo '<p class="success">'.trans("laraupdater.SYSTEM_IS_NOW_UPDATED_TO_VERSION").': '.$lastVersionInfo['version'].'</p>';

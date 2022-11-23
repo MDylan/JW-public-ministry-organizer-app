@@ -6,15 +6,20 @@ use App\Classes\updateGroupFutureChanges;
 use App\Models\AdminNewsletter;
 use App\Models\Event;
 use App\Models\GroupFutureChange;
+use App\Models\GroupMessage;
 use App\Models\LogHistory;
 use App\Models\Settings;
 use App\Models\User;
 use App\Notifications\Newsletter;
 use App\Notifications\UserWillBeAnonymizeNotification;
+use App\Notifications\UserWillBeAnyonimizeAdminNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class Kernel extends ConsoleKernel
 {
@@ -78,6 +83,58 @@ class Kernel extends ConsoleKernel
                     new UserWillBeAnonymizeNotification($data)
                 );
             }
+
+            //notify users admins from future anonymization
+            $editors_list = [];
+            $submonths = config('gdpr.settings.ttl');
+            $minDate = Carbon::now()->subMonths($submonths);
+            $minDate->addDays(7);
+
+            $maxDate = Carbon::now()->subMonths($submonths);
+            $maxDate->addDays(6);
+            $anonymizableUsers = DB::table('users AS U')
+                            ->join('group_user AS GU', function($join) {
+                                $join->on('U.id', '=', 'GU.user_id')
+                                    ->whereNotNull('GU.accepted_at')
+                                    ->whereNull('GU.deleted_at');
+                            })
+                            ->join('groups AS G', function($join) {
+                                $join->on('GU.group_id', '=', 'G.id')
+                                    ->whereNull('G.parent_group_id');
+                            })
+                            ->join('group_user as ADMIN', function($join) {
+                                $join->on('ADMIN.group_id', '=', 'GU.group_id')
+                                    ->whereNotNull('ADMIN.accepted_at')
+                                    ->whereNull('ADMIN.deleted_at')
+                                    ->whereIn('ADMIN.group_role',['roler', 'admin']);
+                            })
+                            ->select('U.id', 'U.email', 'U.name', 'U.last_activity', 'G.id as group_id', 'G.name as group_name', 'ADMIN.user_id as admin_id')
+                                ->where('U.last_activity', '!=', null)
+                                ->where('U.isAnonymized', 0)
+                                ->whereBetween('U.last_activity', [$minDate->format("Y-m-d"), $maxDate->format("Y-m-d")])
+                                // ->where('U.last_activity', '<=', $minDate->format("Y-m-d"))
+                            ->get();
+            foreach ($anonymizableUsers as $user) {
+                $date = Carbon::parse($user->last_activity)->addMonths($submonths);
+                $data['lastDate'] = $date->format("Y-m-d");
+
+                $editors_list[$user->group_id]['admins'][$user->admin_id] = $user->admin_id;
+                $editors_list[$user->group_id]['users'][$user->id] = [
+                    'lastDate' => $data['lastDate'],
+                    'last_activity' => $user->last_activity,
+                    'name' => Crypt::decryptString($user->name)
+                ];
+                $editors_list[$user->group_id]['name'] = Crypt::decryptString($user->group_name);
+            }
+
+            if(count($editors_list)) {
+                foreach($editors_list as $list) {
+                    $admins = User::whereIn('id', $list['admins'])
+                        ->get();
+
+                    Notification::send($admins, new UserWillBeAnyonimizeAdminNotification($list));
+                }
+            }
         })->dailyAt('7:10');
         
         //delete old LogHistory data
@@ -93,6 +150,9 @@ class Kernel extends ConsoleKernel
                 ->where(
                     'day', '<=', $date
                 )->forceDelete();
+
+            //delete old group messages
+            GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
         })->daily();
 
         $schedule->call(function () {

@@ -192,6 +192,7 @@ class UpdateGroupForm extends AppComponent
         $this->state['name'] = strip_tags($this->state['name']);
         $admins = 0;
         $reGenerateStat = [];
+        // dd($this->state);
 
         Validator::make(['change_date' => $this->change_date], [
             'change_date' => 'required|date_format:Y-m-d|after_or_equal:'.date("Y-m-d")
@@ -218,7 +219,10 @@ class UpdateGroupForm extends AppComponent
             'signs' => 'sometimes',
             'languages' => 'sometimes',
             'replyTo' => 'nullable|email',
-            'showPhone' => 'required|numeric|in:0,1'
+            'showPhone' => 'required|numeric|in:0,1',
+            'messages_on' => 'required|numeric|in:0,1',
+            'messages_write' => 'sometimes|numeric|in:0,1',
+            'messages_priority' => 'sometimes|numeric|in:0,1',
         ]);
 
         $validatedData = $v->validate();

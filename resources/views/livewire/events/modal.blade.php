@@ -71,6 +71,15 @@
                                                             <i class="far fa-edit"></i>
                                                         </button>
                                                     @endif
+                                                    <button wire:click="togglePosterRead({{ $poster['id'] }})" wire:loading.attr="disabled" class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#collapse_poster{{ $poster['id'] }}" aria-expanded="false" aria-controls="collapse_poster{{ $poster['id'] }}">
+                                                        @if(count($poster['user_read'] ?? []) == 0) 
+                                                            <i class="far fa-check-circle mr-1"></i>
+                                                            @lang('group.poster.i_have_read')
+                                                        @else
+                                                            <i class="fas fa-eye mr-1"></i>
+                                                            @lang('app.show')
+                                                        @endif
+                                                    </button>
                                                     <strong>
                                                         {{  \Carbon\Carbon::parse($poster["show_date"])->format(__('app.format.date')) }}
                                                         - 
@@ -80,7 +89,9 @@
                                                             @lang('group.poster.until_revoked')
                                                         @endif
                                                     </strong>
-                                                    {!! $poster['info'] !!}
+                                                    <div class="collapse @if(count($poster['user_read'] ?? []) == 0) show @endif" id="collapse_poster{{ $poster['id'] }}">
+                                                        {!! $poster['info'] !!}
+                                                    </div>
                                                 </div>
                                             </div>
                                         @endforeach                                
@@ -227,11 +238,12 @@
                             <div class="tab-pane fade @if ($active_tab == 'event') show active @endif" id="custom-tabs-event" role="tabpanel" aria-labelledby="custom-tabs-event-tab">
                                 <div class="m-4">
                                     @if ($active_tab == 'event')
-                                        @livewire('events.event-edit', 
+                                        {{-- @livewire('events.event-edit', 
                                             [
                                                 'groupId' => $form_groupId, 
                                                 'date' => $date
-                                            ], key('eventEdit-'.$form_groupId.'-'.$date))
+                                            ], key('eventEdit-'.$form_groupId.'-'.$date)) --}}
+                                            <livewire:events.event-edit :groupId="$form_groupId" :date="$date" :wire:key="'eventEdit-'.$form_groupId.'-'.$date">
                                         @endif
                                 </div>
                             </div>

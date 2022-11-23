@@ -13,7 +13,19 @@ final class GroupUser extends Pivot
     public $incrementing = true;
 
     protected $table 	= 'group_user';
-    protected $fillable = ['user_id', 'group_id', 'group_role', 'accepted_at', 'note', 'hidden','deleted_at', 'signs', 'list_order'];
+    protected $fillable = [
+        'user_id', 
+        'group_id', 
+        'group_role',
+        'accepted_at',
+        'note',
+        'hidden',
+        'deleted_at', 
+        'signs', 
+        'list_order',
+        'message_use',
+        'message_send_priority'
+    ];
     protected $dates = ['created_at','updated_at','deleted_at'];
 
     protected $casts = [

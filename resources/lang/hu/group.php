@@ -138,12 +138,12 @@ return [
         'message' => 'Ezentúl nem fogod látni a csoport eseményeit.',
         'success' => 'Sikeresen kiléptél a csoportból!',
         'error'  => 'Hiba a kilépés során',
-        'no_admin' => 'Te vagy az egyedüli csoportfelvigyázó a csoportban. Kilépés előtt add át ezt a jogkört valakinek.',
+        'no_admin' => 'Nincs másik csoportfelvigyázója ennek csoportnak vagy az alcsoportjainak. A folytatáshoz valaki mást ki kell jelölnöd csoportfelvigyázónak mindegyik csoportban.',
         'no_other_admin' => 'Nincs más csoportfelvigyázó, jelölj ki valakit helyette.',
         'log' => 'Kilépett a csoportból',
         'self_delete_error' => 'Magadat nem törölheted a csoportból. A Csoportok oldalon lépj ki, ha szeretnél.'
     ],
-    'error_no_admin_user' => 'Nem jelöltél ki senkit csoportfelvigyázónak!',
+    'error_no_admin_user' => 'Legalább egy közös csoportfelvigyázója kell legyen ennek a csoportnak és az alcsoportjainak.',
     'error_no_right' => 'Nincs jogosultságod új csoportfelvigyázót kinevezni.',
     'error_no_right_to_remove_admin' => 'Nem veheted el a csoportfelvigyázó jogosultságát.',
     'user' => [
@@ -283,6 +283,7 @@ return [
             'success' => 'Az információ törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+        'i_have_read' => 'Elolvastam',
     ],
     'filter' => [
         'title' => 'Szűrés',
@@ -302,5 +303,35 @@ return [
             'success' => 'A jövőbeli változtatás törölve lett.',
             'error' => 'Sikertelen törlés!'
         ],
+    ],
+    'messages' => [
+        'title' => 'Üzenőfal',
+        'type' => 'Üzenet írása',
+        'urgent' => 'Sürgős',
+        'urgent_info' => 'Sürgős esetben a csoportszolgák és csoportfelvigyázók emailben is megkapják az üzenetedet. Kérjük csak tényleg sürgős esetben használd ezt a funkciót.',
+        'no_messages' => 'Nincsenek üzenetek.',
+        'info' => 'Az üzenőfal azoknak érhető el, akiknek szolgálatuk lesz a következő 24 órában, vagy szolgálatuk volt az elmúlt 2 órában. ',
+        'be_short' => 'Ha üzenetet írsz, kérjük fogalmazz röviden és csak a lényeges információkat írd le.',
+        'limit' => 'Túl sok próbálkozás, kérlek várj.',
+        'deleted' => 'Törölve.',
+        'cant_write' => 'Jelenleg nem küldhetsz üzenetet.',
+        'admin' => [
+            'info' => 'Ha bekapcsolod, akkor a Főoldalon az adott csoportnál elérhető lesz az üzenőfal funkció. A Hírnökök menüben további jogosultságot tudsz adni majd egyes hírnököknek, illetve meg is tilthatod, hogy valaki üzenetet tudjon írni (ettől még látni fogja az üzeneteket). Az üzeneteket maximum 7 napig őrizzük, utána törli a rendszer.',
+            'activate' => 'Bekapcsolod ezt a funkciót?',
+            'who_can_write' => 'Ki írhat üzenetet?',
+            'anyone' => 'Bármely hírnök a csoportban',
+            'authorized_only' => 'Csak akinek jogosultságot adunk',
+            'priority' => 'Szeretnéd használni a sürgős üzenet funkciót?',
+            'priority_info' => 'Igen esetén az üzenet írásakor megadható, hogy egy üzenet sürgős, ekkor a csoportszolgák és a jogosultsággal rendelkezők értesítést kapnak emailben az adott üzenetről.',
+        ],
+        'user' => [
+            'title' => 'Üzenőfal beállítások',
+            'when_use' => 'Mikor használhatja az üzenőfalat?',
+            'default' => 'Amikor szolgálata van',
+            'cant_write' => 'Nem írhat az üzenőfalra, csak láthatja',
+            'can_write' => 'Bármikor írhat az üzenőfalra',            
+            'catch_urgent' => 'Továbbítsd neki sürgős üzeneteket',
+            
+        ]
     ]
 ];

@@ -137,6 +137,25 @@ return [
         'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptél be az oldalra.',
         'line_3' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig.',
     ],
+    'anonymizeAdmin' => [
+        'subject' => 'FONTOS: A csoportodból néhány felhasználó hamarosan törölve lesz',
+        'line_1' => 'Szeretnénk értesíteni, hogy a GDPR adatvédelmi törvények miatt hamarosan törölni fogjuk az alábbi - inaktív - hírnök(ök) fiókját és személyes adatait. Ezt követően nem fog tudni belépni sem. Erről ő is email értesítést kapott.',
+        'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptek be az oldalra.',
+        'line_3' => 'Ha szeretnéd ezt megakadályozni akkor két lehetőség van rá:',
+        'line_4' => '1. A hírnök belép az oldalra a megadott határidőig.',
+        'line_5' => '2. A Hírnökök menüben kéred a hírnök adatainak megtartását.',
+        'line_6' => 'Csoport: :group',
+        'line_7' => 'Érintett hírnökök (határidővel):',
+    ],
+    'userProfileRenewal' => [
+        'subject' => 'A felhasználói adataid meg lettek hosszabbítva',
+        'line_1' => 'Szeretnénk értesíteni, hogy :adminName kérte, hogy a(z) :appName oldalon továbbra is őrizzük meg az adataidat, annak ellenére, hogy régen használtad az oldalt. Így a fiókod nem lesz törölve és az adataidat továbbra is megőrizzük.',
+        'line_2' => 'Ha ezt nem szeretnéd, akkor belépés után a Profilom menüben tudod törölni a személyes adataidat.'
+    ],
+    'userProfileRenewalAdmin' => [
+        'subject' => 'A felhasználó adatai meg lettek hosszabbítva',
+        'line_1' => 'Ez egy értesítés arról, hogy :adminName meghosszabbította :userName személyes adatainak tárolását. A hírnök is értesítve lett erről emailben. További teendőd nincs ezzel kapcsolatban.',
+    ],
     'testmail' => [
         'subject' => 'Próba értesítés',
         'line_1' => 'Ez egy próba értesítés. Ha megkapod, az azt jelenti, hogy az email beállítások rendben vannak.',
@@ -146,5 +165,11 @@ return [
         'subject' => 'Csoport létrehozó jogosultságot kaptál',
         'line_1' => 'Szeretnénk értesíteni, hogy az oldalon megkaptad a lehetőséget, hogy új csoportot hozz létre. Ezt a "Csoportok" menüpontban tudod megtenni.',
         'line_2' => 'Kérjük nézd át a Súgó menüben lévő videókat, hogy átlásd a beállítási lehetőségeket. Továbbá ahol lehet, leírások segítik a beállítást, első használatkor kérjük ezeket is olvasd át.',
+    ],
+    'messages' => [
+        'subject' => 'Sürgős üzenet :userName hírnöktől',
+        'line_1' => 'A(z) :groupName csoportban :userName hírnöktől sürgős üzenet érkezett az Üzenőfalra.',
+        'line_2' => 'Az üzenet tartalma:',
+        'line_3' => 'Vagy az üzenőfalon vagy a megadott elérhetőségein tudsz neki válaszolni. Kérjük erre az emailre NE válaszolj, mert nem neki lesz továbbítva.',
     ],
 ];

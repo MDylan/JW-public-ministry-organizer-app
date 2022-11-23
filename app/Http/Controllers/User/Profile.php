@@ -24,6 +24,7 @@ class Profile extends Controller
                 'EventDeletedAdminsNotification',
                 'EventDeletedNotification',
                 'UserProfileChangedNotification',
+                'GroupPriorityMessageNotification'
             ]
         ]);
     }

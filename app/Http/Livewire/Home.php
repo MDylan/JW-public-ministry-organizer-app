@@ -2,10 +2,12 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -20,11 +22,16 @@ class Home extends Component
         'refresh' => 'pollingOn',
         'pollingOn',
         'pollingOff',
-        'setOrder'
+        'setOrder',
+        'togglePosterRead'
     ];
     private $groups = [];
     private $group_roles = [];
     public $polling = true;
+
+    public function togglePosterRead($poster_id) {
+        pwbs_poster_set_read($poster_id);
+    }
 
     public function changeGroup($groupId) {
         $group = Auth()->user()->groupsAccepted()->wherePivot('group_id', $groupId)->firstOrFail()->toArray();
@@ -237,7 +244,7 @@ class Home extends Component
         }
         $stats = Auth::user()->userGroupsAcceptedOnly()
                     ->select('groups.id', 'groups.name', 
-                                'groups.color_default', 'groups.color_empty', 'groups.color_someone', 'groups.color_minimum', 'groups.color_maximum')                       
+                                'groups.color_default', 'groups.color_empty', 'groups.color_someone', 'groups.color_minimum', 'groups.color_maximum', 'groups.messages_on')                       
                     ->orderByPivot('list_order')
                     ->with([
                         // 'stats' => function($q) use($start, $end) {
@@ -264,6 +271,7 @@ class Home extends Component
                         'futureChanges'
                     ])->get()->toArray();
         // dd($stats);
+
         $ids = [];
         foreach($stats as $stat) {
             $ids[] = $stat['id'];

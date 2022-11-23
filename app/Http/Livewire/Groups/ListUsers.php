@@ -17,6 +17,8 @@ use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\LoginData;
 use App\Notifications\UserProfileChangedNotification;
+use App\Notifications\UserProfileRenewalAdminNotification;
+use App\Notifications\UserProfileRenewalNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
@@ -61,7 +63,8 @@ class ListUsers extends AppComponent
         'deleteUser',
         'detachChildGroup',
         'detachParentGroup',
-        'setCopyInfo'
+        'setCopyInfo',
+        'openUserRenewalModal'
     ];
 
     private $copy_datas = [];
@@ -187,7 +190,9 @@ class ListUsers extends AppComponent
                 'congregation' => $user->congregation,
                 'email_verified_at' => $user->email_verified_at,
             ],
-            'finish_guest_registration' => 0
+            'finish_guest_registration' => 0,
+            'message_use' => $user->pivot->message_use,
+            'message_send_priority' => $user->pivot->message_send_priority,
         ];
 
         $this->dispatchBrowserEvent('show-modal', ['id' => 'UserModal']);
@@ -223,11 +228,14 @@ class ListUsers extends AppComponent
             'finish_guest_registration' => [
                 Rule::In($finish_guest),
             ],
+            'message_use' => 'sometimes|numeric|in:0,1,2',
+            'message_send_priority' => 'sometimes|boolean',
         ]);
         $v->after(function ($validator) use ($admins, $current_user, $selected_user) {
             //if modified user rule
             if($selected_user->pivot->group_role != $this->state['group_role']) {
-                if ($admins <= 1 && $selected_user->pivot->group_role == 'admin') {
+                // if ($admins <= 1 && $selected_user->pivot->group_role == 'admin') {
+                if(pwbs_check_group_other_admins($this->group->id, $this->selected_user['id']) === false) {
                     $validator->errors()->add(
                         'users', __('group.error_no_admin_user')
                     );
@@ -322,6 +330,16 @@ class ListUsers extends AppComponent
         $selected_user = $this->group->groupUsers()->where('user_id', $userId)->first();
         if(!$selected_user->id) abort(403);
 
+
+        if(pwbs_check_group_other_admins($this->group->id, $userId) === false) {
+            //no other admin
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
+            return;
+        } 
+
         $this->dispatchBrowserEvent('show-deletion-confirmation', [
             'title' => __('group.user.confirmDelete.question', ['name' => $selected_user->name]),
             'text' => __('group.user.confirmDelete.message'),
@@ -341,6 +359,15 @@ class ListUsers extends AppComponent
             ]);
             return;
         }
+
+        if(pwbs_check_group_other_admins($this->group->id, $this->userIdBeeingRemoved) === false) {
+            //no other admin
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.logout.no_admin'),
+            ]);
+            return;
+        } 
 
         $detach = new GroupUserMoves($this->group->id, $this->userIdBeeingRemoved);
         $detach->detach();
@@ -362,6 +389,7 @@ class ListUsers extends AppComponent
             $this->filter['signs'] = [];
         }
         $this->filter['online'] = false;
+        $this->filter['inactive'] = false;
         $this->resetPage();
     }
 
@@ -387,10 +415,80 @@ class ListUsers extends AppComponent
         if(($this->filter['myself'] ?? null) == true) {
             $this->filter['myself'] = false;
         }
+        $this->filter['inactive'] = false;
+    }
+
+    public function filterInactive() {
+        $this->filter['inactive'] = !($this->filter['inactive'] ?? false);
+        if(($this->filter['myself'] ?? null) == true) {
+            $this->filter['myself'] = false;
+        }
+        $this->filter['online'] = false;
     }
 
     public function clearSearch() {
         $this->searchTerm = null;
+    }
+
+    public function openUserRenewalModal($UserId) {
+        $this->getGroupInfo();
+        if($this->isNotHelper()) {
+            abort(403);
+        }
+
+        $user = $this->group->groupUsers()->where('user_id', '=', $UserId)->first();
+        $this->selected_user = [
+            'id' => $user->id,
+            'user' => [
+                'name' => $user->name,
+                'last_activity' => $user->last_activity,
+                'last_date' => \Carbon\Carbon::parse($user->last_activity)->addMonths(config('gdpr.settings.ttl') ?? 6)
+            ]
+        ];
+
+        $this->dispatchBrowserEvent('show-modal', ['id' => 'userRenewalModal']);
+    }
+
+    public function userRenewal() {
+        $this->getGroupInfo();
+        if($this->isNotHelper()) {
+            abort(403);
+        }
+
+        $error = false;
+        $userExists = $this->group->groupUsers()->where('user_id', '=', $this->selected_user['id'])->first();
+        if($userExists) {
+            if(\Carbon\Carbon::parse($userExists->last_activity)->lt(now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14))) {
+                //update user last_activity to now
+                $user = User::find($this->selected_user['id']);
+                $user->update(['last_activity' => now()]);
+
+                $data = [
+                    'userName' => $userExists->name,
+                    'adminName' => auth()->user()->name
+                ];
+
+                $user->notify(
+                    new UserProfileRenewalNotification($data)
+                );
+
+                Notification::send($this->group->editors, new UserProfileRenewalAdminNotification($data));
+
+                $this->dispatchBrowserEvent('hide-modal', [
+                    'id' => 'userRenewalModal',
+                    'message' => __('group.user.saved').' ('.$user->name.')',
+                    'savedMessage' => __('app.saved')
+                ]);
+            } else {
+                $error = true;
+            }
+        } else $error = true;
+
+        if($error) {
+            $this->dispatchBrowserEvent('error', [
+                'message' => __('user.inactiveModal.error')
+            ]);
+        }
     }
 
     public function user_admin_groups() {
@@ -782,6 +880,9 @@ class ListUsers extends AppComponent
                         if(($this->filter['online'] ?? null) == true) {
                             $query->whereBetween('users.last_activity', [now()->subMinute(5), now()]);
                         }
+                        if(($this->filter['inactive'] ?? null) == true) {
+                            $query->where('users.last_activity', '<=', now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14));
+                        }
                     })
                     ->where(function($query) use ($editor) {
                         if(!$editor) {
@@ -832,7 +933,12 @@ class ListUsers extends AppComponent
             'group_signs' => $this->group->signs,
             'user_admin_groups' => $this->user_admin_groups(),
             'user_role' => $this->role,
-            'copy_datas' => $this->copy_datas
+            'copy_datas' => $this->copy_datas,
+            'messages' => [
+                'on' => $this->group->messages_on,
+                'priority' => $this->group->messages_priority,
+                'write' => $this->group->messages_write,
+            ] 
         ]);
     }
 }

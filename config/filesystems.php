@@ -52,6 +52,13 @@ return [
             'visibility' => 'public',
         ],
 
+        'web' => [
+            'driver' => 'local',
+            'root' => ('public'),
+            'url' => env('APP_URL').'/public',
+            'visibility' => 'public',
+        ],
+
         'news_files' => [
             'driver' => 'local',
             'root' => storage_path('app/private/news_files'),

@@ -33,7 +33,10 @@ class Group extends Model
         'languages',
         'replyTo',
         'showPhone',
-        'copy_from_parent'
+        'copy_from_parent',
+        'messages_on',
+        'messages_write',
+        'messages_priority'
     ];
 
     /**
@@ -46,7 +49,7 @@ class Group extends Model
         'languages' => 'array',
         'copy_from_parent' => 'array',
         'replyTo' => 'encrypted',
-        'name' => 'encrypted'
+        'name' => 'encrypted',
     ];
 
     protected $appends = ['colors'];
@@ -60,7 +63,7 @@ class Group extends Model
 
     public function groupUsers() {
         return $this->belongsToMany(User::class)
-                        ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at', 'signs')
+                        ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at', 'signs', 'message_use', 'message_send_priority')
                         ->withTimestamps()
                         ->whereNull('deleted_at')
                         ->using(GroupUser::class)
@@ -261,10 +264,15 @@ class Group extends Model
 
     public function posters() {
         return $this->hasMany(GroupPosters::class)
+                    ->with('userRead')
                     ->orderBy('show_date', 'asc');
     }
 
     public function futureChanges() {
         return $this->hasOne(GroupFutureChange::class);
+    }
+
+    public function messages() {
+        return $this->hasMany(GroupMessage::class);
     }
 }

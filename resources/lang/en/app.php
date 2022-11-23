@@ -11,6 +11,7 @@ return array (
   'cancel' => 'Cancel',
   'change' => 'Change',
   'choose_language' => 'Choose language',
+  'collapse' => 'Close or open',
   'contact' => 'Contact',
   'delete' => 'Delete',
   'down' => 'Down',
@@ -47,9 +48,9 @@ return array (
   array (
     'edit' => 'Create or edit newsletter',
     'not_found' => 'No newsletters found',
-    'send_date_helper' => 'In this day will be send and visible',
+    'send_date_helper' => 'On this day will it become visible and will be sent in a newsletter',
     'send_newsletter' => 'Send out in email too',
-    'send_newsletter_helper' => 'It will only be visible on the page if you choose "No"',
+    'send_newsletter_helper' => 'It will only be visible on the page if you choose "No", it will not be sent in email.',
     'show_to' => 'Who can see and receive this?',
     'subject' => 'This will be the subject of the email',
   ),
@@ -92,6 +93,7 @@ return array (
   'total' => 'Total',
   'total_notifications' => ':number new notification(s)',
   'type_for_search' => 'Start typing to search',
+  'unknown' => 'unknown',
   'up' => 'Up',
   'update_description' => 'Update description:',
   'update_info' => 'Before updating, make sure that a backup of the files and database has been saved. After clicking on the button, updating starts immediately and the page will be switched to maintenance mode. The page will become available again once the update has been completed.',
@@ -100,5 +102,4 @@ return array (
   'user_will_be_notified' => 'If you modify, the user will be notified.',
   'verifyEmail' => 'You have not verified your email address yet. Please check your inbox, and click on the link that you received. <br/> You need to perform this step first, <strong>and only after that you will have full access</strong>.<br/> If you did not receive the email, click <a href=":url">here to request resending  the email</a>.',
   'yesDelete' => 'Yes, delete',
-  'unknown' => 'unknown',
 );

@@ -18,6 +18,7 @@
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
+        "laravolt/avatar": "^4.1",
         "livewire/livewire": "^2.10.4",
         "pcinaglia/laraupdater": "1.0.2",
         "spatie/calendar-links": "^1.6",
