@@ -14,7 +14,7 @@
 		/*
 		* URL where your updates are stored ( e.g. for a folder named 'updates', under http://site.com/yourapp ).
 		*/
-		'update_baseurl' => 'https://updates.teruletek.hu/v1',
+		'update_baseurl' => env('UPDATE_CHANNEL', 'https://updates.teruletek.hu/v1'),
 
 		/*
 		* Set a middleware for the route: updater.update
