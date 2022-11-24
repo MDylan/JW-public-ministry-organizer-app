@@ -200,7 +200,7 @@ class Kernel extends ConsoleKernel
             $active_users = User::where('last_activity', '>=', $time)->count();
             Statistics::insert([
                 'type' => 'active_users',
-                'date' => $time,
+                'date' => $time->format("Y-m-d H:i:00"),
                 'number' => $active_users ?? 0
             ]);
         })->hourly();
