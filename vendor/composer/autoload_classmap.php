@@ -130,6 +130,7 @@ return array(
     'App\\Models\\Settings' => $baseDir . '/app/Models/Settings.php',
     'App\\Models\\StaticPage' => $baseDir . '/app/Models/StaticPage.php',
     'App\\Models\\StaticPageTranslation' => $baseDir . '/app/Models/StaticPageTranslation.php',
+    'App\\Models\\Statistics' => $baseDir . '/app/Models/Statistics.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Notifications\\EventCreatedNotification' => $baseDir . '/app/Notifications/EventCreatedNotification.php',
     'App\\Notifications\\EventDeletedAdminsNotification' => $baseDir . '/app/Notifications/EventDeletedAdminsNotification.php',

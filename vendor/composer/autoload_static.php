@@ -784,6 +784,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Models\\Settings' => __DIR__ . '/../..' . '/app/Models/Settings.php',
         'App\\Models\\StaticPage' => __DIR__ . '/../..' . '/app/Models/StaticPage.php',
         'App\\Models\\StaticPageTranslation' => __DIR__ . '/../..' . '/app/Models/StaticPageTranslation.php',
+        'App\\Models\\Statistics' => __DIR__ . '/../..' . '/app/Models/Statistics.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Notifications\\EventCreatedNotification' => __DIR__ . '/../..' . '/app/Notifications/EventCreatedNotification.php',
         'App\\Notifications\\EventDeletedAdminsNotification' => __DIR__ . '/../..' . '/app/Notifications/EventDeletedAdminsNotification.php',

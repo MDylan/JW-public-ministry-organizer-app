@@ -9,6 +9,7 @@ use App\Models\GroupFutureChange;
 use App\Models\GroupMessage;
 use App\Models\LogHistory;
 use App\Models\Settings;
+use App\Models\Statistics;
 use App\Models\User;
 use App\Notifications\Newsletter;
 use App\Notifications\UserWillBeAnonymizeNotification;
@@ -193,6 +194,16 @@ class Kernel extends ConsoleKernel
                 $newsletter->save();
             }
         })->everyMinute();
+
+        $schedule->call(function () {
+            $time = now()->subHour();
+            $active_users = User::where('last_activity', '>=', $time)->count();
+            Statistics::insert([
+                'type' => 'active_users',
+                'date' => $time,
+                'number' => $active_users ?? 0
+            ]);
+        })->hourly();
 
         //store last schedule run
         $schedule->call(function () {
