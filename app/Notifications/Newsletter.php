@@ -57,9 +57,18 @@ class Newsletter extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
+        if($this->data['recipients'] == 'groupCreators') {
+            $recipients = Lang::get('roles.groupCreator');
+        } elseif($this->data['recipients'] == 'groupAdmins') {
+            $recipients = Lang::get('group.roles.admin');
+        } elseif($this->data['recipients'] == 'groupServants') {
+            $recipients = Lang::get('group.roles.admin')." + ".Lang::get('group.roles.roler');
+        }
+
         return (new MailMessage)
                     ->subject($this->data['subject'])
                     ->line(new HtmlString($this->data['content']))
+                    ->line(Lang::get('app.newsletter.recipients', ['recipients' => $recipients]))
                     ->action(Lang::get('Log in'), url('/login'));
     }
 

@@ -219,6 +219,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         return $this->belongsToMany(Group::class)
                     ->withPivot(['group_role'])
                     ->wherePivot('group_role','admin')
+                    ->wherePivotNotNull('accepted_at')
                     ->wherePivot('deleted_at', null)
                     ->withTimestamps()
                     ->using(GroupUser::class);

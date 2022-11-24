@@ -171,6 +171,8 @@ class Kernel extends ConsoleKernel
             foreach($newsletters as $newsletter) {
                 if($newsletter->send_to == 'groupCreators') {
                     $users = User::whereIn('role', ['groupCreator', 'mainAdmin'])->get();
+                } elseif($newsletter->send_to == 'groupAdmins') {
+                    $users = User::whereHas('userGroupsDeletable')->get();
                 } elseif($newsletter->send_to == 'groupServants') {
                     $users = User::whereHas('userGroupsEditable')->get();
                 } else {
@@ -181,6 +183,7 @@ class Kernel extends ConsoleKernel
                     'newsletter_id' => $newsletter->id."_".$user->id,
                     'subject' => $newsletter->getTranslation($user->preferredLocale())->subject,
                     'content' => $newsletter->getTranslation($user->preferredLocale())->content,
+                    'recipients' => $newsletter->send_to,
                     ];
                     $user->notify(
                         new Newsletter($data)

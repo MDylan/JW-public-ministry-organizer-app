@@ -71,6 +71,8 @@
                                                 @endif
                                                 @if ($newsletter->send_to == 'groupCreators')
                                                     <i class="fas fa-users-cog mx-1"></i>
+                                                @elseif($newsletter->send_to == 'groupAdmins')
+                                                    <i class="fas fa-user-tie mx-1"></i>
                                                 @else
                                                     <i class="fas fa-users mx-1"></i>
                                                 @endif

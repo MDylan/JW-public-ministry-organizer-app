@@ -19,11 +19,21 @@ class AdminNewsletters extends Component
             $newsletters->where('date', '<=', today());
         }
 
+        $in = [];
+
         if(Auth::user()->can('is-groupCreator')) {
-            $newsletters->where('send_to', 'groupCreators');
-        } elseif(!Auth::user()->can('is-admin')) {
-            $newsletters->where('send_to', 'groupServants');
+            //create group
+            $in[] = 'groupCreators';
+        } 
+        if(Auth::user()->can('is-groupservant')) {
+            $in[] = 'groupServants';            
         }
+        if(Auth::user()->can('is-groupadmin')) {
+            $in[] = 'groupAdmins';            
+        }
+        if(count($in) > 0) 
+            $newsletters->whereIn('send_to', $in);
+
         $newsletters->orderByDesc('date');
         $newsletters = $newsletters->get();
 

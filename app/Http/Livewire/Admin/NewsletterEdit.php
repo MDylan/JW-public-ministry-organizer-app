@@ -39,7 +39,7 @@ class NewsletterEdit extends Component
         $validatedData = Validator::make($this->state, [
             'date' => 'required|date_format:Y-m-d',
             'status' => 'required|numeric|in:0,1',
-            'send_to' => 'required|string|in:groupCreators,groupServants',
+            'send_to' => 'required|string|in:groupCreators,groupAdmins,groupServants',
             'send_newsletter' => 'required|numeric|in:0,1',
         ])->validate();
 
