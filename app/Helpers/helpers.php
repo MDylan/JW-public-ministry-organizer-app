@@ -58,3 +58,21 @@ if(!function_exists('pwbs_check_group_admins')) {
         return (array_search($total_group, $main_admins, true) === false) ? false : true;
     }
 }
+
+if(!function_exists('pwbs_get_newsletter_roles')) {
+    function pwbs_get_newsletter_roles() {
+        $in = [];
+
+        if(auth()->user()->can('is-groupCreator') || auth()->user()->can('is-admin')) {
+            //create group
+            $in[] = 'groupCreators';
+        } 
+        if(auth()->user()->can('is-groupservant')) {
+            $in[] = 'groupServants';            
+        }
+        if(auth()->user()->can('is-groupadmin')) {
+            $in[] = 'groupAdmins';            
+        }
+        return $in;
+    }
+}

@@ -89,6 +89,7 @@ return array (
     'group_approvals' => 'In the :groupName group :events event is waiting for approval (:year/:month)',
     'group_news' => ':number fresh news',
     'groups' => ':number new group invitation(s)',
+    'newsletter' => ':number new newsletter(s)',
   ),
   'total' => 'Total',
   'total_notifications' => ':number new notification(s)',

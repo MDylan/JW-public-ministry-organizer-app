@@ -62,15 +62,22 @@
                                                         card-primary 
                                                     @endif 
                                                 @endif card-outline">
-                                    <a class="d-block w-100 collapsed" data-toggle="collapse" href="#collapse-{{ $newsletter->id }}" aria-expanded="false">
+                                    <a class="d-block w-100 collapsed" wire:ignore.self wire:click="$emitSelf('setAsRead', {{$newsletter->id}})" data-toggle="collapse" href="#collapse-{{ $newsletter->id }}" aria-expanded="false">
                                         <div class="card-header">
                                             <h4 class="card-title w-100">
+                                                @if (is_null($newsletter->user_read))
+                                                    <span class="badge badge-warning">@lang('New')!</span>
+                                                @else
+                                                    <span class="badge badge-success">@lang('group.poster.i_have_read')</span>
+                                                @endif
                                                 {{ $newsletter->date->format( __('app.format.date') ) }} - {{ $newsletter->subject }}
                                                 @if ($newsletter->send_newsletter == 1)
                                                     <i class="far fa-envelope mx-1 @if($newsletter->sent_time !== null) text-success @endif"></i>
                                                 @endif
                                                 @if ($newsletter->send_to == 'groupCreators')
                                                     <i class="fas fa-users-cog mx-1"></i>
+                                                @elseif($newsletter->send_to == 'groupAdmins')
+                                                    <i class="fas fa-user-tie mx-1"></i>
                                                 @else
                                                     <i class="fas fa-users mx-1"></i>
                                                 @endif
@@ -83,7 +90,7 @@
                                             </h4>
                                         </div>
                                     </a>
-                                    <div id="collapse-{{ $newsletter->id }}" class="collapse" data-parent="#accordion" style="">
+                                    <div wire:ignore.self id="collapse-{{ $newsletter->id }}" class="collapse" data-parent="#accordion" style="">
                                         <div class="card-body">
                                             {!! $newsletter->content !!}
                                             <div class="row">

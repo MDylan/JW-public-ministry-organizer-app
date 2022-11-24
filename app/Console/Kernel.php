@@ -9,6 +9,7 @@ use App\Models\GroupFutureChange;
 use App\Models\GroupMessage;
 use App\Models\LogHistory;
 use App\Models\Settings;
+use App\Models\Statistics;
 use App\Models\User;
 use App\Notifications\Newsletter;
 use App\Notifications\UserWillBeAnonymizeNotification;
@@ -171,6 +172,8 @@ class Kernel extends ConsoleKernel
             foreach($newsletters as $newsletter) {
                 if($newsletter->send_to == 'groupCreators') {
                     $users = User::whereIn('role', ['groupCreator', 'mainAdmin'])->get();
+                } elseif($newsletter->send_to == 'groupAdmins') {
+                    $users = User::whereHas('userGroupsDeletable')->get();
                 } elseif($newsletter->send_to == 'groupServants') {
                     $users = User::whereHas('userGroupsEditable')->get();
                 } else {
@@ -181,6 +184,7 @@ class Kernel extends ConsoleKernel
                     'newsletter_id' => $newsletter->id."_".$user->id,
                     'subject' => $newsletter->getTranslation($user->preferredLocale())->subject,
                     'content' => $newsletter->getTranslation($user->preferredLocale())->content,
+                    'recipients' => $newsletter->send_to,
                     ];
                     $user->notify(
                         new Newsletter($data)
@@ -190,6 +194,16 @@ class Kernel extends ConsoleKernel
                 $newsletter->save();
             }
         })->everyMinute();
+
+        $schedule->call(function () {
+            $time = now()->subHour();
+            $active_users = User::where('last_activity', '>=', $time)->count();
+            Statistics::insert([
+                'type' => 'active_users',
+                'date' => $time->format("Y-m-d H:i:00"),
+                'number' => $active_users ?? 0
+            ]);
+        })->hourly();
 
         //store last schedule run
         $schedule->call(function () {

@@ -85,6 +85,7 @@
                                     <label for="send_to">@lang('app.newsletter.show_to')</label>
                                     <select wire:model.defer="state.send_to" class="form-control @error('send_to') is-invalid @enderror" id="send_to">
                                         <option value="groupCreators">@lang('roles.groupCreator')</option>
+                                        <option value="groupAdmins">@lang('group.roles.admin')</option>
                                         <option value="groupServants">@lang('group.roles.admin') + @lang('group.roles.roler')</option>
                                     </select>
                                     @error('send_to')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

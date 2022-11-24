@@ -48,6 +48,7 @@ return [
         'groups' => ':number új csoportmeghívás',
         'group_news' => ':number új hír',
         'group_approvals' => ':groupName csoportban :events esemény jóváhagyásra vár (:year/:month)',
+        'newsletter' => ':number új hírlevél'
     ],
     'new' => 'új',
     'total_notifications' => ':number új értesítés',
@@ -90,7 +91,8 @@ return [
         'show_to' => 'Ki láthatja és kaphatja meg?',
         'send_date_helper' => 'Ezen a napon jelenik meg és ekkor is lesz kiküldve hírlevélben',
         'send_newsletter' => 'Küld ki emailben is',
-        'send_newsletter_helper' => 'Nem esetén csak az oldalon lesz látható, emailben nem küldjük el'
+        'send_newsletter_helper' => 'Nem esetén csak az oldalon lesz látható, emailben nem küldjük el',
+        'recipients' => 'Ezt a levelet minden :recipients megkapta.',
     ],
     'order_changed' => 'A sorrend módosult.',
     'up' => 'Fel',

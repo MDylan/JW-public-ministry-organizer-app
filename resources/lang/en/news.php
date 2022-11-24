@@ -21,7 +21,7 @@ return array (
   'delete' => 'Delete news',
   'edit' => 'Edit news',
   'edited' => 'Successfully edited!',
-  'editor_lang' => 'hu-HU',
+  'editor_lang' => 'en-US',
   'file' => 
   array (
     'available_types' => 'Approved file formats',
