@@ -63,7 +63,7 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
     function pwbs_get_newsletter_roles() {
         $in = [];
 
-        if(auth()->user()->can('is-groupCreator')) {
+        if(auth()->user()->can('is-groupCreator') || auth()->user()->can('is-admin')) {
             //create group
             $in[] = 'groupCreators';
         } 
