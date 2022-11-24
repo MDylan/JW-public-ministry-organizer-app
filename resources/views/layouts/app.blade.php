@@ -32,6 +32,16 @@
           <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
         </div>
       @endif
+      @if (!auth()->user()->two_factor_confirmed && !is_null(auth()->user()->two_factor_secret) && !request()->routeIs('user.twofactorsettings'))
+        <div class="alert alert-warning mx-2 my-2">
+          <h5>@lang('user.two_factor.status_disabled')</h5>
+          <p>@lang('user.two_factor.half_way') 
+            <a class="btn btn-success text-decoration-none" href="{{ route('user.twofactorsettings') }}">
+              <i class="fas fa-lock mr-1"></i>
+              @lang('user.two_factor.title')</a>
+            </p>
+        </div>
+      @endif
       @can('is-admin')
         <x-updateNotification></x-updateNotification>
       @endcan

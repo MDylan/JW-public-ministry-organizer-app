@@ -74,6 +74,13 @@
                                                 <i class="fas fa-mobile-alt mr-1"></i> @lang('user.two_factor.add_code')
                                             </button>
                                         </form>
+
+                                        <form action="{{ route('two-factor.enable') }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                                <button type="submit" class="btn btn-warning mt-2">
+                                                <i class="fas fa-power-off mr-1"></i> @lang('user.two_factor.button_disable')</button>
+                                        </form>
                                     </div>
                                 @else
                                     <b>@lang('user.two_factor.status_disabled')</b>

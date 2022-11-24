@@ -85,6 +85,7 @@ return [
         'have_device' => 'Hitelesítő kódot adok meg.',
         'copy_to_clipboard' => 'Vágolapra másolás',
         'copy_success' => 'A kódok a vágólapra kerültek.',
+        'half_way' => 'Figyelem! A kétlépcsős azonosítás beállítását elkezdted, de még nem fejezted be. Amíg nem véglegesíted a beállítást, a fiókod nincs teljes biztonságban.',
     ],
     'online' => 'Épp online',
     'inactive' => 'Inaktív',
