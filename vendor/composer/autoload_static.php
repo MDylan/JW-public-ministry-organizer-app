@@ -758,6 +758,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Listeners\\LoginListener' => __DIR__ . '/../..' . '/app/Listeners/LoginListener.php',
         'App\\Listeners\\UserVerified' => __DIR__ . '/../..' . '/app/Listeners/UserVerified.php',
         'App\\Models\\AdminNewsletter' => __DIR__ . '/../..' . '/app/Models/AdminNewsletter.php',
+        'App\\Models\\AdminNewsletterRead' => __DIR__ . '/../..' . '/app/Models/AdminNewsletterRead.php',
         'App\\Models\\AdminNewsletterTranslation' => __DIR__ . '/../..' . '/app/Models/AdminNewsletterTranslation.php',
         'App\\Models\\DayStat' => __DIR__ . '/../..' . '/app/Models/DayStat.php',
         'App\\Models\\Event' => __DIR__ . '/../..' . '/app/Models/Event.php',

@@ -23,4 +23,9 @@ class AdminNewsletter extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function user_read() {
+        return $this->hasOne(AdminNewsletterRead::class)
+                    ->where('user_id', auth()->id());
+    }
+
 }

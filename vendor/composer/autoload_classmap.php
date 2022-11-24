@@ -104,6 +104,7 @@ return array(
     'App\\Listeners\\LoginListener' => $baseDir . '/app/Listeners/LoginListener.php',
     'App\\Listeners\\UserVerified' => $baseDir . '/app/Listeners/UserVerified.php',
     'App\\Models\\AdminNewsletter' => $baseDir . '/app/Models/AdminNewsletter.php',
+    'App\\Models\\AdminNewsletterRead' => $baseDir . '/app/Models/AdminNewsletterRead.php',
     'App\\Models\\AdminNewsletterTranslation' => $baseDir . '/app/Models/AdminNewsletterTranslation.php',
     'App\\Models\\DayStat' => $baseDir . '/app/Models/DayStat.php',
     'App\\Models\\Event' => $baseDir . '/app/Models/Event.php',
