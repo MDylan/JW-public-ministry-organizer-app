@@ -57,6 +57,9 @@
                       <i class="nav-icon far fa-newspaper"></i>
                       <p>
                       {{ __('app.menu-newsletters') }}
+                      @if ($sideMenu['newsletters'])
+                        <span class="right badge badge-danger">{{ $sideMenu['newsletters'] }} @lang('app.new')</span>
+                      @endif
                       </p>
                   </a>
                 </li>       

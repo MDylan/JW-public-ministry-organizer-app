@@ -23,6 +23,8 @@ class AdminNewsletters extends Component
             'user_id' => auth()->id(),
             'admin_newsletter_id' => $newsletter_id
         ]);
+        $this->emitTo('partials.nav-bar', 'refresh');
+        $this->emitTo('partials.side-menu', 'refresh');
     }
 
     public function render()
@@ -34,25 +36,12 @@ class AdminNewsletters extends Component
             $newsletters->where('date', '<=', today());
         }
 
-        $in = [];
-
-        if(Auth::user()->can('is-groupCreator')) {
-            //create group
-            $in[] = 'groupCreators';
-        } 
-        if(Auth::user()->can('is-groupservant')) {
-            $in[] = 'groupServants';            
-        }
-        if(Auth::user()->can('is-groupadmin')) {
-            $in[] = 'groupAdmins';            
-        }
+        $in = pwbs_get_newsletter_roles();
         if(count($in) > 0) 
             $newsletters->whereIn('send_to', $in);
 
         $newsletters->orderByDesc('date');
         $newsletters = $newsletters->get();
-
-        // dd($newsletters->toArray());
 
         return view('livewire.admin.admin-newsletters', [
             'editor' => auth()->user()->hasRole('mainAdmin'),

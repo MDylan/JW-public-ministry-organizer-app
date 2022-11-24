@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Partials;
 
 // use App\Models\Event;
+
+use App\Models\AdminNewsletter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -123,6 +125,24 @@ class NavBar extends Component
                         ];
                         $this->total_notifications++;
                     }
+                }
+            }
+
+            if(auth()->user()->can('is-groupservant')) {
+                $in = pwbs_get_newsletter_roles();
+                $not_read = AdminNewsletter::doesntHave('user_read')
+                    ->where('status', 1)
+                    ->whereIn('send_to', $in)
+                    ->count();
+                if($not_read > 0) {
+                    $this->notifications[] = [
+                        'route' => route('newsletters'),
+                        'icon' => 'far fa-newspaper',
+                        'message' => __('app.top_notifies.newsletter', [
+                            'number' => $not_read                            
+                        ])
+                    ];
+                    $this->total_notifications++;
                 }
             }
         }

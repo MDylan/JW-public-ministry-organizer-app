@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Partials;
 
+use App\Models\AdminNewsletter;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -38,8 +39,19 @@ class SideMenu extends Component
             // $this->sideMenu['invites'] = count(auth()->user()->userGroupsNotAccepted);
             // $this->sideMenu['groups'] = count(auth()->user()->groupsAccepted);
 
+            
+            $not_read = 0;
+            if(auth()->user()->can('is-groupservant')) {
+                $in = pwbs_get_newsletter_roles();
+                $not_read = AdminNewsletter::doesntHave('user_read')
+                        ->where('status', 1)
+                        ->whereIn('send_to', $in)
+                        ->count();
+            }
+
             $this->sideMenu['invites'] = auth()->user()->userGroupsNotAcceptedNumber();
             $this->sideMenu['groups'] = auth()->user()->groupsAcceptedNumber();
+            $this->sideMenu['newsletters'] = $not_read;
         }
 
         return view('livewire.partials.side-menu');
