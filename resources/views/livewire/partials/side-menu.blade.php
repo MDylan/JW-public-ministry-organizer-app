@@ -93,6 +93,12 @@
                           <p>{{ __('app.menu-settings') }}</p>
                         </a>
                       </li>
+                      <li class="nav-item">
+                        <a href="{{ route('admin.statistics') }}" class="nav-link {{ request()->is('admin/statistics') ? 'active' : '' }}">
+                          <i class="far fa-chart-bar nav-icon"></i>
+                          <p>@lang('statistics.statistics')</p>
+                        </a>
+                      </li>
                     @endcan
                     <li class="nav-item">
                       <a href="{{ route('admin.translate') }}" class="nav-link {{ request()->is('admin/translate') ? 'active' : '' }}">

@@ -24,6 +24,7 @@ use App\Http\Livewire\Admin\NewsletterEdit;
 use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
+use App\Http\Livewire\Admin\Statistics as AdminStatistics;
 use App\Http\Livewire\Admin\Translation;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
@@ -164,6 +165,10 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
                 Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
                 Route::get('/admin/newsletter_edit/{id?}', NewsletterEdit::class)->name('admin.newsletter_edit');
+            });
+
+            Route::middleware(['can:is-admin'])->group(function () {
+                Route::get('/admin/statistics', AdminStatistics::class)->name('admin.statistics');
             });
 
             Route::middleware(['groupMember'])->group(function () {                
