@@ -154,6 +154,14 @@ class Kernel extends ConsoleKernel
 
             //delete old group messages
             GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
+
+            //create dialy statistics
+            $dialy_users = User::where('last_activity', '>=', now()->subDay())->count();
+            Statistics::insert([
+                'type' => 'dialy_users',
+                'date' => now()->format("Y-m-d"),
+                'number' => $dialy_users ?? 0
+            ]);
         })->daily();
 
         $schedule->call(function () {
