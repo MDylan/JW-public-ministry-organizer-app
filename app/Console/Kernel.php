@@ -159,7 +159,7 @@ class Kernel extends ConsoleKernel
             $dialy_users = User::where('last_activity', '>=', now()->subDay())->count();
             Statistics::insert([
                 'type' => 'dialy_users',
-                'date' => now()->format("Y-m-d"),
+                'date' => now()->subDay()->format("Y-m-d"),
                 'number' => $dialy_users ?? 0
             ]);
         })->daily();
