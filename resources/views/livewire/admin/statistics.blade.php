@@ -39,7 +39,9 @@
 
                 <div class="col-md-6">
                     <div class="card card-primary card-outline">
-                        <canvas id="dialy_users" width="100" height="50"></canvas>
+                        <div class="card-body">
+                            <canvas id="dialy_users" width="100" height="50"></canvas>
+                        </div>
                     </div>
                 </div>
                 
