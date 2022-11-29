@@ -72,6 +72,7 @@ Route::middleware(['signed'])->group(function () {
 
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
+Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVerification'])->name('user.new-email-verified');
 
 //installer available only if file not exists
 if (!Storage::exists('installed.txt')) {
@@ -119,6 +120,8 @@ Route::middleware(['auth'])->group(function () {
         $result = $request->fulfill();
         return redirect('/home');
     })->name('verification.verify');
+
+    Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
 
     Route::get('/confirm-password', function () {
         return view('auth.confirm-password');

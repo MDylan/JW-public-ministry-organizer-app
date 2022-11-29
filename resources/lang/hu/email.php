@@ -172,4 +172,15 @@ return [
         'line_2' => 'Az üzenet tartalma:',
         'line_3' => 'Vagy az üzenőfalon vagy a megadott elérhetőségein tudsz neki válaszolni. Kérjük erre az emailre NE válaszolj, mert nem neki lesz továbbítva.',
     ],
+    'verifyNewEmail' => [
+        'subject' => 'Új email cím megerősítése',
+        'line_1' => 'Kérted, hogy változtassuk meg az email címedet. A változtatás akkor lép életbe, ha a lenti gombra kattintva megerősíted új email címedet.',
+        'line_2' => 'Ha nem te kérted ezt a módosítást, akkor kérjük hagyd figyelmen kívül ezt a levelet.',
+    ],
+    'newEmailSet' => [
+        'subject' => 'FONTOS: Email címed módosítva lesz',
+        'line_1' => 'Ez egy automatikus értesítés arról, hogy a(z) :appName oldalon kérted az email címed módosítását. Az új cím: :email.',
+        'line_2' => 'Erre az új címre egy emailt küldtünk, melyben további információk találhatóak ahhoz, hogy a módosítás életbe lépjen.',
+        'line_3' => 'Ha nem te kérted az email cím módosítását, akkor kérjük sürgősen lépj be az oldalra, és változtasd meg a jelszavadat a "Profilom" oldalon.',
+    ],
 ];

@@ -120,4 +120,12 @@ return [
         'button' => 'Kérem a hírnök adatainak megtartását.',
         'error' => 'Lehet, hogy időközben változtak a felhasználó adatai.',
     ],
+    'newEmail' => [
+        'pending' => 'Az új email címed (:email) megerősítésre vár.',
+        'please_verify' => 'Kérjük erősítsd meg az új email címedet.',
+        'verify_sent_again' => 'Ismét elküldtük az új címedre a levelet, kérjük ellenőrizd a postafiókodat.',
+        'not_pending' => 'Nincs megerősítésre váró email címed.',
+        'success' => 'Az új email címed megerősítve.',
+        'please_use_it' => 'Kérjük ezentúl ezt használd belépéskor.',
+    ],
 ];

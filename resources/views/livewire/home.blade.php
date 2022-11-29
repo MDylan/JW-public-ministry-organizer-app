@@ -30,7 +30,15 @@
             </div>
         @endif
         <div class="row">
-            
+            <div class="col-12">
+            @if (session()->has('verified'))
+                <div class="alert alert-success">
+                    <i class="far fa-thumbs-up mr-1"></i>
+                    @lang('user.newEmail.success') ({{ auth()->user()->email }})<br/>
+                    <b>@lang('user.newEmail.please_use_it')</b>
+                </div>                
+            @endif
+        </div>
         {{-- <div class="card-columns"> --}}
             @forelse ($groups as $group)
                 <div class="col-md-6">

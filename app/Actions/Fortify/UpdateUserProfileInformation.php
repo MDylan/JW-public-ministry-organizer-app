@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Notifications\UserEmailChangedNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         if(isset($input['show_fields'])) {
             $input['show_fields_keys'] = array_keys($input['show_fields']);
         }
-        // dd($input['opted_out_of_notifications']);
+
         Validator::make($input, [
             'name' => ['required', 'string', 'max:50', 'min:2'],
             'congregation' => ['nullable', 'string', 'max:50', 'min:2'],
@@ -44,21 +45,24 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'opted_out_of_notifications' => ['sometimes', 'array']
         ])->validate(); //->validateWithBag('updateProfileInformation');
 
-        if ($input['email'] !== $user->email &&
-            $user instanceof MustVerifyEmail) {
-            $this->updateVerifiedUser($user, $input);
-        } else {
-            $user->forceFill([
-                'name' => $input['name'],
-                'congregation' => $input['congregation'],
-                'phone_number' => $input['phone_number'],
-                'email' => $input['email'],
-                'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
-                'show_fields' => isset($input['show_fields']) ? $input['show_fields'] : null,
-                'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null,
-                'opted_out_of_notifications' => isset($input['opted_out_of_notifications']) ? $input['opted_out_of_notifications'] : null,
-            ])->save();
-        }
+        if ($input['email'] !== $user->email 
+            && $user instanceof MustVerifyEmail) {
+            //sent verification email to new email address
+            $user->newEmail($input['email']);
+            //notify old email address too
+            $user->notify(new UserEmailChangedNotification($input['email']));
+        } 
+        $user->forceFill([
+            'name' => $input['name'],
+            'congregation' => $input['congregation'],
+            'phone_number' => $input['phone_number'],
+            // 'email' => $input['email'],
+            'calendars' => isset($input['calendars']) ? $input['calendars'] : null,
+            'show_fields' => isset($input['show_fields']) ? $input['show_fields'] : null,
+            'firstDay' => isset($input['firstDay']) ? $input['firstDay'] : null,
+            'opted_out_of_notifications' => isset($input['opted_out_of_notifications']) ? $input['opted_out_of_notifications'] : null,
+        ])->save();
+        
     }
 
     /**

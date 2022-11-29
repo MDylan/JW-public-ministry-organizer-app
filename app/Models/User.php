@@ -14,10 +14,11 @@ use Dialect\Gdpr\Anonymizable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, MustVerifyNewEmail;
 
     /**
      * The attributes that are mass assignable.
