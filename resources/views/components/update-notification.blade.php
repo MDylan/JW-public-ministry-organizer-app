@@ -28,6 +28,7 @@
                 <a role="button" href="/updater.update" class="btn btn-warning">
                     <i class="far fa-check-circle mr-1"></i>
                     {{ __('laraupdater.Update_Now') }}</a>
+                    @lang('user.online'): {{ $online }}
             </div>
         </div>
     </div>
