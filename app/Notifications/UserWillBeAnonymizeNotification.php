@@ -64,7 +64,6 @@ class UserWillBeAnonymizeNotification extends Notification implements ShouldQueu
                     ->line(Lang::get('email.anonymize.line_2'))
                     ->line(Lang::get('email.anonymize.line_3', ['lastDate' => $this->data['lastDate']]))
                     ->action(Lang::get('Log in'), url('/login'))
-                    ->line(Lang::get('email.footer'))
                     ->line(__('email.footer'));
     }
 
