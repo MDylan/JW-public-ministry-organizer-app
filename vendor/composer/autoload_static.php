@@ -113,6 +113,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
             'Psr\\EventDispatcher\\' => 20,
             'Psr\\Container\\' => 14,
             'Psr\\Cache\\' => 10,
+            'ProtoneMedia\\LaravelVerifyNewEmail\\' => 35,
             'Prophecy\\' => 9,
             'PragmaRX\\Google2FA\\' => 19,
             'PhpParser\\' => 10,
@@ -413,6 +414,10 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         array (
             0 => __DIR__ . '/..' . '/psr/cache/src',
         ),
+        'ProtoneMedia\\LaravelVerifyNewEmail\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src',
+        ),
         'Prophecy\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpspec/prophecy/src/Prophecy',
@@ -705,6 +710,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Livewire\\Admin\\Settings' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/Settings.php',
         'App\\Http\\Livewire\\Admin\\StaticPageEdit' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/StaticPageEdit.php',
         'App\\Http\\Livewire\\Admin\\StaticPages' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/StaticPages.php',
+        'App\\Http\\Livewire\\Admin\\Statistics' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/Statistics.php',
         'App\\Http\\Livewire\\Admin\\Translation' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/Translation.php',
         'App\\Http\\Livewire\\Admin\\Users\\ListUsers' => __DIR__ . '/../..' . '/app/Http/Livewire/Admin/Users/ListUsers.php',
         'App\\Http\\Livewire\\AppComponent' => __DIR__ . '/../..' . '/app/Http/Livewire/AppComponent.php',
@@ -5293,6 +5299,15 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Prophecy\\Prophet' => __DIR__ . '/..' . '/phpspec/prophecy/src/Prophecy/Prophet.php',
         'Prophecy\\Util\\ExportUtil' => __DIR__ . '/..' . '/phpspec/prophecy/src/Prophecy/Util/ExportUtil.php',
         'Prophecy\\Util\\StringUtil' => __DIR__ . '/..' . '/phpspec/prophecy/src/Prophecy/Util/StringUtil.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\InvalidVerificationLinkException' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/InvalidVerificationLinkException.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\VerifiesPendingEmails' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/VerifiesPendingEmails.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\VerifyNewEmailController' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/VerifyNewEmailController.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\InvalidEmailVerificationModelException' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/InvalidEmailVerificationModelException.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\Mail\\VerifyFirstEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Mail/VerifyFirstEmail.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\Mail\\VerifyNewEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Mail/VerifyNewEmail.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\MustVerifyNewEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/MustVerifyNewEmail.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\PendingUserEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/PendingUserEmail.php',
+        'ProtoneMedia\\LaravelVerifyNewEmail\\ServiceProvider' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/ServiceProvider.php',
         'Psr\\Cache\\CacheException' => __DIR__ . '/..' . '/psr/cache/src/CacheException.php',
         'Psr\\Cache\\CacheItemInterface' => __DIR__ . '/..' . '/psr/cache/src/CacheItemInterface.php',
         'Psr\\Cache\\CacheItemPoolInterface' => __DIR__ . '/..' . '/psr/cache/src/CacheItemPoolInterface.php',

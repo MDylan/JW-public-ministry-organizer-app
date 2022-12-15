@@ -133,9 +133,8 @@ return [
     ],
     'anonymize' => [
         'subject' => 'FONTOS: A hozzáférésedet hamarosan törölni fogjuk',
-        'line_1' => 'Szeretnénk értesíteni, hogy a GDPR adatvédelmi törvények miatt a(z) :appName oldalon hamarosan törölni fogjuk a személyes adataidat. Ezt követően nem fogsz tudni belépni sem.',
-        'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptél be az oldalra.',
-        'line_3' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig.',
+        'line_1' => 'Túl rég óta nem léptél be a(z) :appName oldalon, ezért adatvédelmi okokból hamarosan törölni fogjuk a fiókodat és a személyes adataidat. Ezt követően nem fogsz tudni belépni sem.',
+        'line_2' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig, vagy megkéred a csoportod felvigyázóit, hogy hosszabbítsák meg a hozzáférésedet.',
     ],
     'anonymizeAdmin' => [
         'subject' => 'FONTOS: A csoportodból néhány felhasználó hamarosan törölve lesz',
@@ -171,5 +170,16 @@ return [
         'line_1' => 'A(z) :groupName csoportban :userName hírnöktől sürgős üzenet érkezett az Üzenőfalra.',
         'line_2' => 'Az üzenet tartalma:',
         'line_3' => 'Vagy az üzenőfalon vagy a megadott elérhetőségein tudsz neki válaszolni. Kérjük erre az emailre NE válaszolj, mert nem neki lesz továbbítva.',
+    ],
+    'verifyNewEmail' => [
+        'subject' => 'Új email cím megerősítése',
+        'line_1' => 'Kérted, hogy változtassuk meg az email címedet. A változtatás akkor lép életbe, ha a lenti gombra kattintva megerősíted új email címedet.',
+        'line_2' => 'Ha nem te kérted ezt a módosítást, akkor kérjük hagyd figyelmen kívül ezt a levelet.',
+    ],
+    'newEmailSet' => [
+        'subject' => 'FONTOS: Email címed módosítva lesz',
+        'line_1' => 'Ez egy automatikus értesítés arról, hogy a(z) :appName oldalon kérted az email címed módosítását. Az új cím: :email.',
+        'line_2' => 'Erre az új címre egy emailt küldtünk, melyben további információk találhatóak ahhoz, hogy a módosítás életbe lépjen.',
+        'line_3' => 'Ha nem te kérted az email cím módosítását, akkor kérjük sürgősen lépj be az oldalra, és változtasd meg a jelszavadat a "Profilom" oldalon.',
     ],
 ];

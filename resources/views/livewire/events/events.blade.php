@@ -202,7 +202,7 @@
         </div>
     </div>
     @if ($group_editor)
-        @livewire('groups.poster-edit-modal')
-        @livewire('groups.special-date-modal', ['groupId' => $cal_group_data['id']])
+        @livewire('groups.poster-edit-modal', '', key('poster-edit-modal-livewire'))
+        @livewire('groups.special-date-modal', ['groupId' => $cal_group_data['id']], key('special-date-modal-livewire'))
     @endif    
 </div>

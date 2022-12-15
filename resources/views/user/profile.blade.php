@@ -36,6 +36,11 @@
                                     @lang('user.profile_updated')
                                 </div>
                             @endif
+                            @if (session('success'))
+                                <div class="alert alert-success">
+                                    {{ session('success') }}
+                                </div>
+                            @endif
                             @if (session('profile_message'))
                             <div class="alert alert-danger">
                                 {{session('profile_message')}}
@@ -82,6 +87,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    @if(auth()->user()->getPendingEmail())
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                <div class="badge badge-warning">@lang('user.newEmail.pending', ['email' => auth()->user()->getPendingEmail()])</div>
+                                                <br/>
+                                                <a class="btn btn-info btn-sm" href="{{ route('user.resendNewEmailVerification') }}">
+                                                    <i class="far fa-envelope mr-1"></i>
+                                                    @lang('Resend Verification Email')</a>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="border border-secondary border-left-0 border-right-0 rounded p-2 mt-2">
                                     <div class="row">

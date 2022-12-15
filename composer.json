@@ -21,6 +21,7 @@
         "laravolt/avatar": "^4.1",
         "livewire/livewire": "^2.10.4",
         "pcinaglia/laraupdater": "1.0.2",
+        "protonemedia/laravel-verify-new-email": "^1.6",
         "spatie/calendar-links": "^1.6",
         "spatie/laravel-activitylog": "^4.0.0",
         "spatie/laravel-cookie-consent": "^3.1",

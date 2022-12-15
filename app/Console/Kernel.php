@@ -61,7 +61,20 @@ class Kernel extends ConsoleKernel
         })->everyFiveMinutes();
 
         //anonymize inactive users
-        $schedule->command('gdpr:anonymizeInactiveUsers')->dailyAt('7:00');
+        $schedule->call(function () {
+            if (!config('gdpr.enabled')) {   
+                return;                
+            }
+
+            $users = User::where('last_activity', '<=', carbon::now()
+                    ->submonths(config('gdpr.settings.ttl')))
+                    ->where('isAnonymized', 0)
+                    ->get();
+            foreach ($users as $user) {
+                \App\Models\GroupUser::where('user_id', $user->id)->delete();
+                $user->anonymize();
+            }
+        })->dailyAt('7:00');
 
         $schedule->call(function () {
             //notify inactive users
@@ -112,7 +125,7 @@ class Kernel extends ConsoleKernel
                             ->select('U.id', 'U.email', 'U.name', 'U.last_activity', 'G.id as group_id', 'G.name as group_name', 'ADMIN.user_id as admin_id')
                                 ->where('U.last_activity', '!=', null)
                                 ->where('U.isAnonymized', 0)
-                                ->whereBetween('U.last_activity', [$minDate->format("Y-m-d"), $maxDate->format("Y-m-d")])
+                                ->whereBetween('U.last_activity', [$maxDate->format("Y-m-d"), $minDate->format("Y-m-d")])
                                 // ->where('U.last_activity', '<=', $minDate->format("Y-m-d"))
                             ->get();
             foreach ($anonymizableUsers as $user) {
@@ -154,6 +167,14 @@ class Kernel extends ConsoleKernel
 
             //delete old group messages
             GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
+
+            //create dialy statistics
+            $dialy_users = User::where('last_activity', '>=', now()->subDay())->count();
+            Statistics::insert([
+                'type' => 'dialy_users',
+                'date' => now()->subDay()->format("Y-m-d"),
+                'number' => $dialy_users ?? 0
+            ]);
         })->daily();
 
         $schedule->call(function () {

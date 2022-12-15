@@ -24,6 +24,7 @@ use App\Http\Livewire\Admin\NewsletterEdit;
 use App\Http\Livewire\Admin\Settings;
 use App\Http\Livewire\Admin\StaticPageEdit;
 use App\Http\Livewire\Admin\StaticPages;
+use App\Http\Livewire\Admin\Statistics as AdminStatistics;
 use App\Http\Livewire\Admin\Translation;
 use App\Http\Livewire\Admin\Users\ListUsers;
 use App\Http\Livewire\Events\Events;
@@ -71,6 +72,7 @@ Route::middleware(['signed'])->group(function () {
 
 
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
+Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVerification'])->name('user.new-email-verified');
 
 //installer available only if file not exists
 if (!Storage::exists('installed.txt')) {
@@ -119,6 +121,8 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/home');
     })->name('verification.verify');
 
+    Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
+
     Route::get('/confirm-password', function () {
         return view('auth.confirm-password');
     })->name('password.confirm');
@@ -164,6 +168,10 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
                 Route::get('/admin/staticpages/edit/{staticPage}', StaticPageEdit::class)->name('admin.staticpages_edit');
                 Route::get('/admin/newsletter_edit/{id?}', NewsletterEdit::class)->name('admin.newsletter_edit');
+            });
+
+            Route::middleware(['can:is-admin'])->group(function () {
+                Route::get('/admin/statistics', AdminStatistics::class)->name('admin.statistics');
             });
 
             Route::middleware(['groupMember'])->group(function () {                

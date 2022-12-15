@@ -11,6 +11,12 @@
             <a href="/" class="h1">{{__('app.title')}}</a>
         </div>
         <div class="card-body">
+            @if (session('verified'))
+                <div class="alert alert-success">
+                    <i class="far fa-thumbs-up mr-1"></i>
+                    @lang('user.newEmail.success') @lang('user.newEmail.please_use_it')
+                </div>                
+            @endif
             <form action="{{route('login')}}" method="POST" id="loginForm">
                 @csrf
                 @if (env('USE_RECAPTCHA', false))
