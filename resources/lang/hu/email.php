@@ -133,9 +133,8 @@ return [
     ],
     'anonymize' => [
         'subject' => 'FONTOS: A hozzáférésedet hamarosan törölni fogjuk',
-        'line_1' => 'Szeretnénk értesíteni, hogy a GDPR adatvédelmi törvények miatt a(z) :appName oldalon hamarosan törölni fogjuk a személyes adataidat. Ezt követően nem fogsz tudni belépni sem.',
-        'line_2' => 'Erre azért van szükség, mert túl rég óta nem léptél be az oldalra.',
-        'line_3' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig.',
+        'line_1' => 'Túl rég óta nem léptél be a(z) :appName oldalon, ezért adatvédelmi okokból hamarosan törölni fogjuk a fiókodat és a személyes adataidat. Ezt követően nem fogsz tudni belépni sem.',
+        'line_2' => 'Ha nem szeretnéd, hogy töröljük adataidat, akkor annyit kell tenned, hogy egyszer belépsz az oldalra legkésőbb :lastDate napig, vagy megkéred a csoportod felvigyázóit, hogy hosszabbítsák meg a hozzáférésedet.',
     ],
     'anonymizeAdmin' => [
         'subject' => 'FONTOS: A csoportodból néhány felhasználó hamarosan törölve lesz',

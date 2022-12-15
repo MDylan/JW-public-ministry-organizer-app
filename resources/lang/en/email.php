@@ -28,8 +28,7 @@ return array (
   'anonymize' => 
   array (
     'line_1' => 'We are informing you that your personal data will soon be deleted from the :appName site due to GDPR regulations. Following deletion, you will not be able to log in.',
-    'line_2' => 'This is necessary because it has been too long since you have last logged in.',
-    'line_3' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest.',
+    'line_2' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest.',
     'subject' => 'IMPORTANT: Your access will soon be revoked.',
   ),
   'anonymizeAdmin' => 
