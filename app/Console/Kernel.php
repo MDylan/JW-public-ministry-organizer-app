@@ -125,7 +125,7 @@ class Kernel extends ConsoleKernel
                             ->select('U.id', 'U.email', 'U.name', 'U.last_activity', 'G.id as group_id', 'G.name as group_name', 'ADMIN.user_id as admin_id')
                                 ->where('U.last_activity', '!=', null)
                                 ->where('U.isAnonymized', 0)
-                                ->whereBetween('U.last_activity', [$minDate->format("Y-m-d"), $maxDate->format("Y-m-d")])
+                                ->whereBetween('U.last_activity', [$maxDate->format("Y-m-d"), $minDate->format("Y-m-d")])
                                 // ->where('U.last_activity', '<=', $minDate->format("Y-m-d"))
                             ->get();
             foreach ($anonymizableUsers as $user) {
