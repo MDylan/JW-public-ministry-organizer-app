@@ -61,7 +61,20 @@ class Kernel extends ConsoleKernel
         })->everyFiveMinutes();
 
         //anonymize inactive users
-        $schedule->command('gdpr:anonymizeInactiveUsers')->dailyAt('7:00');
+        $schedule->call(function () {
+            if (!config('gdpr.enabled')) {   
+                return;                
+            }
+
+            $users = User::where('last_activity', '<=', carbon::now()
+                    ->submonths(config('gdpr.settings.ttl')))
+                    ->where('isAnonymized', 0)
+                    ->get();
+            foreach ($users as $user) {
+                \App\Models\GroupUser::where('user_id', $user->id)->delete();
+                $user->anonymize();
+            }
+        })->dailyAt('7:00');
 
         $schedule->call(function () {
             //notify inactive users

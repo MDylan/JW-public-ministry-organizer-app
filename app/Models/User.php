@@ -81,7 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     ];
 
     /**
-     * The attributes that should be visible in the downloadable data.
+     * The attributes that should NOT be visible in the downloadable data.
      *
      * @var array
      */
@@ -108,7 +108,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     protected $gdprAnonymizableFields = [
         'email',
         'name' => 'Anonym',
-        'phone' => '0',
+        'phone_number' => '',
         'role' => 'registered',
         'last_login_ip' => '',
         'isAnonymized' => 1,
@@ -303,5 +303,17 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         }
 
         return false;
+    }
+
+    //this check if user email is valid or this is an anonymized user
+    public function routeNotificationFor($driver, $notification = null)
+    {
+        if($driver == "mail") {
+            if (!filter_var($this->email, FILTER_VALIDATE_EMAIL) 
+                    || $this->isAnonymized == 1) {
+                return null;
+            } 
+            return $this->email;
+        }        
     }
 }
