@@ -3,13 +3,13 @@
 namespace App\Classes;
 
 use App\Models\Group;
-use App\Models\GroupDate;
+// use App\Models\GroupDate;
 use App\Models\GroupDay;
 use App\Models\GroupDayDisabledSlots;
 use App\Models\GroupFutureChange;
-use App\Models\GroupLiterature;
-use Carbon\Carbon;
-use DateTime;
+// use App\Models\GroupLiterature;
+// use Carbon\Carbon;
+// use DateTime;
 
 class updateGroupFutureChanges {
 
@@ -22,21 +22,24 @@ class updateGroupFutureChanges {
     private $disabled_slots = [];
 
     public function getChanges($group_id) {
-        $group = Group::findOrFail($group_id);
+        $group = Group::where('id', $group_id)->with(['days'])->first();
+        if($group === null) return false;
         $this->state = $group->toArray();
         $this->default_colors = config('events.default_colors');
-        foreach($group['colors'] as $field => $color) {
+        foreach($this->default_colors as $field => $color) {
             if(empty($this->state[$field])) {
                 $this->state[$field] = $color;
             }
         }
         $days = [];
-        foreach($group->days as $day) {
-            $days[$day->day_number] = [
-                'day_number' => ''.$day->day_number.'',
-                'start_time' => $day->start_time,
-                'end_time' => $day->end_time,
-            ];
+        if(count($group->days)) {
+            foreach($group->days as $day) {
+                $days[$day->day_number] = [
+                    'day_number' => ''.$day->day_number.'',
+                    'start_time' => $day->start_time,
+                    'end_time' => $day->end_time,
+                ];
+            }
         }
         $this->days_original = $days;
         $literatures = $group->literatures;
@@ -66,6 +69,7 @@ class updateGroupFutureChanges {
                 $this->disabled_slots[$slot['day_number']][$slot['slot']] = true; //$slot['slot'];
             }
         }
+        return true;
         // $this->disabled_slots = ;
     }
 
@@ -82,8 +86,11 @@ class updateGroupFutureChanges {
     }
 
     public function initChanges($group_id) {
-        $this->getChanges($group_id);
-
+        if(!$this->getChanges($group_id)) {
+            //Delete if some error happend with group
+            GroupFutureChange::where('group_id', $group_id)->delete();
+            return;
+        }
         $this->group->update($this->changes->group);
 
         $childs = Group::where('parent_group_id', '=', $this->group->id)->get();
