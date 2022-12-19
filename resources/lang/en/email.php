@@ -27,8 +27,8 @@ return array (
   ),
   'anonymize' => 
   array (
-    'line_1' => 'We are informing you that your personal data will soon be deleted from the :appName site due to GDPR regulations. Following deletion, you will not be able to log in.',
-    'line_2' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest.',
+    'line_1' => 'You have not logged in for too long. Due to personal data protection reasons, your account and personal data will soon be deleted from the :appName page. Following deletion, you will not be able to log in.',
+    'line_2' => 'If you do not want your data to be deleted, please log in to the site once by :lastDate at the latest. Or you can ask the group overseers to preserve your access.',
     'subject' => 'IMPORTANT: Your access will soon be revoked.',
   ),
   'anonymizeAdmin' => 
@@ -77,7 +77,7 @@ return array (
     ),
     'deletion_reasons' => 
     array (
-      'modified_service_time' => 'The time of the service on this day has been modified, and your planned service did not fit into the new service time.',
+      'modified_service_time' => 'The time of the service on this day has been modified.',
       'service_day_deleted' => 'No further services can be scheduled for this day, so the service of all members have been deleted.',
       'unknown' => 'Unknown',
       'user_logout' => 'You have left the group, and so your future services in the group have been deleted.',
@@ -137,7 +137,7 @@ return array (
   'groupCreator' => 
   array (
     'line_1' => 'We are informing you that you have been given the opportunity to create a new group. You can do this in the "Groups" menu.',
-    'line_2' => 'Please review the videos in the Help menu for see your options. Also, where possible, descriptions will help you so please read these when using for the first time.',
+    'line_2' => 'Please review the videos in the "Help" menu to see your options. Also, where possible, descriptions will help you, so please read these when using for the first time.',
     'subject' => 'You have been granted "Group creator" permission',
   ),
   'groupUserAdded' => 
@@ -161,6 +161,13 @@ return array (
     'line_2' => 'The content of the message:',
     'line_3' => 'You can reply to the message on the message board or by using the personal contact details of the publisher. Please DO NOT reply to this email because it is not the publisher who will receive the reply.',
     'subject' => 'Urgent message of the following publisher: :userName',
+  ),
+  'newEmailSet' => 
+  array (
+    'line_1' => 'This is an automatic notification about your request for the modification of your email address on the :appName site. The new email address is :email.',
+    'line_2' => 'An email has been sent to this new email address. In the email, you can find further information for completing the modification.',
+    'line_3' => 'If you are not the one who requested the modification of your email address, please log in as soon as possible and change your password in the "My Profile" menu.',
+    'subject' => 'IMPORTANT: your email address will be modified.',
   ),
   'newadmin' => 
   array (
@@ -187,7 +194,7 @@ The authors of the Help Service Organizer page',
     'line_2' => 'Thank you for using this app :)',
     'subject' => 'Test notification.',
   ),
-  'unsubscribe' => 'If you do not wish to receive such emails in the future, you may opt out in the "My Profile" menu.',
+  'unsubscribe' => 'If you do not wish to receive such emails in the future, you may opt out in the "My profile" menu.',
   'userProfileRenewal' => 
   array (
     'line_1' => 'We are informing you that :adminName has requested that your data should be preserved on the :appName site, though you have not logged in for a long time. As a result of this request, your account will not be deleted and your data will continue to be preserved.',
@@ -198,5 +205,11 @@ The authors of the Help Service Organizer page',
   array (
     'line_1' => 'We are informing you that :adminName has extended the preservation period of the personal data of :userName. The publisher has also been informed about this in email. You do not need to take any actions.',
     'subject' => 'The preservation period of the user\'s data has been extended.',
+  ),
+  'verifyNewEmail' => 
+  array (
+    'line_1' => 'You have requested the modification of your email address. It will be changed only after you have confirmed your new email address by clicking on the link below.',
+    'line_2' => 'If you are not the one who requested this modification, please ignore this message.',
+    'subject' => 'Confirm new email address',
   ),
 );
