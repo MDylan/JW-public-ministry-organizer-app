@@ -31,10 +31,15 @@ Monthly calendar
 - Group owners can approve/decline publisher's services (bulk approval or only one service)
 - Four privilege levels in each group
 - Mobile friendly
-- Multi language support
+- Multi language support (online transation page)
 - GDPR ready
 - Built in update system
 - Lot of email notification (eg. the service approved/declined/deleted,changed)
+- Message Board function
+- Four privilege level (Group overseer, Group servant, Group helper, Group member)
+- Group overseer/servant can set special date if there are different service (or can disable special days)
+- Easy customization (Can set by Group overseers and servants)
+- Easy to invite new publishers (only email address needed)
 
 Based on [Laravel 8](https://laravel.com/)
 
@@ -80,6 +85,8 @@ There are some basic protection in login and registration system.
 We recommend to use https connection. You can enable it into "Administration/Settings" menu.
 ## Installation
 
+There are a Step-By-Step install page.
+
 1. Upload all files to your webserver.
 2. Set your document root path to "/public" directory. (This is important!)
 3. Open your site url, and make the step-by-step setup to install.
@@ -99,7 +106,8 @@ Yes, just see requirements.
 
 #### Can I translate this software into other languages?
 
-YES! Please contact us, or fork this repo and send your translation.
+YES! There are a built translation page. You can translate from English or Hungarian.
+If you like to share your translation, please contact us, or fork this repo and send your translation.
 Any help are welcomed. :)
 
 #### I have an error, what can I do?

@@ -32,7 +32,8 @@ class UpdateNotification extends Component
             $description = $update->getDescription();
             return view('components.update-notification', [
                 'version' => $version,
-                'description' => $description
+                'description' => $description,
+                'online' => \App\Models\User::whereBetween('last_activity', [now()->subMinute(2), now()])->get()->count(),
             ]);
         } else {
             return <<<'blade'
