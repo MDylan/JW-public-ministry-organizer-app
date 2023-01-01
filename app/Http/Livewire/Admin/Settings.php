@@ -271,7 +271,7 @@ class Settings extends AppComponent
                     Artisan::call($commands[$command]['command']);
                 }
             } catch (Exception $e) {
-                return $this->response($e->getMessage(), 'error');
+                return dd($e->getMessage());
             }
             $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
         }
