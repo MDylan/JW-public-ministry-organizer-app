@@ -66,11 +66,10 @@ class DeleteGroupDataProcess implements ShouldQueue
         GroupFutureChange::where('group_id', $this->groupId)->delete();
         
         GroupUser::withoutEvents(function () {
-            $users = GroupUser::with('user')->where('group_id', $this->groupId)->get();
+            $users = GroupUser::with('user', 'user.userGroups')->where('group_id', $this->groupId)->get();
             foreach($users as $user) {
                 if($this->deleteUsers !== false) {
-                    $groups = $user->user->userGroups()->get(['groups.id'])->toArray();
-                    if(count($groups) == 0) {
+                    if(count($user->user->userGroups ?? []) == 0 && $user->user !== null) {
                         $user->user->anonymize();
                     }
                 }
