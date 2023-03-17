@@ -50,8 +50,8 @@
                         <textarea wire:model.lazy="state.info" class="summernote form-control @error('content') is-invalid @enderror" rows="3" name="info">
                             {{-- {{ $state['info'] ?? '' }} --}}
                         </textarea>                        
-                        @error('info')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                     </div>
+                    @error('info')<div class="alert alert-danger">{{$message}}</div>@enderror
                     <script>
                         openSummernote('{{ $state['id'] }}');            
                     </script>
