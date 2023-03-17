@@ -83,7 +83,7 @@ class PosterEditModal extends AppComponent
         $validatedData = Validator::make($this->state, [
             'show_date' => 'required|date_format:Y-m-d',
             'hide_date' => 'nullable|date_format:Y-m-d|after:show_date',
-            'info' => 'required|string|min:3|max:600'
+            'info' => 'required|string|min:3|max:5000'
         ])->validate();
 
         if($this->posterId) {

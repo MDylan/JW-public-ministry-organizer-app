@@ -42,7 +42,6 @@ return array (
     'line_7' => 'Affected publishers (with due date):',
     'subject' => 'IMPORTANT: Some users soon will be deleted from your group.',
   ),
-  'dear' => 'Dear',
   'deletePersonalData' => 
   array (
     'line_1' => 'You have requested us to delete your personal data.',
