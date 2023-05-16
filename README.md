@@ -48,6 +48,7 @@ Based on [Laravel 8](https://laravel.com/)
 
 - Hungarian
 - English
+- German
 
 Any help are welcomed! :)
 ## Requirements
