@@ -809,6 +809,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Notifications\\NewAdminNotification' => __DIR__ . '/../..' . '/app/Notifications/NewAdminNotification.php',
         'App\\Notifications\\Newsletter' => __DIR__ . '/../..' . '/app/Notifications/Newsletter.php',
         'App\\Notifications\\TestNotification' => __DIR__ . '/../..' . '/app/Notifications/TestNotification.php',
+        'App\\Notifications\\UserEmailChangedNotification' => __DIR__ . '/../..' . '/app/Notifications/UserEmailChangedNotification.php',
         'App\\Notifications\\UserProfileChangedNotification' => __DIR__ . '/../..' . '/app/Notifications/UserProfileChangedNotification.php',
         'App\\Notifications\\UserProfileRenewalAdminNotification' => __DIR__ . '/../..' . '/app/Notifications/UserProfileRenewalAdminNotification.php',
         'App\\Notifications\\UserProfileRenewalNotification' => __DIR__ . '/../..' . '/app/Notifications/UserProfileRenewalNotification.php',

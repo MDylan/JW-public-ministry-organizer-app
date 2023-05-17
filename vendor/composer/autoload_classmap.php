@@ -150,6 +150,7 @@ return array(
     'App\\Notifications\\NewAdminNotification' => $baseDir . '/app/Notifications/NewAdminNotification.php',
     'App\\Notifications\\Newsletter' => $baseDir . '/app/Notifications/Newsletter.php',
     'App\\Notifications\\TestNotification' => $baseDir . '/app/Notifications/TestNotification.php',
+    'App\\Notifications\\UserEmailChangedNotification' => $baseDir . '/app/Notifications/UserEmailChangedNotification.php',
     'App\\Notifications\\UserProfileChangedNotification' => $baseDir . '/app/Notifications/UserProfileChangedNotification.php',
     'App\\Notifications\\UserProfileRenewalAdminNotification' => $baseDir . '/app/Notifications/UserProfileRenewalAdminNotification.php',
     'App\\Notifications\\UserProfileRenewalNotification' => $baseDir . '/app/Notifications/UserProfileRenewalNotification.php',

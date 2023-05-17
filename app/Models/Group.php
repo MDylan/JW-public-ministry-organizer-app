@@ -36,7 +36,9 @@ class Group extends Model
         'copy_from_parent',
         'messages_on',
         'messages_write',
-        'messages_priority'
+        'messages_priority',
+        'auto_approval',
+        'auto_back'
     ];
 
     /**
