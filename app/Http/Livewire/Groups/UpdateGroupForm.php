@@ -208,6 +208,8 @@ class UpdateGroupForm extends AppComponent
             'min_time' => 'required|numeric|in:30,60,90,120|lte:max_time',
             'max_time' => 'required|numeric|in:60,90,120,180,240,320,360,420,480|gte:min_time',            
             'need_approval' => 'required|numeric|in:0,1',
+            'auto_approval' => 'required|numeric|in:0,1',
+            'auto_back' => 'required|numeric|in:0,1',
             'color_default' => ['sometimes', 'regex:'.$pattern],
             'color_empty' => ['sometimes', 'regex:'.$pattern],
             'color_someone' => ['sometimes', 'regex:'.$pattern],

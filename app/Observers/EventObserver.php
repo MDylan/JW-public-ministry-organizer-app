@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Jobs\EventAutoCheck;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\LogHistory;
@@ -51,6 +52,10 @@ class EventObserver
             $us->notify(
                 new EventCreatedNotification($data)
             );
+        }
+
+        if($event->groups->need_approval && $event->groups->auto_approval) {
+            EventAutoCheck::dispatch($event);
         }
     }
 

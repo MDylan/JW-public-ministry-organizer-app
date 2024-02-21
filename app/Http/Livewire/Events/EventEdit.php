@@ -466,7 +466,7 @@ class EventEdit extends AppComponent
                 'end' => 'required|numeric|gte:start',
             ])->validate();
             // dd($this->day_data['table']);
-            $step = $this->date_data['min_time'] * 60;            
+            $step = $this->date_data['min_time'] * 60;
             for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
                 $slot_key = "'".date("Hi", $i)."'";
                 if($this->day_data['table'][$slot_key]['publishers'] >= (
