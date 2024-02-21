@@ -144,7 +144,7 @@ return array (
     'success' => 'Du hast die Gruppe erfolgreich verlassen!',
   ),
   'main-group' => 'Hauptgruppe',
-  'manage' => 'Behandlung',
+  'manage' => 'Bearbeitung',
   'max' => 'Max.',
   'max_extend_days' => 'Wie viele Tage im Voraus kann ein Termin gebucht werden?',
   'max_extend_days_placeholder' => 'Zum Beispiel 60',

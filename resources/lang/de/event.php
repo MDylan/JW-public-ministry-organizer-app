@@ -22,7 +22,7 @@ return array (
   'cancel_edit' => 'Doch nicht ändern',
   'choose_group' => 'Wähle dir eine Gruppe',
   'choose_publisher' => 'Wähle einen Verkündiger',
-  'choose_time' => 'Wähle dir einen Termin',
+  'choose_time' => 'Wähle eine Uhrzeit',
   'comment' => 
   array (
     'helper' => 'Hinweis für deinen Dienst. Jeder kann es sehen, bitte halte dich es kurz.',
@@ -34,7 +34,7 @@ return array (
     'question' => 'Bist du dir sicher, dass du den Dienst löschen möchtest?',
     'success' => 'Du hast den Dienst erfolgreich gelöscht.',
   ),
-  'create_event' => 'Wähle dir einen Zeitpunkt zum Dienst',
+  'create_event' => 'Wähle den Zeitpunkt für deinen Dienst',
   'date' => 'Datum',
   'delete_event' => 'Dienst löschen',
   'edit_event' => 'Dienst bearbeiten',
@@ -49,7 +49,7 @@ return array (
   'eventsBar' => 
   array (
     'no_events' => 'Du hast keine geplanten Dienste',
-    'title' => 'Deine nächsten Dienste',
+    'title' => 'Dein nächster Dienst',
   ),
   'invalid_value' => 'Es wurde ein falscher Zeitwert eingegeben.',
   'modal' => 
@@ -63,7 +63,7 @@ return array (
   'please_wait' => 'Warte bitte...',
   'publisher' => 'Verkündiger',
   'reach_max_publisher' => 'Wir haben die maximale Anzahl von Verkündiger in dieser Zeitspanne bereits erreicht. Wähle dir eine andere Zeit.',
-  'save' => 'Speichern der Termin',
+  'save' => 'Den Termin speichern',
   'save_changes' => 'Änderungen speichern',
   'saved' => 'Dein Dienst wurde gespeichert.',
   'service' => 
@@ -78,8 +78,8 @@ return array (
     'success' => 'Abgaben wurden gespeichert.',
     'videos' => 'Video',
   ),
-  'service_end' => 'Ende deiner Dienst',
-  'service_start' => 'Anfang deiner Dienst',
+  'service_end' => 'Ende deines Dienstes',
+  'service_start' => 'Beginn deines Dienstes',
   'status' => 'Status',
   'status_0' => 'Wartet auf Genehmigung!',
   'status_1' => 'Genehmigt',

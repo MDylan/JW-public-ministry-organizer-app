@@ -37,7 +37,7 @@ return array (
   'menu-calendar' => 'Kalender',
   'menu-groups' => 'Gruppen',
   'menu-home' => 'Startseite',
-  'menu-lastevents' => 'Dienst von früher',
+  'menu-lastevents' => 'Bisheriger Dienst',
   'menu-newsletters' => 'Newsletter',
   'menu-settings' => 'Einstellungen',
   'menu-staticpages' => 'statische Seiten',
