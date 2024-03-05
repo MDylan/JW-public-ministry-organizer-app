@@ -374,7 +374,9 @@ class Modal extends AppComponent
                             : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
-                $day_table[$key]['status'] = 'full';
+                if(isset ($day_table[$key])) {
+                    $day_table[$key]['status'] = 'full';
+                }
                 if(isset($day_table[$key]['ts'])) {
                     $k = $day_table[$key]['ts'];
                     unset($day_selects['start'][$k]);

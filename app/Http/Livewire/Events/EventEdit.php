@@ -303,14 +303,18 @@ class EventEdit extends AppComponent
                             : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
-                $day_table[$key]['status'] = 'full';
-                $k = $day_table[$key]['ts'];
-                unset($day_selects['start'][$k]);
-                if(!isset($day_selects['end'][$k + $step]) && ($k + $step) > $max) {
-                    //if somehow last time slot not the same exactly to the end
-                    unset($day_selects['end'][$max]);
+                if(isset($day_table[$key])) {
+                    $day_table[$key]['status'] = 'full';
+                    $k = $day_table[$key]['ts'];
+                    unset($day_selects['start'][$k]);
+
+                    if (!isset($day_selects['end'][$k + $step]) && ($k + $step) > $max) {
+                        //if somehow last time slot not the same exactly to the end
+                        unset($day_selects['end'][$max]);
+                    }
+                    unset($day_selects['end'][$k + $step]);
                 }
-                unset($day_selects['end'][$k + $step]);
+                
             } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
