@@ -115,8 +115,8 @@ class SpecialDateModal extends Component
             'note' => 'required|string|min:3|max:255',
             'date_min_publishers' => 'required_if:date_status,2|numeric|digits_between:1,12|lte:date_max_publishers',
             'date_max_publishers' => 'required_if:date_status,2|numeric|digits_between:1,12|gte:date_min_publishers',
-            'date_min_time' =>  'required_if:date_status,2|numeric|in:30,60,120|lte:date_max_time',
-            'date_max_time' => 'required_if:date_status,2|numeric|in:60,120,180,240,320,360,420,480|gte:date_min_time',
+            'date_min_time' =>  'required_if:date_status,2|numeric|in:30,60,90,120|lte:date_max_time',
+            'date_max_time' => 'required_if:date_status,2|numeric|in:60,90,120,180,240,320,360,420,480|gte:date_min_time',
             'disabled_slots' => 'sometimes|array'
         ])->validate();
 
@@ -283,8 +283,8 @@ class SpecialDateModal extends Component
             $this->state['date_min_time']);
 
         return view('livewire.groups.special-date-modal', [
-            'min_time_options' => [30,60,120],
-            'max_time_options' => [60, 120, 180, 240, 320, 360, 420, 480],
+            'min_time_options' => [30,60,90,120], 
+            'max_time_options' => [60, 90, 120, 180, 240, 320, 360, 420, 480],
             'disabled_selects' => $this->disabled_selects,
             'starts' => $starts,
             'ends' =>$ends,
