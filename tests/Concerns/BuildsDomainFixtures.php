@@ -5,6 +5,7 @@ namespace Tests\Concerns;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupNews;
+use App\Models\GroupPosters;
 use App\Models\GroupUser;
 use App\Models\Settings;
 use App\Models\StaticPage;
@@ -61,6 +62,16 @@ trait BuildsDomainFixtures
                 'title' => 'Teszt hir',
                 'content' => 'Teszt tartalom',
             ],
+        ], $attributes));
+    }
+
+    protected function createGroupPoster(Group $group, array $attributes = []): GroupPosters
+    {
+        return GroupPosters::create(array_merge([
+            'group_id' => $group->id,
+            'info' => 'Teszt hirdetmény',
+            'show_date' => now()->toDateString(),
+            'hide_date' => null,
         ], $attributes));
     }
 
