@@ -14,7 +14,10 @@ use App\Models\GroupUser;
 use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\EventCreatedNotification;
+use App\Notifications\EventDeletedAdminsNotification;
+use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventStatusChangedNotification;
+use App\Notifications\EventUpdatedNotification;
 use App\Notifications\UserRoleIsGroupCreatorNotification;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
@@ -52,10 +55,12 @@ class ObserverRegressionTest extends FeatureTestCase
 
         $creator = $this->createUser(['email' => 'event-creator@example.test']);
         $assignee = $this->createUser(['email' => 'event-assignee@example.test']);
+        $groupAdmin = $this->createUser(['email' => 'event-admin@example.test']);
         $group = $this->createGroup();
 
         $this->attachUserToGroup($creator, $group, 'roler', true);
         $this->attachUserToGroup($assignee, $group, 'member', true);
+        $this->attachUserToGroup($groupAdmin, $group, 'admin', true);
 
         $this->actingAs($creator);
 
@@ -72,10 +77,21 @@ class ObserverRegressionTest extends FeatureTestCase
         ]);
         Notification::assertSentTo($assignee, EventCreatedNotification::class);
 
+        $event->start = now()->addDays(2)->setTime(10, 0)->format('Y-m-d H:i:s');
+        $event->end = now()->addDays(2)->setTime(11, 0)->format('Y-m-d H:i:s');
+        $event->save();
+
+        Notification::assertSentTo($assignee, EventUpdatedNotification::class);
+
         $event->status = 1;
         $event->save();
 
         Notification::assertSentTo($assignee, EventStatusChangedNotification::class);
+
+        $event->delete();
+
+        Notification::assertSentTo($assignee, EventDeletedNotification::class);
+        Notification::assertSentTo($groupAdmin, EventDeletedAdminsNotification::class);
     }
 
     public function test_group_observer_creates_log_history_on_update(): void

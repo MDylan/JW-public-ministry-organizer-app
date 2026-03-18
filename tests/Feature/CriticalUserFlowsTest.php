@@ -6,6 +6,7 @@ use App\Classes\GroupUserMoves;
 use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\FinishRegistrationSuccessNotification;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\GroupUserLogoutNotification;
 use Illuminate\Support\Facades\Bus;
@@ -60,6 +61,7 @@ class CriticalUserFlowsTest extends FeatureTestCase
 
         $this->assertSame('activated', $registered->fresh()->role);
         $this->assertNotNull($registered->fresh()->email_verified_at);
+        Notification::assertSentTo($registered->fresh(), FinishRegistrationSuccessNotification::class);
     }
 
     public function test_profile_information_update_flow(): void
