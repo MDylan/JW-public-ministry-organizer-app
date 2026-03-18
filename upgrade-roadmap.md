@@ -27,6 +27,11 @@ Each item is intentionally small enough to complete and mark independently.
 
 - [ ] **TODO 01: Create a regression test baseline before any upgrade**
   - Needed:
+    - Add test coverage for all existing routes, including middleware and authorization behavior (guest/auth/verified/profileFull/groupMember/groupAdmin/can:* checks).
+    - Add explicit Livewire test coverage for route-mounted components: `Home`, `Events\Events`, `Events\LastEvents`, `Groups\ListGroups`, `Admin\AdminNewsletters`, `Admin\Users\ListUsers`, `Admin\Settings`, `Admin\StaticPages`, `Admin\StaticPageEdit`, `Admin\NewsletterEdit`, `Admin\Statistics`, `Admin\Translation`, `Groups\ListUsers`, `Groups\NewsList`, `Groups\UpdateGroupForm`, `Groups\DeleteGroup`, `Groups\NewsEdit`, `Groups\Statistics`, `Groups\History`.
+    - Add Livewire integration tests for embedded/nested components: `Events\Modal`, `Events\EventEdit`, `Groups\Messages`, `Groups\PosterEditModal`, `Groups\SpecialDateModal`, `Partials\NavBar`, `Partials\SideMenu`, `Partials\EventsBar`.
+    - Add tests for all observers (including model event triggers and side effects): `UserObserver`, `EventObserver`, `GroupObserver`, `GroupUserObserver`, `GroupLiteratureObserver`, `GroupNewsObserver`, `GroupNewsTranslationObserver`, `GroupDayObserver` (currently not registered, must be tested/documented as inactive or activated).
+    - Add tests for all notifications in `app/Notifications` (delivery channel, recipients, payload content, and dispatch trigger coverage from routes/jobs/observers).
     - Replace example tests with real Feature tests for critical user flows.
     - Cover at least: login/logout, registration finish flow, email verification, profile update, group membership flows, event create/update/delete, scheduler-triggered side effects where possible.
     - Add unit tests for key domain helpers/services (group date generation, statistics calculations, notification trigger conditions).
