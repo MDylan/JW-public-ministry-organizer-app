@@ -3,6 +3,11 @@
 This roadmap is designed for multi-step execution by AI agents.
 Each item is intentionally small enough to complete and mark independently.
 
+## Execution Environment (Important)
+
+- Run all Laravel commands with `php81 artisan ...` in this project.
+- Do not use plain `php artisan ...` here, because the default `php` points to PHP 8.3, which is not suitable for this Laravel 8 baseline.
+
 ## Status Convention
 
 - `[ ]` not started
