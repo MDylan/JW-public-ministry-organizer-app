@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsDomainFixtures;
 use Tests\TestCase;
@@ -17,9 +18,9 @@ abstract class FeatureTestCase extends TestCase
 
         $this->seedCoreSettings();
 
-        $owner = $this->createUser([
-            'role' => 'mainAdmin',
+        $owner = User::factory()->asAdmin()->create([
             'email' => 'owner@example.test',
+            'name'  => 'Test User',
         ]);
 
         $this->createHomeStaticPage($owner, 1);

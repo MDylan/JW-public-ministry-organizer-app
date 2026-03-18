@@ -64,4 +64,37 @@ class UserFactory extends Factory
             ];
         });
     }
+
+    public function asAdmin(): static
+    {
+        return $this->role('mainAdmin');
+    }
+
+    public function asGroupCreator(): static
+    {
+        return $this->role('groupCreator');
+    }
+
+    public function asTranslator(): static
+    {
+        return $this->role('translator');
+    }
+
+    public function asActivated(): static
+    {
+        return $this->role('activated');
+    }
+
+    public function withFullProfile(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'name'          => $this->faker->name(),
+                'phone_number'  => '36' . $this->faker->numerify('#########'),
+                'accepted_gdpr' => 1,
+                'firstDay'      => 1,
+                'language'      => 'hu',
+            ];
+        });
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Support\Facades\URL;
 
 class RouteMiddlewareRegressionTest extends FeatureTestCase
@@ -130,7 +131,7 @@ class RouteMiddlewareRegressionTest extends FeatureTestCase
 
     public function test_password_confirmed_middleware_is_enforced(): void
     {
-        $admin = $this->createUser(['role' => 'mainAdmin', 'email' => 'admin-confirm@example.test']);
+        $admin = User::factory()->asAdmin()->create(['email' => 'admin-confirm@example.test']);
 
         $this->actingAs($admin)
             ->get(route('admin.settings'))

@@ -5,6 +5,7 @@ namespace Tests\Concerns;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupNews;
+use App\Models\GroupUser;
 use App\Models\Settings;
 use App\Models\StaticPage;
 use App\Models\User;
@@ -29,17 +30,14 @@ trait BuildsDomainFixtures
         return Group::factory()->create($attributes);
     }
 
-    protected function attachUserToGroup(User $user, Group $group, string $groupRole = 'member', bool $accepted = true): void
+    protected function attachUserToGroup(User $user, Group $group, string $groupRole = 'member', bool $accepted = true): GroupUser
     {
-        $group->groupUsersAllOnly()->syncWithoutDetaching([
-            $user->id => [
-                'group_role' => $groupRole,
-                'accepted_at' => $accepted ? now() : null,
-                'deleted_at' => null,
-                'message_use' => 1,
-                'message_send_priority' => 1,
-            ],
-        ]);
+        return GroupUser::factory()
+            ->forUser($user)
+            ->forGroup($group)
+            ->state(['group_role' => $groupRole])
+            ->when($accepted, fn ($f) => $f->accepted(), fn ($f) => $f->pending())
+            ->create();
     }
 
     protected function createGroupDate(Group $group, ?string $date = null): GroupDate

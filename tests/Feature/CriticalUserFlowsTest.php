@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Classes\GroupUserMoves;
 use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Event;
+use App\Models\GroupUser;
 use App\Models\User;
 use App\Notifications\FinishRegistrationSuccessNotification;
 use App\Notifications\GroupUserAddedNotification;
@@ -118,16 +119,12 @@ class CriticalUserFlowsTest extends FeatureTestCase
         $owner = $this->createUser(['email' => 'event-flow-owner@example.test']);
         $group = $this->createGroup();
 
-        $this->attachUserToGroup($creator, $group, 'roler', true);
-        $this->attachUserToGroup($owner, $group, 'member', true);
+        GroupUser::factory()->forGroup($group)->forUser($creator)->asRoler()->accepted()->create();
+        GroupUser::factory()->forGroup($group)->forUser($owner)->asMember()->accepted()->create();
 
         $this->actingAs($creator);
 
-        $event = Event::factory()->create([
-            'group_id' => $group->id,
-            'user_id' => $owner->id,
-            'status' => 0,
-        ]);
+        $event = Event::factory()->forGroup($group)->forUser($owner)->pending()->create();
 
         $event->status = 1;
         $event->save();
