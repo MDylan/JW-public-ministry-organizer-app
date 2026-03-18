@@ -12,6 +12,9 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/commands.md`: Artisan command and scheduler documentation.
 - `.docs/jobs.md`: Queue job behavior, dispatch sources, and side effects.
 - `.docs/fortify-routes.md`: Custom Fortify integration and authentication route behavior.
+- `.docs/notifications.md`: Notification catalog, delivery channels, and trigger points.
+- `.docs/observers.md`: Observer registration status and side-effect mapping.
+- `.docs/middleware.md`: HTTP middleware stacks, aliases, and custom behavior.
 
 ## Project Stack Snapshot
 
