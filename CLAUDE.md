@@ -1,0 +1,1 @@
+Check 'AGENTS.md' file for project info
