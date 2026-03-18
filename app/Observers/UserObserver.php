@@ -94,9 +94,10 @@ class UserObserver
         $otherAdmins = User::where('role', '=', 'mainAdmin')->where('id', '<>', $user->id)->get();
         $cc = [];
         if(count($otherAdmins) > 0) {
+            $actorName = optional(auth()->user())->name ?? 'SYSTEM';
             $data = [
                 'newAdmin'=> $user->name, 
-                'adminBy' => auth()->user()->name, 
+                'adminBy' => $actorName, 
             ];
             foreach($otherAdmins as $admin) {
                 $admin->notify(new NewAdminNotification($data));

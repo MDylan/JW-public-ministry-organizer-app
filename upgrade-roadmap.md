@@ -17,7 +17,8 @@ Each item is intentionally small enough to complete and mark independently.
 
 - Laravel `8.12` (`composer.json`)
 - PHP constraint is `^8.0` with `config.platform.php = 8.0.9`
-- No meaningful automated tests yet (only `tests/Feature/ExampleTest.php` and `tests/Unit/ExampleTest.php`)
+- Regression test baseline exists under `tests/Feature` and `tests/Unit` (route/middleware, Livewire route-mounted + nested components, observers, notifications, critical user flows, domain unit checks)
+- `phpunit.xml` and `.env.testing` are configured for dedicated MySQL test schema `kozter_testing` with test-safe drivers
 - Custom Fortify routes are manually loaded (`Fortify::ignoreRoutes()`), with duplicate `verification.verify` route names in `routes/web.php` and `routes/fortify.php`
 - Deprecated packages for modern Laravel are present (`fideloper/proxy`, `fruitcake/laravel-cors`, `facade/ignition`)
 - `app/Http/Middleware/TrustProxies.php` still extends `Fideloper\Proxy\TrustProxies`
@@ -25,7 +26,7 @@ Each item is intentionally small enough to complete and mark independently.
 
 ## Phase 0 - Safety and Baseline
 
-- [ ] **TODO 01: Create a regression test baseline before any upgrade**
+- [x] **TODO 01: Create a regression test baseline before any upgrade**
   - Needed:
     - Add test coverage for all existing routes, including middleware and authorization behavior (guest/auth/verified/profileFull/groupMember/groupAdmin/can:* checks).
     - Add explicit Livewire test coverage for route-mounted components: `Home`, `Events\Events`, `Events\LastEvents`, `Groups\ListGroups`, `Admin\AdminNewsletters`, `Admin\Users\ListUsers`, `Admin\Settings`, `Admin\StaticPages`, `Admin\StaticPageEdit`, `Admin\NewsletterEdit`, `Admin\Statistics`, `Admin\Translation`, `Groups\ListUsers`, `Groups\NewsList`, `Groups\UpdateGroupForm`, `Groups\DeleteGroup`, `Groups\NewsEdit`, `Groups\Statistics`, `Groups\History`.
@@ -40,7 +41,7 @@ Each item is intentionally small enough to complete and mark independently.
     - Test data factories/seeders expanded to support realistic scenarios.
     - CI-ready `phpunit` execution with stable deterministic assertions.
 
-- [ ] **TODO 02: Stabilize test environment configuration**
+- [x] **TODO 02: Stabilize test environment configuration**
   - Needed:
     - Enable dedicated test DB config in `phpunit.xml` (prefer sqlite in-memory if compatible, otherwise dedicated MySQL test schema).
     - Ensure queues, cache, mail, and filesystem use test-safe drivers.
