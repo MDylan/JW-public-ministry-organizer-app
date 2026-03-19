@@ -110,14 +110,15 @@ class EventEdit extends AppComponent
         if($this->eventId !== null) {
             $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
 
-            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+            if(!in_array($this->role, ['admin', 'roler', 'helper'])
                 && $editEvent['user_id'] !== Auth::id()) {
                     $this->error = __('event.error.no_permission');
                     $this->cancelEdit();
                 return false;
-            }            
+            }
             return $editEvent;
         }
+        return false;
     }
 
     public function getInfo($saveProcess = false) {
@@ -226,7 +227,7 @@ class EventEdit extends AppComponent
         $day_selects = [];
         $row = 1;
         // dd($date->format("Y-m-d"), date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $step);
-        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max, $step);
+        $slots_array = GenerateSlots::generate($this->day_data['date'], $start, $max, $step);
         foreach($slots_array as $current) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
