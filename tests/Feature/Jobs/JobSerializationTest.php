@@ -7,7 +7,6 @@ use App\Jobs\CalulcateUserNameIndexProcess;
 use App\Jobs\DeleteGroupDataProcess;
 use App\Jobs\EventAutoCheck;
 use App\Jobs\GenerateStatProcess;
-use App\Jobs\GroupDayDeletedProcess;
 use App\Jobs\GroupDayUpdatedProcess;
 use App\Jobs\UserLogoutFromGroupProcess;
 use App\Models\Event;
@@ -18,7 +17,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 05: queue serialization round-trip for all 8 jobs.
+ * TODO 05: queue serialization round-trip for every job.
+ *
+ * There were 8 when this was written; TODO 10.2 deleted GroupDayDeletedProcess,
+ * leaving 7.
  *
  * Every job uses SerializesModels, which replaces Eloquent models with a
  * model-identifier stub on serialize and re-queries them on unserialize.
@@ -79,7 +81,6 @@ class JobSerializationTest extends FeatureTestCase
             DeleteGroupDataProcess::class => new DeleteGroupDataProcess($this->group->id, false),
             EventAutoCheck::class => new EventAutoCheck($event, strtotime($event->start), strtotime($event->end)),
             GenerateStatProcess::class => new GenerateStatProcess($this->group->id, $this->date, false),
-            GroupDayDeletedProcess::class => new GroupDayDeletedProcess($this->date, $this->group->id, 3, '08:00', '12:00', $this->member->id),
             GroupDayUpdatedProcess::class => new GroupDayUpdatedProcess($this->date, $this->group->id, 3, '08:00', '12:00', $this->member->id),
             UserLogoutFromGroupProcess::class => new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User'),
         ];

@@ -36,7 +36,7 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 | `EventCreatedNotification` | Yes | `EventObserver::created` | `ObserverRegressionTest`, `ObserverCauserTest` | Informs assigned user when someone else creates their event. |
 | `EventUpdatedNotification` | Yes | `EventObserver::updated`, `CalculateDatesEvents::generate` | `ObserverRegressionTest`, `GroupDayTemplateCleanupTest` | Informs users about schedule/time changes. |
 | `EventStatusChangedNotification` | Yes | `EventObserver::updated` | `ObserverRegressionTest` | Informs users when event status changes (accept/reject flow). |
-| `EventDeletedNotification` | Yes | `EventObserver::deleted`, `CalculateDatesEvents`, `GroupDayDeletedProcess`, `UserLogoutFromGroupProcess` | `ObserverRegressionTest`, `GroupDayJobsTest`, `UserLogoutFromGroupProcessTest`, `GroupDayTemplateCleanupTest` | Informs users that an event was removed. |
+| `EventDeletedNotification` | Yes | `EventObserver::deleted`, `CalculateDatesEvents`, `UserLogoutFromGroupProcess` | `ObserverRegressionTest`, `SystemCauserJobsTest`, `UserLogoutFromGroupProcessTest`, `GroupDayTemplateCleanupTest` | Informs users that an event was removed. |
 | `EventDeletedAdminsNotification` | Yes | `EventObserver::deleted` (accepted event path) | `ObserverRegressionTest`, `NotificationTriggerRegressionTest` | Notifies group editors/admins about accepted-event deletions. |
 
 ## Group Domain

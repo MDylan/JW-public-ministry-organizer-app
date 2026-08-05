@@ -28,9 +28,11 @@ From `app/Providers/EventServiceProvider.php`.
 
 Because it is not registered, its hooks and queued job dispatches do not run in current runtime behavior.
 
-**This is a deliberate decision, not an oversight** — settled in roadmap TODO 10.1. `GroupDayObserver` is the only place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, which for a while was read as "the cleanup never runs, so this is a missing feature". **That reading was wrong.** The cleanup does run through a different chain, so the observer's cleanup dispatches and their two jobs are a *superseded implementation*. Registering the full observer would still add one distinct capability — `GroupDay` audit-history records — but it would also run the legacy cleanup hooks in addition to the active cleanup. The decision to leave it unregistered therefore deliberately leaves the day-template audit trail disabled. See "The day-template cleanup" below.
+**This is a deliberate decision, not an oversight** — settled in roadmap TODO 10.1. `GroupDayObserver` was the only place that dispatched `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, which for a while was read as "the cleanup never runs, so this is a missing feature". **That reading was wrong.** The cleanup does run through a different chain, so the observer's cleanup dispatches were a *superseded implementation*. Registering the full observer would still add one distinct capability — `GroupDay` audit-history records — but it would also have run the legacy cleanup hooks in addition to the active cleanup. The decision to leave it unregistered therefore deliberately leaves the day-template audit trail disabled. See "The day-template cleanup" below.
 
-The observer has nevertheless been given the shared causer handling (below), and so have the two jobs it would dispatch — passing `0` alone would only have moved the failure downstream.
+**TODO 10.2 followed through on that finding and deleted `GroupDayDeletedProcess` outright.** `deleted()` and `forceDeleted()` now only write their history record; the comments left in their place say why. `GroupDayUpdatedProcess` survives because its `handle()` delegates to `CalculateDatesEvents::generate()`, i.e. it is a thin wrapper over live code rather than a parallel implementation.
+
+The observer has nevertheless been given the shared causer handling (below), and so has the job it would dispatch — passing `0` alone would only have moved the failure downstream.
 
 ## Resolving the causer
 
@@ -40,7 +42,7 @@ Observers, jobs and the service classes behind them use `App\Support\Concerns\Re
 - `causerName(): string` — the acting user's name, or `'SYSTEM'`
 - `causerNameFor($userId): string` (static) — the name for an id **captured earlier**, mapping `0`, `false`, `null` and a since-deleted user onto `'SYSTEM'`
 
-The third one exists because a job receives the causer id at dispatch time but runs later, in a worker, where `auth()` cannot serve as a fallback and `User::find(0)` is always `null`. `GroupDayDeletedProcess` and `CalculateDatesEvents` read the causer's *name* straight into notification payloads, so a `null` there becomes an `ErrorException` — Laravel promotes PHP warnings to exceptions.
+The third one exists because a job receives the causer id at dispatch time but runs later, in a worker, where `auth()` cannot serve as a fallback and `User::find(0)` is always `null`. `CalculateDatesEvents` reads the causer's *name* straight into notification payloads, so a `null` there becomes an `ErrorException` — Laravel promotes PHP warnings to exceptions. (The now-deleted `GroupDayDeletedProcess` had the same defect; `SystemCauserJobsTest` kept its since-deleted-user case and moved it onto `CalculateDatesEvents`.)
 
 Model events do not only fire from HTTP requests: a scheduled command, a queue worker, a console command or a seeder can all write models with no authenticated user. Before TODO 10 three different behaviours coexisted for that situation — some observers skipped the history record, some wrote `0`, and eight call sites simply fataled on `auth()->user()->id`.
 
@@ -59,7 +61,7 @@ Model events do not only fire from HTTP requests: a scheduled command, a queue w
 | `GroupLiteratureObserver` | `GroupLiterature` | `created`, `updated`, `deleted` | Tracks literature lifecycle changes in audit history. |
 | `GroupNewsObserver` | `GroupNews` | `updated`, `deleted` | Stores news change/deletion history records. |
 | `GroupNewsTranslationObserver` | `GroupNewsTranslation` | `created`, `updated`, `deleted` | Stores localized news content change history. |
-| `GroupDayObserver` (inactive) | `GroupDay` | `created`, `updated`, `deleted`, `forceDeleted` | Would record day-template history and dispatch `GroupDayUpdatedProcess` / `GroupDayDeletedProcess` jobs if registered. |
+| `GroupDayObserver` (inactive) | `GroupDay` | `created`, `updated`, `deleted`, `forceDeleted` | Would record day-template history and dispatch `GroupDayUpdatedProcess` if registered. |
 
 ## Detailed Behavior Notes
 
@@ -90,10 +92,10 @@ Model events do not only fire from HTTP requests: a scheduled command, a queue w
 
 ## Inactive GroupDayObserver
 
-- Contains inactive audit-history logic and queue dispatches, but no active registration. Its cleanup dispatches are superseded; its audit-history behavior is not provided elsewhere.
-- It is the **sole dispatcher** of `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so those jobs never run.
+- Contains inactive audit-history logic and one queue dispatch, but no active registration. Its cleanup dispatches were superseded and are gone; its audit-history behavior is not provided elsewhere.
+- It is the **sole dispatcher** of `GroupDayUpdatedProcess`, so that job never runs.
 - `GroupDay` rows are written only by `app/Classes/updateGroupFutureChanges.php` (via `updateOrCreate` and `$del->delete()`, i.e. through Eloquent, so the events would genuinely fire). That class is called from `Groups\UpdateGroupForm` and from the **`ApplyGroupFutureChanges` scheduled command**, which has no authenticated user — the causer handling above is what makes registration survivable at all.
-- `forceDeleted()` dispatches `GroupDayDeletedProcess::dispatch([...])`, passing an **array as a single argument** where the constructor takes six — an `ArgumentCountError`. It is unreachable today because `GroupDay` does not use `SoftDeletes`, so the model has no `forceDelete()`. Anyone registering the observer should fix this first.
+- `forceDeleted()` used to dispatch `GroupDayDeletedProcess::dispatch([...])`, passing an **array as a single argument** where the constructor took six — an `ArgumentCountError` waiting to happen, though unreachable because `GroupDay` does not use `SoftDeletes` and so has no `forceDelete()`. TODO 10.2 removed the call along with the job, which closed the bug as a side effect.
 - `ObserverCauserTest::test_the_group_day_observer_is_still_not_registered` is the guard that will fail first if it is registered.
 
 ## The day-template cleanup
@@ -115,4 +117,4 @@ Groups\UpdateGroupForm::updateGroup()
 
 `tests/Feature/Groups/GroupDayTemplateCleanupTest.php` pins this: narrowing a day deletes the events outside the new window and pulls partially overlapping ones inside; removing a day deletes its events, its `group_dates` row and its `day_stats`; past dates and widened days are left alone. Removing the `recalculateDates()` call makes six of its ten tests fail, which is how we know they measure this chain and not something else.
 
-One difference worth knowing if the decision is ever revisited: `GroupDayDeletedProcess` uses a `LEFT JOIN`, so it would also see events with no `group_dates` row, while the helper chain starts from the `group_dates` rows. In practice such events do not occur — a booking can only be made on a generated date.
+One difference was worth knowing while the decision was open: `GroupDayDeletedProcess` used a `LEFT JOIN`, so it would also have seen events with no `group_dates` row, while the helper chain starts from the `group_dates` rows. In practice such events do not occur — a booking can only be made on a generated date — which is why TODO 10.2 could delete the job rather than merge the difference.

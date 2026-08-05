@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Jobs\GroupDayDeletedProcess;
 use App\Jobs\GroupDayUpdatedProcess;
 use App\Models\GroupDay;
 use App\Models\LogHistory;
@@ -112,14 +111,11 @@ class GroupDayObserver
         $history = new LogHistory($saved_data);
         $groupDay->histories()->save($history);
 
-        GroupDayDeletedProcess::dispatch(
-            date('Y-m-d'),
-            $groupDay->group_id,
-            $groupDay->day_number,
-            $groupDay->start_time,
-            $groupDay->end_time,
-            $this->causerId()
-        );
+        // A takarítást (a sablonból kieső jövőbeli események törlése) korábban
+        // egy innen indított GroupDayDeletedProcess végezte volna. Azt a jobot
+        // a TODO 10.2 törölte: a munkát a GroupDateHelper ->
+        // CalculateDateProcess -> CalculateDatesEvents lánc már elvégzi, még
+        // mielőtt a group_days sorok egyáltalán módosulnának.
     }
 
     /**
@@ -146,13 +142,10 @@ class GroupDayObserver
         $history = new LogHistory($saved_data);
         $groupDay->histories()->save($history);
 
-        GroupDayDeletedProcess::dispatch([
-            date('Y-m-d'),
-            $groupDay->group_id,
-            $groupDay->day_number,
-            $groupDay->start_time,
-            $groupDay->end_time,
-            $this->causerId()
-        ]);
+        // Itt korábban egy GroupDayDeletedProcess::dispatch([...]) állt, ami a
+        // hat konstruktor-argumentumot EGYETLEN tömbként adta át - vagyis
+        // ArgumentCountError lett volna belőle, ha a metódus valaha lefut. Nem
+        // fut le: a GroupDay nem használ SoftDeletes-t, tehát nincs rajta
+        // forceDelete(). A job törlésével (TODO 10.2) a hiba is megszűnt.
     }
 }

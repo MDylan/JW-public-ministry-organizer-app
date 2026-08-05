@@ -3,7 +3,6 @@
 namespace Tests\Feature\Jobs;
 
 use App\Classes\CalculateDatesEvents;
-use App\Jobs\GroupDayDeletedProcess;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
@@ -27,11 +26,16 @@ use Tests\Feature\FeatureTestCase;
  * figyelmeztetéseket ErrorException-né alakítja, tehát ez valódi hiba lett
  * volna, nem néma null.
  *
+ * A TODO 10.2 törölte a GroupDayDeletedProcess-t, tehát az első útvonal
+ * megszűnt. A causerNameFor() három ága - a 0, a valódi azonosító és az
+ * IDŐKÖZBEN TÖRÖLT felhasználó - így itt már mind a CalculateDatesEvents-en
+ * keresztül van lefedve; ez az az útvonal, ami élesben tényleg fut.
+ *
  * Miért nem derült ki korábban: a meglévő jobtesztek mindig valódi, létező
- * causerrel futnak (GroupDayJobsTest), a tesztkörnyezet pedig
- * QUEUE_CONNECTION=sync - vagyis a jobok a hitelesített kérésen BELÜL futnak
- * le, ahol az auth() még ad felhasználót. Élesben QUEUE_CONNECTION=database,
- * tehát külön sorkezelő-folyamatban futnának, auth nélkül.
+ * causerrel futottak, a tesztkörnyezet pedig QUEUE_CONNECTION=sync - vagyis
+ * a jobok a hitelesített kérésen BELÜL futnak le, ahol az auth() még ad
+ * felhasználót. Élesben QUEUE_CONNECTION=database, tehát külön
+ * sorkezelő-folyamatban futnának, auth nélkül.
  */
 class SystemCauserJobsTest extends FeatureTestCase
 {
@@ -45,16 +49,6 @@ class SystemCauserJobsTest extends FeatureTestCase
         $this->group = $this->createGroup();
         $this->member = $this->createUser(['email' => 'sysc-member@example.test']);
         $this->attachUserToGroup($this->member, $this->group);
-    }
-
-    private function nextWeekday(int $phpDayOfWeek): string
-    {
-        $date = now()->addDay();
-        while ((int) $date->format('w') !== $phpDayOfWeek) {
-            $date = $date->addDay();
-        }
-
-        return $date->toDateString();
     }
 
     private function createEventOn(string $day, string $from = '09:00', string $to = '10:00'): Event
@@ -84,76 +78,20 @@ class SystemCauserJobsTest extends FeatureTestCase
         );
     }
 
-    // =========================================================================
-    // 1. GroupDayDeletedProcess
-    // =========================================================================
-
-    public function test_the_deleted_process_runs_with_a_system_causer(): void
+    /** Letiltott nap: a generate() minden rajta lévő eseményt töröl. */
+    private function disabledDate(string $day): void
     {
-        // A 0 azonosítóra a User::find() null-t ad; a job korábban ezen a
-        // null-on olvasott ->name-et, közvetlenül az értesítés payloadjába.
-        Notification::fake();
-        $this->assertGuest();
-
-        $phpDay = 3;
-        $day = $this->nextWeekday($phpDay);
-        $event = $this->createEventOn($day);
-
-        (new GroupDayDeletedProcess(now()->toDateString(), $this->group->id, $phpDay, '08:00', '12:00', 0))
-            ->handle();
-
-        $this->assertNull(Event::find($event->id), 'Az eseményt így is törölnie kell.');
-        $this->assertNotifiedBySystem();
-    }
-
-    public function test_the_deleted_process_still_names_a_real_causer(): void
-    {
-        Notification::fake();
-
-        $causer = $this->createUser(['email' => 'sysc-causer@example.test', 'name' => 'Szervező Sára']);
-
-        $phpDay = 3;
-        $day = $this->nextWeekday($phpDay);
-        $this->createEventOn($day);
-
-        (new GroupDayDeletedProcess(now()->toDateString(), $this->group->id, $phpDay, '08:00', '12:00', $causer->id))
-            ->handle();
-
-        Notification::assertSentTo(
-            $this->member,
-            EventDeletedNotification::class,
-            function ($notification) {
-                $property = new \ReflectionProperty($notification, 'data');
-                $property->setAccessible(true);
-
-                return $property->getValue($notification)['userName'] === 'Szervező Sára';
-            }
-        );
-    }
-
-    public function test_a_deleted_causer_falls_back_to_the_system_name(): void
-    {
-        // Nem csak a 0 problémás: egy időközben törölt felhasználó
-        // azonosítójára is null-t ad a User::find(). A job a dispatch
-        // pillanatában rögzíti az azonosítót, a lefutás pedig később van.
-        Notification::fake();
-
-        $causer = $this->createUser(['email' => 'sysc-gone@example.test']);
-        $causerId = $causer->id;
-        $causer->delete();
-
-        $phpDay = 3;
-        $day = $this->nextWeekday($phpDay);
-        $this->createEventOn($day);
-
-        (new GroupDayDeletedProcess(now()->toDateString(), $this->group->id, $phpDay, '08:00', '12:00', $causerId))
-            ->handle();
-
-        $this->assertNotifiedBySystem();
+        GroupDate::factory()->create([
+            'group_id'    => $this->group->id,
+            'date'        => $day,
+            'date_start'  => $day.' 08:00:00',
+            'date_end'    => $day.' 12:00:00',
+            'date_status' => 0,
+        ]);
     }
 
     // =========================================================================
-    // 2. CalculateDatesEvents
+    // CalculateDatesEvents - az egyetlen megmaradt fogadó oldal
     // =========================================================================
 
     public function test_calculate_dates_events_runs_with_a_system_causer(): void
@@ -166,17 +104,7 @@ class SystemCauserJobsTest extends FeatureTestCase
         $this->assertGuest();
 
         $day = now()->addDays(3)->toDateString();
-
-        // Letiltott nap: a generate() minden rajta lévő eseményt töröl, tehát
-        // biztosan eljut az értesítés összeállításáig.
-        GroupDate::factory()->create([
-            'group_id'    => $this->group->id,
-            'date'        => $day,
-            'date_start'  => $day.' 08:00:00',
-            'date_end'    => $day.' 12:00:00',
-            'date_status' => 0,
-        ]);
-
+        $this->disabledDate($day);
         $event = $this->createEventOn($day);
 
         CalculateDatesEvents::generate($this->group->id, $day, 0);
@@ -192,15 +120,7 @@ class SystemCauserJobsTest extends FeatureTestCase
         $causer = $this->createUser(['email' => 'sysc-calc@example.test', 'name' => 'Naptár Nóra']);
 
         $day = now()->addDays(4)->toDateString();
-
-        GroupDate::factory()->create([
-            'group_id'    => $this->group->id,
-            'date'        => $day,
-            'date_start'  => $day.' 08:00:00',
-            'date_end'    => $day.' 12:00:00',
-            'date_status' => 0,
-        ]);
-
+        $this->disabledDate($day);
         $this->createEventOn($day);
 
         CalculateDatesEvents::generate($this->group->id, $day, $causer->id);
@@ -228,15 +148,7 @@ class SystemCauserJobsTest extends FeatureTestCase
         $this->actingAs($actor);
 
         $day = now()->addDays(5)->toDateString();
-
-        GroupDate::factory()->create([
-            'group_id'    => $this->group->id,
-            'date'        => $day,
-            'date_start'  => $day.' 08:00:00',
-            'date_end'    => $day.' 12:00:00',
-            'date_status' => 0,
-        ]);
-
+        $this->disabledDate($day);
         $this->createEventOn($day);
 
         CalculateDatesEvents::generate($this->group->id, $day);
@@ -251,5 +163,31 @@ class SystemCauserJobsTest extends FeatureTestCase
                 return $property->getValue($notification)['userName'] === 'Belépett Béla';
             }
         );
+    }
+
+    public function test_a_deleted_causer_falls_back_to_the_system_name(): void
+    {
+        // Nem csak a 0 problémás: egy időközben TÖRÖLT felhasználó
+        // azonosítójára is null-t ad a User::find(). Az azonosító a hívás
+        // pillanatában rögzül, a feldolgozás pedig később fut - addig a
+        // felhasználó eltűnhet.
+        //
+        // Ez az ág korábban a GroupDayDeletedProcess-en volt lefedve; a job
+        // törlésével (TODO 10.2) ide került át, arra az útvonalra, ami
+        // élesben tényleg fut.
+        Notification::fake();
+
+        $causer = $this->createUser(['email' => 'sysc-gone@example.test']);
+        $causerId = $causer->id;
+        $causer->delete();
+
+        $day = now()->addDays(6)->toDateString();
+        $this->disabledDate($day);
+        $event = $this->createEventOn($day);
+
+        CalculateDatesEvents::generate($this->group->id, $day, $causerId);
+
+        $this->assertNull(Event::find($event->id), 'Az eseményt így is törölnie kell.');
+        $this->assertNotifiedBySystem();
     }
 }
