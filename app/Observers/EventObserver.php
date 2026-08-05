@@ -12,10 +12,12 @@ use App\Notifications\EventDeletedAdminsNotification;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventStatusChangedNotification;
 use App\Notifications\EventUpdatedNotification;
+use App\Observers\Concerns\ResolvesCauser;
 use Illuminate\Support\Facades\Notification;
 
 class EventObserver
 {
+    use ResolvesCauser;
 
     /**
      * Handle the Event "created" event.
@@ -25,19 +27,24 @@ class EventObserver
      */
     public function created(Event $event)
     {
+        $causerId = $this->causerId();
+
         $saved_data = [
             'event' => 'created',
             'group_id' => $event->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $causerId,
             'changes' => '',
         ];
 
         $history = new LogHistory($saved_data);
         $event->histories()->save($history);
 
-        if($event->user_id != auth()->user()->id) {
+        // A rendszer (causerId 0) sosem egyezik meg az esemény gazdájával,
+        // tehát az értesítés ilyenkor mindig kimegy - ahogy az updated() és a
+        // deleted() is teszi.
+        if($event->user_id != $causerId) {
             $data = [
-                'userName' => auth()->user()->name, 
+                'userName' => $this->causerName(),
                 'groupName' => $event->groups->name,
                 'replyTo' => $event->groups->replyTo,
                 'date' => $event->day,
@@ -86,12 +93,12 @@ class EventObserver
                 }
             }
         }
-        $auth = (auth()->user() !== null) ? true : false;
+        $causerId = $this->causerId();
         if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $event->group_id,
-                'causer_id' => $auth ? auth()->user()->id : 0,
+                'causer_id' => $causerId,
                 'changes' => json_encode($store)
             ];
 
@@ -100,7 +107,7 @@ class EventObserver
 
             if(isset($store['new']['start']) || isset($store['new']['end'])) {
                 $data = [
-                    'userName' => $auth ? auth()->user()->name : "SYSTEM", 
+                    'userName' => $this->causerName(),
                     'groupName' => $event->groups->name,
                     'replyTo' => $event->groups->replyTo,
                     'date' => $event->day,
@@ -114,7 +121,7 @@ class EventObserver
                     ],
                     'reason' => session()->has('reason') ? session('reason') : false 
                 ];
-                if($event->user_id != ($auth ? auth()->user()->id : false)) {
+                if($event->user_id != $causerId) {
                     //notify user if not he modified this event
                     $us = User::find($event->user_id);
                     $us->notify(
@@ -165,11 +172,11 @@ class EventObserver
      */
     public function deleted(Event $event)
     {
-        $auth = (auth()->user() !== null) ? true : false;
+        $causerId = $this->causerId();
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $event->group_id,
-            'causer_id' => $auth ? auth()->user()->id : false,
+            'causer_id' => $causerId,
             'changes' => ''
         ];
 
@@ -177,7 +184,9 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            'userName' => $auth ? auth()->user()->name : false, 
+            // Korábban false volt rendszer-törléskor, ami üresen jelent meg a
+            // levélben; most "SYSTEM", ahogy az updated() már régóta írja.
+            'userName' => $this->causerName(),
             'groupName' => $event->groups->name,
             'replyTo' => $event->groups->replyTo,
             'date' => $event->day,
@@ -193,7 +202,7 @@ class EventObserver
         } else {
             $data['event_user'] = 'anonym';
         }
-        if($event->user_id != ($auth ? auth()->user()->id : false) && !$us->isAnonymized) {
+        if($event->user_id != $causerId && !$us->isAnonymized) {
             //notify user if not he deleted this event            
             $us->notify(
                 new EventDeletedNotification($data)

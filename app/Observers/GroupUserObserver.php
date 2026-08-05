@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupUser;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 class GroupUserObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupUser "created" event.
      *
@@ -41,11 +44,11 @@ class GroupUserObserver
                 }
             }
         }
-        if(count($store) && (auth()->user() !== null)) {
+        if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupUser->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
             $history = new LogHistory($saved_data);
@@ -67,7 +70,7 @@ class GroupUserObserver
                 // 'model_id' => $groupUser->id,
                 'event' => 'deleted',
                 'group_id' => $groupUser->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => ''
             ];
             $history = new LogHistory($saved_data);

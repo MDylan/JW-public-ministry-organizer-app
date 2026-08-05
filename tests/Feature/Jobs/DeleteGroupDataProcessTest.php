@@ -177,24 +177,25 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
         $this->assertSame(0, GroupUser::where('group_id', $empty->id)->count());
     }
 
-    public function test_deleting_a_group_through_eloquent_currently_fatals(): void
+    public function test_deleting_a_group_through_eloquent_writes_a_history_record(): void
     {
-        // Jellemzés-teszt egy meglévő hibáról, nem elvárt viselkedés.
+        // TODO 10 javította a GroupObserver::deleted()-et: korábban a Group
+        // modellen nem létező $group->group_id mezőt olvasta, így mindig null
+        // került a NOT NULL log_histories.group_id oszlopba, és MINDEN
+        // Eloquent-törlés elszállt. Élesben csak azért nem látszott, mert a
+        // GroupDelete tömeges törlést használ, ami nem indít eseményt.
         //
-        // GroupObserver::deleted() a $group->group_id mezőt olvassa, ami a
-        // Group modellen nem létezik (a kulcs neve id), így mindig null. A
-        // LogHistory.group_id viszont NOT NULL, ezért a mentés elszáll.
-        //
-        // Éles környezetben ez rejtve marad, mert a GroupDelete controller
-        // tömeges törlést használ, ami nem indít modell-eseményt. Bármely
-        // jövőbeli kód, ami $group->delete()-et hív, ebbe fut bele.
-        //
-        // Ha a GroupObserver javul, ez a teszt elbukik - akkor a várt
-        // viselkedést kell ide átírni. Lásd: roadmap TODO 10.
+        // Ez a teszt most a javított viselkedés regressziós védelme.
         $group = $this->createGroup();
 
-        $this->expectException(\Throwable::class);
-
         $group->delete();
+
+        $this->assertSoftDeleted('groups', ['id' => $group->id]);
+        $this->assertDatabaseHas('log_histories', [
+            'event'      => 'deleted',
+            'group_id'   => $group->id,
+            'model_id'   => $group->id,
+            'model_type' => Group::class,
+        ]);
     }
 }

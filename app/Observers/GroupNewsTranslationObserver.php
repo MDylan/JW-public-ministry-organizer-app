@@ -5,9 +5,12 @@ namespace App\Observers;
 use App\Models\GroupNews;
 use App\Models\GroupNewsTranslation;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 class GroupNewsTranslationObserver
 {
+    use ResolvesCauser;
+
     private function resolveGroupId(GroupNewsTranslation $groupNewsTranslation): ?int
     {
         return GroupNews::withTrashed()
@@ -33,7 +36,7 @@ class GroupNewsTranslationObserver
         $saved_data = [
             'event' => 'created',
             'group_id' => $this->resolveGroupId($groupNewsTranslation),
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -68,7 +71,7 @@ class GroupNewsTranslationObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $this->resolveGroupId($groupNewsTranslation),
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -88,7 +91,7 @@ class GroupNewsTranslationObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $this->resolveGroupId($groupNewsTranslation),
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => ''
         ];
 

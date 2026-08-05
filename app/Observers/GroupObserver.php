@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\Group;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 class GroupObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the Group "updated" event.
      *
@@ -30,11 +33,11 @@ class GroupObserver
                 }
             }
         }
-        if(count($store) && (auth()->user() !== null)) {
+        if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $group->id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -52,9 +55,12 @@ class GroupObserver
     public function deleted(Group $group)
     {
         $saved_data = [
+            // A group_id korábban $group->group_id volt - olyan mező, ami a
+            // Group modellen nem létezik (a kulcs neve id), így mindig null
+            // került a NOT NULL oszlopba, és minden Eloquent-törlés elszállt.
             'event' => 'deleted',
-            'group_id' => $group->group_id,
-            'causer_id' => auth()->user()->id,
+            'group_id' => $group->id,
+            'causer_id' => $this->causerId(),
             'changes' => ''
         ];
 

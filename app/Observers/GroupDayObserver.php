@@ -6,10 +6,13 @@ use App\Jobs\GroupDayDeletedProcess;
 use App\Jobs\GroupDayUpdatedProcess;
 use App\Models\GroupDay;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 
 class GroupDayObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupDay "created" event.
      *
@@ -27,7 +30,7 @@ class GroupDayObserver
         $saved_data = [
             'event' => 'created',
             'group_id' => $groupDay->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -62,7 +65,7 @@ class GroupDayObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupDay->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -78,7 +81,7 @@ class GroupDayObserver
                     $groupDay->day_number,
                     $groupDay->start_time,
                     $groupDay->end_time,
-                    auth()->user()->id
+                    $this->causerId()
                 );
             }
         }
@@ -102,7 +105,7 @@ class GroupDayObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupDay->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -115,7 +118,7 @@ class GroupDayObserver
             $groupDay->day_number,
             $groupDay->start_time,
             $groupDay->end_time,
-            auth()->user()->id
+            $this->causerId()
         );
     }
 
@@ -136,7 +139,7 @@ class GroupDayObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupDay->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -149,7 +152,7 @@ class GroupDayObserver
             $groupDay->day_number,
             $groupDay->start_time,
             $groupDay->end_time,
-            auth()->user()->id
+            $this->causerId()
         ]);
     }
 }

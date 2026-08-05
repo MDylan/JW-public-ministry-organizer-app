@@ -51,7 +51,7 @@ Each item is intentionally small enough to complete and mark independently.
 - The 70-entry route fixture covers **every application-owned named route**; the 8 named routes it omits are all vendor-provided (5 Debugbar, 3 Livewire). That is a stronger safety net than 70-of-78 suggests.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
 - **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, ~~5 middleware are untested~~ (closed by TODO 09), 23 of 30 models have no factory.
-- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 09: **`OK (660 tests, 1958 assertions)` in ~107s**, up from the 179-test baseline.
+- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 10: **`OK (671 tests, 1985 assertions)` in ~150s**, up from the 179-test baseline. (The jump from ~107s came with TODO 10's fuller audit trail - see that entry.)
 - `phpunit.xml` uses the PHPUnit 9 schema. Two `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids.
 - `.phpunit.result.cache` contains stale defect entries for tests that no longer exist. It must be deleted before recording a baseline.
 
@@ -246,7 +246,17 @@ Full coverage is required **before** any framework change. Every item here is La
   - `setUserLastActivity` details: the write is a mass `update()`, so **no model events fire** (deliberate - an Eloquent save would trigger the name-index job on every request) but the Eloquent builder still **bumps `updated_at`**, meaning every active user's row is touched once a minute.
   - Expected changes: none in application code.
 
-- [ ] **TODO 10: Fix observer defects and cover `GroupDayObserver`**
+- [x] **TODO 10: Fix observer defects and cover `GroupDayObserver`** - DONE
+  - **The first TODO that changes application code.** Deliberately placed here: the fixes only come once there is a net underneath them.
+  - Delivered: new `app/Observers/Concerns/ResolvesCauser.php`; all **eight** observers switched onto it; the `GroupObserver::deleted()` and `Groups\ListUsers::getRole()` defects fixed; four pinning tests rewritten to the new behaviour; new `tests/Feature/Observers/ObserverCauserTest.php` (11 tests); `.docs/observers.md` rewritten. Suite: **660 -> 671 tests, 1985 assertions, green**.
+  - **The causer contract, now uniform.** `causerId()` returns the acting user's id or **`0` = "the system"**; `causerName()` returns the name or `'SYSTEM'`. Before this, three behaviours coexisted for the same situation: `GroupObserver::updated` and `GroupUserObserver::updated` **skipped** the audit record, `EventObserver::updated` wrote `0`, and eight call sites **fataled**. `log_histories.causer_id` has no foreign key, so `0` is safe.
+  - **Two intentional behaviour changes, both user-visible:**
+    1. `GroupObserver::updated()` and `GroupUserObserver::updated()` now log system-driven changes instead of skipping them - notably everything `ApplyGroupFutureChanges` does, which previously happened with no trace at all.
+    2. `EventObserver::deleted()` used to pass `false` as `userName` for a system deletion, which rendered as an **empty name in the outgoing email**. It now says `SYSTEM`, matching what `updated()` has always sent.
+  - **Cost of the fuller audit trail: the suite went from ~107s to ~150s.** The extra time is the additional `log_histories` inserts. The production impact is much smaller than that ratio suggests: in tests most writes are unauthenticated, whereas in production almost all group and membership updates happen inside an authenticated request, where a record was already being written. The genuinely new rows are the scheduler/queue/console ones - which is the point of the change.
+  - **`GroupDayObserver` stays unregistered - a decision, not an oversight.** The exploration turned up why it matters: it is the **sole dispatcher** of `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so the "delete future events that no longer fit the day template" cleanup **never runs**. That is a *missing feature*, not dead code. It was also unregisterable as written: `GroupDay` rows are written only by `updateGroupFutureChanges` (through Eloquent, so the events would fire), and that class is called by the **`ApplyGroupFutureChanges` scheduled command** with no authenticated user - registration would have fataled the scheduler on the first run. The causer fix removes that obstacle; the remaining question is a product one, tracked as TODO 10.1.
+  - **Correction to the TODO 07.2 note on `getRole()`:** it was described as affecting every entry point. The `groups.users` route carries the `groupMember` middleware (`routes/web.php:177`), which requires an accepted membership, so this was **not an active security hole** - it was missing defence in depth, with a 500 as the only thing holding the component shut. The fix is `abort(403)`. Leaving `role` as `null` instead would have been *worse*: `render()` performs no authorization, it only computes `$editor`, so an outsider would have rendered the member list as a non-editor.
+  - Original specification, unchanged:
   - Needed:
     - **Fix `GroupObserver::deleted()`**: it reads `$group->group_id`, which does not exist on the `Group` model (the key is `id`), so `log_histories.group_id` receives null against a NOT NULL column. Any `$group->delete()` through Eloquent fatals today; only the mass-delete in `GroupDelete` keeps this hidden. Found by TODO 05, pinned by a characterization test in `tests/Feature/Jobs/DeleteGroupDataProcessTest.php` that will fail once fixed.
     - **Decide how observers should behave without an authenticated user.** `GroupLiteratureObserver:28`, `GroupNewsTranslationObserver:36`, `EventObserver:31` and others read `auth()->user()->id` unconditionally, so any write from a queue worker, console command or seeder fatals. Either guard the call or make the causer explicit.
@@ -254,6 +264,16 @@ Full coverage is required **before** any framework change. Every item here is La
     - **Fix `Groups\ListUsers::getRole()`** (`:800-806`), found by TODO 07.2 - same family of defect: a missing precondition check at the head of the call chain. It ends in `->first()->toArray()`, so a user with no `group_user` row for the group fatals during `render()`, **before** `isNotHelper()` can return 403. Pinned by `GroupRoleAssignmentTest::test_an_outsider_hits_a_fatal_error_instead_of_a_403`, which will need updating once a proper 403 is returned.
   - Expected changes:
     - Observer fixes, updated characterization tests, and an updated `.docs/observers.md`.
+
+- [ ] **TODO 10.1: Decide whether to activate `GroupDayObserver`**
+  - Context: split out of TODO 10, which fixed the technical obstacle but deliberately left the product decision open.
+  - The observer is the **only** dispatcher of `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`. Registering it turns on two things at once: an audit trail for day-template changes (harmless, clearly wanted) **and** a cleanup that **deletes users' already-booked future events** when an administrator narrows a group's day template (a real behaviour change that reaches end users).
+  - Needed:
+    - Decide whether that deletion is the intended product behaviour, and if so whether affected users should be notified first. The jobs delete silently today.
+    - `GroupDay` rows are written only by `app/Classes/updateGroupFutureChanges.php`, called both from `Groups\UpdateGroupForm` (authenticated) and from the `ApplyGroupFutureChanges` scheduled command (not authenticated) - both paths must be exercised.
+    - `tests/Feature/Jobs/GroupDayJobsTest.php` already covers the two job bodies, so only the wiring needs new coverage.
+    - `ObserverCauserTest::test_the_group_day_observer_is_still_not_registered` pins the current state and must be rewritten when this lands.
+  - Expected changes: one line in `app/Providers/EventServiceProvider.php`, new wiring tests, `.docs/observers.md`.
 
 - [ ] **TODO 11: Fill notification trigger coverage gaps**
   - Needed:

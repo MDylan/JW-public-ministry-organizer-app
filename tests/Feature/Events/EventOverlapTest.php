@@ -334,9 +334,9 @@ class EventOverlapTest extends FeatureTestCase
 
         $this->createEventInRange($other, $user, $this->date, '09:00', '11:00');
 
-        // Tömeges törlés, ahogy a Groups\DeleteGroup is teszi: a GroupObserver
-        // deleted() ága egy nem létező mezőt olvas, ezért Eloquent-törléssel
-        // végzetes hibát dobna (TODO 05-ben rögzített látens hiba).
+        // Tömeges törlés, ahogy a Groups\DeleteGroup is teszi - vagyis
+        // modell-események nélkül. (Az Eloquent út a TODO 10 óta szintén
+        // működik, de itt az éles kódutat akarjuk utánozni.)
         Group::where('id', $other->id)->delete();
 
         $this->book($target, $user, '10:00', '12:00')->assertHasNoErrors();

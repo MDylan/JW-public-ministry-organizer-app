@@ -801,8 +801,21 @@ class ListUsers extends AppComponent
         $info = GroupUser::where('user_id', '=', Auth::id())
             ->where('group_id', '=', $this->groupId)
             ->select('group_role')
-            ->first()->toArray();
-        $this->role = $info['group_role'];
+            ->first();
+
+        // Tagsági sor nélkül korábban a ->toArray() szállt el null-on, vagyis
+        // egy 500-as hiba tartotta zárva a komponenst. A route-on ott van a
+        // groupMember middleware, de a getGroupInfo()-t hívó Livewire
+        // metódusok saját jogon is elérhetők, ezért itt is zárni kell.
+        //
+        // Nem elég a role-t null-ra hagyni: a render() nem ellenőriz
+        // jogosultságot, csak $editor-t számol, tehát a kívülálló
+        // lerenderelné a taglistát nem-szerkesztőként.
+        if($info === null) {
+            abort(403);
+        }
+
+        $this->role = $info->group_role;
     }
 
     private function maxRoles() {

@@ -143,8 +143,8 @@ class GroupListPaginationTest extends FeatureTestCase
         $this->assertSame(21, $this->list()->viewData('groups')->total());
         $this->assertSame(2, $this->list()->viewData('groups')->lastPage());
 
-        // Tömeges törlés, nem $group->delete(): az Eloquent úton a
-        // GroupObserver::deleted() ma fatalt ad (TODO 10).
+        // Tömeges törlés, ahogy az éles kód is teszi - modell-események
+        // nélkül. (Az Eloquent út a TODO 10 óta szintén működik.)
         Group::where('id', $groups[0]->id)->delete();
 
         $paginator = $this->list()->viewData('groups');

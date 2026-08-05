@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupLiterature;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 class GroupLiteratureObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupLiterature "created" event.
      *
@@ -25,7 +28,7 @@ class GroupLiteratureObserver
         $saved_data = [
             'event' => 'created',
             'group_id' => $groupLiterature->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -60,7 +63,7 @@ class GroupLiteratureObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupLiterature->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
             $history = new LogHistory($saved_data);
@@ -86,7 +89,7 @@ class GroupLiteratureObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupLiterature->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 

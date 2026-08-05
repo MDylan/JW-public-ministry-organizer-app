@@ -96,29 +96,24 @@ class GroupRoleAssignmentTest extends FeatureTestCase
         $this->edit($actor, $target)->assertSet('selected_user.id', $target->id);
     }
 
-    public function test_an_outsider_hits_a_fatal_error_instead_of_a_403(): void
+    public function test_an_outsider_gets_a_403(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy látens hibáról.
+        // TODO 10 javította a getRole()-t (:800-806): korábban
+        // ->first()->toArray()-jel zárt, tehát tagsági sor nélkül fatalt
+        // dobott, MÉG MIELŐTT az isNotHelper() 403-at adhatott volna.
         //
-        // A getRole() (:800-806) így zár: ->first()->toArray(). Ha a
-        // bejelentkezett felhasználónak nincs group_user sora az adott
-        // csoportra, a first() null, és a ->toArray() fatalt dob - MÉG
-        // MIELŐTT az isNotHelper() 403-at adhatna.
+        // A route-on ott van a groupMember middleware, tehát ez nem volt
+        // aktív biztonsági rés - de egy 500-as hiba tartotta zárva a
+        // komponenst, ami nem védelem. Most a getRole() maga zár.
         //
-        // Ez már a render()-ben megtörténik, tehát a komponens meg sem
-        // nyílik. Minden getGroupInfo()-t hívó belépési pont érintett:
-        // createUser, editUser, updateUser, confirmUserRemoval, deleteUser.
-        //
-        // Javítás: roadmap TODO 10 (hiányzó előfeltétel-ellenőrzések).
+        // Fontos, hogy miért nem a role null-ra hagyása a helyes megoldás: a
+        // render() nem ellenőriz jogosultságot, csak $editor-t számol, tehát
+        // a kívülálló lerenderelné a taglistát nem-szerkesztőként.
         $outsider = $this->createUser(['email' => 'ra-outsider@example.test']);
 
-        // A kivétel maga \Error, de a render()-ben keletkezik, ezért az
-        // Ignition ViewException-be csomagolja - a \Throwable elvárása
-        // tehát szándékos, nem lazaság.
-        $this->expectException(\Throwable::class);
-        $this->expectExceptionMessage('Call to a member function toArray() on null');
-
-        Livewire::actingAs($outsider)->test(ListUsers::class, ['group' => $this->group->id]);
+        Livewire::actingAs($outsider)
+            ->test(ListUsers::class, ['group' => $this->group->id])
+            ->assertForbidden();
     }
 
     // =========================================================================

@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupNews;
 use App\Models\LogHistory;
+use App\Observers\Concerns\ResolvesCauser;
 
 class GroupNewsObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupNews "created" event.
      *
@@ -45,7 +48,7 @@ class GroupNewsObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupNews->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -65,7 +68,7 @@ class GroupNewsObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupNews->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => ''
         ];
 
