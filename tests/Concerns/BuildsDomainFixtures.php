@@ -243,6 +243,44 @@ trait BuildsDomainFixtures
         return strtotime($date.' '.$time.':00');
     }
 
+    /**
+     * Ideiglenesen felülír egy környezeti változót a callback idejére.
+     *
+     * A CheckRecaptcha és a HttpsProtocol FUTÁSIDŐBEN olvas env()-et
+     * (USE_RECAPTCHA, USE_HTTPS), nem konfigurációból - ez maga a TODO 28
+     * tárgya. A phpunit.xml <server> bejegyzéssel adja meg őket, a Laravel
+     * Env repository-ja pedig élőben olvassa a $_SERVER tömböt, tehát a
+     * bekapcsolt állapot csak így mérhető.
+     *
+     * A visszaállítás finally-ben történik, hogy egy elbukó assertion se
+     * hagyjon szennyezett környezetet a következő tesztnek.
+     *
+     * @template T
+     * @param  callable():T  $callback
+     * @return T
+     */
+    protected function withEnvValue(string $key, ?string $value, callable $callback)
+    {
+        $hadValue = array_key_exists($key, $_SERVER);
+        $original = $_SERVER[$key] ?? null;
+
+        if ($value === null) {
+            unset($_SERVER[$key]);
+        } else {
+            $_SERVER[$key] = $value;
+        }
+
+        try {
+            return $callback();
+        } finally {
+            if ($hadValue) {
+                $_SERVER[$key] = $original;
+            } else {
+                unset($_SERVER[$key]);
+            }
+        }
+    }
+
     protected function createGroupNews(Group $group, User $user, array $attributes = []): GroupNews
     {
         $locale = config('app.locale', 'hu');

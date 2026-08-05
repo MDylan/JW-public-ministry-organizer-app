@@ -50,8 +50,8 @@ Each item is intentionally small enough to complete and mark independently.
 - Strong coverage: 70-route contract snapshot including middleware stacks (`tests/Feature/RouteContractSnapshotTest.php`), route/middleware regression, all 8 observers, mail contract for all 26 notifications.
 - The 70-entry route fixture covers **every application-owned named route**; the 8 named routes it omits are all vendor-provided (5 Debugbar, 3 Livewire). That is a stronger safety net than 70-of-78 suggests.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
-- **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, 5 middleware are untested, 23 of 30 models have no factory.
-- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 08: **`OK (609 tests, 1842 assertions)` in ~102s**, up from the 179-test baseline.
+- **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, ~~5 middleware are untested~~ (closed by TODO 09), 23 of 30 models have no factory.
+- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 09: **`OK (660 tests, 1958 assertions)` in ~107s**, up from the 179-test baseline.
 - `phpunit.xml` uses the PHPUnit 9 schema. Two `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids.
 - `.phpunit.result.cache` contains stale defect entries for tests that no longer exist. It must be deleted before recording a baseline.
 
@@ -235,13 +235,16 @@ Full coverage is required **before** any framework change. Every item here is La
   - **Test-fixture note worth remembering:** the member list is ordered by `name_index, email`, and `name_index` is rewritten by `CalulcateUserNameIndexProcess`, which `UserObserver` dispatches on **every** user write and which renumbers *all* users by name. With identical names the order is effectively arbitrary, so any ordering-sensitive test must give its users distinct names - `attachManyUsersToGroup()` now does.
   - Expected changes: none in application code; the assertions above are the verification for TODO 48.
 
-- [ ] **TODO 09: Test the 5 uncovered middleware directly**
-  - Needed:
-    - `SetLocale`, `SetGuestLanguage`, `setUserLastActivity`, `CheckRecaptcha`, `HttpsProtocol` have no direct test.
-    - `CheckRecaptcha` and `HttpsProtocol` are currently never exercised because `USE_RECAPTCHA=false` and `USE_HTTPS=false`; test them in the enabled state too.
-    - `SetLocale` performs DB work plus `Cache::rememberForever` plus `View::share` on every web request and can force a logout in maintenance mode - cover all three paths.
-  - Expected changes:
-    - New `tests/Feature/Middleware/*Test.php`.
+- [x] **TODO 09: Test the 5 uncovered middleware directly** - DONE
+  - Delivered: `tests/Feature/Middleware/` with `SetLocaleTest.php` (18 tests), `CheckRecaptchaTest.php` (10), `SetUserLastActivityTest.php` (8), `SetGuestLanguageTest.php` (8), `HttpsProtocolTest.php` (7), plus a `withEnvValue()` fixture helper. Suite: **609 -> 660 tests, 1958 assertions, ~107s, green**. No application code was changed.
+  - Where each one actually runs, which the original entry did not record: `SetLocale`, `setUserLastActivity` and `HttpsProtocol` are in the **`web` group**, so they run on every web request; `SetGuestLanguage` is on the signed `finish_registration` route only; and **`CheckRecaptcha` sits on `POST /login`, `POST /register` and `POST /forgot-password`** (`routes/fortify.php:34-75`) - the three most sensitive public endpoints, which is why its enabled state needed covering.
+  - **Two latent bugs found, both pinned rather than fixed** (the user chose characterization, consistent with TODO 04-08):
+    1. **A Google outage would lock everyone out of the site.** `CheckRecaptcha:22` calls `Http::asForm()->post()` with **no try/catch**. An HTTP error code returns a `Response` and is handled, but a *connection* failure throws `ConnectionException`, which nothing catches - so login, registration and password reset all return 500. Dormant today because `USE_RECAPTCHA=false`. Pinned by `CheckRecaptchaTest::test_a_connection_failure_escapes_the_middleware_as_a_fatal_error`; fix tracked as **TODO 33.1**, mandatory before recaptcha is ever switched on.
+    2. **A static page created outside the editor never reaches the menu.** `SetLocale:68-74` uses `Cache::rememberForever('sidemenu_guest' / 'sidemenu_auth')`, and those keys are cleared in **exactly two places** - `Admin\StaticPageEdit:91-92` and the setup `AccountController:50-51`. Anything created by a seeder, a console command, a direct model write or a data import stays invisible until somebody happens to edit a page in the UI. There is no expiry. Pinned by `SetLocaleTest::test_a_page_created_outside_the_editor_never_reaches_the_cached_menu`.
+  - **Behaviour now pinned that was previously undocumented:** the menu visibility rule (guests see `status IN (1,2)`, authenticated users see `(0,1,3)`, so status 2 is guest-only and 0/3 are login-only); maintenance mode logs out **everyone except `mainAdmin`** - a `translator` is not exempt - and does not touch guests at all; the `?lang=` branch validates against `available_languages` and hides invisible languages from all but `mainAdmin`/`translator`, **while the `session('language')` branch validates nothing**, so a previously granted hidden language survives losing the privilege; a visible language choice is also written to `users.language`, which fires `UserObserver` and its name-index job on every switch; and `SetGuestLanguage` feeds that same session key, which is the only guest-side source for the `SetLocale` session branch - the two middleware are coupled and this was recorded nowhere.
+  - `CheckRecaptcha` details: the score test is strict (`score > min_score`, so a score exactly at the threshold is rejected), a 500 from Google counts as a bot, and the rejection path is a `back()` redirect carrying a `status` message rather than an error bag. **`Http::fake()` appears here for the first time in this suite.**
+  - `setUserLastActivity` details: the write is a mass `update()`, so **no model events fire** (deliberate - an Eloquent save would trigger the name-index job on every request) but the Eloquent builder still **bumps `updated_at`**, meaning every active user's row is touched once a minute.
+  - Expected changes: none in application code.
 
 - [ ] **TODO 10: Fix observer defects and cover `GroupDayObserver`**
   - Needed:
@@ -378,6 +381,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   - Needed:
     - 25 occurrences outside `config/`, notably `app/Http/Middleware/HttpsProtocol.php:19`, `app/Http/Middleware/CheckRecaptcha.php:20`, `app/Http/Livewire/Admin/Settings.php:77,78,81`, `app/Http/Controllers/Setup/MailController.php:67`, 7 in Blade views (`auth/login`, `auth/register`, `auth/forgot-password`, `livewire/groups/update-group-form`), and 6 in notifications.
     - **Highest priority: the mailer ones.** `->replyTo(env('MAIL_FROM_ADDRESS'))` in `EventCreatedNotification.php:68`, `EventDeletedNotification.php:66`, `EventStatusChangedNotification.php:71`, `EventUpdatedNotification.php:75`, `UserWillBeAnonymizeNotification.php:62`, and `->bcc(...)` in `UserRoleIsGroupCreatorNotification.php:45`. Symfony Mailer (Phase 4) throws on a null address; SwiftMailer did not.
+    - The two middleware occurrences are now **covered and provably runtime-dependent**: `HttpsProtocolTest` and `CheckRecaptchaTest` (TODO 09) toggle `$_SERVER['USE_HTTPS']` / `$_SERVER['USE_RECAPTCHA']` mid-test and get different behaviour from the same request, which is exactly what `config:cache` would freeze. Both files carry a `test_the_flag_is_read_from_the_environment_on_every_request` case that must be rewritten once the value moves into config - treat that rewrite as part of this TODO.
+    - Note a second defect in `HttpsProtocol:19` while you are there: the comparison is `env('USE_HTTPS', "false") == "true"`, i.e. against the literal string. `USE_HTTPS=1` therefore does **not** enable the redirect. Pinned by `test_a_truthy_but_non_string_true_value_does_not_enable_the_redirect`.
   - Expected changes: new/extended config keys, `env()` confined to `config/*.php`, `config:cache` becomes safe.
 
 - [ ] **TODO 29: Replace `$dates` with `$casts`**
@@ -396,7 +401,9 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   - Needed:
     - `app/Providers/AppServiceProvider.php::boot()` runs `ModelsSettings::all()` on every request inside a bare `catch (\Exception $e) {}`, then `Config::set()`s ~10 runtime keys. The silent catch will hide upgrade failures for the rest of this roadmap.
     - At minimum: log the exception instead of swallowing it. Preferably: defer the lookup or cache it.
-  - Expected changes: `app/Providers/AppServiceProvider.php`.
+    - **A second silent catch of the same kind, found by TODO 09:** `SetLocale:65-79` wraps the whole side-menu lookup in `catch (\Throwable) {}`. If the query fails, `View::share('sidemenu')` never happens and the views meet an undefined variable, while the original error vanishes without a trace.
+    - **Consequence of the boot-time read, worth stating explicitly:** because `settings_maintenance` is populated from the `Settings` table during `boot()`, **maintenance mode cannot be turned on for the current request** - writing the settings row has no effect until the next one. The TODO 09 tests therefore drive it with `Config::set()`, and that workaround should disappear when this TODO lands.
+  - Expected changes: `app/Providers/AppServiceProvider.php`, `app/Http/Middleware/SetLocale.php`.
 
 - [ ] **TODO 32: Squash the migration history**
   - Needed:
@@ -415,6 +422,15 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
       2. **`Groups\ListUsers::isNotHelper()` and `isNotEditor()` are literally identical** (`:792-798`), both allowing only `['admin','roler']`. The `helper` role is therefore not a helper by this check, and `maxRoles()`'s `member`/`helper` branches are unreachable. Decide whether `helper` was meant to have write access; pinned by `test_a_helper_cannot_open_the_user_editor_either`.
       3. **`helpers.php:23` guards on `pwbs_check_group_admins` while defining `pwbs_check_group_other_admins`** - the `function_exists()` check never matches its own function.
   - Expected changes: `app/Http/Kernel.php`, middleware files, `app/Helpers/helpers.php`, `app/Http/Livewire/Groups/ListUsers.php`, `.docs/middleware.md`.
+
+- [ ] **TODO 33.1: Make `CheckRecaptcha` survive a Google outage**
+  - Context: found by TODO 09. `app/Http/Middleware/CheckRecaptcha.php:22` calls `Http::asForm()->post()` with **no try/catch**. HTTP error codes come back as a `Response` and are handled correctly, but a connection failure (timeout, DNS, network) throws `Illuminate\Http\Client\ConnectionException`, which nothing catches. The middleware guards `POST /login`, `POST /register` and `POST /forgot-password`, so **a Google outage returns 500 on all three** - nobody can log in, register or reset a password until Google comes back.
+  - Dormant today only because `USE_RECAPTCHA=false`. **This must be resolved before recaptcha is ever switched on**, independently of the upgrade.
+  - Needed:
+    - Catch `ConnectionException` and decide the policy explicitly: **fail-open** (let the request through, log the failure - availability over bot protection) or **fail-closed** (treat it as a bot, so the user gets the captcha error instead of a 500 - protection over availability). Either is defensible; the current behaviour is neither.
+    - Set an explicit timeout on the request; there is none today, so a hanging Google endpoint holds the PHP worker.
+    - `CheckRecaptchaTest::test_a_connection_failure_escapes_the_middleware_as_a_fatal_error` pins the present behaviour and must be rewritten to match whichever policy is chosen.
+  - Expected changes: `app/Http/Middleware/CheckRecaptcha.php`, one test rewritten.
 
 ---
 
@@ -591,6 +607,7 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
   - Needed:
     - `laravel/framework` to `^11.0`; `laravel/fortify`, `nunomaduro/collision` (`^8.0`) to their Laravel 11 lines.
     - `spatie/laravel-ignition` is absorbed into the framework - remove it.
+    - **Watch the Carbon 2 -> 3 jump, which Laravel 11 opens the door to.** Carbon 3 made `diffIn*` **signed**; in Carbon 2 (2.57 today) it returns an absolute value. `app/Http/Middleware/setUserLastActivity.php:24` reads `Carbon::now()->diffInSeconds($user->last_activity) >= 60`, so under Carbon 3 a past timestamp yields a negative number, the condition never holds, and **`users.last_activity` silently stops updating** - which in turn breaks the `Groups\ListUsers` online/inactive filters and the GDPR inactivity anonymization. `SetUserLastActivityTest::test_an_old_activity_is_refreshed` is the tripwire. Audit every other `diffIn*` call at the same time.
   - Expected changes: composer realignment; `artisan` boots under PHP 8.3.
 
 - [ ] **TODO 56: Migrate to the slim application skeleton**
