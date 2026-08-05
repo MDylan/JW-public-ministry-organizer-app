@@ -4,25 +4,13 @@ namespace Tests\Feature;
 
 use App\Http\Livewire\Events\EventEdit;
 use App\Models\Event;
-use App\Models\Group;
-use App\Models\GroupDate;
 use Livewire\Livewire;
 
 class CalendarEventEditTest extends FeatureTestCase
 {
-    // Segéd: GroupDate létrehozás megadott dátummal
-    private function makeGroupDate(Group $group, string $date, array $attrs = []): GroupDate
-    {
-        return GroupDate::factory()->create(array_merge([
-            'group_id'           => $group->id,
-            'date'               => $date,
-            'date_start'         => $date.' 08:00:00',
-            'date_end'           => $date.' 12:00:00',
-            'date_min_publishers' => 1,
-            'date_max_publishers' => 3,
-            'date_min_time'      => 60,
-        ], $attrs));
-    }
+    // A korábbi privát makeGroupDate() helyett a közös
+    // BuildsDomainFixtures::createEventDate() segédet használjuk - ugyanazokkal
+    // az alapértékekkel, de az összes eseményteszt számára elérhetően.
 
     // =========================================================================
     // 1. Esemény létrehozás
@@ -35,7 +23,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -63,7 +51,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -94,7 +82,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         $this->actingAs($user);
         $event = Event::factory()
@@ -134,7 +122,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         $this->actingAs($user);
         $event = Event::factory()
@@ -162,7 +150,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($owner, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         $this->actingAs($owner);
         $event = Event::factory()
@@ -189,7 +177,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($member, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         $this->actingAs($member);
         $event = Event::factory()
@@ -219,7 +207,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($roler, $group, 'roler', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -247,7 +235,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -276,7 +264,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($roler, $group, 'roler', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         Livewire::actingAs($roler)
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
@@ -292,7 +280,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         Livewire::actingAs($user)
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
@@ -310,7 +298,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         Livewire::actingAs($user)
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
@@ -325,7 +313,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 10:00:00');
         $endTs   = strtotime($date.' 09:00:00'); // vége < kezdet
 
@@ -344,7 +332,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -364,7 +352,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 09:00:00');
         $endTs   = strtotime($date.' 10:00:00');
 
@@ -390,7 +378,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group, 'member', true);
 
         $date = now()->addDay()->toDateString();
-        $this->makeGroupDate($group, $date);
+        $this->createEventDate($group, $date);
 
         $this->actingAs($user);
         $event = Event::factory()
