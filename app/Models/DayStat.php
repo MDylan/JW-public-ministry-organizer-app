@@ -9,6 +9,9 @@ class DayStat extends Model
 {
     use HasFactory;
 
+    // A day_stats táblában nincs created_at/updated_at oszlop.
+    public $timestamps = false;
+
     protected $fillable = [
         'group_id',
         'day',
