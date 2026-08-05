@@ -146,15 +146,16 @@ Full coverage is required **before** any framework change. Every item here is La
     4. `DeleteGroupDataProcess` only anonymizes members if the group is **already soft-deleted** when it runs, because its `count($user->user->userGroups) == 0` check joins the `groups` table. The real `GroupDelete` flow deletes first and dispatches second, so it works - but the job is silently order-dependent, and calling it on a live group skips anonymization entirely.
   - Test-writing notes worth carrying forward: `Notification::fake()` also captures the `EventObserver`-driven notification fired when a test creates an event, so job assertions must be targeted (`assertNotSentTo`) rather than `assertNothingSent`. Jobs touching events need `actingAs()` for the same observer reason as TODO 04.
 
-- [ ] **TODO 06: Extract scheduler closures into testable commands**
-  - Needed:
-    - `app/Console/Kernel.php::schedule()` contains ~200 lines of inline closures (user cleanup, event auto-expire, GDPR anonymization, log purge, newsletter sending, statistics). `commands()` also loads a non-existent `app/Console/Commands` directory.
-    - **Confirmed by TODO 03:** `schedule:list` reports 9 entries, of which **8 have an empty Command column and no description** - only `queue:work` is a named command. The scheduler is opaque from the outside and none of those closures can be invoked individually today. Intervals in use: `* * * * *` (x2), `50 * * * *`, `*/5 * * * *`, `0 7 * * *`, `10 7 * * *`, `0 0 * * *` (x2), `0 * * * *`. Give each extracted command a `->description()` so `schedule:list` becomes self-documenting.
-    - Move each closure into its own Artisan command class under `app/Console/Commands`, keeping the schedule registration identical.
-    - Add a test per command that executes the real logic; keep `tests/Unit/Scheduler/SchedulerRegressionTest.php` asserting the registration and frequencies.
-  - Expected changes:
-    - New `app/Console/Commands/*`, slimmed `app/Console/Kernel.php`, new command tests.
-    - Update `.docs/commands.md` in the same change set.
+- [x] **TODO 06: Extract scheduler closures into testable commands**
+  - Delivered on 2026-08-05. **Suite: 304 -> 342 tests, 945 assertions, green.**
+  - The ~200 lines of anonymous closures in `app/Console/Kernel::schedule()` became **11 named Artisan commands** under `app/Console/Commands` (a directory `commands()` was already loading but which did not exist). `schedule()` is now a 12-line list of `$schedule->command(...)` calls.
+  - Two closures were split because they bundled unrelated work: the daily cleanup closure became `maintenance:daily-cleanup` + `statistics:record-daily-users`, and the every-minute closure became `groups:apply-future-changes` + `newsletters:send-due`. Every original cron expression is preserved; verified against `upgrade-notes/baseline-schedule.txt`.
+  - `schedule:list` now shows 13 named entries instead of 1 named plus 9 blank rows.
+  - `tests/Unit/Scheduler/SchedulerRegressionTest.php` rewritten: it pins every command name to its cron expression, asserts the total task count, asserts the `queue:work` overlap guard, and **fails if an anonymous closure is ever reintroduced**.
+  - New per-command coverage in `tests/Feature/Commands/`: `MaintenanceCommandsTest` (14), `GdprCommandsTest` (13), `NewsletterAndGroupChangeCommandsTest` (9). The GDPR pair was the largest untested surface in the app - roughly 90 lines including a four-way raw join that decrypts `users.name` and `groups.name` by hand - and it deletes or anonymizes real user data daily.
+  - **One more latent bug found, pinned rather than fixed:** `newsletters:send-due` returns early on an unknown `send_to` value, which skips **every remaining newsletter in the batch**, not just the bad one. Since `sent_time` is never stamped, it retries every minute and blocks the queue behind it indefinitely. Characterization test in `NewsletterAndGroupChangeCommandsTest`.
+  - Two quirks deliberately preserved and documented: the `dialy_users` statistics type is a typo that existing data and `Admin\Statistics` both depend on, and the statistics commands use `Statistics::insert()` rather than `create()`, bypassing casts, observers and timestamps.
+  - `.docs/commands.md` rewritten in the same change set, per `AGENTS.md`.
 
 - [ ] **TODO 07: Add interaction tests for the 19 smoke-only Livewire components**
   - Needed:
