@@ -155,8 +155,8 @@ class GroupDayDeletedProcess implements ShouldQueue
             // //it's not right day, skip this
             // if($dayOfWeek != $this->day_number) continue;
 
-            GroupDate::where('id', '=', $day->id)->delete();
-            DayStat::where('day', '=', $day->date)->delete();
+            // GroupDate::where('id', '=', $day->id)->delete();
+            // DayStat::where('day', '=', $day->date)->delete();
            
         }
     }

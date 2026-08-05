@@ -28,7 +28,7 @@ From `app/Providers/EventServiceProvider.php`.
 
 Because it is not registered, its hooks and queued job dispatches do not run in current runtime behavior.
 
-**This is a deliberate decision, not an oversight** — settled in roadmap TODO 10.1. `GroupDayObserver` is the only place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, which for a while was read as "the cleanup never runs, so this is a missing feature". **That reading was wrong.** The cleanup does run — through a different chain — so the observer and its two jobs are a *superseded implementation*, and registering them would run the same work a second time rather than add a capability. See "The day-template cleanup" below.
+**This is a deliberate decision, not an oversight** — settled in roadmap TODO 10.1. `GroupDayObserver` is the only place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, which for a while was read as "the cleanup never runs, so this is a missing feature". **That reading was wrong.** The cleanup does run through a different chain, so the observer's cleanup dispatches and their two jobs are a *superseded implementation*. Registering the full observer would still add one distinct capability — `GroupDay` audit-history records — but it would also run the legacy cleanup hooks in addition to the active cleanup. The decision to leave it unregistered therefore deliberately leaves the day-template audit trail disabled. See "The day-template cleanup" below.
 
 The observer has nevertheless been given the shared causer handling (below), and so have the two jobs it would dispatch — passing `0` alone would only have moved the failure downstream.
 
@@ -90,7 +90,7 @@ Model events do not only fire from HTTP requests: a scheduled command, a queue w
 
 ## Inactive GroupDayObserver
 
-- Contains valid lifecycle logic and queue dispatches, but no active registration.
+- Contains inactive audit-history logic and queue dispatches, but no active registration. Its cleanup dispatches are superseded; its audit-history behavior is not provided elsewhere.
 - It is the **sole dispatcher** of `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so those jobs never run.
 - `GroupDay` rows are written only by `app/Classes/updateGroupFutureChanges.php` (via `updateOrCreate` and `$del->delete()`, i.e. through Eloquent, so the events would genuinely fire). That class is called from `Groups\UpdateGroupForm` and from the **`ApplyGroupFutureChanges` scheduled command**, which has no authenticated user — the causer handling above is what makes registration survivable at all.
 - `forceDeleted()` dispatches `GroupDayDeletedProcess::dispatch([...])`, passing an **array as a single argument** where the constructor takes six — an `ArgumentCountError`. It is unreachable today because `GroupDay` does not use `SoftDeletes`, so the model has no `forceDelete()`. Anyone registering the observer should fix this first.
