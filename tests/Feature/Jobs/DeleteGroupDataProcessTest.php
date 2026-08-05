@@ -1,0 +1,200 @@
+<?php
+
+namespace Tests\Feature\Jobs;
+
+use App\Jobs\DeleteGroupDataProcess;
+use App\Models\DayStat;
+use App\Models\Event;
+use App\Models\Group;
+use App\Models\GroupDate;
+use App\Models\GroupDayDisabledSlots;
+use App\Models\GroupFutureChange;
+use App\Models\GroupLiterature;
+use App\Models\GroupMessage;
+use App\Models\GroupNews;
+use App\Models\GroupNewsUserLogs;
+use App\Models\GroupPosters;
+use App\Models\GroupSurvey;
+use App\Models\GroupUser;
+use App\Models\User;
+use Tests\Feature\FeatureTestCase;
+
+/**
+ * TODO 05: real handle() execution.
+ *
+ * Dispatched from GroupDelete when a group is removed. It wipes every
+ * group-scoped table and optionally anonymizes members who belong to no other
+ * group. This is the most destructive job in the codebase and had zero
+ * coverage before.
+ */
+class DeleteGroupDataProcessTest extends FeatureTestCase
+{
+    private Group $group;
+    private Group $otherGroup;
+    private User $member;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->group = $this->createGroup();
+        $this->otherGroup = $this->createGroup();
+        $this->member = $this->createUser(['email' => 'delete-member@example.test']);
+        $this->attachUserToGroup($this->member, $this->group);
+        $this->actingAs($this->member);
+    }
+
+    /**
+     * A GroupDelete controller tömeges törlést használ
+     * ($user->userGroupsDeletable()->where(...)->delete()), ami query builderen
+     * fut, ezért NEM indít modell-eseményt. Ez itt lényeges: a
+     * GroupObserver::deleted() a nem létező $group->group_id mezőt olvassa
+     * (helyesen $group->id lenne), így Eloquent-törléskor a LogHistory.group_id
+     * null lenne és az egész művelet elszállna. Lásd a lenti jellemzés-tesztet.
+     */
+    private function softDeleteGroupLikeTheController(Group $group): void
+    {
+        Group::where('id', $group->id)->delete();
+    }
+
+    private function seedGroupData(Group $group): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        GroupDate::factory()->create(['group_id' => $group->id, 'date' => $date]);
+        Event::factory()->create([
+            'group_id' => $group->id,
+            'user_id' => $this->member->id,
+            'day' => $date,
+            'start' => $date.' 09:00:00',
+            'end' => $date.' 10:00:00',
+        ]);
+        DayStat::factory()->create(['group_id' => $group->id, 'day' => $date, 'time_slot' => $date.' 09:00:00']);
+        GroupDayDisabledSlots::factory()->create(['group_id' => $group->id]);
+        GroupLiterature::factory()->create(['group_id' => $group->id]);
+        GroupNews::factory()->create(['group_id' => $group->id, 'user_id' => $this->member->id]);
+        GroupNewsUserLogs::factory()->create(['group_id' => $group->id, 'user_id' => $this->member->id]);
+        GroupPosters::factory()->create(['group_id' => $group->id]);
+        GroupSurvey::factory()->create(['group_id' => $group->id]);
+        GroupMessage::factory()->create(['group_id' => $group->id, 'user_id' => $this->member->id]);
+        GroupFutureChange::factory()->create(['group_id' => $group->id, 'user_id' => $this->member->id]);
+    }
+
+    public function test_handle_removes_every_group_scoped_record(): void
+    {
+        $this->seedGroupData($this->group);
+
+        (new DeleteGroupDataProcess($this->group->id, false))->handle();
+
+        $scoped = [
+            Event::class, GroupDate::class, DayStat::class, GroupDayDisabledSlots::class,
+            GroupLiterature::class, GroupNews::class, GroupNewsUserLogs::class,
+            GroupPosters::class, GroupSurvey::class, GroupMessage::class, GroupFutureChange::class,
+        ];
+
+        foreach ($scoped as $model) {
+            $this->assertSame(
+                0,
+                $model::where('group_id', $this->group->id)->count(),
+                $model.' rows survived the group deletion.'
+            );
+        }
+    }
+
+    public function test_handle_leaves_other_groups_data_intact(): void
+    {
+        $this->seedGroupData($this->group);
+        $this->attachUserToGroup($this->member, $this->otherGroup);
+        $this->seedGroupData($this->otherGroup);
+
+        (new DeleteGroupDataProcess($this->group->id, false))->handle();
+
+        $this->assertSame(1, GroupDate::where('group_id', $this->otherGroup->id)->count());
+        $this->assertSame(1, GroupPosters::where('group_id', $this->otherGroup->id)->count());
+        $this->assertSame(1, GroupMessage::where('group_id', $this->otherGroup->id)->count());
+    }
+
+    public function test_handle_detaches_the_memberships(): void
+    {
+        (new DeleteGroupDataProcess($this->group->id, false))->handle();
+
+        $this->assertSame(0, GroupUser::where('group_id', $this->group->id)->count());
+    }
+
+    public function test_handle_keeps_the_user_when_not_asked_to_delete_users(): void
+    {
+        (new DeleteGroupDataProcess($this->group->id, false))->handle();
+
+        $fresh = User::find($this->member->id);
+        $this->assertNotNull($fresh);
+        $this->assertSame('delete-member@example.test', $fresh->email);
+    }
+
+    public function test_handle_anonymizes_a_member_who_has_no_other_group(): void
+    {
+        // Fontos a sorrend: a GroupDelete controller előbb soft-deleteli a
+        // csoportot, és csak utána dispatch-eli a jobot. Az anonimizálás
+        // feltétele (count($user->user->userGroups) == 0) csak így teljesül,
+        // mert a userGroups reláció a groups táblához joinol, és a
+        // soft-deleted csoport kiesik belőle. A job önmagában, élő csoporton
+        // futtatva soha nem anonimizálna.
+        $this->softDeleteGroupLikeTheController($this->group);
+
+        (new DeleteGroupDataProcess($this->group->id, true))->handle();
+
+        $fresh = User::find($this->member->id);
+
+        $this->assertNotNull($fresh, 'The user row itself must survive; only its data is anonymized.');
+        $this->assertNotSame('delete-member@example.test', $fresh->email);
+    }
+
+    public function test_handle_does_not_anonymize_a_member_who_still_belongs_to_another_group(): void
+    {
+        $this->attachUserToGroup($this->member, $this->otherGroup);
+        $this->softDeleteGroupLikeTheController($this->group);
+
+        (new DeleteGroupDataProcess($this->group->id, true))->handle();
+
+        $this->assertSame('delete-member@example.test', User::find($this->member->id)->email);
+    }
+
+    public function test_handle_does_not_anonymize_while_the_group_is_still_live(): void
+    {
+        // Jellemzés-teszt a fenti sorrendfüggőségre: ha a csoport nincs
+        // soft-deletelve, a tag még hozzá tartozik, ezért az anonimizálás
+        // kimarad - akkor is, ha a deleteUsers igaz.
+        (new DeleteGroupDataProcess($this->group->id, true))->handle();
+
+        $this->assertSame('delete-member@example.test', User::find($this->member->id)->email);
+    }
+
+    public function test_handle_is_safe_to_run_for_a_group_with_no_data(): void
+    {
+        $empty = $this->createGroup();
+
+        (new DeleteGroupDataProcess($empty->id, true))->handle();
+
+        $this->assertSame(0, GroupUser::where('group_id', $empty->id)->count());
+    }
+
+    public function test_deleting_a_group_through_eloquent_currently_fatals(): void
+    {
+        // Jellemzés-teszt egy meglévő hibáról, nem elvárt viselkedés.
+        //
+        // GroupObserver::deleted() a $group->group_id mezőt olvassa, ami a
+        // Group modellen nem létezik (a kulcs neve id), így mindig null. A
+        // LogHistory.group_id viszont NOT NULL, ezért a mentés elszáll.
+        //
+        // Éles környezetben ez rejtve marad, mert a GroupDelete controller
+        // tömeges törlést használ, ami nem indít modell-eseményt. Bármely
+        // jövőbeli kód, ami $group->delete()-et hív, ebbe fut bele.
+        //
+        // Ha a GroupObserver javul, ez a teszt elbukik - akkor a várt
+        // viselkedést kell ide átírni. Lásd: roadmap TODO 10.
+        $group = $this->createGroup();
+
+        $this->expectException(\Throwable::class);
+
+        $group->delete();
+    }
+}

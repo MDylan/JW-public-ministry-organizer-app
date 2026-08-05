@@ -132,12 +132,19 @@ Full coverage is required **before** any framework change. Every item here is La
   - **Observation for TODO 10:** several observers (`GroupLiteratureObserver:28`, `GroupNewsTranslationObserver:36`, and others) read `auth()->user()->id` unconditionally, so any model write outside an authenticated context fatals. `ModelFactoryTest` works around it with `actingAs()` in `setUp()`, which mirrors real application usage - but a queue job or console command writing these models would hit the same fatal.
   - Not done, deliberately: `tests/Concerns/BuildsDomainFixtures.php` still uses its ad-hoc builders. Rewriting them onto the new factories touches all 16 existing feature test files, so it belongs in its own change set rather than bundled here.
 
-- [ ] **TODO 05: Execute job `handle()` bodies in tests**
-  - Needed:
-    - Real (non-faked) execution tests for all 8 jobs. `DeleteGroupDataProcess`, `EventAutoCheck`, and `GroupDayDeletedProcess` currently have **zero** coverage; the other five are only asserted at dispatch level via `Bus::fake()`.
-    - Assert side effects (DB writes, notifications, file deletions), and assert queue serialization survives a round trip - this is what breaks across framework majors.
-  - Expected changes:
-    - New `tests/Feature/Jobs/*Test.php`.
+- [x] **TODO 05: Execute job `handle()` bodies in tests**
+  - Delivered on 2026-08-05. **Suite: 249 -> 304 tests, 875 assertions, green.** All 8 jobs now execute for real; previously not a single `handle()` body ran.
+  - New files under `tests/Feature/Jobs/`: one per job, plus `JobSerializationTest.php` covering the serialize/unserialize round trip for all 8, the `ModelIdentifier` payload shape, and a full dispatch through the sync queue. Laravel 11 reworked queue serialization, so this is the guard against a worker picking up a payload written by the previous release.
+  - **Job activity status, established while writing the tests** - this materially changes what needs attention later:
+    - *Live:* `CalulcateUserNameIndexProcess` (dispatched from `UserObserver` on every user write), `GenerateStatProcess`, `CalculateDateProcess`, `UserLogoutFromGroupProcess`, `DeleteGroupDataProcess`.
+    - *Inactive:* `GroupDayUpdatedProcess` and `GroupDayDeletedProcess` are dispatched only from `GroupDayObserver`, which is not registered in `EventServiceProvider`. Tested anyway, since TODO 10 may activate it.
+    - *Dead:* `EventAutoCheck` - both dispatch sites in `EventObserver` (`:58`, `:144`) are commented out.
+  - **Four latent bugs found, all documented with characterization tests rather than fixed** (fixing them changes behaviour and belongs to the phase that owns the code):
+    1. `GroupObserver::deleted()` reads `$group->group_id`, a field the `Group` model does not have (the key is `id`), so it is always null while `log_histories.group_id` is NOT NULL. **Any `$group->delete()` through Eloquent fatals.** Hidden today because `GroupDelete` uses a mass delete, which fires no model events. -> TODO 10.
+    2. `GenerateStatProcess::handle()` calls `->first()->delete()` unconditionally in its `forceReset` branch, so a missing `GroupDate` is a null-pointer fatal. Current callers always pass an existing date.
+    3. `EventAutoCheck` is not merely unfinished (it carries an explicit "THIS IS NOT FINISHED YET" marker, an empty `foreach`, and an invalid `'=<'` SQL operator) but **unrunnable**: line 115 reads `$event->id` on an array element while the same loop uses `$event['end']`. It fatals as soon as it passes its guard clauses - proof it has never executed in production.
+    4. `DeleteGroupDataProcess` only anonymizes members if the group is **already soft-deleted** when it runs, because its `count($user->user->userGroups) == 0` check joins the `groups` table. The real `GroupDelete` flow deletes first and dispatches second, so it works - but the job is silently order-dependent, and calling it on a live group skips anonymization entirely.
+  - Test-writing notes worth carrying forward: `Notification::fake()` also captures the `EventObserver`-driven notification fired when a test creates an event, so job assertions must be targeted (`assertNotSentTo`) rather than `assertNothingSent`. Jobs touching events need `actingAs()` for the same observer reason as TODO 04.
 
 - [ ] **TODO 06: Extract scheduler closures into testable commands**
   - Needed:
@@ -207,12 +214,13 @@ Full coverage is required **before** any framework change. Every item here is La
   - Expected changes:
     - New `tests/Feature/Middleware/*Test.php`.
 
-- [ ] **TODO 10: Add real behavior coverage for `GroupDayObserver`**
+- [ ] **TODO 10: Fix observer defects and cover `GroupDayObserver`**
   - Needed:
-    - The observer is currently not registered, and the only assertion is that it is inactive. Its `GroupDayUpdatedProcess` and `GroupDayDeletedProcess` dispatch paths are untested.
-    - Decide and document whether it should be activated; test the handlers either way.
+    - **Fix `GroupObserver::deleted()`**: it reads `$group->group_id`, which does not exist on the `Group` model (the key is `id`), so `log_histories.group_id` receives null against a NOT NULL column. Any `$group->delete()` through Eloquent fatals today; only the mass-delete in `GroupDelete` keeps this hidden. Found by TODO 05, pinned by a characterization test in `tests/Feature/Jobs/DeleteGroupDataProcessTest.php` that will fail once fixed.
+    - **Decide how observers should behave without an authenticated user.** `GroupLiteratureObserver:28`, `GroupNewsTranslationObserver:36`, `EventObserver:31` and others read `auth()->user()->id` unconditionally, so any write from a queue worker, console command or seeder fatals. Either guard the call or make the causer explicit.
+    - `GroupDayObserver` is still not registered. Decide and document whether to activate it; its two jobs are now covered by `tests/Feature/Jobs/GroupDayJobsTest.php`, so activation is verifiable.
   - Expected changes:
-    - Observer tests, plus an updated `.docs/observers.md`.
+    - Observer fixes, updated characterization tests, and an updated `.docs/observers.md`.
 
 - [ ] **TODO 11: Fill notification trigger coverage gaps**
   - Needed:
