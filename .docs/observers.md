@@ -28,7 +28,7 @@ From `app/Providers/EventServiceProvider.php`.
 
 Because it is not registered, its hooks and queued job dispatches do not run in current runtime behavior.
 
-**This is a deliberate decision, not an oversight.** `GroupDayObserver` is the *only* place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so the "delete future events that no longer fit the day template" cleanup never runs today — that is a missing feature, not dead code. Registering it would start deleting bookings users have already made whenever an administrator narrows a group's day template, which is a product decision that needs its own testing. See roadmap TODO 10.1.
+**This is a deliberate decision, not an oversight** — settled in roadmap TODO 10.1. `GroupDayObserver` is the only place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, which for a while was read as "the cleanup never runs, so this is a missing feature". **That reading was wrong.** The cleanup does run — through a different chain — so the observer and its two jobs are a *superseded implementation*, and registering them would run the same work a second time rather than add a capability. See "The day-template cleanup" below.
 
 The observer has nevertheless been given the shared causer handling (below), and so have the two jobs it would dispatch — passing `0` alone would only have moved the failure downstream.
 
@@ -92,5 +92,27 @@ Model events do not only fire from HTTP requests: a scheduled command, a queue w
 
 - Contains valid lifecycle logic and queue dispatches, but no active registration.
 - It is the **sole dispatcher** of `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so those jobs never run.
-- `GroupDay` rows are written only by `app/Classes/updateGroupFutureChanges.php` (via `updateOrCreate` and `$del->delete()`, i.e. through Eloquent, so the events would genuinely fire). That class is also called by the **`ApplyGroupFutureChanges` scheduled command**, which has no authenticated user — the causer handling above is what makes registration survivable at all.
-- Before registering `GroupDay::observe(GroupDayObserver::class)` in `EventServiceProvider`, decide what should happen to bookings that fall outside a narrowed day template: the jobs delete them. `ObserverCauserTest::test_the_group_day_observer_is_still_not_registered` is the guard that will fail first.
+- `GroupDay` rows are written only by `app/Classes/updateGroupFutureChanges.php` (via `updateOrCreate` and `$del->delete()`, i.e. through Eloquent, so the events would genuinely fire). That class is called from `Groups\UpdateGroupForm` and from the **`ApplyGroupFutureChanges` scheduled command**, which has no authenticated user — the causer handling above is what makes registration survivable at all.
+- `forceDeleted()` dispatches `GroupDayDeletedProcess::dispatch([...])`, passing an **array as a single argument** where the constructor takes six — an `ArgumentCountError`. It is unreachable today because `GroupDay` does not use `SoftDeletes`, so the model has no `forceDelete()`. Anyone registering the observer should fix this first.
+- `ObserverCauserTest::test_the_group_day_observer_is_still_not_registered` is the guard that will fail first if it is registered.
+
+## The day-template cleanup
+
+The behaviour the two inactive jobs would provide — remove or adjust future events that no longer fit a narrowed service day — **already happens**, on this chain:
+
+```
+Groups\UpdateGroupForm::updateGroup()
+  -> GroupFutureChange saved first
+  -> GroupDateHelper::generateDate()      rewrites future group_dates rows
+                                          against the PENDING template
+  -> GroupDateHelper::recalculateDates()
+  -> CalculateDateProcess
+  -> CalculateDatesEvents::generate()     deletes/adjusts events, notifies
+                                          users, purges group_dates + day_stats
+```
+
+`CalculateDatesEvents::generate()` is exactly what `GroupDayUpdatedProcess::handle()` calls — that job's own body is entirely commented out and replaced by a single call to it. The `GroupDate` rows are rewritten to the *pending* template at save time, so the scheduled `initChanges()` only has to sync the `group_days` template itself.
+
+`tests/Feature/Groups/GroupDayTemplateCleanupTest.php` pins this: narrowing a day deletes the events outside the new window and pulls partially overlapping ones inside; removing a day deletes its events, its `group_dates` row and its `day_stats`; past dates and widened days are left alone. Removing the `recalculateDates()` call makes six of its ten tests fail, which is how we know they measure this chain and not something else.
+
+One difference worth knowing if the decision is ever revisited: `GroupDayDeletedProcess` uses a `LEFT JOIN`, so it would also see events with no `group_dates` row, while the helper chain starts from the `group_dates` rows. In practice such events do not occur — a booking can only be made on a generated date.

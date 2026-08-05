@@ -3,7 +3,10 @@
 namespace Tests\Feature\Commands;
 
 use App\Models\AdminNewsletter;
+use App\Models\Group;
+use App\Models\GroupDay;
 use App\Models\GroupFutureChange;
+use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\Newsletter;
 use Illuminate\Support\Facades\Notification;
@@ -163,5 +166,95 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
         $this->artisan('groups:apply-future-changes')->assertExitCode(0);
 
         $this->assertSame(0, GroupFutureChange::count());
+    }
+
+    /**
+     * TODO 10.1: a napsablont ténylegesen beíró ág.
+     *
+     * A fenti tesztek üres days tömbbel futnak, tehát az
+     * updateGroupFutureChanges::initChanges() Eloquent-írásai (updateOrCreate
+     * és $del->delete()) sosem futottak le. Éppen ezek azok a hívások,
+     * amelyeken a GroupDayObserver elsülne, ha regisztrálva lenne.
+     */
+    public function test_apply_future_changes_writes_the_day_template(): void
+    {
+        $group = $this->createGroup();
+        GroupDay::factory()->create([
+            'group_id' => $group->id, 'day_number' => 1,
+            'start_time' => '08:00', 'end_time' => '16:00',
+        ]);
+        GroupDay::factory()->create([
+            'group_id' => $group->id, 'day_number' => 3,
+            'start_time' => '08:00', 'end_time' => '16:00',
+        ]);
+
+        GroupFutureChange::factory()->create([
+            'group_id' => $group->id,
+            'user_id' => $this->creator->id,
+            'change_date' => today()->toDateString(),
+            'group' => ['min_publishers' => 1, 'max_publishers' => 3],
+            'days' => [
+                // szűkítés, törlés (day_number === false) és új nap egyszerre
+                1 => ['day_number' => '1', 'start_time' => '10:00', 'end_time' => '12:00'],
+                3 => ['day_number' => false, 'start_time' => '08:00', 'end_time' => '16:00'],
+                5 => ['day_number' => '5', 'start_time' => '09:00', 'end_time' => '11:00'],
+            ],
+            'disabled_slots' => [],
+        ]);
+
+        $this->artisan('groups:apply-future-changes')->assertExitCode(0);
+
+        $days = GroupDay::where('group_id', $group->id)->get()->keyBy('day_number');
+
+        $this->assertSame('10:00', $days[1]->start_time);
+        $this->assertSame('12:00', $days[1]->end_time);
+        $this->assertFalse($days->has(3), 'A false day_number a nap törlését jelenti.');
+        $this->assertSame('09:00', $days[5]->start_time);
+    }
+
+    /**
+     * TODO 10.1: élesben az ütemező futtatja ezt a parancsot, ahol nincs
+     * bejelentkezett felhasználó - a TODO 10 causer-munkája előtt a
+     * GroupObserver::updated() ilyenkor egyszerűen kihagyta a naplózást.
+     */
+    public function test_apply_future_changes_runs_without_an_authenticated_user(): void
+    {
+        auth()->logout();
+        $this->assertGuest();
+
+        $group = $this->createGroup(['max_publishers' => 3]);
+        GroupDay::factory()->create([
+            'group_id' => $group->id, 'day_number' => 2,
+            'start_time' => '08:00', 'end_time' => '16:00',
+        ]);
+
+        GroupFutureChange::factory()->create([
+            'group_id' => $group->id,
+            'user_id' => $this->creator->id,
+            'change_date' => today()->toDateString(),
+            'group' => ['max_publishers' => 6],
+            'days' => [
+                2 => ['day_number' => '2', 'start_time' => '09:00', 'end_time' => '15:00'],
+            ],
+            'disabled_slots' => [],
+        ]);
+
+        $this->artisan('groups:apply-future-changes')->assertExitCode(0);
+
+        $this->assertSame(6, (int) $group->fresh()->max_publishers);
+        $this->assertSame(
+            '09:00',
+            GroupDay::where('group_id', $group->id)->where('day_number', 2)->first()->start_time
+        );
+
+        // A rendszer okozta módosítás is naplóba kerül, causer_id = 0.
+        $history = LogHistory::where('model_type', Group::class)
+            ->where('model_id', $group->id)
+            ->where('event', 'updated')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($history, 'Az ütemezett változás is nyomot hagy.');
+        $this->assertSame(0, (int) $history->causer_id);
     }
 }

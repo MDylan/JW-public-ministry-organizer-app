@@ -258,14 +258,21 @@ class ObserverCauserTest extends FeatureTestCase
 
     public function test_the_group_day_observer_is_still_not_registered(): void
     {
-        // A GroupDayObserver megkapta ugyan a causer-kezelést (hogy a későbbi
-        // bekapcsolás ne az ütemező elhasalásával kezdődjön), de NINCS
+        // A GroupDayObserver megkapta ugyan a causer-kezelést, de NINCS
         // regisztrálva az EventServiceProvider-ben.
         //
-        // Ez tudatos döntés: az általa indított GroupDayUpdatedProcess és
-        // GroupDayDeletedProcess a KÉT JOB EGYETLEN indítója, és a
-        // bekapcsolásuk elkezdené törölni a felhasználók már felvett
-        // jövőbeli eseményeit, ha egy admin szűkíti a csoport napsablonját.
+        // Ez tudatos döntés (TODO 10.1). A TODO 10 jegyzete még azt írta,
+        // hogy a bekapcsolás hiányzó funkciót pótolna; ez téves volt. A
+        // napsablon szűkítése utáni takarítás ma is lefut, csak a
+        // GroupDateHelper -> CalculateDateProcess -> CalculateDatesEvents
+        // láncon - ugyanazon a motoron, amit a GroupDayUpdatedProcess is
+        // hívna. Az observer és a két jobja tehát FELVÁLTOTT
+        // implementáció: a bekapcsolásuk nem új képességet adna, hanem
+        // ugyanazt futtatná le másodszor.
+        //
+        // A másik oldalt a
+        // tests/Feature/Groups/GroupDayTemplateCleanupTest.php tartja: az
+        // bizonyítja, hogy a takarítás observer nélkül is megtörténik.
         //
         // Ha valaki regisztrálja, ennek a tesztnek kell elsőként elbuknia.
         Bus::fake();

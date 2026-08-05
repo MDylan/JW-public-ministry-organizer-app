@@ -189,6 +189,9 @@ class ObserverRegressionTest extends FeatureTestCase
 
     public function test_group_day_observer_is_inactive_by_default(): void
     {
+        // Miért marad kikapcsolva, lásd TODO 10.1: felváltott
+        // implementáció. A döntést az ObserverCauserTest és a
+        // GroupDayTemplateCleanupTest tartja együtt.
         Bus::fake();
 
         $user = $this->createUser(['email' => 'group-day-observer@example.test']);
