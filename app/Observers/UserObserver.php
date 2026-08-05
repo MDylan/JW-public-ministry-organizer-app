@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Notifications\NewAdminNotification;
 use App\Notifications\UserRegisteredNotification;
 use App\Notifications\UserRoleIsGroupCreatorNotification;
-use App\Observers\Concerns\ResolvesCauser;
+use App\Support\Concerns\ResolvesCauser;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
 

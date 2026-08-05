@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\User;
 use App\Notifications\EventDeletedNotification;
+use App\Support\Concerns\ResolvesCauser;
 use DateTime;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 class GroupDayDeletedProcess implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, ResolvesCauser, SerializesModels;
 
     private $date;
     private $group_id;
@@ -69,7 +70,13 @@ class GroupDayDeletedProcess implements ShouldQueue
     public function handle()
     {
         $group = Group::find($this->group_id);
-        $causer_user = User::find($this->user_id);
+
+        // A causer azonosítója a dispatch pillanatában rögzült, a job viszont
+        // sorkezelőben fut - ott sem az auth() nem használható, sem a
+        // User::find() nem ad eredményt a rendszer-okozó 0-jára. A név
+        // közvetlenül értesítés szövegébe kerül, tehát a null itt
+        // ErrorException-t okozna.
+        $causerName = $this->causerNameFor($this->user_id);
 
         $events = DB::select('SELECT e.id, e.day, e.start, e.end, gd.date, gd.date_status, e.user_id
                                 FROM events as e
@@ -99,7 +106,7 @@ class GroupDayDeletedProcess implements ShouldQueue
             $deletes[$event->id] = $event->id;
 
             $notifies[$event->user_id][] = [
-                'userName' => $causer_user->name, 
+                'userName' => $causerName, 
                 'groupName' => $group->name,
                 'date' => $event->day,
                 'oldService' => [

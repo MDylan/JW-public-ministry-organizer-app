@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\GroupLiterature;
 use App\Models\LogHistory;
-use App\Observers\Concerns\ResolvesCauser;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupLiteratureObserver
 {

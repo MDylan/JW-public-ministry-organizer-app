@@ -5,7 +5,7 @@ namespace App\Observers;
 use App\Models\GroupNews;
 use App\Models\GroupNewsTranslation;
 use App\Models\LogHistory;
-use App\Observers\Concerns\ResolvesCauser;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupNewsTranslationObserver
 {

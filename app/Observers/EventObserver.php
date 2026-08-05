@@ -12,7 +12,7 @@ use App\Notifications\EventDeletedAdminsNotification;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventStatusChangedNotification;
 use App\Notifications\EventUpdatedNotification;
-use App\Observers\Concerns\ResolvesCauser;
+use App\Support\Concerns\ResolvesCauser;
 use Illuminate\Support\Facades\Notification;
 
 class EventObserver

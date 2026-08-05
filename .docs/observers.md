@@ -30,14 +30,17 @@ Because it is not registered, its hooks and queued job dispatches do not run in 
 
 **This is a deliberate decision, not an oversight.** `GroupDayObserver` is the *only* place that dispatches `GroupDayUpdatedProcess` and `GroupDayDeletedProcess`, so the "delete future events that no longer fit the day template" cleanup never runs today — that is a missing feature, not dead code. Registering it would start deleting bookings users have already made whenever an administrator narrows a group's day template, which is a product decision that needs its own testing. See roadmap TODO 10.1.
 
-The observer has nevertheless been given the shared causer handling (below), so that registering it later cannot break the scheduler on the first run.
+The observer has nevertheless been given the shared causer handling (below), and so have the two jobs it would dispatch — passing `0` alone would only have moved the failure downstream.
 
 ## Resolving the causer
 
-All observers use `App\Observers\Concerns\ResolvesCauser`, which provides:
+Observers, jobs and the service classes behind them use `App\Support\Concerns\ResolvesCauser`, which provides:
 
 - `causerId(): int` — the acting user's id, or **`0` meaning "the system"**
 - `causerName(): string` — the acting user's name, or `'SYSTEM'`
+- `causerNameFor($userId): string` (static) — the name for an id **captured earlier**, mapping `0`, `false`, `null` and a since-deleted user onto `'SYSTEM'`
+
+The third one exists because a job receives the causer id at dispatch time but runs later, in a worker, where `auth()` cannot serve as a fallback and `User::find(0)` is always `null`. `GroupDayDeletedProcess` and `CalculateDatesEvents` read the causer's *name* straight into notification payloads, so a `null` there becomes an `ErrorException` — Laravel promotes PHP warnings to exceptions.
 
 Model events do not only fire from HTTP requests: a scheduled command, a queue worker, a console command or a seeder can all write models with no authenticated user. Before TODO 10 three different behaviours coexisted for that situation — some observers skipped the history record, some wrote `0`, and eight call sites simply fataled on `auth()->user()->id`.
 

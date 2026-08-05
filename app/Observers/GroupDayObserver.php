@@ -6,7 +6,7 @@ use App\Jobs\GroupDayDeletedProcess;
 use App\Jobs\GroupDayUpdatedProcess;
 use App\Models\GroupDay;
 use App\Models\LogHistory;
-use App\Observers\Concerns\ResolvesCauser;
+use App\Support\Concerns\ResolvesCauser;
 
 
 class GroupDayObserver
