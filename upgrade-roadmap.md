@@ -51,7 +51,7 @@ Each item is intentionally small enough to complete and mark independently.
 - The 70-entry route fixture covers **every application-owned named route**; the 8 named routes it omits are all vendor-provided (5 Debugbar, 3 Livewire). That is a stronger safety net than 70-of-78 suggests.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
 - **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, 5 middleware are untested, 23 of 30 models have no factory.
-- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 07.2: **`OK (565 tests, 1670 assertions)` in ~96s**, up from the 179-test baseline.
+- ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 08: **`OK (609 tests, 1842 assertions)` in ~102s**, up from the 179-test baseline.
 - `phpunit.xml` uses the PHPUnit 9 schema. Two `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids.
 - `.phpunit.result.cache` contains stale defect entries for tests that no longer exist. It must be deleted before recording a baseline.
 
@@ -216,12 +216,24 @@ Full coverage is required **before** any framework change. Every item here is La
     - New `tests/Feature/Groups/GroupCreationTest.php` and `tests/Feature/Groups/GroupRoleAssignmentTest.php`.
     - Gate coverage added to `tests/Feature/RouteMiddlewareRegressionTest.php`, which currently only exercises `can:is-admin` and `can:is-translator`.
 
-- [ ] **TODO 08: Cover `AppComponent` pagination behavior**
-  - Needed:
-    - `app/Http/Livewire/AppComponent.php` sets `protected $paginationTheme = 'bootstrap'`, which no longer exists in Livewire 3.
-    - Assert paginated output for the components extending it (`Admin\StaticPages`, `Admin\AdminNewsletters`, `Groups\NewsList`, `Groups\History`, `Groups\ListUsers`): page size, page navigation, rendered pagination markup.
-  - Expected changes:
-    - New pagination assertions; a documented expectation to re-verify after the Livewire 3 hop.
+- [x] **TODO 08: Cover `AppComponent` pagination behavior** - DONE
+  - Delivered: `tests/Feature/Livewire/PaginationBehaviorTest.php` (10 tests), `AdminUserListPaginationTest.php` (9), `GroupListPaginationTest.php` (9), `GroupUserListPaginationTest.php` (16), plus two fixture helpers (`attachManyUsersToGroup()`, `attachUserToManyGroups()`). Suite: **565 -> 609 tests, 1842 assertions, ~102s, green**. No application code was changed.
+  - **CORRECTION to this roadmap's own component list.** The original entry named five components; **four of them do not paginate**, and three are not even `AppComponent` subclasses:
+
+    | named | base class | paginates? |
+    |---|---|---|
+    | `Admin\StaticPages` | `Livewire\Component` | no |
+    | `Admin\AdminNewsletters` | `Livewire\Component` | no |
+    | `Groups\NewsList` | `Livewire\Component` | no |
+    | `Groups\History` | `AppComponent` | no - month navigation |
+    | `Groups\ListUsers` | `AppComponent` | **yes, by hand** |
+
+    The complete set of paginating components, from the `paginate()` and `->links()` call sites: **`Admin\Users\ListUsers`** (`:134`, `paginate(20)`), **`Groups\ListGroups`** (`:229`, `paginate(20)`) and **`Groups\ListUsers`** (`:915-921`, a hand-built `LengthAwarePaginator` with `per_page = 10`). `Events\Events` uses the `pagination` CSS class for its year/month navigation but is not a Laravel paginator and is unaffected by `$paginationTheme` - TODO 48 should not look for it there.
+  - **The main finding, and the reason TODO 48 is riskier than it looks: `Groups\ListUsers` will break silently under Livewire 3.** Its `render()` reads `$current_page = $this->page` (`:915`) - the Livewire 2 `WithPagination` trait's `public $page`, which `setPage()` keeps in step with `$paginators` by writing **both** (`$this->paginators[$pageName] = $page; $this->{$pageName} = $page;`). Livewire 3 drops the trait property and the second write. The component declares its own `public $page = 1` (`:36`), so the property survives - but nothing updates it: the pagination buttons call `gotoPage()`, which sets `paginators`, while `render()` still reads `$page`. **The list would sit on page 1 forever, with no error.** The other two components go through the framework's `paginate()`, which the `Paginator::currentPageResolver` binds to `paginators`, so they migrate cleanly. Pinned by `GroupUserListPaginationTest::test_going_to_the_second_page_actually_shows_the_second_ten` and `test_goto_page_writes_both_the_page_property_and_the_paginators_array`.
+  - **One latent bug found and pinned: two filters change the result set without resetting the cursor.** `updatedSearchTerm()` (`:382`), `filterMyself()` (`:393`), `filterIcon()` (`:405`) and `filterOff()` (`:409`) all call `resetPage()`; `filterOnline()` (`:413-419`) and `filterInactive()` (`:421-427`) do not, although they narrow the list just as much. Standing on page 3 and clicking the online filter therefore yields an empty list even when there are matches. Pinned by `test_the_online_filter_narrows_the_list_without_resetting_the_cursor`.
+  - Also pinned: `paginationView()` resolves to `livewire::bootstrap` (and `livewire::simple-bootstrap`), which is exactly what TODO 48 must reproduce through a `paginationView()` override; the rendered markup is bootstrap and **not** tailwind (both directions asserted, so a silent fallback to the v3 default is caught); the vendor template's `wire:click="nextPage('page')"` / `gotoPage(N, 'page')` handlers make those method names part of the view contract; the relation filters run before pagination, so withdrawn memberships and soft-deleted groups do not leave gaps, while **pending invitations do count toward the page total**; and `Groups\ListUsers` is the only `->links()` call site taking an argument (`onEachSide(1)`).
+  - **Test-fixture note worth remembering:** the member list is ordered by `name_index, email`, and `name_index` is rewritten by `CalulcateUserNameIndexProcess`, which `UserObserver` dispatches on **every** user write and which renumbers *all* users by name. With identical names the order is effectively arbitrary, so any ordering-sensitive test must give its users distinct names - `attachManyUsersToGroup()` now does.
+  - Expected changes: none in application code; the assertions above are the verification for TODO 48.
 
 - [ ] **TODO 09: Test the 5 uncovered middleware directly**
   - Needed:
@@ -519,8 +531,11 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
 - [ ] **TODO 48: Migrate pagination off `$paginationTheme`**
   - Needed:
     - `app/Http/Livewire/AppComponent.php` sets `protected $paginationTheme = 'bootstrap'`; v3 replaces it with `paginationView()` and the `WithoutUrlPagination` split.
-    - One base class to fix, but every subclass inherits it. TODO 08's assertions are the verification.
-  - Expected changes: `AppComponent`, possibly published pagination views.
+    - One base class to fix, but every subclass inherits it. TODO 08's assertions are the verification: `paginationView()` must keep returning `livewire::bootstrap`, and the rendered markup must stay bootstrap rather than falling back to the v3 tailwind default.
+    - **This is not only a theme swap. `Groups\ListUsers` needs a second, independent fix**, found by TODO 08. Its `render()` builds a `LengthAwarePaginator` by hand from `$this->page` (`:915-921`). In Livewire 2 the `WithPagination` trait keeps `$page` in step with `$paginators` because `setPage()` writes both; **Livewire 3 removes the trait property and that second write**. The component declares its own `public $page = 1` (`:36`), so the property survives but is never updated again - `gotoPage()` sets `paginators`, `render()` reads `$page`, and the list sits on page 1 **with no error**. Switch it to `$this->getPage()` (or rebuild it on `paginate()`), and re-run `GroupUserListPaginationTest`, whose page-2/page-3 content assertions are the tripwire.
+    - Only three components actually paginate: `Admin\Users\ListUsers`, `Groups\ListGroups` and `Groups\ListUsers`. The first two go through the framework's `paginate()` and should migrate on the theme change alone.
+    - `Groups\ListUsers` is also the only `->links()` call site with an argument (`onEachSide(1)`, `list-users.blade.php:312`) - re-check the window rendering after the hop.
+  - Expected changes: `AppComponent`, `app/Http/Livewire/Groups/ListUsers.php`, possibly published pagination views.
 
 - [ ] **TODO 49: Re-verify file uploads**
   - Needed:

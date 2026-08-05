@@ -43,6 +43,65 @@ trait BuildsDomainFixtures
     }
 
     /**
+     * $count tag a csoportba, sorrendbe rendezhető névvel és e-mail-címmel.
+     *
+     * A Group::groupUsers() orderByRaw('name_index, email') szerint rendez.
+     * A name_index-et a CalulcateUserNameIndexProcess írja, amit a
+     * UserObserver MINDEN felhasználó-íráskor elindít: a job az összes
+     * felhasználót NÉV szerint rendezi (CollectionHelper::sortByCollator)
+     * és újraszámozza őket. Azonos nevek mellett a sorrend tehát esetleges -
+     * ezért kap itt minden tag egyedi, nullával tömött nevet, és így lesz a
+     * lapozás kiszámítható.
+     *
+     * A visszatérési érték a felhasználók tömbje, a létrehozás sorrendjében.
+     */
+    protected function attachManyUsersToGroup(
+        Group $group,
+        int $count,
+        string $groupRole = 'member',
+        bool $accepted = true,
+        string $prefix = 'page'
+    ): array {
+        $users = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $sequence = str_pad((string) $i, 3, '0', STR_PAD_LEFT);
+
+            $user = $this->createUser([
+                'name'  => ucfirst($prefix).' '.$sequence,
+                'email' => $prefix.'-'.$sequence.'@example.test',
+            ]);
+            $this->attachUserToGroup($user, $group, $groupRole, $accepted);
+
+            $users[] = $user;
+        }
+
+        return $users;
+    }
+
+    /**
+     * $count csoport ugyanahhoz a felhasználóhoz - a Groups\ListGroups
+     * lapozásához, ami a userGroups() reláción paginál.
+     */
+    protected function attachUserToManyGroups(
+        User $user,
+        int $count,
+        string $groupRole = 'member',
+        bool $accepted = true
+    ): array {
+        $groups = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $group = $this->createGroup(['name' => 'Csoport '.str_pad((string) $i, 3, '0', STR_PAD_LEFT)]);
+            $this->attachUserToGroup($user, $group, $groupRole, $accepted);
+
+            $groups[] = $group;
+        }
+
+        return $groups;
+    }
+
+    /**
      * Gyermekcsoport a megadott szülő alatt. A pwbs_check_group_other_admins()
      * a szülő mellett a gyermekcsoportok adminjait is átnézi, ezért a
      * szerepkiosztási teszteknek szükségük van erre az ágra.
