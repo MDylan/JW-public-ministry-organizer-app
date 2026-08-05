@@ -42,6 +42,49 @@ trait BuildsDomainFixtures
             ->create();
     }
 
+    /**
+     * Gyermekcsoport a megadott szülő alatt. A pwbs_check_group_other_admins()
+     * a szülő mellett a gyermekcsoportok adminjait is átnézi, ezért a
+     * szerepkiosztási teszteknek szükségük van erre az ágra.
+     */
+    protected function createChildGroup(Group $parent, array $attributes = []): Group
+    {
+        return Group::factory()->asChildOf($parent)->create($attributes);
+    }
+
+    /**
+     * A Groups\ListUsers::editUser() által épített $state szerkezete.
+     *
+     * Az updateUser() feltételezi, hogy minden kulcs jelen van - a validátor
+     * szabályai (`hidden` => required, `finish_guest_registration` => Rule::In)
+     * hiányzó kulcsra máshogy viselkednek, ezért a teszteknek a teljes
+     * szerkezetet kell beküldeniük, ahogy a modal is teszi.
+     */
+    protected function editUserState(User $target, array $overrides = []): array
+    {
+        $state = [
+            'group_role'                => 'member',
+            'note'                      => null,
+            'hidden'                    => 0,
+            'user'                      => [
+                'name'              => $target->name,
+                'phone_number'      => $target->phone_number,
+                'congregation'      => $target->congregation,
+                'email_verified_at' => $target->email_verified_at,
+            ],
+            'finish_guest_registration' => 0,
+            'message_use'               => 0,
+            'message_send_priority'     => 0,
+        ];
+
+        if (isset($overrides['user'])) {
+            $state['user'] = array_merge($state['user'], $overrides['user']);
+            unset($overrides['user']);
+        }
+
+        return array_merge($state, $overrides);
+    }
+
     protected function createGroupDate(Group $group, ?string $date = null): GroupDate
     {
         return GroupDate::factory()->create([

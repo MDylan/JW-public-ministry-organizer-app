@@ -129,6 +129,45 @@ class RouteMiddlewareRegressionTest extends FeatureTestCase
             ->assertStatus(200);
     }
 
+    public function test_group_servant_gate_route_accepts_membership_instead_of_a_global_role(): void
+    {
+        // TODO 07.2: a can:is-groupservant az egyetlen route-szintű használata
+        // a három csoport-gate-nek (routes/web.php:160). Az is-admin és az
+        // is-translator gate-tel szemben ez NEM a users.role oszlopból
+        // dolgozik, hanem az elfogadott admin/roler tagságok számából -
+        // vagyis egy sima 'activated' felhasználó is átmehet rajta.
+        // A closure-ök teljes mátrixa: tests/Feature/Auth/AuthorizationGateTest.
+        $group = $this->createGroup();
+        $user = $this->createUser([
+            'email' => 'newsletter-gate@example.test',
+            'role'  => 'activated',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('newsletters'))
+            ->assertForbidden();
+
+        $this->attachUserToGroup($user, $group, 'roler');
+
+        $this->actingAs($user->fresh())
+            ->get(route('newsletters'))
+            ->assertStatus(200);
+    }
+
+    public function test_group_servant_gate_route_rejects_a_plain_member(): void
+    {
+        $group = $this->createGroup();
+        $member = $this->createUser([
+            'email' => 'newsletter-member@example.test',
+            'role'  => 'activated',
+        ]);
+        $this->attachUserToGroup($member, $group, 'member');
+
+        $this->actingAs($member->fresh())
+            ->get(route('newsletters'))
+            ->assertForbidden();
+    }
+
     public function test_password_confirmed_middleware_is_enforced(): void
     {
         $admin = User::factory()->asAdmin()->create(['email' => 'admin-confirm@example.test']);
