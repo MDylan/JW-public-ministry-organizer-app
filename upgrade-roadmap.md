@@ -50,6 +50,7 @@ Each item is intentionally small enough to complete and mark independently.
 - Strong coverage: 70-route contract snapshot including middleware stacks (`tests/Feature/RouteContractSnapshotTest.php`), route/middleware regression, all 8 observers, mail contract for all 26 notifications.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
 - **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, 5 middleware are untested, 23 of 30 models have no factory.
+- **The single largest gap: the core scheduling domain has zero coverage.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap between events, and the cross-group "publisher busy" check are the application's central business rules and **not one of them is exercised by any test** - despite `CalendarEventEditTest` configuring the limits in its fixture and `GroupFactory::withStrictPublisherLimits()` existing but never being called. In-group role assignment (`Groups\ListUsers::saveUser()`, ~100 lines of authorization) is likewise reached only by a route-returns-200 smoke test. See TODO 07.1 and TODO 07.2.
 - `phpunit.xml` uses the PHPUnit 9 schema. Two `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids.
 - `.phpunit.result.cache` contains stale defect entries for tests that no longer exist. It must be deleted before recording a baseline.
 
@@ -151,9 +152,43 @@ Full coverage is required **before** any framework change. Every item here is La
     - These currently only assert "mounts and returns 200": `Admin\AdminNewsletters`, `Admin\NewsletterEdit`, `Admin\Settings`, `Admin\StaticPages`, `Admin\StaticPageEdit`, `Admin\Statistics`, `Admin\Translation`, `Events\LastEvents`, `Groups\DeleteGroup`, `Groups\History`, `Groups\ListUsers`, `Groups\NewsEdit`, `Groups\NewsList`, `Groups\Statistics`, `Groups\Messages`, `Partials\NavBar`, `Partials\SideMenu`, `Partials\EventsBar`, plus the uncovered half of `Groups\ListGroups`.
     - For each: cover the public methods, validation rules, authorization boundaries, `$listeners`, and emitted events.
     - `Groups\NewsEdit` needs explicit `WithFileUploads` coverage (upload, `mimes` validation, `temporaryUrl()`, storage on the `news_files` disk) because file uploads change substantially in Livewire 3.
+    - The two heaviest business-rule surfaces inside these components are broken out separately: see **TODO 07.1** (event scheduling capacity and overlap) and **TODO 07.2** (group creation and role assignment).
   - Expected changes:
     - New per-component test files under `tests/Feature/Livewire/`.
     - **This is a hard prerequisite for Phase 6.** Without it the Livewire 3 migration is unverifiable.
+
+- [ ] **TODO 07.1: Cover event scheduling capacity and overlap rules**
+  - Context: this is the core domain logic of the application and it is **entirely untested today**. `tests/Feature/CalendarEventEditTest.php` sets up `date_max_publishers => 3` and `date_min_time => 60` in its fixture, but not one of its 15 tests ever fills a slot, so the capacity branch in `saveEvent()` never executes. `GroupFactory::withStrictPublisherLimits()` exists and is used by **zero** tests. All 5 rules below are Livewire-component logic that must survive the Livewire 3 migration.
+  - How the logic actually works (verified, needed to write meaningful tests):
+    - Capacity is enforced **per time slot**, not per event. `getInfo()` (`app/Http/Livewire/Events/EventEdit.php:228-326`) builds `day_data['table']` from `GenerateSlots::generate()` using `date_min_time * 60` as the step, then walks every existing event and increments `publishers` and `accepted` on each slot the event spans (`:284-296`). `saveEvent()` (`:475-485`) re-walks the requested `start..end` range in the same steps and rejects the save if any single slot is at capacity.
+    - `Events\Modal.php:71-394` carries a near-identical copy of the same `getInfo()` table builder, so **both** components need coverage. That duplication is scheduled for removal after the upgrade (TODO 77), and these tests are its prerequisite.
+  - Needed:
+    - **Max publishers per slot.** Fill a slot to `date_max_publishers` with accepted events, then assert a further save fails with the `event.reach_max_publisher` error on both `start` and `end` (`EventEdit.php:567-575`). Assert the boundary explicitly: the Nth booking succeeds, the N+1th fails.
+    - **Approval groups allow overbooking, but only up to a point.** When `need_approval` is set, the effective per-slot limit is `max_publishers + config('events.max_columns')` (currently 4) **while** `accepted < max_publishers`; as soon as the accepted count reaches `max_publishers`, the limit drops back to `max_publishers` (`EventEdit.php:477-482`, mirrored at `:302-305`). Test all three states: under-subscribed (extra pending applicants accepted), at the raised ceiling (rejected), and accepted-count-reached (limit collapses, further pending applications rejected). Contrast against a `withAutoApproval()` group where the limit is always `max_publishers`.
+    - **Overlapping time ranges.** The user's example must be an explicit test: with `date_min_time => 60` and `max_publishers => 1`, an accepted 08:00-10:00 event must make 09:00-10:00 unavailable for a second 09:00-12:00 application, while 10:00-12:00 remains free. Assert both the rejection and that a non-overlapping range still saves. Repeat with a sub-hour `min_time` (e.g. 30) so the slot-stepping arithmetic is exercised at more than one granularity.
+    - **Full slots disappear from the selectable times.** `getInfo():300-322` marks saturated slots `full` and removes them from `day_selects['start']` / `day_selects['end']`. Assert that, and assert the `ready` status once `accepted >= min_publishers`. Also cover `GroupDayDisabledSlots` (`disabled_slots`), which suppresses slots through the same code path.
+    - **Cross-group double booking (`busy`).** `saveEvent():583-601` rejects a save when the same user already has an **accepted** event in a **different** group whose range overlaps (`events.start < end AND events.end > start`), producing `event.error.publisher_busy`. Test the overlap, the exact-touch boundary (08:00-10:00 then 10:00-12:00 must be allowed), that pending events in the other group do not block, and that soft-deleted events and soft-deleted groups are ignored.
+  - Expected changes:
+    - New `tests/Feature/Events/EventCapacityTest.php` and `tests/Feature/Events/EventOverlapTest.php`, covering both `Events\EventEdit` and `Events\Modal`.
+    - Extend `tests/Concerns/BuildsDomainFixtures.php` with a helper that seeds N accepted/pending events across a slot range.
+    - A unit test for `App\Classes\GenerateSlots` (`app/Classes/GenerateSlots.php`), since every rule above depends on its stepping arithmetic.
+
+- [ ] **TODO 07.2: Cover group creation and role assignment authorization**
+  - Context: group creation has a happy-path test (`tests/Feature/LivewireComponentInteractionTest.php:114`), but the authorization boundaries around it are untested, and **in-group role assignment has no coverage at all** - `Groups\ListUsers::saveUser()` is roughly 100 lines of authorization logic reached only by a route-returns-200 smoke test.
+  - Needed:
+    - **The `is-groupcreator` gate.** `app/Providers/AuthServiceProvider.php` grants it to `mainAdmin`, `groupCreator` **and** `translator`. Only the `groupCreator` path is exercised today. Test all three grants plus the denial for a plain `activated` user. The sibling gates `is-groupservant` and `is-groupadmin` derive from `userGroupsEditable` / `userGroupsDeletable` counts and are also untested.
+    - **Granting the group-creator privilege.** `Admin\Users\ListUsers` assigning `role => groupCreator` is covered (`:29,35`), and `UserRoleIsGroupCreatorNotification` has a mail-contract test - but the request side is not: `Groups\ListGroups::requestGroupCreatorPrivilege()` validates `congregation`/`reason`/`phone` and sends a raw `Mail::send()` with a `replyTo`. **That mail call is one of the `env()`/address-strictness risks from TODO 28**, so it needs a test before Phase 4.
+    - **Group creation boundaries.** `Groups\ListGroups::createGroup()` calls `abort(403)` when the gate denies - untested. Also untested: the `name` validation (`min:2`, `max:50`), and that a *denied* user cannot create a group by calling the component method directly. The existing test already asserts the creator gets `group_role => admin` with `accepted_at` set - keep that.
+    - **In-group role assignment hierarchy.** `Groups\ListUsers::saveUser()` enforces four distinct rules, none of them tested:
+      1. `maxRoles()` (`:809-813`) walks `$group_roles = ['member','helper','roler','admin']` and stops at the current user's own role, so nobody can grant a role above their own. **Note the failure mode: an out-of-range role is silently reset to the target's existing role (`:211-214`), not rejected with an error.** Pin that behavior down before the upgrade, because a silent reset is easy to break unnoticed.
+      2. `pwbs_check_group_other_admins()` (`app/Helpers/helpers.php:24`) blocks demoting the last remaining admin (`group.error_no_admin_user`).
+      3. A non-admin cannot remove an existing admin's role (`group.error_no_right_to_remove_admin`).
+      4. A non-admin cannot grant the admin role (`group.error_no_right`).
+    - **Guest activation side effect.** `finish_guest_registration == 1` on a `registered` user generates a random password, flips `role` to `activated` and sets `email_verified_at` (`:294-300`). Also assert the `UserProfileChangedNotification` dispatched when name/phone/congregation change - all three are `encrypted` columns, which ties into TODO 13.
+    - Cover the `hidden`, `note` (`max:50`), `message_use` and `message_send_priority` fields in the same validator.
+  - Expected changes:
+    - New `tests/Feature/Groups/GroupCreationTest.php` and `tests/Feature/Groups/GroupRoleAssignmentTest.php`.
+    - Gate coverage added to `tests/Feature/RouteMiddlewareRegressionTest.php`, which currently only exercises `can:is-admin` and `can:is-translator`.
 
 - [ ] **TODO 08: Cover `AppComponent` pagination behavior**
   - Needed:
@@ -706,6 +741,24 @@ Not part of the Laravel 13 upgrade and not blocking. Livewire 4 supports Laravel
     - Assess after Phase 12 is released and stable in production.
     - Scope it as its own roadmap; do not bundle it with a framework hop.
   - Expected changes: a separate decision document.
+
+---
+
+## Appendix C - Post-Upgrade Refactoring
+
+Deliberately scheduled **after** the Laravel 13 upgrade is released and stable. Doing it earlier would mean rewriting the same code twice - once for Livewire 3 and once for the refactor - and would invalidate the regression tests mid-upgrade.
+
+- [ ] **TODO 77: Eliminate the duplicated scheduling logic between `Events\Modal` and `Events\EventEdit`**
+  - Context: `app/Http/Livewire/Events/Modal.php` (562 lines) and `app/Http/Livewire/Events/EventEdit.php` (706 lines) each carry their own near-identical copy of the day-table builder - `getInfo()` at `EventEdit.php:124-364` and `Modal.php:71-394`, roughly 560 of the 1268 combined lines. Both independently reimplement slot generation, the `publishers`/`accepted` counters, the approval-based capacity ceiling (`max_publishers + config('events.max_columns')`), the `full`/`ready` status marking, and the `day_selects` filtering. `getRole()` is duplicated as well.
+  - Why this matters: this is the application's central business logic, and the two copies can silently drift apart - a capacity rule fixed in one component but not the other produces a calendar that shows a slot as available and then rejects the save. The duplication also doubled the work in Phase 6 (every Livewire 3 change had to be applied twice) and doubles the test surface in TODO 07.1.
+  - Needed:
+    - Extract the shared logic into a dedicated service or action class (for example `app/Classes/DayScheduleBuilder.php`, alongside the existing `app/Classes/GenerateSlots.php`), and have both components consume it.
+    - Move the capacity and overlap rules out of the Livewire components entirely, so they can be unit-tested without a component harness.
+    - **Prerequisite: TODO 07.1 must be complete and green.** Those tests are the only proof that the extracted service behaves identically to both originals - run them against each component before and after the extraction.
+    - Consider whether `Events\EventEdit` still needs to be a separate component once the logic is shared.
+  - Expected changes:
+    - New service class under `app/Classes/`, both Livewire components substantially slimmed, the TODO 07.1 tests re-pointed at the service where they no longer need a component.
+    - Updated `.docs/components.md`.
 
 ---
 
