@@ -22,7 +22,11 @@ class GroupUserFactory extends Factory
             'hidden'                => 0,
             'signs'                 => null,
             'list_order'            => 0,
-            'message_use'           => 1,
+            // A message_use a csoportüzenetek egyéni szabálya, a DB
+            // alapértéke 0. Jelentése a Groups\Messages::checkPrivilege()
+            // szerint: 0 = alapeset (a tag közelgő eseménye dönt),
+            // 1 = nem írhat, 2 = eseménytől függetlenül írhat.
+            'message_use'           => 0,
             'message_send_priority' => 0,
         ];
     }
@@ -75,18 +79,20 @@ class GroupUserFactory extends Factory
 
     // --- Üzenetkezelés ---
 
+    /** Írhat akkor is, ha nincs közelgő eseménye, és kap prioritásos értesítést. */
     public function withMessaging(): static
     {
         return $this->state([
-            'message_use'           => 1,
+            'message_use'           => 2,
             'message_send_priority' => 1,
         ]);
     }
 
+    /** Egyáltalán nem írhat, közelgő eseménytől függetlenül. */
     public function withoutMessaging(): static
     {
         return $this->state([
-            'message_use'           => 0,
+            'message_use'           => 1,
             'message_send_priority' => 0,
         ]);
     }
