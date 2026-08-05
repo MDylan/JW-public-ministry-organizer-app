@@ -1,0 +1,29 @@
+﻿astrotomic/laravel-translatable       11.10.0 A Laravel package for multilingual models
+barryvdh/laravel-debugbar             3.6.7   PHP Debugbar integration for Laravel
+dialect/laravel-gdpr-compliance       1.4.7   GDPR compliant data portability and anonymization
+doctrine/dbal                         3.3.2   Powerful PHP database abstraction layer (DBAL) with many features fo...
+eusonlito/laravel-packer              2.2.6   A package for pack css and javascript files
+facade/ignition                       2.17.4  A beautiful error page for Laravel applications.
+fakerphp/faker                        1.19.0  Faker is a PHP library that generates fake data for you.
+fideloper/proxy                       4.4.1   Set trusted proxies for Laravel
+fruitcake/laravel-cors                2.1.0   Adds CORS (Cross-Origin Resource Sharing) headers support in your La...
+guzzlehttp/guzzle                     7.4.1   Guzzle is a PHP HTTP client library
+joedixon/laravel-translation          1.1.2   A tool for managing all of your Laravel translations
+laravel/fortify                       1.10.2  Backend controllers and scaffolding for Laravel authentication.
+laravel/framework                     8.83.1  The Laravel Framework.
+laravel/sail                          1.13.4  Docker files for running a basic Laravel application.
+laravel/tinker                        2.7.0   Powerful REPL for the Laravel framework.
+laravelcollective/html                6.3.0   HTML and Form Builders for the Laravel Framework
+laravolt/avatar                       4.1.7   Turn name, email, and any other string into initial-based avatar or ...
+livewire/livewire                     2.10.4  A front-end framework for Laravel.
+mockery/mockery                       1.5.0   Mockery is a simple yet flexible PHP mock object framework
+nunomaduro/collision                  5.11.0  Cli error handling for console/command-line PHP applications.
+pcinaglia/laraupdater                 1.0.2   LaraUpdater allows your Laravel Application to auto-update itself.
+petercoles/multilingual-country-list  1.2.12  Lookup Objects for ISO 3166 Country Names and Codes
+phpunit/phpunit                       9.5.14  The PHP Unit Testing framework.
+protonemedia/laravel-verify-new-email 1.6.0   Package to handle email address updates and verification
+rakibdevs/openweather-laravel-api     1.9.0   Laravel package to connect https://openweathermap.org/ to get custom...
+spatie/calendar-links                 1.7.1   Generate add to calendar links for Google, iCal and other calendar s...
+spatie/laravel-activitylog            4.4.0   A very simple activity logger to monitor the users of your website o...
+spatie/laravel-cookie-consent         3.2.0   Make your Laravel app comply with the crazy EU cookie law
+spatie/laravel-failed-job-monitor     4.1.1   Get notified when a queued job fails

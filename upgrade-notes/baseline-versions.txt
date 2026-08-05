@@ -1,0 +1,9 @@
+﻿Laravel Framework 8.83.1
+PHP 8.1.30 (cli) (built: Sep 26 2024 21:14:36) (NTS Visual C++ 2019 x64)
+Copyright (c) The PHP Group
+Zend Engine v4.1.30, Copyright (c) Zend Technologies
+Composer version 2.10.2 2026-07-01 11:24:45
+v24.18.0
+12.0.2
+Current application environment: local
+artisan about: NOT AVAILABLE on Laravel 8 (introduced in Laravel 9)

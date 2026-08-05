@@ -46,8 +46,9 @@ Each item is intentionally small enough to complete and mark independently.
 
 ### Test suite (this is the main upgrade asset)
 
-- 20 test files, 134 `test_*` methods, roughly 184 executed cases after data providers.
+- 20 test files, 134 `test_*` methods, **179 executed cases** after data providers. **Verified green on 2026-08-05: `OK (179 tests, 593 assertions)` in 36.5s** (TODO 03).
 - Strong coverage: 70-route contract snapshot including middleware stacks (`tests/Feature/RouteContractSnapshotTest.php`), route/middleware regression, all 8 observers, mail contract for all 26 notifications.
+- The 70-entry route fixture covers **every application-owned named route**; the 8 named routes it omits are all vendor-provided (5 Debugbar, 3 Livewire). That is a stronger safety net than 70-of-78 suggests.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
 - **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, 5 middleware are untested, 23 of 30 models have no factory.
 - **The single largest gap: the core scheduling domain has zero coverage.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap between events, and the cross-group "publisher busy" check are the application's central business rules and **not one of them is exercised by any test** - despite `CalendarEventEditTest` configuring the limits in its fixture and `GroupFactory::withStrictPublisherLimits()` existing but never being called. In-group role assignment (`Groups\ListUsers::saveUser()`, ~100 lines of authorization) is likewise reached only by a route-returns-200 smoke test. See TODO 07.1 and TODO 07.2.
@@ -108,14 +109,13 @@ Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the 93
   - Delivered: dedicated MySQL test schema `kozter_testing`, test-safe drivers for cache/mail/queue/session/filesystem, `.env.testing` defaults.
   - Files: `phpunit.xml`, `.env.testing`.
 
-- [ ] **TODO 03: Freeze a verified behavior snapshot**
-  - Needed:
-    - Delete `.phpunit.result.cache` and run the full suite fresh with `php81` to record a **real** pass/fail baseline. The existing cache contains defect entries for tests that no longer exist and must not be trusted.
-    - Export `php81 artisan route:list --json`, the scheduler listing, `php81 artisan about`, and `composer show --tree` into `upgrade-notes/`.
-    - Record the exact PHP/Composer/Node versions used to produce the snapshot.
-  - Expected changes:
-    - New `upgrade-notes/` folder with baseline artifacts.
-    - A documented green (or known-red) starting point that every later phase compares against.
+- [x] **TODO 03: Freeze a verified behavior snapshot**
+  - Delivered on 2026-08-05. Full report: `upgrade-notes/baseline-report.md`.
+  - **The suite is green: `OK (179 tests, 593 assertions)` in 36.5s on PHP 8.1.30 / Laravel 8.83.1**, with no failures, errors, skips, risky tests or deprecation notices. The stale `.phpunit.result.cache` (2026-03-19, 110 defect entries referencing tests that no longer exist) was deleted first and was **not** evidence of real failures.
+  - Artifacts in `upgrade-notes/`: `baseline-phpunit.txt`, `baseline-routes.json` (91 routes), `baseline-routes.txt`, `baseline-schedule.txt`, `baseline-composer-tree.txt`, `baseline-composer-direct.txt`, `baseline-versions.txt`.
+  - Findings folded into later TODOs: the `verification.verify` winner is now known empirically (TODO 26), the route-contract fixture's true coverage is quantified (TODO 14), and `schedule:list` visually confirms the 8 opaque closures (TODO 06).
+  - Not available on this baseline: `artisan about` (Laravel 9+) and `artisan config:show` (Laravel 11+). Re-capture both after the relevant hop for a richer after-picture.
+  - Practical note for every later phase: `vendor/bin/phpunit` is a POSIX shell wrapper - invoking it through `php81` merely prints the script. Use `php81 vendor/phpunit/phpunit/phpunit`. `php81` itself resolves via `C:\scripts\php81.bat` and is reachable **only from PowerShell**, not from a POSIX shell.
 
 ---
 
@@ -141,6 +141,7 @@ Full coverage is required **before** any framework change. Every item here is La
 - [ ] **TODO 06: Extract scheduler closures into testable commands**
   - Needed:
     - `app/Console/Kernel.php::schedule()` contains ~200 lines of inline closures (user cleanup, event auto-expire, GDPR anonymization, log purge, newsletter sending, statistics). `commands()` also loads a non-existent `app/Console/Commands` directory.
+    - **Confirmed by TODO 03:** `schedule:list` reports 9 entries, of which **8 have an empty Command column and no description** - only `queue:work` is a named command. The scheduler is opaque from the outside and none of those closures can be invoked individually today. Intervals in use: `* * * * *` (x2), `50 * * * *`, `*/5 * * * *`, `0 7 * * *`, `10 7 * * *`, `0 0 * * *` (x2), `0 * * * *`. Give each extracted command a `->description()` so `schedule:list` becomes self-documenting.
     - Move each closure into its own Artisan command class under `app/Console/Commands`, keeping the schedule registration identical.
     - Add a test per command that executes the real logic; keep `tests/Unit/Scheduler/SchedulerRegressionTest.php` asserting the registration and frequencies.
   - Expected changes:
@@ -237,8 +238,9 @@ Full coverage is required **before** any framework change. Every item here is La
 
 - [ ] **TODO 14: Harden the route contract snapshot**
   - Needed:
-    - Extend `tests/Fixtures/route-contracts.json` and `RouteContractSnapshotTest` to explicitly record which definition currently wins for `verification.verify` and `password.confirm`.
+    - Extend `tests/Fixtures/route-contracts.json` and `RouteContractSnapshotTest` to explicitly record which definition currently wins for `verification.verify` and `password.confirm`. TODO 03 already established the answer (Fortify wins the former; both survive for the latter) - encode it as an assertion.
     - This makes the deduplication in TODO 26 a visible, intentional diff rather than a silent behavior change.
+    - Consider whether the 3 Livewire vendor routes (`livewire.message`, `livewire.upload-file`, `livewire.preview-file`) belong in the fixture. They **will** change in Phase 6, so snapshotting them turns a Livewire 3 routing change into an explicit, reviewable diff rather than a silent one.
   - Expected changes:
     - Updated fixture and test.
 
@@ -319,8 +321,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
 
 - [ ] **TODO 26: Resolve duplicate route names**
   - Needed:
-    - `verification.verify` is defined twice (`routes/fortify.php:89` and `routes/web.php:122`), same URI, same name; whichever provider boots last wins. Route caching makes this worse, and newer Laravel is stricter about duplicate names.
-    - `password.confirm` is defined twice in `routes/web.php` (`:128` GET, `:138` POST). Note `password.confirm` is also a middleware alias in `app/Http/Kernel.php:68`.
+    - **`verification.verify`: resolved empirically in TODO 03.** Only one entry reaches the routing table - `Route::get()` overwrites by `method + domain + uri`, and **the Fortify definition wins** (`Laravel\Fortify\Http\Controllers\VerifyEmailController@__invoke`, middleware `web, Authenticate:web, ValidateSignature, ThrottleRequests:6,1`). The closure at `routes/web.php:122` is **dead code that never executes** and can be deleted with zero runtime change - confirm the Fortify middleware stack above is the intended one first.
+    - `password.confirm` is defined twice in `routes/web.php` (`:128` GET, `:138` POST). **Both survive** because they differ by HTTP method, but `route('password.confirm')` resolves against the *last* registration, so URL generation points at the POST route. Confirm that is intended. Note `password.confirm` is also a middleware alias in `app/Http/Kernel.php:68`.
     - `verification.notice` at `routes/web.php:74` uses a string callable while Fortify's own is commented out at `routes/fortify.php:82-86` with the note "disabled, it's generate problem" - resolve that properly.
     - The snapshot test from TODO 14 must be updated in the same change set to show the intended winner.
   - Expected changes: `routes/web.php`, `routes/fortify.php`, updated route contract fixture, updated `.docs/routes.md` and `.docs/fortify-routes.md`.
