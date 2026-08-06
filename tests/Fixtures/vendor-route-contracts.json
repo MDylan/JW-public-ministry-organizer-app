@@ -1,0 +1,28 @@
+{
+    "livewire.message": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "web"
+        ]
+    },
+    "livewire.preview-file": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "web"
+        ]
+    },
+    "livewire.upload-file": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "throttle:60,1",
+            "web"
+        ]
+    }
+}

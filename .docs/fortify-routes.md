@@ -96,7 +96,7 @@ Defined in provider:
 
 | Method | URI | Name | Notes |
 |---|---|---|---|
-| GET | `/email/verify/{id}/{hash}` | `verification.verify` | Signed + throttled + auth middleware. |
+| GET | `/email/verify/{id}/{hash}` | `verification.verify` | Signed + throttled + auth middleware. **This is the definition that actually serves the request**, overwriting the identical route in `routes/web.php` (see Important Notes). |
 | POST | `/email/verification-notification` | `verification.send` | Resend verification notification (throttled). |
 
 ## Profile & Password Management
@@ -123,5 +123,10 @@ Defined in provider:
 ## Important Notes
 
 - Fortify email verification prompt view route is intentionally commented out in `routes/fortify.php`.
-- A similar `/email/verify/{id}/{hash}` route is also defined in `routes/web.php`; both should be considered when refactoring verification behavior.
+- An identical `/email/verify/{id}/{hash}` route is also defined in `routes/web.php` as an inline
+  closure. Because `RouteCollection` keys routes by `method + domain + uri`, only one survives, and
+  `FortifyServiceProvider` is listed after `RouteServiceProvider` in `config/app.php`, so **the
+  Fortify definition above wins and the `routes/web.php` closure is dead code**. This is verified by
+  `tests/Feature/RouteContractSnapshotTest.php`, which also guards the provider order the outcome
+  depends on.
 - The default Fortify confirm-password GET view route is disabled in `routes/fortify.php`; this app uses a custom `/confirm-password` flow in `routes/web.php`.

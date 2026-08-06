@@ -152,9 +152,10 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
 |---|---|---|---|
 | GET | `/home` | `home.home` | Livewire `Home` |
 | GET | `/loginback/{id}` | `admin.loginback` | `Admin\LoginToUserController::loginback` (`signed`) |
-| GET | `/email/verify/{id}/{hash}` | `verification.verify` | Inline closure using `EmailVerificationRequest` |
+| GET | `/email/verify/{id}/{hash}` | `verification.verify` | **Inactive.** An inline closure using `EmailVerificationRequest` is defined here, but it is shadowed by the identical Fortify route (see Route Observations); the request is served by `Laravel\Fortify\Http\Controllers\VerifyEmailController` |
 | GET | `/profile/resend-new-email-verification` | `user.resendNewEmailVerification` | `User\Profile::resendNewEmailVerification` |
-| GET/POST | `/confirm-password` | `password.confirm` | Inline closure view + password check (`POST` throttled `6,1`) |
+| GET | `/confirm-password` | `password.confirm` | Inline closure returning the `auth.confirm-password` view |
+| POST | `/confirm-password` | `password.confirm` | Inline closure verifying the password, throttled `6,1`. **Two distinct routes share this name**; URL generation resolves the name to this POST definition |
 
 ### Verified + Profile-Complete Routes
 
@@ -186,4 +187,21 @@ Inside nested `verified` -> `profileFull` middleware:
 
 - Setup routes are runtime-conditional based on `Storage::exists('installed.txt')`.
 - Role and membership checks are strongly middleware-driven (`can:*`, `groupMember`, `groupAdmin`).
-- There is overlap for `verification.verify` with Fortify route definitions (`routes/fortify.php` also defines `/email/verify/{id}/{hash}`), so route precedence should be reviewed when changing auth flows.
+- **Two route names are defined twice, and the precedence of both is measured and pinned by
+  `tests/Feature/RouteContractSnapshotTest.php`.**
+  - `verification.verify` is defined in `routes/web.php` (inline closure) and in
+    `routes/fortify.php` (`VerifyEmailController`). Both use the same method and URI, and
+    `RouteCollection` keys routes by `method + domain + uri`, so the later registration
+    overwrites the earlier one. `RouteServiceProvider` (which loads `routes/web.php`) is listed
+    before `FortifyServiceProvider` in `config/app.php`, therefore **the Fortify definition wins
+    and the closure in `routes/web.php` never executes**. The effective middleware stack is
+    `web, auth:web, signed, throttle:6,1`. Note that this outcome depends purely on service
+    provider order.
+  - `password.confirm` is defined twice in `routes/web.php`, as a GET and as a POST route. They
+    differ by HTTP method, so **both survive**, but the name look-up table keeps the last
+    registration, so `route('password.confirm')` resolves to the POST definition. The
+    `password.confirm` middleware alias (`app/Http/Kernel.php`) redirects to that name.
+- The named Livewire routes (`livewire.message`, `livewire.upload-file`, `livewire.preview-file`)
+  are snapshotted separately in `tests/Fixtures/vendor-route-contracts.json`. The two Livewire
+  asset routes (`livewire/livewire.js`, `livewire/livewire.js.map`) are unnamed and therefore
+  outside any name-keyed snapshot.
