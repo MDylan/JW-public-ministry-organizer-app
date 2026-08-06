@@ -175,21 +175,20 @@ class ModelFactoryTest extends FeatureTestCase
         $this->assertNotEmpty($newsletter->fresh()->translate($locale)->subject);
     }
 
-    public function test_encrypted_attributes_round_trip_through_factories(): void
+    public function test_encrypted_attribute_factories_produce_decryptable_values(): void
     {
+        // Ez a fájl a GYÁRAKRÓL szól, nem a titkosításról: itt csak annyit
+        // kell tudni, hogy a két érintett gyár nyílt szöveget vár és a cast
+        // lefut rá. A titkosítás teljes viselkedését - mind a 9 oszlopon,
+        // nullal, üres stringgel, hosszal, rossz kulccsal és a castot
+        // megkerülő írással - a TODO 13 fájljai mérik:
+        // tests/Feature/Models/EncryptedAttributeTest.php és
+        // tests/Feature/Models/EncryptedColumnSchemaTest.php.
         $poster = GroupPosters::factory()->create(['info' => 'Titkos hirdetmény']);
         $message = GroupMessage::factory()->create(['message' => 'Titkos üzenet']);
 
-        // Olvasáskor a cast visszafejt.
         $this->assertSame('Titkos hirdetmény', $poster->fresh()->info);
         $this->assertSame('Titkos üzenet', $message->fresh()->message);
-
-        // A tárolt érték viszont nem lehet nyílt szöveg.
-        $rawPoster = DB::table('group_posters')->where('id', $poster->id)->value('info');
-        $rawMessage = DB::table('group_messages')->where('id', $message->id)->value('message');
-
-        $this->assertNotSame('Titkos hirdetmény', $rawPoster);
-        $this->assertNotSame('Titkos üzenet', $rawMessage);
     }
 
     public function test_array_cast_factories_store_and_read_back_arrays(): void

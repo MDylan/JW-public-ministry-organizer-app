@@ -6,7 +6,7 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
 
 ### Cross-cutting model behaviors
 
-- **Encrypted fields** are used in multiple models (`User`, `Group`, `Event`, `GroupPosters`, `GroupMessage`, `GroupUser`).
+- **Encrypted fields** - see the dedicated section below.
 - **Translatable models** use `astrotomic/laravel-translatable`:
   - `StaticPage` + `StaticPageTranslation`
   - `GroupNews` + `GroupNewsTranslation`
@@ -18,6 +18,60 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   `App\Support\Gdpr\AnonymizationPolicy`, returning `false` and doing nothing
   when blocked. The guard sits on the model because three separate code paths
   anonymize users - see `.docs/commands.md`.
+
+### Encrypted columns
+
+Nine columns across six models use the `encrypted` cast. Behaviour is covered by
+`tests/Feature/Models/EncryptedAttributeTest.php`, the schema by
+`tests/Feature/Models/EncryptedColumnSchemaTest.php`.
+
+| Column | Type | Nullable |
+|---|---|---|
+| `users.name` | `text` | yes |
+| `users.phone_number` | `text` | yes |
+| `users.congregation` | `text` | yes |
+| `groups.name` | `text` | **no** |
+| `groups.replyTo` | `text` | yes |
+| `events.comment` | `text` | yes |
+| `group_user.note` | `text` | yes |
+| `group_posters.info` | `mediumtext` | **no** |
+| `group_messages.message` | `longtext` | yes |
+
+Rules that follow from the cast, all measured:
+
+- **These columns cannot be searched or sorted in SQL.** Encryption uses a random
+  IV, so the same text yields a different ciphertext every write. `where('name', $x)`
+  and `assertDatabaseHas(['name' => $x])` can never match. This is why duplicate
+  group names are possible, and why `users.name_index` exists - maintained by
+  `CalulcateUserNameIndexProcess` from `UserObserver`, it is the only sortable
+  proxy for the encrypted name.
+- **`null` bypasses the cast in both directions**; an empty string does not - it
+  is encrypted and read back as `''`.
+- **Any write that bypasses Eloquent stores plain text**, and the next read
+  through the model throws `DecryptException`. That covers query-builder writes,
+  `Model::insert()` (three such call sites exist - see `.docs/commands.md` on the
+  statistics commands), and raw SQL in migrations. `NotifyUpcomingAnonymization`
+  reads such columns from a raw join and therefore decrypts by hand with
+  `Crypt::decryptString()`.
+- **A wrong `APP_KEY` fails loudly** with `DecryptException` on read - it does not
+  return null or garbage. The danger is overwriting the row afterwards, not the
+  read itself.
+- **The columns are all `text` or wider on purpose.** A short value already
+  encrypts to ~200 characters and a 100-character value passes 255, so a
+  `varchar(255)` would hold roughly 30 characters of plain text and the original
+  `varchar(100)` on `events.comment` could hold none at all. Four of the nine
+  columns were widened by `->change()` migrations, which is what makes the schema
+  test a prerequisite for the Laravel 11 upgrade.
+
+**Pivot columns depend on `using()`.** `group_user.note` is encrypted on write
+only because the relation declares `using(GroupUser::class)`:
+`InteractsWithPivotTable::castAttributes()` runs the attach payload through
+`newPivot()->fill()` when a custom pivot class is set, and returns it untouched
+otherwise. `Group::groupUsers()`, `Group::groupUsersAll()` and `User::userGroups()`
+declare it; **`User::groupsAcceptedFiltered()` does not**, so reading `note`
+through that relation yields the raw ciphertext. Harmless today - no caller reads
+it there - but dropping `using()` from a *writing* relation would put plain text
+into the column undetectably.
 
 ## Core Identity Models
 
