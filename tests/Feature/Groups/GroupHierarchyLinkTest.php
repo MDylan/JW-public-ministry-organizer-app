@@ -294,6 +294,17 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         $this->linkedChild();
         Notification::fake();
 
+        // A userName-et a levél kirendereli (line_4), ezért a payloadban is
+        // mérjük: enélkül egy null-biztos "javítás" (auth()->user()?->name)
+        // zölden hagyná a suite-ot, miközben üres név menne ki a levélben -
+        // pontosan az a hiba, amit a TODO 10 az EventObserver::deleted()-nél
+        // talált.
+        $actorName = $this->actor->name;
+        $this->assertNotEmpty(
+            $actorName,
+            'A fixture neve nem lehet üres, különben az alábbi állítás vákuum.'
+        );
+
         $this->listUsers()
             ->call('confirmParentDetach', $this->parent->id)
             ->call('detachParentGroup');
@@ -301,13 +312,14 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         Notification::assertSentTo(
             $this->actor,
             GroupParentGroupDetachedNotification::class,
-            function ($notification) {
+            function ($notification) use ($actorName) {
                 $property = new \ReflectionProperty($notification, 'data');
                 $property->setAccessible(true);
                 $payload = $property->getValue($notification);
 
                 return $payload['groupName'] === 'Szülő csoport'
-                    && $payload['childGroupName'] === 'Gyerek csoport';
+                    && $payload['childGroupName'] === 'Gyerek csoport'
+                    && $payload['userName'] === $actorName;
             }
         );
     }
