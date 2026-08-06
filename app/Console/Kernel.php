@@ -13,7 +13,12 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \Dialect\Gdpr\Commands\AnonymizeInactiveUsers::class,
+        // A Dialect csomag gdpr:anonymizeInactiveUsers parancsának helyére a
+        // projekt leszármazottja kerül. Innen regisztrálva felülírja a csomag
+        // providerből jövő változatát - az indoklás a parancs osztálydokjában
+        // van (TODO 12.2). A csomag a saját ütemezését a providerből adja hozzá,
+        // ami a Kernel::schedule() után fut, ezért onnan nem szűrhető ki.
+        \App\Console\Commands\PackageAnonymizeInactiveUsers::class,
     ];
 
     /**

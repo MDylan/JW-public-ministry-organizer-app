@@ -11,7 +11,7 @@ use App\Models\GroupUser;
 use App\Models\Settings;
 use App\Models\StaticPage;
 use App\Models\User;
-use Illuminate\Foundation\Testing\TestResponse;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Support\Facades\URL;
 
 trait BuildsDomainFixtures

@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use App\Support\Gdpr\AnonymizationPolicy;
 use Dialect\Gdpr\Portable;
 use Dialect\Gdpr\Anonymizable;
 use Illuminate\Support\Str;
@@ -18,7 +19,9 @@ use ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, MustVerifyNewEmail;
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, MustVerifyNewEmail {
+        Anonymizable::anonymize as protected anonymizeAttributes;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -239,6 +242,31 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     public function preferredLocale()
     {
         return $this->language;
+    }
+
+    /**
+     * TODO 12.2: az anonimizálás feltétele az utódlás.
+     *
+     * Az őr szándékosan itt van, és nem a napi parancsban: naponta KÉT
+     * anonimizáló fut (a Dialect csomagé 00:00-kor, mindenféle szűrés nélkül,
+     * a projekté 07:00-kor), és a profiloldali GDPR-kérés is közvetlenül ezt a
+     * metódust hívja. Parancsba tett szabályt a csomag futása megkerülné.
+     *
+     * A hívók előre is ellenőrizzenek az AnonymizationPolicy-vel, ha a
+     * blokkolásnak következménye van (üzenet a felhasználónak, a tagságbontás
+     * kihagyása) - ez a metódus csendben nem csinál semmit.
+     *
+     * @return bool megtörtént-e az anonimizálás
+     */
+    public function anonymize($modelChecker = [])
+    {
+        if (! AnonymizationPolicy::for($this)->allows()) {
+            return false;
+        }
+
+        $this->anonymizeAttributes($modelChecker);
+
+        return true;
     }
 
     /**

@@ -4,21 +4,29 @@ namespace Tests\Feature\Gdpr;
 
 use App\Models\AdminNewsletter;
 use App\Models\User;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 use Tests\Feature\FeatureTestCase;
 
 /**
  * TODO 12: naponta KÉT különböző anonimizáló fut, más-más szabályokkal.
  *
- * A .docs/commands.md eddig annyit rögzített, hogy a kettő nem ugyanaz. Azt
- * nem, hogy mi a viselkedésbeli különbség, és hogy a csomagé fut előbb:
- *
  *   0:00  gdpr:anonymizeInactiveUsers  (a Dialect csomag, saját providerből)
  *   7:00  gdpr:anonymize-inactive      (a projekté, TODO 06-ban kiemelve)
  *
- * A projekt sajátja szándékosan óvatosabb: kihagyja a mainAdmin és
- * groupCreator szerepet, és előbb bontja a csoporttagságokat. A csomagé
- * egyiket sem teszi - és hét órával korábban fut.
+ * TODO 12.2 ÓTA MEGVÁLTOZOTT, MI A KÜLÖNBSÉG. Az utódlási szabály a
+ * User::anonymize()-ban ül, ezért MINDKÉT parancsra érvényes - a szerepalapú
+ * divergencia megszűnt. A csomag parancsát ráadásul a projekt leszármazottja
+ * (App\Console\Commands\PackageAnonymizeInactiveUsers) írja felül, mert az
+ * eredeti a `$user->anonymize()` után külön is beállította az isAnonymized
+ * jelzőt - és azt az őr nem tudta megakadályozni.
+ *
+ * Ami DIVERGENCIA MARADT, és a TODO 16 csomagcsere-döntésére tartozik:
+ *   - a csomag parancsa nem bontja a csoporttagságokat,
+ *   - és hét órával korábban fut.
+ * Ez a két különbség együtt még mindig oda vezet, hogy egy anonimizált
+ * felhasználó bent maradhat a hírlevél-címzettek között.
  */
 class AnonymizeCommandDivergenceTest extends FeatureTestCase
 {
@@ -42,41 +50,82 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         ], $attributes));
     }
 
+    /**
+     * A csomag parancsa nem bontja a tagságokat, ezért a forgatókönyveinek
+     * akkor is életben kell maradniuk, ha a vizsgált felhasználó csoportadmin.
+     * Ehhez kell egy második, valódi admin - különben az utódlási szabály
+     * blokkolna, és nem a mért különbséget látnánk.
+     */
+    private function successorFor(\App\Models\Group $group, string $email = 'successor@example.test'): User
+    {
+        $successor = $this->createUser(['email' => $email]);
+        $this->attachUserToGroup($successor, $group, 'admin');
+
+        return $successor;
+    }
+
     // =========================================================================
-    // 1. A szerepszűrés hiánya
+    // 1. A projekt leszármazottja írja felül a csomag parancsát
     // =========================================================================
 
-    public function test_the_package_command_anonymizes_a_main_admin(): void
+    public function test_the_package_command_is_served_by_the_project_subclass(): void
     {
-        // A projekt parancsa kizárja a mainAdmin-t (whereNotIn), a csomagé
-        // viszont csak a last_activity és az isAnonymized alapján válogat.
-        // A role benne van a $gdprAnonymizableFields-ben, tehát 'registered'
-        // lesz belőle: a főadmin elveszti a jogosultságát a saját oldalán.
-        $admin = $this->inactiveUser('sleeping-admin@example.test', ['role' => 'mainAdmin']);
+        // A felülírás REGISZTRÁCIÓS SORRENDEN múlik: a csomag a providerből,
+        // Artisan::starting() callbackben regisztrál, a Kernel $commands tömbje
+        // viszont később oldódik fel, és az azonos nevű parancs felülírja az
+        // előzőt. Pont az a fajta framework-verziófüggő út, amit egy 8 -> 13
+        // ugrás megzavarhat, ezért itt van rá közvetlen állítás.
+        $resolved = Artisan::all()['gdpr:anonymizeInactiveUsers'] ?? null;
+
+        $this->assertInstanceOf(Command::class, $resolved);
+        $this->assertInstanceOf(
+            \App\Console\Commands\PackageAnonymizeInactiveUsers::class,
+            $resolved,
+            'A csomag parancsát a projekt leszármazottjának kell kiszolgálnia.'
+        );
+    }
+
+    // =========================================================================
+    // 2. Az utódlási szabály mindkét parancsra érvényes
+    // =========================================================================
+
+    public function test_both_commands_apply_the_same_succession_rule(): void
+    {
+        // Korábban itt állt a legélesebb ellentmondás: a csomag parancsa
+        // anonimizálta a főadmint, a projekté védte. Ma mindkettőt ugyanaz a
+        // feltétel köti, tehát ugyanazt a döntést hozzák.
+        User::where('email', 'owner@example.test')->update(['role' => 'activated']);
+
+        $sole = $this->inactiveUser('sole-admin@example.test', ['role' => 'mainAdmin']);
+
+        $this->artisan('gdpr:anonymizeInactiveUsers')->assertExitCode(0);
+        $this->assertSame('sole-admin@example.test', User::find($sole->id)->email);
+
+        $this->artisan('gdpr:anonymize-inactive')->assertExitCode(0);
+        $this->assertSame('sole-admin@example.test', User::find($sole->id)->email);
+    }
+
+    public function test_the_package_command_no_longer_flags_a_protected_user(): void
+    {
+        // A csomag eredeti törzse `$user->anonymize()` UTÁN külön is beállította
+        // az isAnonymized jelzőt. Az őr az elsőt megállította, a másodikat nem -
+        // a védett felhasználó adatai megmaradtak volna, de eltűnt volna minden
+        // csoportlistából (Group::groupUsers(), ::users() szűri a jelzőt) és
+        // semmilyen levelet nem kapott volna (User::routeNotificationFor()).
+        $user = $this->inactiveUser('flag-guard@example.test');
+        $group = $this->createGroup(['name' => 'Jelzővédelem']);
+        $this->attachUserToGroup($user, $group, 'admin');
 
         $this->artisan('gdpr:anonymizeInactiveUsers')->assertExitCode(0);
 
-        $fresh = User::find($admin->id);
+        $fresh = User::find($user->id);
 
-        $this->assertSame('registered', $fresh->role);
-        $this->assertSame(1, (int) $fresh->isAnonymized);
-        $this->assertNotSame('sleeping-admin@example.test', $fresh->email);
-    }
-
-    public function test_the_project_command_protects_the_same_user(): void
-    {
-        // Ugyanaz a bemenet, a másik parancs - és a felhasználó érintetlen.
-        // A kettő ellentmond egymásnak, és a csomagé fut előbb.
-        $admin = $this->inactiveUser('protected-admin@example.test', ['role' => 'mainAdmin']);
-
-        $this->artisan('gdpr:anonymize-inactive')->assertExitCode(0);
-
-        $this->assertSame('protected-admin@example.test', User::find($admin->id)->email);
-        $this->assertSame('mainAdmin', User::find($admin->id)->role);
+        $this->assertSame(0, (int) $fresh->isAnonymized, 'A jelző nem kerülhet rá egy védett felhasználóra.');
+        $this->assertSame('flag-guard@example.test', $fresh->email);
     }
 
     // =========================================================================
-    // 2. A tagságok sorsa
+    // 3. A megmaradt divergencia: a tagságok sorsa
     // =========================================================================
 
     public function test_the_package_command_leaves_group_memberships_intact(): void
@@ -84,9 +133,11 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         $user = $this->inactiveUser('member@example.test');
         $group = $this->createGroup();
         $this->attachUserToGroup($user, $group, 'admin');
+        $this->successorFor($group);
 
         $this->artisan('gdpr:anonymizeInactiveUsers');
 
+        $this->assertSame(1, (int) User::find($user->id)->isAnonymized, 'Anonimizálódnia kellett.');
         $this->assertDatabaseHas('group_user', [
             'user_id' => $user->id,
             'group_id' => $group->id,
@@ -99,6 +150,7 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         $user = $this->inactiveUser('detached@example.test');
         $group = $this->createGroup();
         $this->attachUserToGroup($user, $group, 'admin');
+        $this->successorFor($group);
 
         $this->artisan('gdpr:anonymize-inactive');
 
@@ -110,15 +162,15 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A két különbség együtt: az anonimizált felhasználó címzett marad
+    // 4. A divergencia következménye: az anonimizált felhasználó címzett marad
     // =========================================================================
 
     public function test_an_anonymized_group_admin_is_still_a_newsletter_recipient(): void
     {
-        // A két eltérés összeadódik. A csomag parancsa anonimizál, de a
-        // tagságot meghagyja - a User::userGroupsDeletable() relációja pedig
-        // NEM szűri az isAnonymized-et (a Group::groupUsers() és ::users()
-        // igen, ezért máshol nem látszik a probléma).
+        // A csomag parancsa anonimizál, de a tagságot meghagyja - a
+        // User::userGroupsDeletable() relációja pedig NEM szűri az
+        // isAnonymized-et (a Group::groupUsers() és ::users() igen, ezért
+        // máshol nem látszik a probléma).
         //
         // Így a newsletters:send-due 'groupAdmins' célcsoportja tartalmazza az
         // anonimizált felhasználót, akinek az e-mail mezője ekkor már egy
@@ -126,6 +178,7 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         $admin = $this->inactiveUser('newsletter-admin@example.test');
         $group = $this->createGroup();
         $this->attachUserToGroup($admin, $group, 'admin');
+        $this->successorFor($group);
 
         $this->artisan('gdpr:anonymizeInactiveUsers');
 
@@ -156,6 +209,7 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         $admin = $this->inactiveUser('token-address@example.test');
         $group = $this->createGroup();
         $this->attachUserToGroup($admin, $group, 'admin');
+        $this->successorFor($group);
 
         $this->artisan('gdpr:anonymizeInactiveUsers');
 
@@ -190,6 +244,7 @@ class AnonymizeCommandDivergenceTest extends FeatureTestCase
         $admin = $this->inactiveUser('real-send@example.test');
         $group = $this->createGroup();
         $this->attachUserToGroup($admin, $group, 'admin');
+        $this->successorFor($group);
 
         $this->artisan('gdpr:anonymizeInactiveUsers');
 

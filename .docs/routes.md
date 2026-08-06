@@ -81,6 +81,23 @@ Registered by `Dialect\Gdpr\GdprServiceProvider`, served by the published
 The consent feature as a whole is therefore unfinished rather than regressed:
 no middleware drives users to it, and the page it would show does not render.
 
+#### User-initiated deletion (`user.askToDelete`, `user.deletepersonaldata`)
+
+Two steps: `asktodelete` mails a signed link valid for 60 hours,
+`deletepersonaldata` anonymizes the owner and detaches every membership.
+
+Both steps first ask `App\Support\Gdpr\AnonymizationPolicy` whether the user may
+be anonymized at all (the succession rule - see `.docs/commands.md`). When
+blocked, nothing happens: no mail, no anonymization, no detach, no logout. The
+user is redirected to `user.profile` with a `profile_message` naming what to do
+(appoint another main administrator, or hand over the listed groups). The second
+step re-checks because the link stays valid long enough for the situation to
+change.
+
+The allowed path anonymizes **before** detaching. That ordering suppresses
+`GroupUserLogoutNotification`, since `GroupUserMoves::detach()` only notifies
+non-anonymized users - correct, because the address is already a token by then.
+
 The export omits `$gdprHidden` fields but, because `setHidden()` **replaces**
 the model's `$hidden` list, it exposes `language`, `created_at`, `updated_at`
 and `isAnonymized`, which the normal model output hides. Encrypted columns

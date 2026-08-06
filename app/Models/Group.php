@@ -114,6 +114,26 @@ class Group extends Model
     }
 
     /**
+     * Azok az adminok, akik valóban át tudják venni a csoportot.
+     *
+     * A groupAdmins() nem szűri sem az isAnonymized-et, sem az accepted_at-ot,
+     * ezért egy anonimizált felhasználó vagy egy még el nem fogadott meghívott
+     * is adminnak látszik rajta keresztül. Az utódlási vizsgálatnak
+     * (pwbs_check_group_other_admins(), TODO 12.2) ez nem elég: a csomag napi
+     * anonimizálója meghagyja a tagságot, így az anonimizált sor utódnak
+     * számítana, és a csoport összes valódi adminja egymás után kiüríthető lenne.
+     *
+     * A groupAdmins() maga szándékosan változatlan: a további hívási helyei a
+     * SAJÁT jogosultságot ellenőrzik (wherePivot('user_id', Auth::id())), ott a
+     * szűrés felesleges.
+     */
+    public function activeAdmins() {
+        return $this->groupAdmins()
+                ->where('isAnonymized', 0)
+                ->wherePivotNotNull('accepted_at');
+    }
+
+    /**
      * Akik szerkeszteni tudják a csoportot
      */
     public function editors() {

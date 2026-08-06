@@ -108,16 +108,44 @@ class GdprCommandsTest extends FeatureTestCase
         $this->assertSame('active@example.test', User::find($active->id)->email);
     }
 
-    public function test_anonymize_never_touches_admins_or_group_creators(): void
+    /**
+     * TODO 12.2 óta a szerep önmagában NEM véd - az utódlás dönt.
+     *
+     * Ez a teszt korábban azt rögzítette, hogy a parancs kihagyja a mainAdmin
+     * és a groupCreator szerepet. Az a szabály két irányban tévedett: védte azt
+     * a groupCreator-t, akinek minden csoportját ellátja más, és nem védte azt
+     * a csoportadmint, aki az egyetlen a csoportjában. A részletes utódlási
+     * eseteket a tests/Feature/Gdpr/AnonymizationSuccessionTest.php méri; itt
+     * csak azt rögzítjük, hogy a parancs a szereplistát tényleg elengedte.
+     */
+    public function test_anonymize_no_longer_protects_by_role_alone(): void
     {
         $this->enableGdpr();
+        // A FeatureTestCase::setUp() owner@example.test főadminja marad
+        // utódnak, a groupCreator-nak pedig nincs csoportja - mindkettő
+        // anonimizálható.
         $admin = $this->inactiveUser(['email' => 'admin@example.test', 'role' => 'mainAdmin']);
         $creator = $this->inactiveUser(['email' => 'creator@example.test', 'role' => 'groupCreator']);
 
         $this->artisan('gdpr:anonymize-inactive');
 
-        $this->assertSame('admin@example.test', User::find($admin->id)->email);
+        $this->assertNotSame('admin@example.test', User::find($admin->id)->email);
+        $this->assertNotSame('creator@example.test', User::find($creator->id)->email);
+        $this->assertSame('registered', User::find($admin->id)->role);
+    }
+
+    public function test_anonymize_protects_a_user_who_has_nobody_to_hand_over_to(): void
+    {
+        $this->enableGdpr();
+
+        $creator = $this->inactiveUser(['email' => 'creator@example.test', 'role' => 'groupCreator']);
+        $group = Group::factory()->create(['parent_group_id' => null]);
+        $this->attachUserToGroup($creator, $group, 'admin');
+
+        $this->artisan('gdpr:anonymize-inactive');
+
         $this->assertSame('creator@example.test', User::find($creator->id)->email);
+        $this->assertSame(0, (int) User::find($creator->id)->isAnonymized);
     }
 
     public function test_anonymize_skips_already_anonymized_users(): void
@@ -169,16 +197,41 @@ class GdprCommandsTest extends FeatureTestCase
         Notification::assertNotSentTo($recent, UserWillBeAnonymizeNotification::class);
     }
 
-    public function test_notify_never_warns_admins_or_group_creators(): void
+    /**
+     * TODO 12.2: a figyelmeztetés ugyanazt az alkalmassági feltételt követi,
+     * mint az anonimizálás.
+     *
+     * Ez fontos mindkét irányban. Aki anonimizálható lesz, annak MEG KELL
+     * kapnia az előzetes értesítést - a régi szereplista mellett egy
+     * groupCreator figyelmeztetés nélkül tűnt volna el. Akit viszont az
+     * utódlás blokkol, annak nem szabad kapnia: a lekérdezés nem ablak, hanem
+     * küszöb (last_activity <= ttl - 15 nap), tehát a blokkolt felhasználó
+     * NAPONTA kapna levelet egy soha be nem következő törlésről.
+     */
+    public function test_notify_warns_a_group_creator_who_will_be_anonymized(): void
     {
         Notification::fake();
         $this->enableGdpr();
 
-        $admin = $this->inactiveUser(['role' => 'mainAdmin']);
+        $creator = $this->inactiveUser(['role' => 'groupCreator']);
 
         $this->artisan('gdpr:notify-anonymization');
 
-        Notification::assertNotSentTo($admin, UserWillBeAnonymizeNotification::class);
+        Notification::assertSentTo($creator, UserWillBeAnonymizeNotification::class);
+    }
+
+    public function test_notify_stays_silent_for_a_user_the_succession_rule_blocks(): void
+    {
+        Notification::fake();
+        $this->enableGdpr();
+
+        $group = Group::factory()->create(['parent_group_id' => null]);
+        $soleAdmin = $this->inactiveUser();
+        $this->attachUserToGroup($soleAdmin, $group, 'admin');
+
+        $this->artisan('gdpr:notify-anonymization');
+
+        Notification::assertNotSentTo($soleAdmin, UserWillBeAnonymizeNotification::class);
     }
 
     public function test_notify_alerts_group_editors_about_members_in_the_warning_window(): void

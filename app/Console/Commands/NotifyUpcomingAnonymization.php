@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Notifications\UserWillBeAnonymizeNotification;
 use App\Notifications\UserWillBeAnyonimizeAdminNotification;
+use App\Support\Gdpr\AnonymizationPolicy;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Crypt;
@@ -47,11 +48,16 @@ class NotifyUpcomingAnonymization extends Command
         $model = config('gdpr.settings.user_model_fqn', 'App\Models\User');
         $user = new $model();
 
+        // TODO 12.2: a korábbi szerepszűrés helyett ugyanaz az utódlási
+        // feltétel dönt, mint az anonimizálásnál. Enélkül két hiba állna elő:
+        // egy groupCreator figyelmeztetés nélkül anonimizálódna, egy blokkolt
+        // felhasználó pedig NAPONTA kapna levelet a soha be nem következő
+        // törlésről - a lekérdezés ugyanis nem ablak, hanem küszöb.
         $anonymizableUsers = $user::where('last_activity', '!=', null)
             ->where('isAnonymized', 0)
             ->where('last_activity', '<=', $date)
-            ->whereNotIn('role', ['mainAdmin', 'groupCreator'])
-            ->get();
+            ->get()
+            ->filter(fn ($candidate) => AnonymizationPolicy::for($candidate)->allows());
 
         foreach ($anonymizableUsers as $user) {
             $lastDate = Carbon::parse($user->last_activity)->addMonths(config('gdpr.settings.ttl'));
@@ -89,8 +95,17 @@ class NotifyUpcomingAnonymization extends Command
             ->where('U.last_activity', '!=', null)
             ->where('U.isAnonymized', 0)
             ->whereBetween('U.last_activity', [$maxDate->format('Y-m-d'), $minDate->format('Y-m-d')])
-            ->whereNotIn('U.role', ['mainAdmin', 'groupCreator'])
             ->get();
+
+        // TODO 12.2: nyers join, itt nem fűzhető rá az utódlási feltétel -
+        // ezért utószűrés. A modelleket egyetlen lekérdezéssel töltjük be, az
+        // ablak eleve egy nap széles, tehát a halmaz kicsi.
+        $candidates = User::whereIn('id', $anonymizableUsers->pluck('id')->unique())->get()->keyBy('id');
+
+        $anonymizableUsers = $anonymizableUsers->filter(
+            fn ($row) => isset($candidates[$row->id])
+                && AnonymizationPolicy::for($candidates[$row->id])->allows()
+        );
 
         foreach ($anonymizableUsers as $user) {
             $lastDate = Carbon::parse($user->last_activity)->addMonths($submonths);

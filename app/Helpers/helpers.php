@@ -23,7 +23,9 @@ if(!function_exists('pwbs_poster_set_read')) {
 if(!function_exists('pwbs_check_group_admins')) {
     function pwbs_check_group_other_admins(int $groupId, int $userId) {
         $group = Group::findOrFail($groupId);
-        $users = $group->groupAdmins()->get()->toArray();
+        // Utódnak csak nem anonimizált, elfogadott admin számít - lásd a
+        // Group::activeAdmins() indoklását (TODO 12.2).
+        $users = $group->activeAdmins()->get()->toArray();
         $total_group = 1;
         $admins = 0;
         $main_admins = [];
@@ -37,11 +39,11 @@ if(!function_exists('pwbs_check_group_admins')) {
             }
         }
         //check child groups too!
-        $child_groups = $group->childGroups()->with('groupAdmins')->get()->toArray();
+        $child_groups = $group->childGroups()->with('activeAdmins')->get()->toArray();
         if(count($child_groups) > 0) {
             $total_group += count($child_groups);
             foreach($child_groups as $child_group) {
-                foreach($child_group['group_admins'] as $user) {
+                foreach($child_group['active_admins'] as $user) {
                     if($user['id'] != $userId) {
                         $admins++;
                         if(!isset($main_admins[$user['id']])) 

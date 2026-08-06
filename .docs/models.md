@@ -13,6 +13,11 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   - `AdminNewsletter` + `AdminNewsletterTranslation`
 - **Soft deletes** are used by `Event`, `Group`, `GroupNews`, and `GroupUser` (pivot).
 - **GDPR traits** (`Dialect\Gdpr`) are used by `User`, `Group`, and `Event`.
+  `User` **overrides** the `Anonymizable::anonymize()` method (trait alias
+  `anonymizeAttributes`) to enforce the succession rule from
+  `App\Support\Gdpr\AnonymizationPolicy`, returning `false` and doing nothing
+  when blocked. The guard sits on the model because three separate code paths
+  anonymize users - see `.docs/commands.md`.
 
 ## Core Identity Models
 
@@ -25,7 +30,7 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
 
 | Model | Purpose | Key Relations | Notes |
 |---|---|---|---|
-| `Group` | Main scheduling unit (territory/group). | Many relations: members, days, dates, events, stats, news, posters, futureChanges, weather | Heavy domain model with role-aware helpers (`editors`, `currentUser`, etc.), encrypted `name/replyTo`, dynamic `colors` accessor. |
+| `Group` | Main scheduling unit (territory/group). | Many relations: members, days, dates, events, stats, news, posters, futureChanges, weather | Heavy domain model with role-aware helpers (`editors`, `currentUser`, etc.), encrypted `name/replyTo`, dynamic `colors` accessor. `groupAdmins()` lists every admin pivot row; `activeAdmins()` narrows it to non-anonymized, accepted admins and is what `pwbs_check_group_other_admins()` treats as a possible successor. |
 | `GroupDay` | Weekly service-day template. | `belongsTo(Group)`, morph-many `LogHistory` | Stores weekday start/end; accessors normalize time formatting. |
 | `GroupDayDisabledSlots` | Disabled time slots for service days. | `belongsTo(Group)` | Provides timestamp accessor for slot calculations. |
 | `GroupDate` | Date-specific generated service day config. | `belongsTo(Group)` | Stores daily start/end, status, limits, and JSON `disabled_slots`. |
