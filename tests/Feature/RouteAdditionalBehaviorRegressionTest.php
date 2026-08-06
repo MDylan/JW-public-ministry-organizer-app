@@ -148,10 +148,11 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
 
         $this->get(route('gdpr-terms'))->assertRedirect(route('login'));
 
-        $termsResponse = $this->actingAs($user)
-            ->get(route('gdpr-terms'));
-
-        $this->assertContains($termsResponse->getStatusCode(), [200, 500]);
+        // TODO 12: itt korábban assertContains($status, [200, 500]) állt, ami
+        // az 500-at is elfogadta - és pontosan azt takarta el, hogy a
+        // gdpr-terms oldal TÉNYLEG elszáll (hiányzó 'base' layout). A törött
+        // oldalt most a Gdpr\ConsentTermsTest méri, névvel és indoklással;
+        // itt csak a route-szerződés marad.
 
         $this->actingAs($user)
             ->post(route('gdpr-terms-accepted'))
@@ -172,12 +173,10 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
         $downloadResponse = $this->actingAs($user)
             ->post(route('gdpr-download'), ['password' => 'password']);
 
-        $this->assertContains($downloadResponse->getStatusCode(), [200, 500]);
-        if ($downloadResponse->getStatusCode() === 200) {
-            $this->assertStringContainsString(
-                'attachment; filename="user.json"',
-                $downloadResponse->headers->get('Content-Disposition', '')
-            );
-        }
+        $downloadResponse->assertStatus(200);
+        $this->assertStringContainsString(
+            'attachment; filename="user.json"',
+            $downloadResponse->headers->get('Content-Disposition', '')
+        );
     }
 }

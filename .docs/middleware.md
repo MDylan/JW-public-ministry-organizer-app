@@ -76,7 +76,7 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 | `SetLocale` | Custom | Resolves locale from query/session/user defaults, handles maintenance logout for non-admin users, and shares static-page side menu via cache. |
 | `HttpsProtocol` | Custom | Redirects to HTTPS in production when `USE_HTTPS=true`. |
 | `setUserLastActivity` | Custom | Updates authenticated user `last_activity` (at most once per minute). |
-| `RedirectIfUnansweredTerms` | Custom (unregistered alias) | Redirects users without GDPR response to `gdpr-terms`; class exists but alias is not registered in kernel. |
+| `RedirectIfUnansweredTerms` | Custom (unregistered alias) | Redirects users without GDPR response to `gdpr-terms`; class exists but alias is not registered in kernel. **Reads `Auth::user()->accepted_gdpr` with no null check, so registering it in the `web` group would turn every guest request into a 500.** Its redirect target is broken as well - see `.docs/routes.md`. Covered by `tests/Feature/Gdpr/UnansweredTermsMiddlewareTest.php`. |
 
 ## Practical Notes
 

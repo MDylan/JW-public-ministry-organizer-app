@@ -37,6 +37,37 @@ this: it fails if a closure is reintroduced or a task changes frequency.
   the package command is `gdpr:anonymizeInactiveUsers` and applies the package's
   own rules, while the application command applies this project's stricter ones.
 
+#### The two anonymizers differ in behaviour, and both run every day
+
+The package schedules its own command from `GdprServiceProvider::boot()`, so the
+scheduler runs two anonymizers with different rules. Measured by
+`tests/Feature/Gdpr/AnonymizeCommandDivergenceTest.php`:
+
+| | `gdpr:anonymizeInactiveUsers` (package) | `gdpr:anonymize-inactive` (project) |
+|---|---|---|
+| Runs at | daily `00:00` | daily `07:00` |
+| Role filter | **none** | skips `mainAdmin` and `groupCreator` |
+| Group memberships | left intact | deleted first |
+
+Consequences worth knowing before changing either one:
+
+- The package command runs **seven hours earlier** and has no role filter, so an
+  inactive `mainAdmin` is anonymized - including `role` becoming `registered`.
+  The project command's protection cannot prevent this.
+- Because the package command leaves memberships in place, an anonymized user
+  still matches `User::userGroupsEditable()` / `userGroupsDeletable()`, which do
+  **not** filter `isAnonymized` (unlike `Group::groupUsers()` and `Group::users()`,
+  which do). Such a user therefore stays in the `newsletters:send-due` recipient
+  list.
+- No mail actually reaches them, because `User::routeNotificationFor()` returns
+  `null` for any anonymized user and for any address failing
+  `FILTER_VALIDATE_EMAIL`. That method is load-bearing and must survive any
+  replacement of the GDPR package.
+- Uniqueness of the anonymized address rests entirely on
+  `User::getAnonymizedEmail()`. Without it the trait writes the literal string
+  `email` into a unique column, and the second user in the batch fails with
+  `SQLSTATE[23000]`.
+
 ### Closure command (`routes/console.php`)
 
 | Signature | Purpose |
