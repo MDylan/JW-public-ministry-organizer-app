@@ -47,12 +47,12 @@ Each item is intentionally small enough to complete and mark independently.
 ### Test suite (this is the main upgrade asset)
 
 - 20 test files, 134 `test_*` methods, **179 executed cases** after data providers. **Verified green on 2026-08-05: `OK (179 tests, 593 assertions)` in 36.5s** (TODO 03).
-- Strong coverage: 70-route contract snapshot including middleware stacks (`tests/Feature/RouteContractSnapshotTest.php`), route/middleware regression, all 8 observers, mail contract for all 26 notifications.
+- Strong coverage: 70-route contract snapshot including middleware stacks (`tests/Feature/RouteContractSnapshotTest.php`), route/middleware regression, all 8 observers, mail contract for all notifications (26 at the time; **25 since TODO 15** deleted an unused stub, and the provider list now fails if a class is added without a contract).
 - The 70-entry route fixture covers **every application-owned named route**; the 8 named routes it omits are all vendor-provided (5 Debugbar, 3 Livewire). That is a stronger safety net than 70-of-78 suggests. **TODO 14 added the 3 Livewire routes in a second fixture**, so only the 5 dev-only Debugbar routes now sit outside the snapshot.
 - Runs against a real MySQL schema `kozter_testing` via `RefreshDatabase`; `phpunit.xml` and `.env.testing` are configured with test-safe drivers.
 - **Known gaps** (addressed in Phase 1): no job `handle()` body is ever executed (all `Bus::fake()`), the ~200 lines of inline scheduler closures are only tested at registration level, 19 Livewire components are smoke-only, ~~5 middleware are untested~~ (closed by TODO 09), 23 of 30 models have no factory.
 - ~~**The single largest gap: the core scheduling domain has zero coverage.**~~ **Closed by TODO 07.1 and TODO 07.2.** Per-slot publisher capacity, the raised limit for approval-based groups, time-range overlap, the cross-group "publisher busy" check and in-group role assignment (`Groups\ListUsers::updateUser()`, not `saveUser()`) now have dedicated test files. Suite as of TODO 10: **`OK (677 tests, 1995 assertions)` in ~135s**, up from the 179-test baseline. (The jump from ~107s came with TODO 10's fuller audit trail - see that entry.)
-- `phpunit.xml` uses the PHPUnit 9 schema. Two `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids.
+- `phpunit.xml` uses the PHPUnit 9 schema. **Six** `@dataProvider` annotations use **non-static** provider methods, which PHPUnit 11 forbids (measured in TODO 15; this line previously said two - see TODO 40 for the list).
 - `.phpunit.result.cache` contains stale defect entries for tests that no longer exist. It must be deleted before recording a baseline.
 
 ### Code-level upgrade risks
@@ -71,7 +71,7 @@ Each item is intentionally small enough to complete and mark independently.
 - `app/Providers/BladeComponentServiceProvider.php:17` uses the legacy `Blade::component()` view alias, called from `register()` instead of `boot()`.
 - `resources/lang/` must move to `lang/` in Laravel 9; `joedixon/laravel-translation` hardcodes assumptions about that path.
 - `app/Http/Middleware/setUserLastActivity.php` has a lowercase class name (risky on case-sensitive deploy targets). `RedirectIfUnansweredTerms` exists but is never registered.
-- `app/Notifications/GroupPriorityMessageNotificationTest.php` is a production class with a `Test` suffix, which some PHPUnit discovery configurations will pick up.
+- ~~`app/Notifications/GroupPriorityMessageNotificationTest.php` is a production class with a `Test` suffix, which some PHPUnit discovery configurations will pick up.~~ **Closed by TODO 15**, which deleted it. It was an accidental `make:notification` stub with no dispatch site, and it was inert under today's `phpunit.xml` - the hazard was the PHPUnit 10 schema rewrite in TODO 40. A guard now rejects any `*Test.php` under `app/`.
 
 ### Livewire 2 -> 3 migration size (this is the largest single item)
 
@@ -122,6 +122,8 @@ Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the 93
 ## Phase 1 - Test Coverage Completion
 
 Full coverage is required **before** any framework change. Every item here is Laravel 8 compatible and is the safety net for Phases 4 through 10.
+
+**Phase 1 is complete as of 2026-08-06 (TODO 04 through TODO 15).** The suite went from the 179-test TODO 03 baseline to **957 tests / 2867 assertions**, green on PHP 8.1.30 / Laravel 8.83.1 in roughly 155s. The next work is Phase 2, the dependency decisions.
 
 - [x] **TODO 04: Add factories for uncovered models and make seeding usable**
   - Delivered on 2026-08-05. **Suite: 179 -> 249 tests, 777 assertions, green.**
@@ -297,7 +299,7 @@ Full coverage is required **before** any framework change. Every item here is La
   - Expected changes: as delivered. Suite: **734 -> 725 tests, 2183 assertions, green** - seven tests removed from `GroupDayJobsTest`, three from `SystemCauserJobsTest`, one added back there for the moved coverage.
 
 - [x] **TODO 11: Fill notification trigger coverage gaps** - DONE
-  - **The list in this entry was stale, and by a wide margin.** It named 13 classes, then struck 2 in the TODO 07.2 follow-up and said "eleven classes remain". **Five remained.** The intervening TODOs had quietly closed the rest: `GroupPriorityMessageNotification` (`GroupMessagesTest`), `Newsletter` (`NewsletterAndGroupChangeCommandsTest`, TODO 06), `TestNotification` (`AdminSettingsTest`), and both anonymization notifications (`GdprCommandsTest`). `GroupPriorityMessageNotificationTest` has **no dispatch site anywhere**, so no trigger test is possible for it at all - TODO 15 renames it. The lesson is the same one TODO 10.1 produced: a roadmap claim written early is evidence of nothing by the time it is executed.
+  - **The list in this entry was stale, and by a wide margin.** It named 13 classes, then struck 2 in the TODO 07.2 follow-up and said "eleven classes remain". **Five remained.** The intervening TODOs had quietly closed the rest: `GroupPriorityMessageNotification` (`GroupMessagesTest`), `Newsletter` (`NewsletterAndGroupChangeCommandsTest`, TODO 06), `TestNotification` (`AdminSettingsTest`), and both anonymization notifications (`GdprCommandsTest`). `GroupPriorityMessageNotificationTest` has **no dispatch site anywhere**, so no trigger test is possible for it at all - **TODO 15 deleted it**, which is why the count of notifications is 25 from that point on. The lesson is the same one TODO 10.1 produced: a roadmap claim written early is evidence of nothing by the time it is executed.
   - **All five survivors lived in one component, `Groups\ListUsers`** - `FinishRegistration` (`createUser`), `UserProfileRenewalNotification` and `UserProfileRenewalAdminNotification` (`userRenewal`), `GroupParentGroupAttachedNotification` (`linkToGroup`) and `GroupParentGroupDetachedNotification` (`detachParentGroup`). So this was not eleven scattered tests but **two entirely uncovered features**: guest invitation/profile renewal, and the parent-child group link.
   - Delivered: new `tests/Feature/Groups/GroupUserInviteTest.php` (14 tests), new `tests/Feature/Groups/GroupHierarchyLinkTest.php` (17 tests), new `tests/Unit/Notifications/NotificationEnvFallbackTest.php` (14 tests); `.docs/notifications.md` gained a "Covered by" column and an "Environment dependencies" section. Suite: **689 -> 734 tests, 2197 assertions**. All 45 new tests pass; the one red test at the time was **pre-existing and unrelated**, and TODO 10.2 settled it.
   - **The biggest thing this uncovered was not a notification.** `linkToGroup()` does not merely set `parent_group_id`: it runs `$group->groupUsersAll()->sync()` against the *parent's* member list (`ListUsers:585-610`), so **anyone who was only in the child group is removed from it** and gets a `GroupUserLogoutNotification`. Linking two groups is a membership operation, and that was recorded nowhere.
@@ -418,11 +420,16 @@ Full coverage is required **before** any framework change. Every item here is La
   - **A documentation error found and fixed:** `.docs/routes.md:155` described `verification.verify` as an "Inline closure using `EmailVerificationRequest`" - the definition that never runs. Both route docs now carry the measured precedence.
   - Expected changes: as delivered - tests, one new fixture, and documentation only.
 
-- [ ] **TODO 15: Rename the production class with a `Test` suffix**
-  - Needed:
-    - `app/Notifications/GroupPriorityMessageNotificationTest.php` is a production notification. Rename it and update all references.
-  - Expected changes:
-    - Renamed class, updated dispatch sites, updated `.docs/notifications.md`.
+- [x] **TODO 15: Remove the production class with a `Test` suffix** - DONE
+  - Delivered on 2026-08-06. `app/Notifications/GroupPriorityMessageNotificationTest.php` **deleted**; new `tests/Unit/ApplicationNamingConventionTest.php`; `NotificationRegressionTest` lost its provider row and gained a completeness guard; `.docs/notifications.md` corrected. Suite: **956 -> 957 tests, 2867 assertions, ~155s, green.** This closes Phase 1.
+  - **CORRECTION to this entry's own instruction: deleted, not renamed.** The class was an untouched `make:notification` stub - generic English placeholder text, an empty `__construct()`, an unused `ShouldQueue` import, an empty `toArray()`. `git log` places its birth in commit **60dc8382 "New: Message Board functionality"**, the same commit that added the real `GroupPriorityMessageNotification`, i.e. the generator was run twice by accident. It was never touched again, and it has **no dispatch site anywhere**. There is nothing to preserve and no meaningful name to rename it to - the meaningful one is taken by the real class.
+  - **CORRECTION to the risk claim** (repeated at the baseline list, `Code-level upgrade risks`). "Some PHPUnit discovery configurations will pick it up" is not true of this project today: `phpunit.xml` scans only `./tests/Unit` and `./tests/Feature` with `suffix="Test.php"`, so a file under `app/` is never discovered and the class was **inert**. The real exposure was **TODO 40**, which rewrites `phpunit.xml` for the PHPUnit 10 schema (where `processUncoveredFiles="true"` - today's reason every `app/*.php` gets loaded during a coverage run - is removed); PHPUnit 10+ errors on a class the suite picks up that does not extend `TestCase`. The secondary cost was plain confusion: the name reads as "the test for `GroupPriorityMessageNotification`", while that test actually lives in `NotificationRegressionTest`.
+  - **Two guards added, both in this suite's established "the list is the assertion" shape** (TODO 04's factory list, TODO 13's cast list):
+    - `NotificationRegressionTest::test_every_notification_class_has_a_mail_contract` reads `app/Notifications/*.php` and compares it to the data provider's keys, so a new notification cannot land without a mail contract. The provider is now 25 rows.
+    - `tests/Unit/ApplicationNamingConventionTest.php` walks all of `app/` and rejects any `*Test.php`. It lives in its own file because the rule is application-wide, not notification-specific. Both were verified against a temporary `app/Notifications/FooTest.php`, which failed them for the two distinct reasons (the name, and the missing provider row) before being removed.
+  - **Three stale claims found in `.docs/notifications.md` and fixed:** the `TestNotification` row still said "the setup-flow dispatch site is not covered, it belongs to roadmap TODO 12" - TODO 12 closed it, `tests/Feature/Setup/SetupMailTest.php:75` asserts it; the "Two kinds of coverage" section still promised "two named exceptions listed under Utility" - with TODO 12 done and this class gone, **there are now zero exceptions**, every notification has both a mail contract and a dispatch trigger test; and the deleted class had its own catalog row.
+  - **A finding for TODO 40, recorded there:** the roadmap claimed two non-static `@dataProvider` methods. There are **six**.
+  - Expected changes: as delivered - one deletion, two test files, documentation.
 
 ---
 
@@ -585,7 +592,7 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
 
 - [ ] **TODO 36: Validate the SwiftMailer -> Symfony Mailer switch**
   - Needed:
-    - Verified low risk: zero direct SwiftMailer usage, zero Mailables, all 26 notifications use the stable `MailMessage` API, `config/mail.php` already uses the modern `mailers` shape.
+    - Verified low risk: zero direct SwiftMailer usage, zero Mailables, all 25 notifications use the stable `MailMessage` API, `config/mail.php` already uses the modern `mailers` shape.
     - The real exposure is address strictness: Symfony Mailer throws on invalid or empty `replyTo`/`bcc`. TODO 28 must be complete first.
     - Re-verify `spatie/laravel-failed-job-monitor`, which is wired to queued notifications.
   - Expected changes: mostly verification; the notification test suite is the gate.
@@ -618,7 +625,8 @@ This is where the interpreter switches. Laravel 10.x supports PHP 8.1 through 8.
 - [ ] **TODO 40: Migrate the test layer to PHPUnit 10**
   - Needed:
     - `phpunit.xml`: `<coverage><include>` becomes `<source>`, `processUncoveredFiles` is removed, add `cacheDirectory`.
-    - Convert both `@dataProvider` annotations to `#[DataProvider]` attributes **and make the provider methods `static`** (`LivewireRouteMountedComponentsTest::mountedRouteProvider`, `NotificationRegressionTest::notificationProvider`). Non-static providers are deprecated in PHPUnit 10 and forbidden in 11, so doing it here avoids a fatal in Phase 9.
+    - Convert every `@dataProvider` annotation to a `#[DataProvider]` attribute **and make the provider methods `static`**. Non-static providers are deprecated in PHPUnit 10 and forbidden in 11, so doing it here avoids a fatal in Phase 9.
+    - **CORRECTION (measured in TODO 15): there are six, not two.** `AuthorizationGateTest::groupServantMembershipProvider`, `PaginationBehaviorTest::paginatingComponentProvider`, `LivewireRouteMountedComponentsTest::mountedRouteProvider`, `SetLocaleTest::privilegedRoleProvider`, `NotificationEnvFallbackTest::replyToNotificationProvider`, `NotificationRegressionTest::notificationProvider`. The count grew because Phase 1 added test files after this entry was written; TODO 13's providers are already static and are correctly absent from the list. Re-derive the list with a grep before executing rather than trusting this one.
     - Keep `.env.testing` and the `phpunit.xml` `<php>` block in sync; they currently duplicate each other.
   - Expected changes: `phpunit.xml`, two test files.
 

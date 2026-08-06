@@ -23,9 +23,9 @@ Used by:
 
 ### Two kinds of coverage
 
-`tests/Unit/Notifications/NotificationRegressionTest.php` covers the **mail contract** of every class: whether it queues, whether `mail` is among its channels, and whether `toMail()` builds a `MailMessage`. That says nothing about whether the notification is ever *sent*.
+`tests/Unit/Notifications/NotificationRegressionTest.php` covers the **mail contract** of every class: whether it queues, whether `mail` is among its channels, and whether `toMail()` builds a `MailMessage`. That says nothing about whether the notification is ever *sent*. Its data provider is itself an assertion — `test_every_notification_class_has_a_mail_contract` reads this directory and fails if a class is added without a contract row (roadmap TODO 15).
 
-The "Covered by" column below records the **dispatch trigger** test — the one that would fail if a notification silently stopped going out. Settled in roadmap TODO 11; every class with a dispatch site now has one, with two named exceptions listed under Utility.
+The "Covered by" column below records the **dispatch trigger** test — the one that would fail if a notification silently stopped going out. Settled in roadmap TODO 11. **Every notification now has both kinds of coverage, with no exceptions**: the last gap, `TestNotification`'s setup-flow dispatch site, was closed by TODO 12, and the one class that had no dispatch site at all was deleted in TODO 15.
 
 ## Notification Catalog
 
@@ -77,8 +77,7 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 
 | Notification | Queued | Triggered From | Covered by | Purpose |
 |---|---|---|---|---|
-| `TestNotification` | No | `Livewire\Admin\Settings`, `Setup\MailController` | `AdminSettingsTest` — **the setup-flow dispatch site is not covered**, it belongs to roadmap TODO 12 | SMTP/mail configuration test notification. |
-| `GroupPriorityMessageNotificationTest` | No | Not referenced in app flow | **None, and none is possible** — the class has no dispatch site anywhere. Roadmap TODO 15 renames it | Test-only message notification class (currently unused). |
+| `TestNotification` | No | `Livewire\Admin\Settings`, `Setup\MailController` | `AdminSettingsTest` and `Setup\SetupMailTest` — both dispatch sites are covered | SMTP/mail configuration test notification. |
 
 ## Environment dependencies
 
@@ -101,4 +100,5 @@ The `replyTo`/`bcc` fallback only applies when the group's own `replyTo` is blan
 
 - All notifications currently use mail delivery; no database/broadcast channel implementations are present.
 - Several class names contain legacy typos (`deletePersonalDataNotification`, `UserWillBeAnyonimizeAdminNotification`).
+- No class in `app/` may carry a `Test` suffix — PHPUnit would treat it as a test class. Enforced by `tests/Unit/ApplicationNamingConventionTest.php`, added when `GroupPriorityMessageNotificationTest` (an accidental `make:notification` stub with no dispatch site) was deleted in roadmap TODO 15.
 - Delivery suppression for opted-out users depends on `User::opted_out_of_notifications` keys matching notification class names.

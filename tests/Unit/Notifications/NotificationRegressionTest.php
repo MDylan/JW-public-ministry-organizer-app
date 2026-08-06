@@ -12,7 +12,6 @@ use App\Notifications\FinishRegistrationSuccessNotification;
 use App\Notifications\GroupParentGroupAttachedNotification;
 use App\Notifications\GroupParentGroupDetachedNotification;
 use App\Notifications\GroupPriorityMessageNotification;
-use App\Notifications\GroupPriorityMessageNotificationTest;
 use App\Notifications\GroupUserAddedNotification;
 use App\Notifications\GroupUserLogoutNotification;
 use App\Notifications\LoginData;
@@ -76,6 +75,28 @@ class NotificationRegressionTest extends TestCase
         $this->assertSame([], (new UserProfileChangedNotification($payload))->via($notifiable));
     }
 
+    /**
+     * TODO 15: a provider-lista maga is állítás.
+     *
+     * Ugyanaz a minta, mint a TODO 04 factory-listája és a TODO 13 cast-listája:
+     * ha valaki új notification osztályt vesz fel mail-kontraktus nélkül, ez a
+     * teszt bukik el. A provider KULCSAI pontosan a rövid osztálynevek - a
+     * kisbetűs deletePersonalDataNotification-t is beleértve.
+     */
+    public function test_every_notification_class_has_a_mail_contract(): void
+    {
+        $classes = array_map(
+            fn (string $path): string => basename($path, '.php'),
+            glob(app_path('Notifications/*.php'))
+        );
+        sort($classes);
+
+        $covered = array_keys($this->notificationProvider());
+        sort($covered);
+
+        $this->assertSame($classes, $covered);
+    }
+
     public function notificationProvider(): array
     {
         $payload = $this->sharedPayload();
@@ -91,7 +112,6 @@ class NotificationRegressionTest extends TestCase
             'GroupParentGroupAttachedNotification' => [GroupParentGroupAttachedNotification::class, [$payload], true],
             'GroupParentGroupDetachedNotification' => [GroupParentGroupDetachedNotification::class, [$payload], true],
             'GroupPriorityMessageNotification' => [GroupPriorityMessageNotification::class, [$payload], true],
-            'GroupPriorityMessageNotificationTest' => [GroupPriorityMessageNotificationTest::class, [], false],
             'GroupUserAddedNotification' => [GroupUserAddedNotification::class, [$payload], true],
             'GroupUserLogoutNotification' => [GroupUserLogoutNotification::class, [$payload], true],
             'LoginData' => [LoginData::class, [$payload], true],
