@@ -16,8 +16,13 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   `User` **overrides** the `Anonymizable::anonymize()` method (trait alias
   `anonymizeAttributes`) to enforce the succession rule from
   `App\Support\Gdpr\AnonymizationPolicy`, returning `false` and doing nothing
-  when blocked. The guard sits on the model because three separate code paths
-  anonymize users - see `.docs/commands.md`.
+  when blocked. The guard sits on the model because **five** separate code paths
+  anonymize users - see `.docs/commands.md` for the list.
+  `Group` and `Event` carry `Anonymizable` with an empty `$gdprAnonymizableFields`
+  for a reason that is easy to miss: `User::$gdprWith` makes `anonymize()` recurse
+  into `eventsOnly` and `groupsAccepted` and call `anonymize()` on each. Remove the
+  trait from either model and the user anonymization fatals. Neither declares
+  `$gdprWith`, so the cascade stops one level deep.
 
 ### Encrypted columns
 

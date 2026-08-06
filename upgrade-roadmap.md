@@ -377,7 +377,8 @@ Full coverage is required **before** any framework change. Every item here is La
   - **The `groupCreator` role stopped being a condition.** Creating a group makes the creator an `admin` of it (`ListGroups::createGroup()`), so rule 2 already covers every group they own. A `groupCreator` with no groups is now anonymizable - a deliberate behaviour change, pinned by `test_a_group_creator_without_groups_is_now_anonymizable`.
   - **A third quirk of `pwbs_check_group_other_admins()`, not in the original list: `Group::groupAdmins()` filters neither `isAnonymized` nor `accepted_at`.** So an already-anonymized row and an unaccepted invitation both counted as successors. This is not theoretical: the package command anonymizes but **leaves memberships in place**, so it manufactures exactly such rows - and a group's real admins could then be anonymized one after another, each one "handing over" to the previous ghost. New `Group::activeAdmins()` closes it; `groupAdmins()` itself is untouched, because its ten other call sites check the caller's own membership (`wherePivot('user_id', Auth::id())`). The tightening also applies to the group-leave and role-removal flows, which is correct and which **no existing test noticed** - their fixtures never built an anonymized or pending admin.
   - **The model guard alone was not enough, and measuring caught it.** The package's `handle()` runs `$user->anonymize()` **and then** `$user->update(['isAnonymized' => true])`. The guard stops the first call, not the second - so a protected user would keep all their data yet be flagged anonymized, which means disappearing from every group listing (`Group::groupUsers()`/`users()` filter the flag) and never receiving mail again (`User::routeNotificationFor()`). For a sole `mainAdmin` that is arguably worse than the anonymization it was meant to prevent. Fixed by `PackageAnonymizeInactiveUsers`, a project subclass with the same signature registered from `Kernel::$commands`; it wins because the package registers through an `Artisan::starting()` callback while `$commands` is resolved after the console application is built. `test_the_package_command_is_served_by_the_project_subclass` asserts that resolution order directly - it is exactly the kind of framework-internal path an 8 -> 13 hop disturbs.
-  - **Full removal of the package command is still TODO 16.** `GdprServiceProvider::boot()` schedules it inside an `app->booted()` callback, which runs *after* `Kernel::schedule()`, so it cannot be filtered out of the schedule; only disabling auto-discovery would remove it. `schedule:list` still shows the same 13 entries and `SchedulerRegressionTest` is unchanged. What remains as divergence is the timing (00:00 vs 07:00) and the missing membership detach - both still pinned.
+  - **Full removal of the package command is decided in TODO 16 and executed in TODO 33.2.** `GdprServiceProvider::boot()` schedules it inside an `app->booted()` callback, which runs *after* `Kernel::schedule()`, so it cannot be filtered out of the schedule; only disabling auto-discovery would remove it. `schedule:list` still shows the same 13 entries and `SchedulerRegressionTest` is unchanged. What remains as divergence is the timing (00:00 vs 07:00) and the missing membership detach - both still pinned.
+  - **CORRECTION, measured by TODO 16: there are five anonymization call paths, not three.** This entry, `.docs/commands.md` and `.docs/models.md` all counted the two commands plus the profile page. `app/Jobs/DeleteGroupDataProcess.php:73` (group deletion, anonymizes a member left with no other group) and `database/migrations/2024_12_01_223022_anonymize_old_data.php:20` (a one-off backfill) also call `anonymize()`. Both are covered by the model guard - which is the argument for its placement, only stronger than it was written.
   - **`gdpr:notify-anonymization` follows the same rule now.** Without it a `groupCreator` would be anonymized with no 15-day warning, and - the less obvious half - a *blocked* user would be mailed **every day**, because that query is a threshold (`last_activity <= ttl - 15 days`), not a window, and a blocked user never leaves it. The raw four-way join in `notifyGroupEditors()` cannot express the rule in SQL, so it post-filters with one extra model load; the window there is a single day, so the set is small.
   - **The profile path checks in both steps.** `asktodelete` decides before sending the signed link, `deletePersonalData` again when it is opened - the link is valid for 60 hours and the situation can change. A blocked request changes nothing at all (no mail, no anonymization, no detach, no logout) and flashes a `profile_message` naming what to do; `profile.blade.php:44` already renders that key. The test asserts on the group name inside the message rather than its mere presence, because the `profileFull` middleware uses the same key for the same redirect.
   - Two new language keys (`user.delete.no_successor_admin`, `no_successor_group`) in `hu` and `en`; the fallback locale is `en`, so the remaining 23 languages can be filled in through the translation UI.
@@ -437,13 +438,79 @@ Full coverage is required **before** any framework change. Every item here is La
 
 Every blocker gets its own assess-then-decide pair. The **decision** is recorded here; the **execution** happens in the phase where the package first blocks (Phase 8 for Laravel 11 blockers, Phase 10 for Laravel 13 blockers). See Appendix A for the verified compatibility matrix.
 
+**Check the constraint before assuming a package blocks anything.** A package with an *unbounded* framework constraint never fails a Composer resolution - it installs on Laravel 13 and would only misbehave at runtime. When that is the case and the replacement is framework-neutral, the execution should be pulled **forward** into Phase 3 rather than left in a hop, so the hop carries one dependency less. TODO 16 is the worked example, executed as TODO 33.2.
+
 For each package, "assess" means: list every API the project actually consumes, then price out three options - **fork/vendor into the project**, **replace with an alternative or in-house code**, or **drop the feature**.
 
-- [ ] **TODO 16: Assess and decide - `dialect/laravel-gdpr-compliance`**
-  - Context: last release 2020-01-06, effectively abandoned. Its `illuminate/support: >=5.5` constraint is unbounded, so Composer will happily install it on Laravel 13 while its code silently breaks.
-  - Consumed surface: `Portable` and `Anonymizable` traits on `User` and `Group`, `$gdprHidden`, `$gdprWith`, `$gdprAnonymizableFields`, `config/gdpr.php`, and the scheduled `Dialect\Gdpr\Commands\AnonymizeInactiveUsers`.
-  - This is the largest and highest-risk decision in the roadmap. **Unblocked: TODO 12 delivered the behavioural evidence.** Start from its findings - the two divergent anonymizers, and the two undocumented guards (`User::getAnonymizedEmail()` and `User::routeNotificationFor()`) that any replacement must reproduce. Note that the consent half of the package (`gdpr-terms` plus `RedirectIfUnansweredTerms`) is unfinished and unreachable, so dropping it costs nothing.
-  - Expected changes: a written decision with an effort estimate, recorded in this file.
+- [x] **TODO 16: Assess and decide - `dialect/laravel-gdpr-compliance`** - DONE
+  - Delivered on 2026-08-06. **Decision: replace the package with in-house code and remove it; drop the consent half.** The execution is **not** Phase 8 work - see the first correction - and is recorded as the new **TODO 33.2** at the end of Phase 3. Suite untouched: **957 tests, 2867 assertions, green.** The only files changed outside this roadmap are `.docs/commands.md` and `.docs/models.md`, which carried a measured undercount (see below).
+
+  - **The three required options, priced:**
+
+    | Option | Cost | Verdict |
+    | --- | --- | --- |
+    | Fork / vendor the package | The upstream repository has been dead since 2020-01-06. A fork means maintaining the same 158 lines *plus* a repository and a `repositories` entry in `composer.json`, and it keeps the split-brain structure below | rejected |
+    | **Replace with in-house code** | Move 158 lines (two traits + one form request) into `app/`, re-register one route, delete three, drop the package | **chosen** |
+    | Drop the feature | Not available for the export (GDPR art. 20) or the anonymization - both are legal obligations. **Available for the consent half**, which has never worked | partially taken |
+
+  - **CORRECTION to this roadmap's own classification: the package blocks nothing, and never will.** Both this entry and Appendix A called it "Blocks Phase 8". `composer.lock:351` confirms the requirement is `illuminate/support: >=5.5` with **no upper bound**, so Composer cannot fail on it at any hop, Laravel 11 or 13. It is not a blocker but a *silent* risk: a failure would appear at runtime, not at resolution. The practical consequence is the reason for the reschedule - **nothing forces this into Phase 8**, and the replacement code is framework-neutral, so it can be written and proven green on Laravel 8 today.
+  - **CORRECTION to "its code silently breaks".** Not demonstrable. Every framework API the package touches - `Str::studly()`, `loadMissing()`, `setVisible()`/`setHidden()`, `getRelations()`, `Route::group(['namespace' => ...])`, `app()->getNamespace()`, `$this->app->booted()`, `Schedule::command()` - still exists in Laravel 13, and the traits read their `$gdpr*` properties through Eloquent's `__get()`, so PHP 8.2's dynamic-property deprecation does not reach them either. The case for removal rests on the structural findings below, not on a predicted break.
+
+  - **The vendor surface is 158 lines, because four of the package's six publishable pieces already live in the project.** Measured, not assumed:
+
+    | Piece | Where it lives today | Still vendor? |
+    | --- | --- | --- |
+    | `GdprController` | `app/Http/Controllers/GdprController.php` - byte-identical to the package copy | no |
+    | `RedirectIfUnansweredTerms` | `app/Http/Middleware/` - never registered | no |
+    | `gdpr/message.blade.php` | `resources/views/gdpr/` - `@extends('base')`, 500 | no |
+    | `config/gdpr.php` | `config/` | only the `mergeConfigFrom` default |
+    | `add_gdpr_to_users_table` | `database/migrations/2022_02_14_210008_*` | no |
+    | `Dialect\Gdpr\Portable` | vendor, **41 lines** | **yes** |
+    | `Dialect\Gdpr\Anonymizable` | vendor, **87 lines** | **yes** |
+    | `Dialect\Gdpr\Http\Requests\GdprDownload` | vendor, **30 lines** (`password` => `required|string`) | **yes** |
+    | `GdprServiceProvider` | vendor - 4 routes, command registration, the 00:00 schedule | **yes**, but see below |
+    | `Dialect\Gdpr\Commands\AnonymizeInactiveUsers` | vendor - already overridden by a project subclass (TODO 12.2) | replaced already |
+    | `Dialect\Gdpr\EncryptsAttributes` (101 lines) | vendor - **zero usage**, the project uses the native `encrypted` cast | no |
+    | `Dialect\Gdpr\console\Kernel` (22 lines) | vendor - never referenced, a documentation example | no |
+
+    So what the project still consumes from `vendor/` is two traits, one form request, and a route group. `diff` confirms the published controller is byte-identical to the vendor copy, and `php81 artisan route:list --name=gdpr` confirms all four routes already dispatch to `App\Http\Controllers\GdprController`, with `web` + `Authenticate`.
+
+  - **The real reasons to remove it:**
+    1. **Split responsibility.** The published controller imports a *vendor* form request. Half the feature is in `app/`, half in `vendor/`, and neither half is complete on its own.
+    2. **A framework-internal workaround is holding the guard in place.** The package schedules its own command from `GdprServiceProvider::boot()` inside an `app->booted()` callback - after `Kernel::schedule()`, so it cannot be filtered out. `schedule:list` still shows it as the 13th entry at `0 0 * * *`. TODO 12.2 had to neutralize it with a same-named subclass registered from `Kernel::$commands`, which wins **only** because `Kernel::getArtisan()` resolves `$commands` after the `Artisan::starting()` callbacks. That ordering is exactly the kind of internal path an 8 -> 13 hop disturbs, and it is currently load-bearing for a data-protection guarantee.
+    3. **The divergence that survived TODO 12.2**: the package command still does not detach group memberships and still runs seven hours earlier, which is how an anonymized user stays on the newsletter recipient list.
+    4. **The consent half is dead code** - `gdpr-terms` returns 500, the middleware is unregistered, nothing links to either.
+
+  - **The anonymization call paths were undercounted: there are five, not three.** TODO 12.2, `.docs/commands.md:39` and `.docs/models.md:19` all say three (the two commands and the profile page). A `grep` for `->anonymize(` finds two more:
+    - **`app/Jobs/DeleteGroupDataProcess.php:73`** - group deletion anonymizes a member who is left with no other group. This is a live job (TODO 05 confirmed it), so the succession guard is reached from the group-deletion flow too. It happens inside `GroupUser::withoutEvents()`, and the return value is discarded, so a blocked user is silently kept - which is the correct outcome, but it was never a considered one.
+    - **`database/migrations/2024_12_01_223022_anonymize_old_data.php:20`** - a one-off backfill that re-anonymizes every `isAnonymized = 1` row. It runs on every `RefreshDatabase` test boot as well (harmlessly, on an empty table). TODO 32 squashes it away.
+
+    Both docs were corrected to five in this change set. **This is the load-bearing fact for the replacement**: the guard must stay on `User::anonymize()`, because five callers is already more than any single command-level rule could cover.
+
+  - **Three defects in the vendor traits, found by reading them for the replacement.** None of them bites today, and the reason each one does not bite is a constraint the replacement must not lose:
+    1. **The recursion guard does not work.** `Anonymizable::anonymize()` pushes relation names as *values* (`array_push($modelChecker, $relationName)`) but tests them as *keys* (`array_key_exists($relationName, $modelChecker)`), so the check is never true. The only thing stopping unbounded recursion is that `Group` and `Event` declare no `$gdprWith` - the cascade is exactly one level deep.
+    2. **`parseValue()` cannot handle a closure.** Its closure branch is `\call_user_func($item())` - it invokes the closure and then tries to call the *result* as a callable. Any closure in `$gdprAnonymizableFields` would fatal. The project uses none.
+    3. **`Portable::setVisible()` is dead here.** No model declares `$gdprVisible`.
+
+    Also worth carrying forward: **`Group` and `Event` carry `Anonymizable` with an empty `$gdprAnonymizableFields` purely so the recursion has a method to call.** Remove the trait from either and `User::anonymize()` fatals with a `BadMethodCallException`. That is not documented anywhere, and it reads like dead code.
+
+  - **What the replacement must reproduce** (the acceptance criteria are the 68 existing tests in `tests/Feature/Gdpr/`):
+    - `User::getAnonymizedEmail()` - the `getAnonymized{Column}` extension point. Without it, the keyless `'email'` entry writes the literal string `email` into a `unique` column and the **second** user in a daily batch fails with `SQLSTATE[23000]`, stopping GDPR retention permanently (TODO 12 proved this by removing the method).
+    - `User::routeNotificationFor()` returning `null` for anonymized users - the only thing that keeps mail away from them.
+    - `Portable::portable()` calls `setHidden()`, which **replaces** the model's `$hidden` rather than extending it, so `language`, `created_at`, `updated_at` and `isAnonymized` appear in the export. Pinned by `DataExportTest::test_the_export_reveals_fields_the_normal_api_hides`.
+    - The two distinct rejections on the download: a missing password is a **302 + validation error** (the form request), a wrong one is a **403** (`abort_unless` in the controller).
+    - `null` values bypassing the cast in `parseValue()`, and the one-level cascade shape above.
+
+  - **The consent half is dropped** (a decision by the user). The three consent routes, the three controller methods, the published view and the unregistered middleware go; `users.accepted_gdpr` stays as a column so no data migration is needed. The `spatie/laravel-cookie-consent` banner is a different feature and is unaffected. If consent is ever wanted as a real feature, it should be specified on its own, not resurrected from a package's Lorem ipsum.
+
+  - **Effort estimate: one focused change set, comparable to TODO 12.2 and smaller than TODO 07.** The breakdown, all of it in TODO 33.2:
+    - ~158 lines moved into `app/` (2 traits + 1 form request), plus a ~10-line route registration keeping `config('gdpr.uri')` and `config('gdpr.middleware')`.
+    - 6 imports re-pointed (`User`, `Group`, `Event`, `GdprController`, and the two anonymization commands), 1 `composer.json` line removed, 1 subclass and 1 `Kernel::$commands` entry deleted.
+    - Test churn, all mechanical and all already located: `ConsentTermsTest` (6) and `UnansweredTermsMiddlewareTest` (4) deleted; `AnonymizeCommandDivergenceTest` (9) largely moot once there is one command; `SchedulerRegressionTest` 13 -> 12 entries; `route-contracts.json` 70 -> 67 app routes and `test_every_named_route_is_accounted_for` 78 -> 75.
+    - 4 `.docs/` files updated in the same change set, per `AGENTS.md`.
+    - The risk is low precisely because the 68 GDPR tests were written against *behaviour*, not against the package - only two of them (`ConsentTermsTest`, `UnansweredTermsMiddlewareTest`) name the package's own structure.
+  - **Re-check before executing:** whether a maintained fork or alternative appeared on Packagist since this assessment. It would not change the decision - the in-house code is smaller than the integration cost of any package - but it belongs in the same re-check discipline as TODO 22.
+  - Expected changes: as delivered - the decision recorded here, the new TODO 33.2, and the Appendix A / TODO 58 / TODO 12.2 pointers updated, plus the two `.docs` undercount corrections.
 
 - [ ] **TODO 17: Assess and decide - `joedixon/laravel-translation`**
   - Context: installed v1.1.2; latest stable v2.2.0 supports at most Laravel 10 (a `3.x-dev` branch exists). Blocks Laravel 11.
@@ -553,7 +620,7 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
 - [ ] **TODO 33: Clean up middleware naming and dead code**
   - Needed:
     - Rename `app/Http/Middleware/setUserLastActivity.php` to `SetUserLastActivity` (PSR-4 tolerates the current name locally, but case-sensitive deploy targets will not).
-    - Decide the fate of `RedirectIfUnansweredTerms`, which is never registered in `app/Http/Kernel.php`.
+    - ~~Decide the fate of `RedirectIfUnansweredTerms`, which is never registered in `app/Http/Kernel.php`.~~ **Decided in TODO 16: it is deleted with the rest of the consent feature, in TODO 33.2.**
     - `app/Providers/RouteServiceProvider.php` still passes `->namespace($this->namespace)` where the property is commented out.
     - **Three naming defects found by TODO 07.2, all pinned by tests today:**
       1. **`helpers.php:68` asks for `can('is-groupCreator')` but the gate is `is-groupcreator`.** Gate names are case-sensitive, so the branch is always false and a plain `groupCreator` never receives the newsletters targeted at them - only `mainAdmin` does, through `is-admin`. A one-character fix that **changes production behaviour**, so it needs the user's go-ahead. Affects `Admin\AdminNewsletters`, `Partials\NavBar`, `Partials\SideMenu`; pinned by `AuthorizationGateTest::test_a_group_creator_never_receives_group_creator_newsletters`, which must be inverted when fixed.
@@ -569,6 +636,22 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - Set an explicit timeout on the request; there is none today, so a hanging Google endpoint holds the PHP worker.
     - `CheckRecaptchaTest::test_a_connection_failure_escapes_the_middleware_as_a_fatal_error` pins the present behaviour and must be rewritten to match whichever policy is chosen.
   - Expected changes: `app/Http/Middleware/CheckRecaptcha.php`, one test rewritten.
+
+- [ ] **TODO 33.2: Replace `dialect/laravel-gdpr-compliance` with in-house code**
+  - **This is the execution of the TODO 16 decision.** It sits in Phase 3 rather than Phase 8 because the package's `illuminate/support: >=5.5` requirement is unbounded and therefore blocks no Composer resolution, while the replacement code uses only stable Eloquent APIs - it can be written and proven green on Laravel 8 today, which takes one package out of every subsequent hop. Read TODO 16 first; it carries the measurements, the three vendor-trait defects, and the list of behaviour the replacement must reproduce.
+  - Needed:
+    - Move the two traits into `app/Support/Gdpr/` (`Portable.php`, `Anonymizable.php`, next to the existing `AnonymizationPolicy.php`) and the form request into `app/Http/Requests/GdprDownload.php`. Re-point the imports in `User`, `Group`, `Event` and `GdprController`. **Keep `Anonymizable` on `Group` and `Event`** - `User::anonymize()` recurses into `$gdprWith` and calls `anonymize()` on those models; removing the trait fatals. Add a comment saying so, since the empty `$gdprAnonymizableFields` reads as dead code.
+    - Decide explicitly whether to carry the three defects across or fix them: the broken `$modelChecker` recursion guard (pushes values, tests keys), the `parseValue()` closure branch that calls the closure's *return value*, and the dead `setVisible()` branch. Fixing the guard is safe today (the cascade is one level deep); fixing or deleting the closure branch is free (no closures are used). Whatever is chosen, `AnonymizationTest` must state it.
+    - Register `gdpr-download` in `routes/web.php` inside a group built from `config('gdpr.uri')` and `config('gdpr.middleware')`, so the route contract is byte-identical (`POST gdpr/download`, `web` + `Authenticate`). `tests/Fixtures/route-contracts.json` must not change for this route.
+    - **Drop the consent half** (TODO 16 decision): delete the `gdpr-terms`, `gdpr-terms-accepted` and `gdpr-terms-denied` routes, the three matching `GdprController` methods, `resources/views/gdpr/message.blade.php`, and `app/Http/Middleware/RedirectIfUnansweredTerms.php`. Also delete `GdprController::anonymize($id)` - no route has ever pointed at it. `users.accepted_gdpr` **stays** as a column; no data migration. This closes the `RedirectIfUnansweredTerms` question left open in TODO 33.
+    - Delete `app/Console/Commands/PackageAnonymizeInactiveUsers.php` and its `Kernel::$commands` entry. With the package gone, `gdpr:anonymizeInactiveUsers` and its 00:00 schedule disappear, and `gdpr:anonymize-inactive` at 07:00 becomes the only anonymizer - which retires the divergence for good.
+    - Remove `dialect/laravel-gdpr-compliance` from `composer.json`. `config/gdpr.php` stays (it is a published, project-owned file); check that nothing relied on the vendor `mergeConfigFrom` default.
+    - **The guard must stay on `User::anonymize()`.** TODO 16 measured **five** call paths, not the three previously documented - the two commands, the profile request, `DeleteGroupDataProcess::handle()` and the `2024_12_01_223022_anonymize_old_data` migration.
+  - Verification:
+    - The 68 tests in `tests/Feature/Gdpr/` are the acceptance criteria and should pass **unchanged**, except the two that name the package's own structure: `ConsentTermsTest` (6) and `UnansweredTermsMiddlewareTest` (4) are deleted with the feature, and `AnonymizeCommandDivergenceTest` (9) is rewritten down to what still exists.
+    - `SchedulerRegressionTest` 13 -> 12 entries; the route fixture 70 -> 67 app routes; `RouteContractSnapshotTest::test_every_named_route_is_accounted_for` 78 -> 75.
+    - Control step: run the GDPR suite **before** removing the package, with the imports already re-pointed at `app/Support/Gdpr/`. Green there proves the traits were copied faithfully, separately from the removal.
+  - Expected changes: 3 new files under `app/`, 5 deletions, `composer.json`, `routes/web.php`, `app/Console/Kernel.php`, the route fixture, 3 test files removed or rewritten, and `.docs/routes.md`, `.docs/commands.md`, `.docs/middleware.md`, `.docs/models.md`.
 
 ---
 
@@ -768,8 +851,8 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
 
 - [ ] **TODO 58: Execute the Laravel 11 blocker decisions**
   - Needed:
-    - Apply the TODO 17 (`joedixon/laravel-translation`), TODO 18 (`pcinaglia/laraupdater`), and TODO 16 (`dialect/laravel-gdpr-compliance`) decisions. All three block here.
-    - The GDPR package is the deepest: it touches the `User`/`Group` traits, `config/gdpr.php`, the scheduled anonymization command, and interacts with the encrypted columns.
+    - Apply the TODO 17 (`joedixon/laravel-translation`) and TODO 18 (`pcinaglia/laraupdater`) decisions. Both block here - they declare bounded Laravel constraints, so Composer stops on them.
+    - **The GDPR package is no longer part of this item.** TODO 16 measured that its constraint is unbounded, so it blocks nothing; its replacement is done earlier, in **TODO 33.2** (Phase 3). If that has slipped, do it before touching the framework rather than here - it is Laravel-8-compatible work and does not belong in a hop.
     - The TODO 12 GDPR/setup tests and the TODO 13 encrypted round-trip tests are the acceptance criteria.
   - Expected changes: depends on the recorded decisions; likely new code under `app/` replacing vendor packages.
 
@@ -915,7 +998,7 @@ Verified against Packagist at the time of writing. **Re-check before each hop** 
 | `fruitcake/laravel-cors` | 2.1.0 | 8 | **Remove in Phase 4** - framework-native since Laravel 9 |
 | `facade/ignition` | 2.17.4 (dev) | 8 | **Replace in Phase 4** with `spatie/laravel-ignition`, then absorbed into the framework at Laravel 11 |
 | `doctrine/dbal` | 3.3.2 | - | **Remove in Phase 8** - Laravel 11 reimplemented `change()` natively |
-| `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | unbounded `>=5.5`, last release **2020-01-06** | **Abandoned. Blocks Phase 8** - decision required (TODO 16). Highest risk item |
+| `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | unbounded `>=5.5`, last release **2020-01-06** | **Decided (TODO 16): replace in-house and remove.** Executed in **Phase 3, TODO 33.2**. **Blocks nothing** - the unbounded constraint means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
 | `joedixon/laravel-translation` | 1.1.2 | 10 (v2.2.0; `3.x-dev` exists) | **Blocks Phase 8** - decision required (TODO 17) |
 | `pcinaglia/laraupdater` | 1.0.2 (exact pin) | 10 (v1.0.3.4) | **Blocks Phase 8** - decision required (TODO 18) |
 | `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0) | **Blocks Phase 10** - decision required (TODO 19) |

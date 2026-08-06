@@ -36,9 +36,19 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 The rule lives in `App\Support\Gdpr\AnonymizationPolicy` and is enforced from
 `User::anonymize()`, which overrides the package trait's method (trait alias
 `Anonymizable::anonymize as anonymizeAttributes`). Placing it on the model is
-deliberate: **three** separate code paths anonymize users - the project command,
-the package command, and the user-initiated profile request - and a rule living
-in any one command would be bypassed by the others.
+deliberate: **five** separate code paths anonymize users - and a rule living in
+any one command would be bypassed by the other four.
+
+| Path | Where |
+|---|---|
+| Project command, 07:00 | `AnonymizeInactiveUsers::handle()` |
+| Package command, 00:00 | `PackageAnonymizeInactiveUsers::handle()` |
+| User-initiated GDPR request | `deletePersonalDataController::deletePersonalData()` |
+| Group deletion | `DeleteGroupDataProcess::handle()` - anonymizes a member left with no other group |
+| One-off backfill | `2024_12_01_223022_anonymize_old_data` migration |
+
+The last two were undercounted until the TODO 16 assessment; both discard the
+return value, so a blocked user is simply left alone.
 
 Two conditions, both about whether somebody is left to take over:
 
