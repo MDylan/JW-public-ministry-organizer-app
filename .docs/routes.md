@@ -37,6 +37,26 @@ From `app/Http/Kernel.php`:
 | GET | `/email/verify` | `verification.notice` | `Admin\DashboardController@verify` | Verification notice page. |
 | GET | `/user/new-email-verified` | `user.new-email-verified` | `User\Profile::redirectAfterNewEmailVerification` | Redirect helper after pending-email verification. |
 
+#### Static page status matrix (`StaticPageController::render`)
+
+`/page/{slug}` carries **no auth middleware**, so every branch below is reachable by a guest.
+`/` routes the `home` slug through the same method behind `guest` middleware, where the visitor is
+always unauthenticated.
+
+| `status` | Guest | Authenticated non-admin | `mainAdmin` |
+|---|---|---|---|
+| 0 - draft | 403 | 403 | `layouts.staticpage` |
+| 1 - public | `main` | `layouts.staticpage` | `layouts.staticpage` |
+| 2 - guest only | `main` | 403 | 403 |
+| 3 - login only | 403 | `layouts.staticpage` | `layouts.staticpage` |
+
+- Only the `is-admin` gate is consulted; `translator` gets no draft access.
+- The `home` slug never 403s or 404s: every rejecting branch renders the `home-404` view instead.
+  A missing page under any other slug is a 404.
+- New pages are created as **draft** (`Admin\StaticPageEdit` initialises `status = 0`), so status 0
+  is the default state, not an edge case.
+- Covered by `tests/Feature/StaticPageAccessTest.php`.
+
 ### Signed Registration-Finish Flow
 
 All routes below are wrapped in `middleware(['signed'])`.

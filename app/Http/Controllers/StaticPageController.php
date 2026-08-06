@@ -12,7 +12,11 @@ class StaticPageController extends Controller
         $page = StaticPage::where('slug', '=', $slug)->first();
         if(isset($page->id)) {
             //draft, only admin can see this
-            if($page->status === 0 && Auth::user()->can('is-admin')) {
+            //Auth::check() nélkül a can() null-on hívódna: a route nyilvános
+            //(web.php:62), a '/' pedig guest middleware-rel fut, tehát itt a
+            //vendég a normál eset, nem a kivétel. Vendégként az elseif-lánc
+            //végigfut az else-ig, ami 403-at ad - a 'home' slugra home-404-et.
+            if($page->status === 0 && Auth::check() && Auth::user()->can('is-admin')) {
                 return view('layouts.staticpage', ['page' => $page]);
             } 
             //public, anyone can see
@@ -26,7 +30,7 @@ class StaticPageController extends Controller
             //only public users see this
             elseif($page->status === 2) {
                 if(Auth::id()) {
-                    abort('403');
+                    abort(403);
                 } else {
                     return view('main', ['page' => $page]);
                 }
@@ -39,7 +43,7 @@ class StaticPageController extends Controller
                 if($slug === 'home') {
                     return view('home-404');
                 }
-                abort('403');
+                abort(403);
             }
         } else {
             if($slug === 'home') {
