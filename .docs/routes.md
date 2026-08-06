@@ -67,6 +67,27 @@ All routes below are wrapped in `middleware(['signed'])`.
 | POST | `/finish-registration/{id}` | `finish_registration_register` | `FinishRegistration::register` |
 | GET | `/finish-registration/{id}/cancel` | `finish_registration_cancel` | `FinishRegistration::cancel` |
 
+#### GDPR routes (`gdpr` prefix, `web` + `auth`)
+
+Registered by `Dialect\Gdpr\GdprServiceProvider`, served by the published
+`App\Http\Controllers\GdprController`. Covered by `tests/Feature/Gdpr/`.
+
+| Route | State |
+|---|---|
+| `gdpr-download` | Works. Re-checks the password via `Auth::attempt()` (403 on mismatch, 302 + validation error when omitted), returns `portable()` as a JSON attachment. |
+| `gdpr-terms-accepted` / `-denied` | Work. Each writes `users.accepted_gdpr`; a denial has no further consequence. |
+| `gdpr-terms` | **Broken - returns 500.** The published view extends a `base` layout that does not exist in this project, and its text is still the package's Lorem ipsum. Nothing in the application links to it; only the unregistered `RedirectIfUnansweredTerms` would. |
+
+The consent feature as a whole is therefore unfinished rather than regressed:
+no middleware drives users to it, and the page it would show does not render.
+
+The export omits `$gdprHidden` fields but, because `setHidden()` **replaces**
+the model's `$hidden` list, it exposes `language`, `created_at`, `updated_at`
+and `isAnonymized`, which the normal model output hides. Encrypted columns
+(`name`, `phone_number`, `congregation`) are exported in clear text. The
+`groups_accepted` key is renamed to `groups` only when the user has groups, so
+the export's shape is data-dependent.
+
 ### Conditional Setup Routes (only when `storage/installed.txt` does not exist)
 
 | Method | URI | Name | Action |
@@ -78,6 +99,31 @@ All routes below are wrapped in `middleware(['signed'])`.
 | GET/POST | `/setup/mail` | `setup.mail` / `setup.save-mail` | `Setup\MailController@index/configure` |
 | GET/POST | `/setup/account` | `setup.account` / `setup.save-account` | `Setup\AccountController@index/register` |
 | GET | `/setup/complete` | `setup.complete` | `Setup\MetaController::complete` |
+
+Behaviour of the group, covered by `tests/Feature/Setup/`:
+
+- **The condition is evaluated once, at route-registration time.** With
+  `storage/app/installed.txt` present the routes do not exist at all - the URLs
+  are 404, not 403, and `Route::has('setup.welcome')` is false. This is also why
+  the route-contract fixture contains no `setup.` entry.
+- **No route in the group carries `auth`, a gate, or a signature.** While the
+  installer is open, any visitor can complete it: `setup.save-account` creates a
+  `mainAdmin` and logs in as it, and it can be called repeatedly, creating one
+  admin per call.
+- **`setup.complete` closes the installer on a GET**, by writing the sentinel.
+  Anyone can therefore end the install window early.
+- `Setup\MailController::configure` is the only place where the `languages` and
+  `default_language` settings rows are created, and it advances only if the test
+  message sends successfully.
+- `Setup\DatabaseController::configure` runs `migrate:fresh` on the submitted
+  credentials, so its success path is destructive by design and is deliberately
+  not exercised by tests. Its `databaseHasData()` guard calls
+  `getDoctrineSchemaManager()`, which Laravel 11 removes (roadmap TODO 66).
+- `Exceptions\Handler` redirects any `QueryException` to `setup.welcome` while
+  the sentinel is missing - this is what routes a freshly unpacked copy into the
+  installer. **With the sentinel present the same handler calls `dd()`**, so a
+  database error on an installed site prints a raw message and exits, with no
+  error page and no logging.
 
 ### Authenticated Routes (`middleware(['auth'])`)
 
