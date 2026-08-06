@@ -679,13 +679,6 @@ class ListUsers extends AppComponent
 
     public function detachParentGroup() {
         $group = Group::findorFail($this->groupId);
-        $parent_group = $group->parentGroup;
-        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
-        $data = [
-            'groupName' => $parent_group_name,
-            'childGroupName' => $group->name,
-            'userName' => auth()->user()->name
-        ];
 
         if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
             abort(403);
@@ -693,6 +686,21 @@ class ListUsers extends AppComponent
 
         if($group->parent_group_id != $this->detachId)
             abort(403);
+
+        // Az értesítés adatai a jogosultsági őrök UTÁN épülnek: az
+        // auth()->user()->name korábban itt fentebb állt, tehát bejelentkezett
+        // felhasználó nélkül fatal jött 403 helyett.
+        //
+        // De még az update() ELŐTT kell összeállnia: a parent_group_id
+        // nullázása után a parentGroup reláció már nem adná vissza az
+        // elhagyott szülőcsoport nevét.
+        $parent_group = $group->parentGroup;
+        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
+        $data = [
+            'groupName' => $parent_group_name,
+            'childGroupName' => $group->name,
+            'userName' => auth()->user()->name
+        ];
 
         $res = $group->update([
             'parent_group_id' => null,

@@ -288,8 +288,9 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_the_detach_notification_still_names_the_former_parent(): void
     {
-        // A $data tömb a frissítés ELŐTT épül (:684-688), tehát a levélben
-        // még benne van az elhagyott szülőcsoport neve.
+        // A $data tömb a frissítés ELŐTT épül (:697-703), tehát a levélben
+        // még benne van az elhagyott szülőcsoport neve. A TODO 11.1 a
+        // jogosultsági őrök alá vitte, de szándékosan az update() fölé.
         $this->linkedChild();
         Notification::fake();
 
@@ -353,5 +354,41 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         $this->listUsers()
             ->call('confirmParentDetach', $foreign->id)
             ->assertForbidden();
+    }
+
+    public function test_an_unauthenticated_call_is_rejected_with_403_not_a_fatal_error(): void
+    {
+        // TODO 11.1: a $data tömb korábban a jogosultsági őr ELŐTT épült, és
+        // olvasta az auth()->user()->name-et - bejelentkezett felhasználó
+        // nélkül tehát ErrorException (500) jött ott, ahol 403 a helyes válasz.
+        //
+        // Ugyanaz a hibacsalád, mint a TODO 10-ben javított getRole(): hiányzó
+        // előfeltétel-ellenőrzés a hívási lánc elején. Az osztály minden
+        // testvér metódusa - detachChildGroup() (:642), confirmParentDetach()
+        // (:663), setCopyInfo() (:845) - ugyanezzel az őrrel indul.
+        //
+        // A route-on ott van a groupMember middleware, tehát ez nem aktív
+        // biztonsági rés. Az élesben elérhető út: a session él, de a
+        // felhasználó nincs bejelentkezve (másik fülön kijelentkezett), a
+        // metódus pedig benne van a $listeners tömbben (:59-68), tehát a
+        // Livewire message endpointon önállóan is hívható.
+        $this->linkedChild();
+
+        $component = $this->listUsers()
+            ->call('confirmParentDetach', $this->parent->id);
+
+        Notification::fake();
+
+        // A Livewire::actingAs() csak auth()->guard()->setUser()-t hív, ezért
+        // a guardok felejtetése állítja vissza a vendég állapotot.
+        $this->app['auth']->forgetGuards();
+
+        $component->call('detachParentGroup')->assertForbidden();
+
+        $this->assertNotNull(
+            $this->child->fresh()->parent_group_id,
+            'A kapcsolat nem bomolhat el hitelesítés nélkül.'
+        );
+        Notification::assertNothingSent();
     }
 }
