@@ -41,24 +41,31 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (\Illuminate\Encryption\MissingAppKeyException $e) {
-            // dump($e->getMessage());
             $target = base_path() . "/.env";
             $from = base_path() . "/.env.example";
             if(!file_exists($target) && file_exists($from)) {
-                copy($from, $target);                
+                copy($from, $target);
                 Artisan::call("key:generate");
                 return redirect()->route('setup.welcome');
-            } else {
-                dd(".env.example file missing and ".$e->getMessage());
             }
+
+            // Egyébként a beépített kezelőre esünk vissza: a null visszatérés
+            // után a keretrendszer rendereli az errors/500 nézetet. Korábban
+            // itt dd() állt, ami az APP_DEBUG-tól függetlenül nyers üzenetet
+            // írt ki, és exit-tel zárt.
+            return null;
         });
 
         $this->renderable(function (\Illuminate\Database\QueryException $e) {
             if (!Storage::exists('installed.txt')) {
                 return redirect()->route('setup.welcome');
-            } else {
-                dd($e->getMessage());
             }
+
+            // Telepített oldalon a normál hibakezelés a helyes válasz: a
+            // report() már lefutott (Pipeline::handleException hívja a render()
+            // előtt), tehát a kivétel naplózva van, a felhasználó pedig
+            // hibaoldalt kap a nyers adatbázis-üzenet helyett.
+            return null;
         });
     }
 }

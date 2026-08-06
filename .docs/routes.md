@@ -121,9 +121,13 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   `getDoctrineSchemaManager()`, which Laravel 11 removes (roadmap TODO 66).
 - `Exceptions\Handler` redirects any `QueryException` to `setup.welcome` while
   the sentinel is missing - this is what routes a freshly unpacked copy into the
-  installer. **With the sentinel present the same handler calls `dd()`**, so a
-  database error on an installed site prints a raw message and exits, with no
-  error page and no logging.
+  installer. With the sentinel present it returns `null`, so the exception falls
+  through to the framework's own handling: it is reported through the normal log
+  stack and rendered as `errors/500`. The same shape applies to
+  `MissingAppKeyException`, whose bootstrap branch (copy `.env.example`, run
+  `key:generate`, go to the installer) only runs when `.env` does not exist.
+  Covered by `tests/Feature/Setup/InstallerExceptionHandlerTest.php` and
+  `InstalledExceptionHandlerTest.php`.
 
 ### Authenticated Routes (`middleware(['auth'])`)
 

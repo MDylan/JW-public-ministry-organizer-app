@@ -13,11 +13,10 @@ use Illuminate\Support\Facades\Route;
  * kicsomagolás után - amikor még nincs adatbázis - a felhasználót a setupba
  * tereli ahelyett, hogy nyers hibát mutatna.
  *
- * A MÁSIK ÁG SZÁNDÉKOSAN NINCS TESZTELVE. Telepített állapotban a handler
- * dd($e->getMessage())-et hív, a dd() pedig exit-tel zár - egy ilyen teszt a
- * PHPUnit folyamatát ölné meg. A viselkedés így is rögzítendő: éles üzemben egy
- * adatbázishiba nyers hibaüzenetet dob a böngészőbe, hibaoldal és naplózás
- * nélkül. Külön javítási tétel a roadmapben.
+ * A másik ág - telepített állapot, tehát meglévő sentinel - az
+ * InstalledExceptionHandlerTest-ben van. Az korábban lefedhetetlen volt, mert a
+ * handler dd()-vel zárt, ami exit-tel megölte volna a PHPUnit folyamatát; a
+ * TODO 12.1 ezt szüntette meg.
  */
 class InstallerExceptionHandlerTest extends SetupTestCase
 {
