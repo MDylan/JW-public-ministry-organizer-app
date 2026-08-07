@@ -42,6 +42,31 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   by `tests/Feature/NewEmail/PendingEmailKnownGapsTest.php`; the first two are fixed with the GDPR
   replacement (roadmap TODO 33.2), the third with the package replacement (TODO 33.5).
 
+- **The weather cache** is `WeatherCity` plus two columns on `groups`: `weather_enabled` and
+  `city_id`. `Group::weather()` is a `belongsTo(WeatherCity::class, 'city_id')`, and the whole
+  feature is additionally gated on `config('weather')`, which is not a config file - it is injected
+  at boot from the `settings` table (`AppServiceProvider.php:45,72`) and ships **off**.
+
+  Four measured traps live here, all pinned by `tests/Feature/Weather/`:
+
+  1. **`WeatherCity::groups()` is a broken stub.** It is a plain `hasMany(Group::class)`, so it looks
+     for `groups.weather_city_id`, which does not exist - the real column is `groups.city_id`.
+     Calling it throws. No caller does.
+  2. **`groups.city_id` has no foreign key.** The migration
+     (`2024_12_04_194500_add_city_id_to_groups_table.php:17`) calls `->constrained()` on an
+     `unsignedBigInteger()` column, where it is a silent no-op - no constraint and no
+     `onDelete('set null')` were ever created. A deleted `weather_cities` row therefore leaves a
+     dangling `city_id`, which the calendar then dereferences unguarded.
+  3. **The two JSON columns are encoded twice in production.** `pwbs_weather_api_call()`
+     (`helpers.php:116-117`) calls `json_encode()` and the `json` cast then encodes again, so
+     reading the model back yields a **string**, not an array, and every reader decodes a second
+     time. `WeatherCityFactory::withWeatherData()` writes plain arrays instead - a shape production
+     cannot produce, which is what `ModelFactoryTest` asserts against.
+  4. **Nothing refreshes the table.** Rows are written only when a group admin saves the group form;
+     the calendar is a pure reader. See `.docs/components.md`.
+
+  Traps 1, 2 and 4 are fixed by roadmap TODO 33.7, trap 3 by TODO 33.6.
+
 ### Encrypted columns
 
 Nine columns across six models use the `encrypted` cast. Behaviour is covered by
@@ -141,7 +166,7 @@ into the column undetectably.
 | `GroupSurveyAnswer` | Survey answer records. | none declared | Unguarded, no timestamps. |
 | `GroupSurveyStatistics` | Survey aggregate statistics. | none declared | Unguarded model. |
 | `GroupLiterature` | Literature types available for reporting. | `belongsTo(Group)`, morph-many `LogHistory` | Used by event service reports. |
-| `WeatherCity` | Cached weather and forecast metadata. | `hasMany(Group)` | JSON weather payloads and last try timestamp. |
+| `WeatherCity` | Cached OpenWeather payloads for one city. | `hasMany(Group)` - **broken, see below** | `current_weather` / `forecast_weather` under a `json` cast, plus `last_try`. Unique on `(city, country)`. |
 
 ## System/Audit Models
 
