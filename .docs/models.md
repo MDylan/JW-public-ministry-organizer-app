@@ -23,6 +23,24 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   into `eventsOnly` and `groupsAccepted` and call `anonymize()` on each. Remove the
   trait from either model and the user anonymization fatals. Neither declares
   `$gdprWith`, so the cascade stops one level deep.
+- **Pending e-mail changes** use `ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail` on `User`.
+  A requested address is parked in `pending_user_emails` (a vendor model, `PendingUserEmail`, related
+  through `morphs('user')`) and only reaches `users.email` when the signed link is opened. The trait
+  supplies `newEmail()`, `getPendingEmail()`, `clearPendingEmail()` and
+  `resendPendingEmailVerificationMail()`; see `.docs/routes.md` for the route side.
+
+  **Nothing cleans that table up, and it collides with anonymization.** There is no foreign key, no
+  observer touches it, and `User::anonymize()` never calls `clearPendingEmail()` — even though
+  `email` is in `$gdprAnonymizableFields`. Two measured consequences:
+
+  1. After anonymization the user's **real** requested address stays in `pending_user_emails`
+     indefinitely.
+  2. Until the signed link expires, opening it writes that real address back onto the anonymized
+     user **and marks it verified**, leaving a row that reads as anonymized while carrying real data.
+
+  Deleting a user leaves the row orphaned for the same reason. All three are pinned as known defects
+  by `tests/Feature/NewEmail/PendingEmailKnownGapsTest.php`; the first two are fixed with the GDPR
+  replacement (roadmap TODO 33.2), the third with the package replacement (TODO 33.5).
 
 ### Encrypted columns
 

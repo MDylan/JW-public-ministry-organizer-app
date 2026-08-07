@@ -35,7 +35,8 @@ From `app/Http/Kernel.php`:
 | GET | `/` | - | `StaticPageController::render('home')` | Guest-only landing page. |
 | GET | `/page/{slug}` | `static_page` | `StaticPageController::render` | Static page rendering with status-based access logic. |
 | GET | `/email/verify` | `verification.notice` | `Admin\DashboardController@verify` | Verification notice page. |
-| GET | `/user/new-email-verified` | `user.new-email-verified` | `User\Profile::redirectAfterNewEmailVerification` | Redirect helper after pending-email verification. |
+| GET | `/user/new-email-verified` | `user.new-email-verified` | `User\Profile::redirectAfterNewEmailVerification` | Redirect helper after pending-email verification. Target of `config('verify-new-email.redirect_to')`; sends a `verified` guest to `login`, everyone else to `home.home`. |
+| GET | `/pendingEmail/verify/{token}` | `pendingEmail.verify` | `ProtoneMedia\LaravelVerifyNewEmail\Http\VerifyNewEmailController::verify` | **Vendor route**, registered from the package's own route file — and only because `config('verify-new-email.route')` is `null`. Middleware `web, signed, throttle:6,1`. See the pending-email section below. |
 
 #### Static page status matrix (`StaticPageController::render`)
 
@@ -153,7 +154,7 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
 | GET | `/home` | `home.home` | Livewire `Home` |
 | GET | `/loginback/{id}` | `admin.loginback` | `Admin\LoginToUserController::loginback` (`signed`) |
 | GET | `/email/verify/{id}/{hash}` | `verification.verify` | **Inactive.** An inline closure using `EmailVerificationRequest` is defined here, but it is shadowed by the identical Fortify route (see Route Observations); the request is served by `Laravel\Fortify\Http\Controllers\VerifyEmailController` |
-| GET | `/profile/resend-new-email-verification` | `user.resendNewEmailVerification` | `User\Profile::resendNewEmailVerification` |
+| GET | `/profile/resend-new-email-verification` | `user.resendNewEmailVerification` | `User\Profile::resendNewEmailVerification` — re-sends the pending-address mail with a **new** token, or flashes `profile_message` when nothing is pending |
 | GET | `/confirm-password` | `password.confirm` | Inline closure returning the `auth.confirm-password` view |
 | POST | `/confirm-password` | `password.confirm` | Inline closure verifying the password, throttled `6,1`. **Two distinct routes share this name**; URL generation resolves the name to this POST definition |
 
@@ -227,6 +228,33 @@ Notes that matter:
 | Channel | Authorization Logic |
 |---|---|
 | `App.Models.User.{id}` | Allows listen only if authenticated user ID equals `{id}` |
+
+### Pending e-mail address change (`protonemedia/laravel-verify-new-email`)
+
+Changing an e-mail address on the profile page does **not** write `users.email`. The requested
+address is parked in `pending_user_emails` and only moves onto the user when the signed link is
+opened. Three routes make up the flow, and they sit in three different places:
+
+| Route | Owner | Role |
+|---|---|---|
+| `user-profile-information.update` (Fortify) | `Actions\Fortify\UpdateUserProfileInformation:51` | Calls `$user->newEmail(...)` — the **only** dispatch site in the application |
+| `pendingEmail.verify` | vendor package | Activates the pending address, marks it verified, fires `Verified`, deletes the row |
+| `user.new-email-verified` | `routes/web.php:75` | Where the activation redirects afterwards |
+
+**`pendingEmail.verify` deliberately carries no `auth` middleware.** The link is normally opened on
+a different device than the one that made the request, so the protection is the signature plus the
+token, not the session. `config('verify-new-email.login_after_verification')` is `false`, so
+activating does not log the visitor in either.
+
+Three rejection paths, from three different layers: an unsigned or tampered link is **403**
+(`ValidateSignature`), an expired one is also **403** (60 minutes, from the `auth.verification.expire`
+default), and a validly signed link carrying an unknown token is a **302 to `login`** — because
+`InvalidVerificationLinkException` extends `Illuminate\Auth\AuthenticationException`, so the
+package's own message never reaches the user.
+
+Behaviour is pinned by `tests/Feature/NewEmail/` (30 tests, roadmap TODO 19.1). The package itself is
+scheduled for in-house replacement in roadmap TODO 33.5; the route name and URI are to be preserved
+so links already in flight keep working.
 
 ## Route Observations
 

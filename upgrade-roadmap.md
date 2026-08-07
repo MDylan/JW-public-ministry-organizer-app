@@ -440,6 +440,8 @@ Every blocker gets its own assess-then-decide pair. The **decision** is recorded
 
 **Check the constraint before assuming a package blocks anything.** A package with an *unbounded* framework constraint never fails a Composer resolution - it installs on Laravel 13 and would only misbehave at runtime. When that is the case and the replacement is framework-neutral, the execution should be pulled **forward** into Phase 3 rather than left in a hop, so the hop carries one dependency less. TODO 16 is the worked example, executed as TODO 33.2. **TODO 17 is the second and TODO 18 the third, and all three found the same misclassification** - three of the four packages this roadmap called "blockers" declare no framework constraint that Composer can fail on. Read the vendor `composer.json` **of the version actually installed**, not the Packagist support badge of the latest release, before writing "Blocks Phase N". TODO 18 is the sharpest case: the badge describes 1.0.3.4, while the pinned 1.0.2 requires nothing but `php >=5.4.0`.
 
+**And the rule cuts both ways - TODO 19 proved it.** The fourth package was misclassified in the **opposite** direction: `protonemedia/laravel-verify-new-email` 1.6.0 requires `illuminate/support: ^8.67 || ^9.0`, a real upper bound, so it fails **five phases earlier** than the "Blocks Phase 10" this roadmap recorded - at Phase 5. So the rule is not "the blockers do not block". It is: **read the installed version's `composer.json`, and read both ends of the constraint.** Note also what that measurement did *not* change: the `composer.json` constraint (`^1.6`) already admits every later 1.x, so an early failure of this kind can be a lock bump rather than a decision. Check the declared range before pricing options.
+
 For each package, "assess" means: list every API the project actually consumes, then price out three options - **fork/vendor into the project**, **replace with an alternative or in-house code**, or **drop the feature**.
 
 - [x] **TODO 16: Assess and decide - `dialect/laravel-gdpr-compliance`** - DONE
@@ -599,10 +601,59 @@ For each package, "assess" means: list every API the project actually consumes, 
   - **What the rename costs, and it is not zero.** `install()` only ever adds and overwrites - it **never deletes**. Every deployed install will therefore keep a dead `vendor/pcinaglia/laraupdater` tree after the release that switches to `vendor/mdylan/laraupdater`. It is inert (the new autoloader does not map it), but the release zip must carry an `upgrade.php` whose `main()` deletes it. That mechanism exists for exactly this.
   - Expected changes: as delivered - the decision recorded here, the new TODO 33.4 executed in the same change set, and the TODO 58 / Appendix A pointers updated.
 
-- [ ] **TODO 19: Assess and decide - `protonemedia/laravel-verify-new-email`**
-  - Context: installed v1.6.0; latest v1.13.0 supports at most Laravel 12. Blocks Laravel 13.
-  - Consumed surface: the `MustVerifyNewEmail` trait on `User`, `config/verify-new-email.php`, and an interaction with the duplicated `verification.verify` route resolved in TODO 26.
-  - Expected changes: decision recorded (wait for upstream Laravel 13 support, fork, or reimplement).
+- [x] **TODO 19: Assess and decide - `protonemedia/laravel-verify-new-email`** - DONE
+  - Delivered on 2026-08-07. **Decision: replace the package with in-house code and remove it.** The execution is **not** Phase 10 work - see the phase note below - and is recorded as the new **TODO 33.5** at the end of Phase 3. The characterization suite that every option needed but none had is delivered in the same change set as the new **TODO 19.1**. Suite: **983 -> 1013 tests, 2909 -> 3008 assertions, ~184 s, green.** No application code changed.
+
+  - **The three required options, priced:**
+
+    | Option | Cost | Verdict |
+    | --- | --- | --- |
+    | Fork / vendor the package | ~350 lines, a repository the project would then own, a `repositories` entry, and six hops of re-validation. The TODO 18 experience applies directly. Decisive against: **a fork inherits the two GDPR defects, the collision defect and the localization gap measured below** - it would have to fix them anyway, at which point it is the in-house option with extra hosting | rejected |
+    | **Replace with in-house code** | ~250-300 lines: one `App\Models\PendingUserEmail`, one trait, a thin controller, two Mailables. Stable API only (`Password::broker()->getRepository()->createNewToken()`, `URL::temporarySignedRoute()`, Eloquent, Mailable) - framework-neutral, provable green on Laravel 8 today | **chosen** |
+    | Drop the feature | Not available. Without it the profile page would write an unverified address straight into `users.email`, which is exactly the check Fortify's verification exists to make | rejected |
+    | *(fourth option, since the roadmap named it)* Wait for upstream | The package is **not abandoned**, but its last release is **v1.13.0, 2025-04-01** - 16 months ago, and it still declares `^10.0||^11.0||^12.0`. Phase 10 cannot depend on a release that may never come. The "Re-check before executing" line below keeps this open | rejected |
+
+  - **CORRECTION to this entry's own context line, and it points the opposite way to TODO 16/17/18.** Those three found packages the roadmap called blockers that block nothing. This one is the reverse: **the installed version blocks five phases earlier than recorded.** `vendor/protonemedia/laravel-verify-new-email/composer.json` shows the installed **1.6.0** requires `illuminate/support: "^8.67 || ^9.0"` - the **first genuine upper-bounded constraint** of the Phase 2 four. Composer fails on it at **Phase 5 (Laravel 10)**, not at Phase 10. That is a version bump, not a decision: `composer.json:31` declares `"^1.6"`, which already admits 1.13.0, so **the constraint needs no edit** - only the lock moves, and it moves with the PHP switch, since 1.9.0+ requires `php ^8.1` while `config.platform.php` is still pinned to `8.0.9`. The real wall stays at Phase 10, where no 1.x line exists. **The roadmap's "latest v1.13.0 supports at most Laravel 12" was accurate** - this is the one of the four where that half needed no correction.
+  - **CORRECTION to the stated consumed surface: there is no "interaction with the duplicated `verification.verify` route".** The package registers `pendingEmail.verify` at `pendingEmail/verify/{token}`; the `verification.verify` duplicate (`routes/web.php:119-122` vs `routes/fortify.php:87-89`) is a different name at a different URI. The two flows touch at exactly one point - `PendingUserEmail::activate()` also calls `markEmailAsVerified()` and fires `Verified`. **TODO 26 is not a prerequisite for TODO 19, and TODO 19 is not one for TODO 26.**
+
+  - **The consumed surface, measured.** Four call sites, one trait, one route, two published views:
+
+    | What | Where |
+    | --- | --- |
+    | `use MustVerifyNewEmail` | `app/Models/User.php:18,22` |
+    | `$user->newEmail($input['email'])` | `app/Actions/Fortify/UpdateUserProfileInformation.php:51` - the **only** dispatch site |
+    | `getPendingEmail()` + `resendPendingEmailVerificationMail()` | `app/Http/Controllers/User/Profile.php:20-22` |
+    | `getPendingEmail()` in Blade | `resources/views/layouts/app.blade.php:45,47`, `resources/views/user/profile.blade.php:93` |
+    | `pendingEmail.verify` | vendor `src/routes.php`, loaded **only because** `config('verify-new-email.route')` is `null` |
+    | published config / migration / views | `config/verify-new-email.php`, `database/migrations/2022_11_29_095804_*`, `resources/views/vendor/verify-new-email/` |
+
+    What still runs from `vendor/`: `MustVerifyNewEmail` (~110 lines), `PendingUserEmail` (~90), `VerifyNewEmailController` + `VerifiesPendingEmails` (~60), two Mailables (~40 each), `InvalidVerificationLinkException`, `ServiceProvider`, `routes.php` - **~350 lines**. Smaller than TODO 17's ~1100, comparable to TODO 18's ~300.
+
+  - **The load-bearing fact: the feature had zero test coverage.** Of 983 tests, one touched it indirectly (`NotificationTriggerRegressionTest:37-55`, and only for the notification) plus one row in `tests/Fixtures/route-contracts.json`. Nothing covered the signed link, `activate()`, expiry, resend or the mail selection. TODO 16 could lean on 68 existing GDPR tests as its acceptance criteria; here there was nothing to lean on, so **the net had to be built before the decision could mean anything**. That is TODO 19.1, delivered in this change set.
+
+  - **Five defects found by reading the package for the replacement.** All five are pinned by tests today, and all five are why the fork option loses:
+    1. **Anonymization leaves the real address behind.** `users.email` is in `$gdprAnonymizableFields` (`User.php:112`) and `getAnonymizedEmail()` returns `Str::random(10)`, but nothing clears `pending_user_emails` - no foreign key, no observer among the eight in `app/Observers/`, and `User::anonymize()` never calls the trait's `clearPendingEmail()`. The address the user asked for survives indefinitely.
+    2. **A live link reverses the anonymization.** `PendingUserEmail::activate()` does not look at `isAnonymized`. Until the signed link expires, opening it writes the real address back onto the anonymized user **and marks it verified**, leaving a row that reads as anonymized while carrying real data. **Fix location: TODO 33.2**, since that is where `User::anonymize()` is rewritten anyway and the fix is independent of this package's fate.
+    3. **Deleting a user orphans the row.** `morphs('user')` creates no foreign key.
+    4. **`activate()` fatals on a collision.** `Rule::unique` runs only at request time in `UpdateUserProfileInformation`; if someone else takes the address while the mail is in flight, `$user->save()` throws `SQLSTATE[23000]` inside a signed-link GET - a 500 with no recovery path.
+    5. **`verifyFirstEmail.blade.php` is the package's English stub**, in a 22-locale application. Its sibling `verifyNewEmail.blade.php` is fully `@lang()`-ed. The stub is reachable: `sendPendingEmailVerificationMail()` picks it whenever `hasVerifiedEmail()` is false.
+  - **A sixth, milder finding, worth knowing before rewriting:** `InvalidVerificationLinkException extends Illuminate\Auth\AuthenticationException`, so an unknown token does **not** produce an error page - the framework redirects to `route('login')` and the package's own message (`The verification link is not valid anymore.`) never reaches anyone. Pinned as current behaviour, not as a defect to preserve.
+
+  - **Why the execution is pulled forward to Phase 3, even though this constraint really is bounded.** The Phase 2 preamble rule ("pull forward when the constraint is unbounded") does not apply on its face - Composer genuinely fails here, at Phase 5. But the rule's *purpose* does: the replacement code is framework-neutral and provable on Laravel 8 today, so writing it in Phase 3 takes the package out of the Phase 5, 8, 9 **and** 10 resolutions at once, instead of bumping the lock three times and then still having to solve Phase 10. It also lets defects 4 and 5 be fixed in the same motion. **If TODO 33.5 slips**, the fallback is unchanged and safe: bump the lock to 1.13.0 at Phase 5 and do the replacement in TODO 65.
+  - **What the replacement must reproduce** (the acceptance criteria are the 30 tests in `tests/Feature/NewEmail/`): the pending row shape and the "one row per user" rule; `users.email` untouched until activation; the verified/unverified Mailable split; `getPendingEmail()` for both Blade call sites; the token rotation on resend and its two flash messages; activation writing the address, marking it verified, firing `Verified`, deleting the row, redirecting to `config('verify-new-email.redirect_to')` with `verified` in the session and **not** logging the visitor in; and the three rejection paths (unsigned 403, expired 403, unknown token 302). The route must keep `web, signed, throttle:6,1` and must **not** gain `auth` - the link is opened on other devices.
+  - **Re-check before executing:** whether a 2.x line or a Laravel 13 release appeared upstream since 2025-04-01. It would not change the decision - the in-house code is smaller than the integration cost, and it is the only path that fixes the five defects - but it belongs in the same re-check discipline as TODO 22.
+  - Expected changes: as delivered - the decision recorded here, the new TODO 19.1 and TODO 33.5, and the Phase 2 preamble / TODO 39 / TODO 65 / Appendix A pointers updated, plus three `.docs` files that had never documented this feature at all.
+
+- [x] **TODO 19.1: Build the missing characterization suite for the pending-email flow** - DONE
+  - Delivered on 2026-08-07 in the TODO 19 change set. **This is not optional scaffolding - it is what makes the TODO 19 decision executable.** Before it, the flow had no acceptance criteria at all, so "replace", "fork" and "wait" were indistinguishable in risk.
+  - New `tests/Feature/NewEmail/`, three files, **30 tests**, following the `tests/Feature/Updater/` precedent from TODO 18:
+    - `PendingEmailFlowTest` (12) - what `newEmail()` writes, the verified/unverified Mailable split, the one-row rule, the early return, the profile-update path, `getPendingEmail()` and its two Blade call sites, and both resend branches.
+    - `PendingEmailVerificationTest` (13) - activation, the `Verified` event, the redirect and its session flag, the guest assertion, the three rejection paths, the route contract (including the deliberate absence of `auth`), the throttle, and `verificationUrl()` round-tripping through the named route.
+    - `PendingEmailKnownGapsTest` (5) - **the defects, asserted as they behave today.** Same discipline as TODO 14's duplicate-route tripwires that TODO 26 rewrites: the fix must make these fail, and that failure is the reviewable diff. Each carries the TODO that owns it.
+  - **A measurement that shaped the whole suite: both Mailables are `ShouldQueue`, so under `Mail::fake()` they are asserted with `assertQueued()`, not `assertSent()`.** The queue connection is `sync`, so they still go out in the same request in production - but `MailFake::send()` diverts a `ShouldQueue` mailable to `queue()` before anything else happens, and `assertSent()` silently finds nothing.
+  - **Control experiment, as run** (the TODO 14 / TODO 15 discipline): `$user->newEmail(...)` was commented out at `UpdateUserProfileInformation.php:51` and the suite re-run. **Exactly one test failed** - and that exposed a hole: `test_the_profile_update_does_not_write_the_new_address_into_the_users_table` stayed green, because "the address is not in `users`" is still true when the feature is simply gone. It gained a `getPendingEmail()` assertion so both profile-path tests now catch the removal. Line restored, verified.
+  - No route is added, so `tests/Fixtures/route-contracts.json` and `RouteContractSnapshotTest` are untouched.
+  - Expected changes: as delivered - three test files, no application code.
 
 - [ ] **TODO 20: Assess and decide - `rakibdevs/openweather-laravel-api`**
   - Context: installed v1.9.0; latest v2.0.0 supports at most Laravel 12. Blocks Laravel 13. Small consumed surface (`WeatherCity`, `config/openweather.php`) - a direct HTTP-client call is a realistic replacement.
@@ -780,6 +831,21 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     2. The release that ships this must carry an `upgrade.php` whose `main()` deletes `vendor/pcinaglia/`. `install()` never deletes, so the dead tree would otherwise stay on every deployed host forever. **Written and verified: `release/upgrade.php`**, with `release/README.md` documenting the hook contract. It removes `vendor/pcinaglia/`, the orphaned published view at `resources/views/vendor/laraupdater/`, and `bootstrap/cache/packages.php` / `services.php` - the last two belt-and-braces, since `optimize:clear` reaches them a few lines later but a failed Artisan call would otherwise leave a manifest naming a class that no longer exists. Verified against the booted application with the targets planted: every branch exercised (directory tree, plain file, "already gone"), idempotent on a second run, and no collateral damage to `vendor/mdylan/`, the sibling `resources/views/vendor/*` directories or the published `laraupdater` language files. It is a one-off - once 1.1.6 has reached every install, empty `main()` or drop the file so later archives stop carrying it.
   - Expected changes: as delivered.
 
+- [ ] **TODO 33.5: Replace `protonemedia/laravel-verify-new-email` with in-house code**
+  - **This is the execution of the TODO 19 decision.** It sits in Phase 3 rather than Phase 10 for a reason that differs from 33.2/33.3/33.4: this package's constraint really **is** bounded (`illuminate/support ^8.67||^9.0` in the installed 1.6.0), so Composer really does fail on it - at **Phase 5**, not Phase 10. But that half is a lock bump, not a decision, and the replacement code is framework-neutral, so writing it here removes the package from the Phase 5, 8, 9 and 10 resolutions in one move. Read TODO 19 first; it carries the measurements and the five defects.
+  - **Acceptance criteria already exist: the 30 tests in `tests/Feature/NewEmail/` (TODO 19.1).** They were written against the vendor code, so they are the before-and-after comparison. Twenty-five must stay green untouched; the five in `PendingEmailKnownGapsTest` are the ones the replacement is allowed - and for two of them, required - to break.
+  - Needed:
+    - **New code in `app/`**: `App\Models\PendingUserEmail` (the `forUser` scope, `activate()`, `verificationUrl()`), a `MustVerifyNewEmail` equivalent under `App\Support\Email\`, a thin controller with `throttle:6,1`, and two Mailables. Register `pendingEmail.verify` in `routes/web.php` with `web, signed` - keeping the name and URI so deployed links in flight keep working.
+    - **Keep `config/verify-new-email.php`** and its keys (`redirect_to`, `login_after_verification`, `model`, the two mailable classes), re-pointed at the new classes. The `route` key loses its meaning once the route is app-owned; drop it and delete the branch that read it.
+    - Fix defect 4 while rewriting: `activate()` must check that the address is still free and fail into a flash message instead of a `SQLSTATE[23000]` 500.
+    - Fix defect 5: give `verifyFirstEmail` the same `@lang()` treatment `verifyNewEmail` already has, and add the missing `email.verifyFirstEmail.*` keys to `hu` and `en`.
+    - Fix defect 3: give `pending_user_emails.user_id` a cleanup path - the simplest is the same `UserObserver` that already exists.
+    - Drop `protonemedia/laravel-verify-new-email` from `composer.json`. The `pending_user_emails` table and its migration **stay** - no data migration, same shape.
+    - Update the import at `app/Models/User.php:18,22`. The four call sites keep their names, so `UpdateUserProfileInformation`, `User\Profile` and both Blade views need no edit - **verify that, do not assume it**.
+  - **Defects 1 and 2 are NOT fixed here - they belong to TODO 33.2**, where `User::anonymize()` is rewritten. If 33.2 has already shipped by then, its `clearPendingEmail()` call has to be re-pointed at the new trait in this change set.
+  - **The release note that must not be lost**, the same shape as TODO 33.4: `install()` never deletes, so the release carrying this must extend `release/upgrade.php` to remove `vendor/protonemedia/` and `resources/views/vendor/verify-new-email/` from deployed hosts.
+  - Expected changes: ~250-300 lines under `app/`, one route registration, `config/verify-new-email.php` re-pointed, `composer.json`, two language files, `release/upgrade.php`, and the `.docs` entries added by TODO 19.
+
 ---
 
 ## Phase 4 - Laravel 8 -> 9 (PHP 8.1)
@@ -830,6 +896,7 @@ This is where the interpreter switches. Laravel 10.x supports PHP 8.1 through 8.
   - Needed:
     - `laravel/framework` to `^10.0`, `nunomaduro/collision` to `^7.0`, PHPUnit to `^10.0`.
     - Reconcile Monolog 3 logging changes against `config/logging.php`.
+    - **`protonemedia/laravel-verify-new-email` fails the resolution here if TODO 33.5 has slipped**, and this is the only place in the roadmap where it does so before Phase 10. Measured in TODO 19: the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`. It is a lock bump, not a decision - `composer.json` already declares `^1.6`, so 1.13.0 resolves once `config.platform.php` stops pinning 8.0.9 (TODO 24). If TODO 33.5 shipped, the package is gone and this line is moot.
   - Expected changes: composer updates plus the PHPUnit work in TODO 40.
 
 - [ ] **TODO 40: Migrate the test layer to PHPUnit 10**
@@ -1036,11 +1103,12 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
   - Expected changes: composer updates, test-layer adjustments.
 
 - [ ] **TODO 65: Resolve the Laravel 13 package blockers**
+  - **`protonemedia/laravel-verify-new-email` is no longer part of this item.** TODO 19 decided to replace it in-house, and the replacement is done earlier, in **TODO 33.5** (Phase 3), because the code is framework-neutral and Laravel 8 compatible. If TODO 33.5 has slipped, do it before touching the framework rather than here. Note the fallback if it slipped *and* the schedule is tight: the package installs fine through Laravel 12 by bumping the lock to 1.13.0, so only the Laravel 13 hop actually forces it.
   - Needed:
-    - `protonemedia/laravel-verify-new-email` (latest v1.13.0 supports at most Laravel 12) and `rakibdevs/openweather-laravel-api` (latest v2.0.0 supports at most Laravel 12) both block here.
-    - Apply the TODO 19 and TODO 20 decisions: wait for upstream Laravel 13 support, fork, or replace. The weather package has a small surface and is a realistic candidate for a direct HTTP-client call.
+    - `rakibdevs/openweather-laravel-api` (latest v2.0.0 supports at most Laravel 12) is what remains blocking here.
+    - Apply the TODO 20 decision: wait for upstream Laravel 13 support, fork, or replace. The weather package has a small surface and is a realistic candidate for a direct HTTP-client call.
     - Re-check upstream at execution time - support may have landed since this roadmap was written.
-  - Expected changes: per the recorded decisions.
+  - Expected changes: per the recorded decision.
 
 - [ ] **TODO 66: Bump the remaining packages to their Laravel 13 lines**
   - Needed:
@@ -1140,7 +1208,7 @@ Verified against Packagist at the time of writing. **Re-check before each hop** 
 | `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | unbounded `>=5.5`, last release **2020-01-06** | **Decided (TODO 16): replace in-house and remove.** Executed in **Phase 3, TODO 33.2**. **Blocks nothing** - the unbounded constraint means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
 | `joedixon/laravel-translation` | 1.1.2 | unbounded - **`"require": {}`**, last release **2020-04-13** | **Decided (TODO 17): remove and replace the UI with an in-house Livewire editor.** Executed in **Phase 3, TODO 33.3**; `elegantly/laravel-translator` arrives as the engine in **Phase 10, TODO 66.1**. **Blocks nothing** - the empty require block means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
 | `mdylan/laraupdater` (was `pcinaglia/laraupdater` 1.0.2) | v2.0.0, own fork | declares `^8.12` through `^13.0` | **Decided (TODO 18): keep the self-updater, move it onto the project's own fork.** Executed in **Phase 3, TODO 33.4**. **The old pin blocked nothing** - 1.0.2 required only `php >=5.4.0`; the earlier "Blocks Phase 8" reading came from the Packagist badge for 1.0.3.4, a version this project never used |
-| `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0) | **Blocks Phase 10** - decision required (TODO 19) |
+| `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0, released 2025-04-01) | **Decided (TODO 19): replace in-house and remove.** Executed in **Phase 3, TODO 33.5**. **Blocks twice, and the earlier one was missed:** the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`, so Composer fails at **Phase 5**, not only at Phase 10. That half is a lock bump, not a decision - `composer.json` already declares `^1.6`, which admits 1.13.0. The Phase 10 wall is real: no 1.x line supports Laravel 13 |
 | `rakibdevs/openweather-laravel-api` | 1.9.0 | 12 (v2.0.0) | **Blocks Phase 10** - decision required (TODO 20) |
 | `eusonlito/laravel-packer` | 2.2.6 | v3.0.1 declares no Laravel constraint | Likely redundant after Vite (TODO 21, TODO 54) |
 | `livewire/livewire` | 2.10.4 | v3 and v4 both support Laravel 10-13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |

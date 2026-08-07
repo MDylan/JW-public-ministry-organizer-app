@@ -57,7 +57,7 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 | `UserRegisteredNotification` | Yes | `Actions\Fortify\CreateNewUser` | `NotificationTriggerRegressionTest` | Registration email with verification link. |
 | `FinishRegistration` | Yes | `Livewire\Groups\ListUsers::createUser` | `GroupUserInviteTest` | Invitation-style email to complete account registration. |
 | `FinishRegistrationSuccessNotification` | Yes | `Http\Controllers\FinishRegistration` | `CriticalUserFlowsTest` | Confirms successful finish-registration flow. |
-| `UserEmailChangedNotification` | Yes | `Actions\Fortify\UpdateUserProfileInformation` | `NotificationTriggerRegressionTest` | Alerts old email address about pending new email. |
+| `UserEmailChangedNotification` | Yes | `Actions\Fortify\UpdateUserProfileInformation` | `NotificationTriggerRegressionTest`, `NewEmail\PendingEmailFlowTest` | Alerts the **old** address that a new one is pending. Goes out alongside the verification mail below. |
 | `LoginData` | Yes | `Livewire\Groups\ListUsers::updateUser` | `GroupRoleAssignmentTest` | Sends login details/entry data to created users. |
 | `UserProfileChangedNotification` | Yes | `Livewire\Groups\ListUsers::updateUser` | `GroupRoleAssignmentTest` | Notifies user profile was modified by admin/editor. |
 | `UserProfileRenewalNotification` | Yes | `Livewire\Groups\ListUsers::userRenewal` | `GroupUserInviteTest` | Asks user to renew/update profile data. |
@@ -78,6 +78,29 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 | Notification | Queued | Triggered From | Covered by | Purpose |
 |---|---|---|---|---|
 | `TestNotification` | No | `Livewire\Admin\Settings`, `Setup\MailController` | `AdminSettingsTest` and `Setup\SetupMailTest` — both dispatch sites are covered | SMTP/mail configuration test notification. |
+
+## Mailables (not Notifications)
+
+Two mail classes reach users without going through the notification system at all. They belong to
+`protonemedia/laravel-verify-new-email` and are dispatched from `MustVerifyNewEmail::sendPendingEmailVerificationMail()`,
+which picks between them on `hasVerifiedEmail()`. Both are addressed to the **new** address, both
+are configurable in `config/verify-new-email.php`, and both are `ShouldQueue`.
+
+| Mailable | View | Sent when | Covered by |
+|---|---|---|---|
+| `...\Mail\VerifyNewEmail` | `resources/views/vendor/verify-new-email/verifyNewEmail.blade.php` | The user's current address is already verified | `NewEmail\PendingEmailFlowTest` |
+| `...\Mail\VerifyFirstEmail` | `resources/views/vendor/verify-new-email/verifyFirstEmail.blade.php` | The user's current address is **not** verified | `NewEmail\PendingEmailFlowTest` |
+
+Two consequences worth knowing:
+
+- **They are `ShouldQueue`, so under `Mail::fake()` they must be asserted with `assertQueued()`,
+  not `assertSent()`** — `MailFake::send()` diverts a queueable mailable before recording it. The
+  queue connection is `sync`, so in production they still go out in the same request.
+- **`verifyFirstEmail.blade.php` is the package's untranslated English stub**, while its sibling is
+  fully `@lang()`-ed against `email.verifyNewEmail.*`. In a 22-locale application that is a real gap,
+  and it is reachable — any user who never verified their original address gets the English mail.
+  Pinned as a known defect by `NewEmail\PendingEmailKnownGapsTest`; scheduled for repair with the
+  in-house replacement in roadmap TODO 33.5.
 
 ## Environment dependencies
 
