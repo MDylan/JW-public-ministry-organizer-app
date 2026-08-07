@@ -15,6 +15,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/notifications.md`: Notification catalog, delivery channels, and trigger points.
 - `.docs/observers.md`: Observer registration status and side-effect mapping.
 - `.docs/middleware.md`: HTTP middleware stacks, aliases, and custom behavior.
+- `.docs/assets.md`: CSS/JS delivery - the live `laravel-packer` pipeline, the dead Mix one, and the traps in both.
 
 ## Project Stack Snapshot
 

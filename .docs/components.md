@@ -79,7 +79,7 @@ These are used from other Livewire views or layouts.
 | `Events\Modal` | Day modal for event creation/edit/accept/reject flows, poster and bulk actions. |
 | `Events\EventEdit` | Event editor form used from modal/calendar workflows. |
 | `Groups\Messages` | Embedded group message board block (priority + permission checks). |
-| `Groups\PosterEditModal` | Poster create/update/delete modal for group notices. |
+| `Groups\PosterEditModal` | Poster create/update/delete modal for group notices. **The only asset call inside a Livewire view**: `:87` pushes a `Packer::js()` tag for summernote into the `footer_scripts` section, one of the 16 call sites documented in `.docs/assets.md`. Roadmap TODO 33.8 replaces it with a `pwbs_asset()` tag. |
 | `Groups\SpecialDateModal` | Special day configuration modal for date-level overrides. |
 | `Partials\NavBar` | Global top navigation with notifications and language switch. |
 | `Partials\SideMenu` | Main sidebar navigation and role-aware menu sections. |

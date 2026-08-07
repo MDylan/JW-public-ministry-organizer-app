@@ -21,14 +21,15 @@ Each item is intentionally small enough to complete and mark independently.
 
 | Phase | Laravel | PHP required | Interpreter to use | PHPUnit | Collision | Node |
 | --- | --- | --- | --- | --- | --- | --- |
-| Current baseline | 8.83.1 | `^8.0` (pinned to 8.0.9) | `php81` | 9.5 | 5.x | 24.18 (Mix broken) |
-| Phase 4 | 9.x | `^8.0.2` | `php81` (see note) | 9.5 | 6.x | 24.18 (Mix broken) |
-| Phase 5 | 10.x | `^8.1` | `php81`, then switch to `php` (8.3) | 10.x | 7.x | 24.18 (Mix broken) |
-| Phase 7 | 10.x | `^8.1` | `php` (8.3) | 10.x | 7.x | 24.18 (Vite OK) |
+| Current baseline | 8.83.1 | `^8.0` (pinned to 8.0.9) | `php81` | 9.5 | 5.x | 24.18 (unused) |
+| Phase 4 | 9.x | `^8.0.2` | `php81` (see note) | 9.5 | 6.x | 24.18 (unused) |
+| Phase 5 | 10.x | `^8.1` | `php81`, then switch to `php` (8.3) | 10.x | 7.x | 24.18 (unused) |
+| Phase 7 | 10.x | `^8.1` | `php` (8.3) | 10.x | 7.x | 24.18 (only if TODO 52 keeps a build) |
 | Phase 8 | 11.x | `^8.2` | `php` (8.3) OK | 10.x/11.x | 8.x | 24.18 |
 | Phase 9 | 12.x | `^8.2` | `php` (8.3) OK | 11.x | 8.x | 24.18 |
 | Phase 10 | 13.x | `^8.3` | `php` (8.3) OK | 12.x | current major | 24.18 |
 
+- **Node is listed for completeness only.** No phase before 7 uses it: the Mix pipeline is dead (zero `mix()` calls, empty entrypoints, no outputs), and the assets are served by `eusonlito/laravel-packer` until TODO 33.8 replaces it with a PHP helper. Whether Node is ever needed is the open question in the Phase 7 preamble.
 - **Both required runtimes are already installed.** `^8.2` is a caret constraint, so PHP 8.3 satisfies Laravel 11 and 12; no PHP 8.2 install is needed.
 - **Note on Phase 4:** although Laravel 9 declares `^8.0.2`, its officially tested ceiling is PHP 8.2, and the current `nesbot/carbon` line already fatals on PHP 8.3. Stay on `php81` for Laravel 9 and only move to PHP 8.3 once Laravel 10 is in place (Laravel 10.x supports PHP 8.1-8.3).
 - PHP 8.4 is not installed. Laravel 13 accepts `^8.3`, so 8.4 is forward-looking only (TODO 68).
@@ -42,7 +43,7 @@ Each item is intentionally small enough to complete and mark independently.
 - PHP constraint is `^8.0` with `config.platform.php = 8.0.9`, which artificially holds back every dependency resolution.
 - `minimum-stability: dev` with `prefer-stable: true` - risks pulling unstable packages during the upgrade.
 - `composer.lock` was resolved in early 2022 and is roughly four years stale.
-- `config/app.php` hard-registers the dev-only `Barryvdh\Debugbar\ServiceProvider`, which breaks `composer install --no-dev`. It also registers `Eusonlito\LaravelPacker\PackerServiceProvider` as a plain string instead of `::class`.
+- `config/app.php` hard-registers the dev-only `Barryvdh\Debugbar\ServiceProvider`, which breaks `composer install --no-dev`. It also registers `Eusonlito\LaravelPacker\PackerServiceProvider` as a plain string instead of `::class`, with a matching `Packer` alias. TODO 21 decided to remove that package; TODO 33.8 deletes both lines.
 
 ### Test suite (this is the main upgrade asset)
 
@@ -93,8 +94,9 @@ Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the 93
 
 ### Frontend
 
-- Build uses Laravel Mix (`webpack.mix.js`, `laravel-mix ^6.0.6`). No `vite.config.js`, no `package-lock.json`, no `node_modules/`.
-- Local Node is **24.18.0**; Mix 6 / webpack 5 will not build on it. **Vite migration is mandatory, not optional.**
+- **The real asset pipeline is `eusonlito/laravel-packer`, not Mix** - 16 call sites across `layouts/app.blade.php`, `layouts/setup.blade.php` and `livewire/groups/poster-edit-modal.blade.php`, concatenating hand-placed files under `public/` at request time. Measured in **TODO 21**, which decided to remove it (executed in TODO 33.8).
+- **The Mix pipeline is dead.** `webpack.mix.js` and `laravel-mix ^6.0.6` are present, but there are **zero `mix()` calls** in the project, `resources/css/app.css` is 0 bytes, `resources/js/app.js` is the 25-byte default, and the outputs `public/js/app.js` / `public/css/app.css` do not exist. No `vite.config.js`, no `package-lock.json`, no `node_modules/`.
+- Local Node is **24.18.0**, and Mix 6 / webpack 5 will not build on it - but since nothing builds today and nothing consumes the output, **that is not what makes a Vite migration necessary**. See the Phase 7 preamble.
 - `composer.json` `post-autoload-dump` publishes Livewire assets, which breaks under Livewire 3.
 
 ---
@@ -719,10 +721,78 @@ For each package, "assess" means: list every API the project actually consumes, 
   - No route and no scheduled command is added, so `RouteContractSnapshotTest` and `SchedulerRegressionTest` are untouched.
   - Expected changes: as delivered - three test files, no application code.
 
-- [ ] **TODO 21: Assess and decide - `eusonlito/laravel-packer`**
-  - Context: v3.0.1 exists with no Laravel constraint at all. Registered as a **string literal** provider in `config/app.php` plus a `Packer` facade alias.
-  - Likely made redundant by the Vite migration (Phase 7) - assess after that decision, not before.
-  - Expected changes: decision recorded, most likely removal.
+- [x] **TODO 21: Assess and decide - `eusonlito/laravel-packer`** - DONE
+  - Delivered on 2026-08-07. **Decision: remove the package and replace its 16 call sites with a `pwbs_asset()` versioning helper, without concatenation.** The execution is **TODO 33.8**, at the end of Phase 3. The characterization suite is delivered in the same change set as the new **TODO 21.1**. Suite: **1038 -> 1055 tests, 3090 -> 3151 assertions, green.** No application code changed.
+
+  - **CORRECTION 1: this package blocks nothing, and the roadmap said it did.** The entry read *"v3.0.1 exists with no Laravel constraint at all"* and Appendix A filed it under "likely redundant after Vite". The installed **v2.2.6** (2022-04-22) declares, in full:
+
+    ```json
+    "php": ">=5.5",
+    "imagecow/imagecow": "^2.4"
+    ```
+
+    No `illuminate/*`, and **no upper PHP bound**. It fails neither the Phase 5 resolution (PHP 8.1) nor the Phase 10 one (Laravel 13) - it would install under both today, unchanged. The transitive `imagecow/imagecow` v2.4.1 asks only for `php >=5.5` and is pulled in by **this package alone**. So the honest classification is not "blocker" and not "redundant-once-Vite-lands" but **maintenance debt that happens to be free of Composer risk**. That changes what the decision has to be argued on: runtime behaviour, not resolvability.
+
+  - **CORRECTION 2: the Vite dependency is recorded backwards.** The entry deferred this item behind Phase 7 - *"likely made redundant by the Vite migration - assess after that decision, not before"*. Measured:
+    - **Zero `mix()` calls exist in the project**, in the layouts or anywhere else, though TODO 52 instructs replacing them.
+    - `resources/css/app.css` is **0 bytes**; `resources/js/app.js` is the untouched 25-byte Laravel default.
+    - The Mix outputs `public/js/app.js` and `public/css/app.css` **do not exist**, and nothing references them. There is no `node_modules/` and no `package-lock.json`.
+
+    **The Mix pipeline is dead: it does not run, it never ran here, and nothing consumes its output.** Two consequences. Phase 7's stated reason for being mandatory - "Mix 6 will not build on Node 24" - does not hold, because nothing builds today and therefore nothing breaks. And **Vite cannot make Packer redundant**, because Packer is the application's only working asset pipeline and TODO 52 as scoped touches none of its 16 call sites. The dependency runs the other way: decide Packer first, and Vite's real scope follows from that. Pinned by `AssetPipelineKnownGapsTest`.
+
+  - **The consumed surface: two facade methods, 16 call sites.**
+
+    | File | Calls |
+    |---|---|
+    | `resources/views/layouts/app.blade.php` | 9 (3 `css`, 6 `js`) |
+    | `resources/views/layouts/setup.blade.php` | 6 (3 `css`, 3 `js`) |
+    | `resources/views/livewire/groups/poster-edit-modal.blade.php:87` | 1 (`js`) |
+
+    Only `Packer::css()` and `Packer::js()`. **`img()`, `jsDir()` and `cssDir()` are never called** - which means the `imagecow` dependency exists solely to serve dead code. The package ships no routes, migrations, commands or views; the project-side surface is `config/packer.php`, the string-literal provider at `config/app.php:185` and the `Packer` alias at `:238`.
+
+  - **What it actually does here, and it is less than the name suggests.**
+    1. **13 of the 16 calls pass a single, already-minified file** (`all.min.css`, `adminlte.min.css`, `jquery.min.js`, `bootstrap.bundle.min.js`, `adminlte.min.js`, `toastr.min.js`, `sweetalert2.all.min.js`, `summernote-bs4.min.js`). For those the package copies the file to a `{filemtime}-` prefixed name and nothing else. `public/cache/js/*-jquery.js` is 89 KB today: `jquery.min.js` with a semicolon in front. Only **3 calls** concatenate more than one file.
+    2. **It never minifies.** `config/packer.php` sets `'css_minify' => false` **and** `'js_minify' => false`. In this project the package is a concatenator and a timestamp renamer. The one value it genuinely delivers is **cache busting**, which is a `filemtime()` lookup.
+
+  - **Finding 1 - the CSS rewriter breaks the icons it is handed.** `Providers/CSS.php:25` prefixes **every** `url(` with the asset base plus the source file's directory. Correct for relative paths; destructive for anything else. `toastr.min.css` carries four `data:` URIs, and the served `public/cache/css/*-all_style.css` contains, right now:
+
+    ```
+    url(http://kozter.test/plugins/toastr/data:image/png;base64,...)
+    ```
+
+    **All four toastr icons are broken in every non-`local` environment** - and fine locally, because `local` skips packing, which is exactly why nobody noticed. The project gains nothing in exchange: both of its own stylesheets contain zero `url(`.
+
+  - **Finding 2 - it writes into the web root during a request, and that has already cost something.** `process()` runs `mkdir` + `tempnam` + `fopen` + `rename` + `chmod 0644` under `public/` while rendering. `ignore_environments` lists only `local`, so `production` **and** `testing` both write. Twelve artifacts across six directories today, contained by **nine `.gitignore` lines** written for no other purpose (seven `*-cache_*` globs, `/public/cache`, and a misspelled `/public/storages/cache/*` naming a directory that has never existed).
+
+    The concrete damage: `setup.blade.php` targets `/storage/cache/...` (while `app.blade.php` sends the same jQuery to `/cache/...`), so Packer creates the missing directory - and **`public/storage` is a real directory in this repository, not a symlink**, containing nothing but Packer's two files. That is precisely the state in which `php artisan storage:link` reports *"The [public/storage] link already exists"* and **skips the link** - `--force` does not help, since it only removes an `is_link()`. Every public-disk URL then 404s. In production the installer wizard renders before anyone runs `storage:link`, so a fresh deploy reproduces it.
+
+  - **Finding 3 - dead weight.** `imagecow` is installed for an API with zero call sites. The provider still uses the pre-5.8 `protected $defer = true;` with a `provides()` method but does not implement `DeferrableProvider`, so the deferral has been inert for six major versions and the package registers eagerly on every request. And the provider and alias are registered as **string literals**, which is the other half of TODO 25.
+
+  - **Options, priced:**
+
+    | Option | Cost | Verdict |
+    |---|---|---|
+    | **Remove; replace with a `pwbs_asset()` helper, no concatenation** | ~10 lines in the already-autoloaded `app/Helpers/helpers.php`, plus 16 one-line blade edits. Deletes the runtime write into the web root, the nine `.gitignore` lines, `config/packer.php`, `imagecow`, the string-literal provider and the alias - and fixes finding 1 outright. Concatenation is dropped deliberately: it affects 3 of 16 calls and buys nothing measurable over HTTP/2 | **chosen** |
+    | Keep it | No Composer risk, but findings 1 and 2 are live defects and the package has been untouched since 2022. Keeping it also keeps two entries in `config/app.php`'s `providers`/`aliases` arrays, which the Laravel 11 skeleton change makes awkward | rejected |
+    | Upgrade to v3.0.1 | None of the three findings live in the package's version history - one is its own design, two are ours. The web-root writing stays. Buys nothing, costs a re-read of the 3.x API | rejected |
+    | Fold into Vite (TODO 52) | Would mean pulling AdminLTE, jQuery, bootstrap, toastr, sweetalert2 and summernote into a build graph: an order of magnitude more frontend work than TODO 52 describes, on a machine with no Node modules installed. It is a legitimate future direction, not a way to retire this package | rejected for now |
+    | Drop cache busting entirely | Simplest of all, and wrong: it is the one thing the package genuinely provides | rejected |
+
+  - **Why the execution goes in Phase 3.** Same argument as TODO 33.5 and 33.6: the replacement is framework-neutral and provable on Laravel 8 today, so doing it in Phase 3 takes the package and `imagecow` out of the Phase 5, 8, 9 and 10 resolutions at once, and empties two lines of `config/app.php` before the Laravel 11 skeleton change makes them awkward. Finding 2 is also a live bug, not an upgrade concern. Since nothing blocks, **there is no fallback to record** - if TODO 33.8 slips, every later phase simply carries the package unchanged.
+  - **What the replacement must reproduce** (the acceptance criteria are the 17 tests in `tests/Feature/Assets/`): a cache-busting token that follows `filemtime`, `<link rel="stylesheet">` and `<script src>` tags in the positions the layouts expect, and the same set of files reaching the browser. The nine `AssetPipelineKnownGapsTest` assertions are the ones the execution is **required** to break.
+  - **Re-check before executing:** whether `public/storage` is still a real directory on each deployed host (the fix is per-install, not per-release), and whether any asset has since been added to a layout without going through the helper.
+  - Expected changes: as delivered - the decision recorded here, the new TODO 21.1 and TODO 33.8, the TODO 25 / 52 / 53 / 54 / Phase 1 findings / Phase 7 preamble / Appendix A pointers updated, and a new `.docs/assets.md` for a subsystem that had no documentation at all.
+
+- [x] **TODO 21.1: Build the missing characterization suite for the asset pipeline** - DONE
+  - Delivered on 2026-08-07 in the TODO 21 change set. Same reason as TODO 19.1 and 20.1: before it the pipeline had **zero** tests, so "keep", "upgrade" and "remove" were indistinguishable in risk - and every page in the application is served through it.
+  - New `tests/Feature/Assets/`, two files, **17 tests**:
+    - `AssetPipelineTest` (8) - the container binding and the real `public_path()` it points at; the packed URLs the app layout emits outside `local` and the individual source tags it emits inside it; the concatenation order; the single-file copy; the `filemtime` prefix and its tracking of a changed source; the directory tree creation; and the two tag shapes the layouts depend on.
+    - `AssetPipelineKnownGapsTest` (9) - **the findings, asserted as they behave today**, each naming the TODO that owns it. The fix must make these fail; that failure is the reviewable diff.
+  - **A design split worth keeping in later work.** The two layout-rendering tests use the **real** `public/` directory, because only that proves what the browser receives - and it adds no new damage, since the suite already writes there (`SetupFlowTest` renders the setup layout) and every artifact is gitignored. Everything else runs against a **temporary `public_path`** with a directly instantiated `Packer` - which is exactly what `PackerServiceProvider` does, `new Packer($this->config())`, minus the container - and cleans up after itself in `tearDown()`.
+  - **Two measured facts that decide every assertion in the files**, and neither is visible from the call sites: the JS provider prepends a `;` to **every** packed file, so output is never byte-identical to its source even for a single file; and the CSS provider rewrites every `url(` to absolute, which is how finding 1 was found.
+  - **Control experiment, as run** (the TODO 14 / 15 / 19 / 20 discipline): the multi-file `Packer::js` call was deleted from `app.blade.php:77-81` and the suite re-run. **Exactly three tests failed** - the packed-URL test, the local-passthrough test and the call-site count in the gaps file - and nothing else. Line restored, `git diff` empty.
+  - No route and no scheduled command is added, so `RouteContractSnapshotTest` and `SchedulerRegressionTest` are untouched.
+  - Expected changes: as delivered - two test files, no application code.
 
 - [ ] **TODO 22: Confirm the remaining dependencies need only version bumps**
   - Needed:
@@ -751,7 +821,7 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
 - [ ] **TODO 25: Fix provider registration hygiene**
   - Needed:
     - Remove the hard-registered `Barryvdh\Debugbar\ServiceProvider` from `config/app.php` and rely on auto-discovery (or gate it behind an environment check); it is a `require-dev` package and currently breaks `composer install --no-dev`.
-    - Replace the `'Eusonlito\LaravelPacker\PackerServiceProvider'` string literal with `::class`.
+    - Replace the `'Eusonlito\LaravelPacker\PackerServiceProvider'` string literal with `::class`. **Ordering:** TODO 33.8 deletes this line and the matching `Packer` alias outright, so if that item ships first this bullet is moot. Do not do both.
     - Review the `\Debugbar::enable()` call in `app/Providers/AppServiceProvider.php`.
   - Expected changes: `config/app.php`, `app/Providers/AppServiceProvider.php`.
 
@@ -933,6 +1003,21 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - Decide the `weather_monthly_call` counter's fate: it is written at `helpers.php:130-137` and read nowhere. Either give it a display on the admin screen or delete the write. `WeatherKnownGapsTest` pins the current state either way.
   - Expected changes: one new command plus its schedule entry and test-whitelist line, one migration, `Events.php` guards, two language files, and the `.docs/commands.md` row that TODO 20 deliberately left for this item.
 
+- [ ] **TODO 33.8: Remove `eusonlito/laravel-packer`**
+  - **This is the TODO 21 decision.** Unlike 33.5 and 33.6 it unblocks nothing - the package resolves fine under Laravel 13. It is here because the code is framework-neutral and provable today, because it empties two lines of `config/app.php` before the Laravel 11 skeleton change makes them awkward, and because finding 2 is a live bug on every deployed host.
+  - **The replacement, in full:** a `pwbs_asset(string $path): string` helper in the already-autoloaded `app/Helpers/helpers.php` (the file is registered under `composer.json` `autoload.files`, and the `pwbs_` prefix is the house convention). It returns `asset($path)` with a `?v={filemtime}` query appended when the file exists, and plain `asset($path)` when it does not - never a hard failure on a missing asset, and never a write to disk.
+  - **Concatenation is dropped on purpose.** It affects 3 of the 16 call sites and buys nothing measurable over HTTP/2, while the machinery behind it is what writes into the web root. The 3 multi-file calls become individual tags.
+  - Needed:
+    - Rewrite the **16 call sites**: `layouts/app.blade.php` (9), `layouts/setup.blade.php` (6), `livewire/groups/poster-edit-modal.blade.php` (1). Each `{!! Packer::css($src, $out) !!}` becomes `<link rel="stylesheet" href="{{ pwbs_asset($src) }}">`, each `Packer::js` a `<script src="...">`; the three multi-file calls expand to one tag per source, in the same order.
+    - Delete the provider line (`config/app.php:185`) and the `Packer` alias (`:238`). **This also settles the second bullet of TODO 25** - there is no string literal left to convert, so do 33.8 first or drop that bullet.
+    - Delete `config/packer.php`.
+    - Drop `eusonlito/laravel-packer` from `composer.json`; `imagecow/imagecow` goes with it, since nothing else requires it.
+    - Delete the **nine** `.gitignore` lines that exist only for Packer output, including the misspelled `/public/storages/cache/*`. Keep `/public/storage` - that one is for the symlink.
+    - Extend `release/upgrade.php` with `vendor/eusonlito`, `vendor/imagecow` and the scattered `*-cache_*` artifacts under `public/dist/` and `public/plugins/` (the TODO 33.5 precedent).
+    - **Repair `public/storage` on each host.** The stray real directory must be removed so `php artisan storage:link` can finally create the symlink. This is per-install state, not repository state, so the release hook has to handle it: remove the directory only when it is not a link **and** contains nothing but the `cache/` subtree Packer created, then create the link. Refusing to act on a directory with other contents is the safe default.
+  - **Acceptance:** the nine `AssetPipelineKnownGapsTest` assertions fail - that is the point - and `AssetPipelineTest` is rewritten to the new emission (versioned URLs instead of packed filenames, individual tags instead of the two concatenated bundles), keeping its control-experiment property. The toastr icons render in a non-`local` environment, which finding 1 says they do not today.
+  - Expected changes: `app/Helpers/helpers.php`, three blade files, `config/app.php`, `config/packer.php` deleted, `composer.json` / `composer.lock`, `.gitignore`, `release/upgrade.php`, both test files rewritten, and `.docs/assets.md`.
+
 ---
 
 ## Phase 4 - Laravel 8 -> 9 (PHP 8.1)
@@ -1081,25 +1166,40 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
 
 ## Phase 7 - Frontend: Mix -> Vite (on Laravel 10)
 
-Mandatory, not optional: Laravel Mix 6 / webpack 5 does not build on the locally installed Node 24.18.
+**CORRECTED BY TODO 21.** This phase used to open with *"Mandatory, not optional: Laravel Mix 6 / webpack 5 does not build on the locally installed Node 24.18."* That reason does not hold, and the measurement is pinned by `AssetPipelineKnownGapsTest`:
+
+- There are **zero `mix()` calls** in the project - not in the layouts, not anywhere.
+- `resources/css/app.css` is **0 bytes**; `resources/js/app.js` is the untouched 25-byte Laravel default.
+- The outputs `public/js/app.js` and `public/css/app.css` **do not exist**, and nothing references them.
+
+**The Mix pipeline is dead**: it does not run, it never ran here, and nothing consumes its output. Node 24 not being able to build it therefore breaks nothing. What actually serves the application's assets is `eusonlito/laravel-packer` plus hand-placed files under `public/` - and TODO 21 decided to remove that package in Phase 3 (TODO 33.8), replacing it with a `pwbs_asset()` versioning helper and no build step at all.
+
+**So this phase is a choice, not an obligation**, and its scope is an open question rather than a translation exercise: it is worth doing only if we want AdminLTE, jQuery, bootstrap, toastr, sweetalert2 and summernote under a real build graph, which is substantially more frontend work than the items below describe. **Decide that before starting**, and re-scope TODO 52 to whatever is decided. Nothing in Phases 4-13 depends on the answer.
 
 - [ ] **TODO 52: Migrate the build from Laravel Mix to Vite**
-  - Needed:
+  - **Prerequisite: decide the scope above.** If the answer is "keep serving hand-placed assets", the honest version of this item is to **delete** `webpack.mix.js`, `resources/js/`, `resources/css/` and the `laravel-mix` devDependency, and stop there - removing a pipeline that produces nothing rather than porting it.
+  - Needed, if a real build is wanted:
     - Replace `webpack.mix.js` with `vite.config.js`; add `vite` and `laravel-vite-plugin`, drop `laravel-mix`.
-    - Current entrypoints are `resources/js/app.js` and `resources/css/app.css`.
-    - Replace `mix()` asset helpers with the `@vite` directive in `layouts/app.blade.php` and `layouts/setup.blade.php`.
-  - Expected changes: `package.json`, `vite.config.js`, layout files.
+    - The nominal entrypoints are `resources/js/app.js` and `resources/css/app.css`; both are effectively empty, so their contents have to be **written**, not migrated.
+    - Bring the vendor assets under `public/plugins/` and `public/dist/` into the graph, and replace the `pwbs_asset()` tags left by TODO 33.8 with the `@vite` directive in `layouts/app.blade.php`, `layouts/setup.blade.php` and `livewire/groups/poster-edit-modal.blade.php`. (Before TODO 33.8 those are `Packer::` calls - there are **no** `mix()` helpers to replace in either case.)
+    - Rewrite `tests/Feature/Assets/` to the new emission, as TODO 33.8 leaves it.
+  - Expected changes: `package.json`, `vite.config.js`, `resources/js/`, `resources/css/`, three blade files, `.docs/assets.md`.
 
 - [ ] **TODO 53: Establish a reproducible frontend build**
-  - Needed:
+  - **Conditional on TODO 52.** If TODO 52 resolves to "delete the dead pipeline", there is no build to make reproducible and this item disappears with it - `package.json` goes too.
+  - Needed, if a build exists:
     - Commit a `package-lock.json` (none exists today) and verify `npm ci && npm run build` on Node 24.
     - Record the Node/npm version in `upgrade-notes/`.
   - Expected changes: lockfile committed, working production build.
 
-- [ ] **TODO 54: Execute the `eusonlito/laravel-packer` decision**
+- [ ] **TODO 54: Verify the `eusonlito/laravel-packer` removal**
+  - **The execution moved to Phase 3, TODO 33.8.** TODO 21 decided to remove the package and replace its 16 call sites with a `pwbs_asset()` helper; the code is framework-neutral, so it is written on Laravel 8 rather than here. Note that the package never blocked anything - the installed 2.2.6 declares `php >=5.5` and no `illuminate/*`, so it resolves under Laravel 13 unchanged. It was removed for what it does at runtime, not for what it constrains.
+  - **With that moved, this item has no work left.** It reduces to verification.
   - Needed:
-    - Apply the TODO 21 decision. If removed: drop the requirement, the string-literal provider, the `Packer` facade alias, and `config/packer.php`.
-  - Expected changes: `composer.json`, `config/app.php`, `config/packer.php`.
+    - Confirm `eusonlito/laravel-packer` and `imagecow/imagecow` are absent from `composer.json` / `composer.lock`, that `config/packer.php` and the `Packer` provider and alias are gone, and that `vendor/eusonlito/` and `vendor/imagecow/` are gone from deployed hosts (the `release/upgrade.php` lines added by TODO 33.8).
+    - Confirm `public/storage` is a symlink on every host, not the stray real directory Packer created.
+    - If TODO 33.8 slipped, do it before this phase rather than in it - it has no dependency on Laravel 10, and TODO 52 assumes the call sites are already helper-based.
+  - Expected changes: verification only, if TODO 33.8 shipped.
 
 ---
 
@@ -1299,7 +1399,7 @@ Verified against Packagist at the time of writing. **Re-check before each hop** 
 | `mdylan/laraupdater` (was `pcinaglia/laraupdater` 1.0.2) | v2.0.0, own fork | declares `^8.12` through `^13.0` | **Decided (TODO 18): keep the self-updater, move it onto the project's own fork.** Executed in **Phase 3, TODO 33.4**. **The old pin blocked nothing** - 1.0.2 required only `php >=5.4.0`; the earlier "Blocks Phase 8" reading came from the Packagist badge for 1.0.3.4, a version this project never used |
 | `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0, released 2025-04-01) | **Decided (TODO 19): replace in-house and remove.** Executed in **Phase 3, TODO 33.5**. **Blocks twice, and the earlier one was missed:** the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`, so Composer fails at **Phase 5**, not only at Phase 10. That half is a lock bump, not a decision - `composer.json` already declares `^1.6`, which admits 1.13.0. The Phase 10 wall is real: no 1.x line supports Laravel 13 |
 | `rakibdevs/openweather-laravel-api` | 1.9.0 | 12 (v2.0.0, released 2026-07-03) | **Decided (TODO 20): replace with a direct `Http::` client and remove.** Executed in **Phase 3, TODO 33.6**, with the feature finished in TODO 33.7. **Blocks twice, and the roadmap had both wrong:** the installed 1.9.0 declares **no** framework constraint - it would install under Laravel 13 - but its `php ^7.2\|^7.3\|^7.4\|^8.0` excludes 8.1, so Composer fails at **Phase 5**, on PHP. Unlike TODO 19 that half is a **constraint edit**, not a lock bump: `composer.json` declares `^1.9`, which does not admit 2.0.0. The Phase 10 wall is real but belongs to v2.0.0 (`illuminate/support ^8.0\|...\|^12.0`) |
-| `eusonlito/laravel-packer` | 2.2.6 | v3.0.1 declares no Laravel constraint | Likely redundant after Vite (TODO 21, TODO 54) |
+| `eusonlito/laravel-packer` | 2.2.6 | No constraint in either 2.2.6 or v3.0.1 | **Decided (TODO 21): remove and replace with a `pwbs_asset()` helper.** Executed in **Phase 3, TODO 33.8**; TODO 54 reduces to verification. **Blocks nothing:** the installed 2.2.6 requires only `php >=5.5` and `imagecow/imagecow ^2.4` - no `illuminate/*`, no upper PHP bound - so it resolves under Laravel 13 today. Removed for runtime reasons: it writes into the web root during a request (which left `public/storage` a real directory instead of a symlink), corrupts `data:` URIs while rewriting CSS, and never minifies (both `*_minify` flags are `false`). `imagecow` leaves with it - nothing else requires it, and the API it serves has zero call sites |
 | `livewire/livewire` | 2.10.4 | v3 and v4 both support Laravel 10-13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |
 | `laravel/fortify` | 1.10.2 | current | Bump per hop; the vendored route file is the real work (TODO 69) |
 | `astrotomic/laravel-translatable` | 11.10.0 | 13 (v11.17.0 declares `^13.0`) | Version bump only |
