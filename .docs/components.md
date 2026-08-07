@@ -32,7 +32,7 @@ These are mounted directly from `routes/web.php`.
 | `Admin\StaticPageEdit` | `/admin/staticpages/create`, `/admin/staticpages/edit/{staticPage}` | Static page create/edit/delete workflow with translation content. |
 | `Admin\NewsletterEdit` | `/admin/newsletter_edit/{id?}` | Newsletter create/edit/delete and send-target configuration. |
 | `Admin\Statistics` | `/admin/statistics` | Admin statistics dashboard. |
-| `Admin\Translation` | `/admin/translate` | Translation management view integration. |
+| `Admin\Translation` | `/admin/translate` | **Link-out page only.** Reads the `settings.languages` JSON row and renders a locale table whose links are hardcoded URLs (`/languages/{code}/translations`, `/languages`) pointing at the `joedixon/laravel-translation` vendor UI. It calls no package API itself. Roadmap TODO 33.3 grows it into the actual editor and removes the package. |
 | `Groups\ListUsers` | `/groups/{group}/users` | Group membership management, role/sign controls, linking/detaching child-parent groups. |
 | `Groups\NewsList` | `/groups/{group}/news` | Group news listing. |
 | `Groups\UpdateGroupForm` | `/groups/{group}/edit` | Group configuration editor (rules, service days, literature, weather, future changes). |

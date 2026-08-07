@@ -69,7 +69,7 @@ Each item is intentionally small enough to complete and mark independently.
 - `config/filesystems.php` `web` disk uses a bare relative root `'public'` instead of `public_path()`, which is fragile under Flysystem 3. No disk declares `'throw'`.
 - `app/Providers/AppServiceProvider.php` runs a DB query (`ModelsSettings::all()`) during boot inside a bare `catch (\Exception $e) {}`, which will mask upgrade failures.
 - `app/Providers/BladeComponentServiceProvider.php:17` uses the legacy `Blade::component()` view alias, called from `register()` instead of `boot()`.
-- `resources/lang/` must move to `lang/` in Laravel 9; `joedixon/laravel-translation` hardcodes assumptions about that path.
+- `resources/lang/` must move to `lang/` in Laravel 9: **22 locale directories plus `vendor/`, 130 files, 906 KB**, of which only 7 locales hold more than the installer stub. ~~`joedixon/laravel-translation` hardcodes assumptions about that path.~~ **Corrected by TODO 17:** the package resolves its path through `$this->app['path.lang']`, which follows the move; only its `vendor:publish` target was a literal, and everything is already published. The package is removed in TODO 33.3 regardless.
 - `app/Http/Middleware/setUserLastActivity.php` has a lowercase class name (risky on case-sensitive deploy targets). `RedirectIfUnansweredTerms` exists but is never registered.
 - ~~`app/Notifications/GroupPriorityMessageNotificationTest.php` is a production class with a `Test` suffix, which some PHPUnit discovery configurations will pick up.~~ **Closed by TODO 15**, which deleted it. It was an accidental `make:notification` stub with no dispatch site, and it was inert under today's `phpunit.xml` - the hazard was the PHPUnit 10 schema rewrite in TODO 40. A guard now rejects any `*Test.php` under `app/`.
 
@@ -438,7 +438,7 @@ Full coverage is required **before** any framework change. Every item here is La
 
 Every blocker gets its own assess-then-decide pair. The **decision** is recorded here; the **execution** happens in the phase where the package first blocks (Phase 8 for Laravel 11 blockers, Phase 10 for Laravel 13 blockers). See Appendix A for the verified compatibility matrix.
 
-**Check the constraint before assuming a package blocks anything.** A package with an *unbounded* framework constraint never fails a Composer resolution - it installs on Laravel 13 and would only misbehave at runtime. When that is the case and the replacement is framework-neutral, the execution should be pulled **forward** into Phase 3 rather than left in a hop, so the hop carries one dependency less. TODO 16 is the worked example, executed as TODO 33.2.
+**Check the constraint before assuming a package blocks anything.** A package with an *unbounded* framework constraint never fails a Composer resolution - it installs on Laravel 13 and would only misbehave at runtime. When that is the case and the replacement is framework-neutral, the execution should be pulled **forward** into Phase 3 rather than left in a hop, so the hop carries one dependency less. TODO 16 is the worked example, executed as TODO 33.2. **TODO 17 is the second, and it found the same misclassification** - two of the four packages this roadmap called "blockers" declare no framework constraint at all. Read the vendor `composer.json`, not the Packagist support badge, before writing "Blocks Phase N".
 
 For each package, "assess" means: list every API the project actually consumes, then price out three options - **fork/vendor into the project**, **replace with an alternative or in-house code**, or **drop the feature**.
 
@@ -512,10 +512,64 @@ For each package, "assess" means: list every API the project actually consumes, 
   - **Re-check before executing:** whether a maintained fork or alternative appeared on Packagist since this assessment. It would not change the decision - the in-house code is smaller than the integration cost of any package - but it belongs in the same re-check discipline as TODO 22.
   - Expected changes: as delivered - the decision recorded here, the new TODO 33.2, and the Appendix A / TODO 58 / TODO 12.2 pointers updated, plus the two `.docs` undercount corrections.
 
-- [ ] **TODO 17: Assess and decide - `joedixon/laravel-translation`**
-  - Context: installed v1.1.2; latest stable v2.2.0 supports at most Laravel 10 (a `3.x-dev` branch exists). Blocks Laravel 11.
-  - Consumed surface: `app/Http/Livewire/Admin/Translation.php`, `config/translation.php`, and hardcoded assumptions about the `resources/lang` path (which moves in Phase 4).
-  - Expected changes: decision recorded, including whether `3.x-dev` is viable or a self-hosted translation UI is cheaper.
+- [x] **TODO 17: Assess and decide - `joedixon/laravel-translation`** - DONE
+  - Delivered on 2026-08-07. **Decision: remove the package now and replace its UI with an in-house Livewire editor; adopt `elegantly/laravel-translator` later as the engine underneath it.** The removal is **not** Phase 8 work - see the first correction - and is recorded as the new **TODO 33.3** at the end of Phase 3; the engine adoption is the new **TODO 66.1** in Phase 10. Suite untouched: **957 tests, 2867 assertions, green.** The only files changed outside this roadmap are `.docs/routes.md` and `.docs/components.md`, both of which under-documented this integration (see below).
+
+  - **The three required options, priced:**
+
+    | Option | Cost | Verdict |
+    | --- | --- | --- |
+    | Fork / vendor the package | ~1100 lines of actually-consumed PHP (`File` driver 369, `DriverInterface` 128, abstract `Translation` 101, provider 181, 2 controllers 117, manager 47, `Scanner` 62, requests/rules 96) **plus** a Vue 2 + Tailwind 0.6 front-end, in a repository the project would then own. Upstream is dead since 2020-04-13. **Not rejected for incompatibility - see below, a Laravel 13 fork is about half a day's PHP work** | rejected |
+    | **Replace with in-house code** | ~350-450 lines: one `LangFiles` repository plus growing the existing 18-line `Admin\Translation` shim into a real editor. Zero new runtime dependencies, framework-neutral, provable green on Laravel 8 today | **chosen** |
+    | Drop the feature | Not available. The `translator` role, the `/admin/translate` page and 22 locales depend on it, and the `var_export()` shape of `resources/lang/en/*.php` proves the editor has actually been used to write them | rejected |
+
+  - **Why the fork was rejected, stated precisely, because "unmaintained" is not the same as "incompatible".** A fork **could** be made Laravel 13 compatible, and the PHP side is roughly half a day. The Laravel 13 upgrade guide touches **nothing** the driver depends on - no change to the `path.lang` binding, `Application::langPath()`, translation loader registration or `Illuminate\Translation\Translator` - and the driver's actual work is `Filesystem` plus `Arr::dot`/`Arr::set` and `Str::before`/`after`, all stable API. That is why it installs on Laravel 13 today. The full list of what a fork would have to fix:
+    1. Delete `src/InterfaceDatabaseLoader.php` - it implements `Illuminate\Translation\LoaderInterface`, removed in **Laravel 5.4**; only an `interface_exists` guard in `TranslationBindingsServiceProvider.php:48` keeps it from fataling.
+    2. Delete `database/factories/` - Laravel 5-style `$factory->define()`, and not autoloaded anyway (the PSR-4 map covers `src` only). Dead already.
+    3. Convert the 7 string route actions to `[Controller::class, 'method']`. The `namespace` group attribute still works, so this removes doubt rather than a break.
+    4. `src/Rules/LanguageNotExists.php`: `Illuminate\Contracts\Validation\Rule` -> `ValidationRule`. Deprecated since Laravel 10 but **still present in 13** and absent from the 13 removal list, so not even urgent.
+    5. Drop the 5 global helpers in `resources/helpers.php`, `str_before()` above all - it redefines a helper Laravel dropped in 6. **Laravel 13 adds `symfony/polyfill-php85`, which defines global `array_first()` / `array_last()`, and the upgrade guide warns explicitly about this class of collision with legacy global-helper packages.** Checked while assessing: the project's own `app/Helpers/helpers.php` is entirely `pwbs_`-prefixed, so the app itself is clear.
+    6. Optionally delete `TranslationBindingsServiceProvider` and the database driver. That provider is the one piece that swaps a framework core singleton (`translator`, `translation.loader`), and it is inert here because `driver => 'file'`.
+  - **The fork loses on cost, not on compatibility:**
+    1. **The front-end is the real liability and a fork inherits it.** Vue 2 (EOL 2023-12-31), axios 0.18, Tailwind 0.6 (2018), laravel-mix 4, shipped as a 302 KB CSS and 114 KB JS prebuilt bundle. Nothing about Laravel 13 breaks it - static assets keep working - but nobody will ever modernize it, and doing so costs more than writing the editor.
+    2. **~1100 lines owned to keep a UI that is being replaced anyway**, and it keeps a *second* UI stack (Tailwind/Vue) inside a Bootstrap/AdminLTE/Livewire application. The in-house editor is ~350-450 lines precisely because it reuses the layout, `AppComponent`, the gate and Livewire that already exist.
+    3. **It does not close the split brain.** `File::addLanguage()` would still know nothing about `settings.languages`. That is a mismatch between the package and *this* application's architecture, not a package defect, so a fork inherits it by definition.
+    4. **Six hops of re-validation** plus a `repositories` entry and a hosted repository, against zero.
+    5. **It buys none of what `elegantly/laravel-translator` was wanted for** - missing/dead key detection, CSV export/import, AI translation would all still be separate work.
+  - **A fourth option was proposed by the user and priced: `elegantly/laravel-translator`** (v4.2.0, released 2026-07-31). It is adopted, but **not as the replacement for the UI**, because:
+    - **It ships no web UI at all.** It is a CLI toolkit (`translator:translate|missing|dead|sort|export|import|proofread|add-locale`) plus a `Translator` facade. The UI advertised in its README is **Laratranslate**, a separate **commercial** product ($29 single-project / $49 unlimited, one-time, one year of updates, licence key plus a private Composer repository).
+    - It requires `illuminate/contracts: ^11.0||^12.0||^13.0` and PHP `^8.2`, so it **cannot be installed before Phase 8** under any decision.
+    - It pulls **7 runtime dependencies** (`laravel/ai`, `nikic/php-parser ^5.1`, `spatie/laravel-package-tools`, `spatie/simple-excel`, `symfony/finder ^7.0||^8.0`, `symfony/intl ^7.0||^8.0`, `illuminate/contracts`) where the current package pulls **zero**.
+    - Laratranslate's own compatibility statement says "Laravel 11 and 12" - it does **not** claim Laravel 13, while the base package already declares `^13`. That is an open risk at this roadmap's end state, and its production authorization hook (a gate or middleware config that would let `translator` and `mainAdmin` in) is **not publicly documented** - it sits behind the licence. Buying it would mean committing before that can be verified.
+    - So the UI is built in-house, which keeps translator access behind the project's own already-proven `is-translator` gate, and the package comes in later purely as an **engine**: sorting, missing/dead key detection, CSV export/import, AI translation.
+  - **The user asked for the current package to be removed now and the new one introduced later, and that is achievable with no loss of function**, because what is removed is the *UI* and what arrives later is the *engine*. They are not the same thing, so there is no gap in between.
+
+  - **CORRECTION to this roadmap's own classification: the package blocks nothing, and never will.** This entry, `TODO 58` and Appendix A all said "Blocks Phase 8" / "Blocks Laravel 11". `vendor/joedixon/laravel-translation/composer.json:12` reads **`"require": {}`** - the require block is completely empty. No `php` constraint, no `illuminate/*`, nothing. Composer cannot fail on it at any hop; it would install silently on Laravel 13 and only misbehave at runtime. Identical shape to the TODO 16 finding, and the second time this roadmap mistook "unmaintained" for "blocking".
+  - **CORRECTION to the stated consumed surface.** This entry named `app/Http/Livewire/Admin/Translation.php`. That file is **18 lines and calls no package API at all** - it reads one `Settings` row, and its view links out to the vendor UI through two **hardcoded URLs** (`resources/views/livewire/admin/translation.blade.php:53,78` -> `/languages/...`, not `route()`). The real surface is elsewhere:
+
+    | Piece | Where | Size |
+    | --- | --- | --- |
+    | 7 auto-registered routes (`languages.*`) | `vendor/.../routes/web.php`, loaded unconditionally by `loadRoutesFrom` | in the **app** fixture: `tests/Fixtures/route-contracts.json:398-479` |
+    | Published views | `resources/views/vendor/translation/` | 12 files, byte-identical to vendor (`diff -r` clean) |
+    | Published assets | `public/vendor/translation/` | `main.css` 302 992 B + `app.js` 114 692 B - Vue 2, Tailwind 0.6 |
+    | Published lang files | `resources/lang/vendor/translation/` | de/en/fr/nl identical to vendor + **`hu` (52 + 6 lines), project-authored, does not exist upstream** |
+    | `config/translation.php` | project | one divergence from the package default: `:26` middleware `['web','auth','can:is-translator','password.confirm']` |
+    | 5 global helper functions | `vendor/.../resources/helpers.php`, `require`d at boot | `set_active`, `strs_contain`, `array_diff_assoc_recursive`, `str_before`, `array_undot` |
+
+  - **CORRECTION to the path claim** (repeated at the baseline list `Code-level upgrade risks` and at TODO 38). "Hardcodes assumptions about the `resources/lang` path" is only half true. At **runtime** the driver takes its path from the container: `TranslationManager.php:40` passes `$this->app['path.lang']` into `File`, which follows the Laravel 9 move to `lang/` for free. The single genuine literal is the **publish target**, `TranslationServiceProvider.php:131` -> `resource_path('lang/vendor/translation')`, and that only matters during `vendor:publish` - everything is already published. TODO 38 would therefore not have broken the UI.
+
+  - **The 5 global helpers leave safely with the package.** A grep across the whole project excluding `vendor/` finds `set_active()` **only** in the published `resources/views/vendor/translation/nav.blade.php:7,13`, which is deleted in the same change set. The other four have zero call sites. This mattered: `resources/helpers.php:84` redefines `str_before()`, a global helper Laravel dropped in 6 - had any application code used it, removing the package would have been a fatal.
+
+  - **Two vendor migrations have already run.** `php81 artisan migrate:status` shows `2018_08_29_200844_create_languages_table` and `2018_08_29_205156_create_translations_table` as applied, batch **1**. They are loaded straight from `vendor/` via `loadMigrationsFrom` (`TranslationServiceProvider.php:118`) and run on every `migrate` **and** on every `RefreshDatabase` boot, even though `config/translation.php:14` sets `driver => 'file'` and neither table is ever read. The languages migration also seeds rows through an Eloquent model inside the migration body. Removing the package takes both out of the migration path and leaves the two tables orphaned in the database - TODO 33.3 must decide explicitly what happens to them, and TODO 32 touches them anyway.
+
+  - **Language management is split-brained, and the replacement closes it.** `Admin\Settings::languageAdd()` (`Settings.php:89-112`) writes **only** the `settings.languages` JSON blob and never creates a language directory. The package's `File::addLanguage()` writes **only** the directory and never registers the locale in that blob. Neither half knows about the other, so a locale added in the admin UI has no files, and a locale added in the translation UI never appears in the language switcher. Same shape as TODO 16's "split responsibility", and the single strongest structural argument for owning this code.
+
+  - **What the replacement must reproduce** (the acceptance criteria are the existing tests):
+    - The three access assertions in `tests/Feature/RouteAdditionalBehaviorRegressionTest.php:43-73`, the only test that renders the vendor UI today: a `registered` user gets **403**, a `translator` gets redirected to `password.confirm`, and with a confirmed password the page returns **200**. This is the user's stated hard requirement - `translator` and `mainAdmin` must reach the editor in production - and it is inherited for free by keeping the `/admin/translate` route exactly as it is (`routes/web.php:195-197`), already pinned by `LivewireRouteMountedComponentsTest:90`.
+    - Reading and writing both file shapes: per-group PHP arrays (`lang/{locale}/{group}.php`) and the 5 root JSON files (`de.json`, `fr.json`, `hu.json`, `ro.json`, `sk.json`).
+    - The source-locale reference column, which is what makes translating a 22-locale tree tractable.
+  - **Re-check before executing:** whether Laratranslate has published a Laravel 13 line and a documented authorization hook. It would not change the decision - the in-house editor is needed regardless, since it is what keeps the feature alive from Phase 3 to Phase 10 - but it would change whether TODO 66.1 is worth extending. Same re-check discipline as TODO 22.
+  - Expected changes: as delivered - the decision recorded here, the new TODO 33.3 and TODO 66.1, the TODO 58 / TODO 38 / Appendix A / baseline pointers updated, plus the two `.docs` corrections.
 
 - [ ] **TODO 18: Assess and decide - `pcinaglia/laraupdater`**
   - Context: pinned at exactly `1.0.2`; latest `1.0.3.4` supports at most Laravel 10. Blocks Laravel 11. Registered as a provider in `config/app.php`, with `config/laraupdater.php`.
@@ -653,6 +707,29 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - Control step: run the GDPR suite **before** removing the package, with the imports already re-pointed at `app/Support/Gdpr/`. Green there proves the traits were copied faithfully, separately from the removal.
   - Expected changes: 3 new files under `app/`, 5 deletions, `composer.json`, `routes/web.php`, `app/Console/Kernel.php`, the route fixture, 3 test files removed or rewritten, and `.docs/routes.md`, `.docs/commands.md`, `.docs/middleware.md`, `.docs/models.md`.
 
+- [ ] **TODO 33.3: Remove `joedixon/laravel-translation` and build an in-house translation editor**
+  - **This is the execution of the TODO 17 decision.** It sits in Phase 3 rather than Phase 8 because the package's `require` block is **empty**, so it blocks no Composer resolution at any hop, while the replacement uses only stable filesystem and Eloquent APIs - it can be written and proven green on Laravel 8 today, which takes one package, 417 KB of Vue 2 / Tailwind 0.6 assets and 5 injected global functions out of every subsequent hop. Read TODO 17 first; it carries the measurements, the corrected consumed surface and the split-brain finding.
+  - Needed:
+    - **Write the editor first, prove it green, and only then remove the package.** Two independent failure sources otherwise, exactly as TODO 33.2 warns.
+    - New `app/Support/Translation/LangFiles.php`, a thin repository next to the `app/Support/Gdpr/` precedent:
+      - `locales()` reads the **`settings.languages` JSON blob**, i.e. the application's own registry, not the filesystem. This is what closes the split brain at its source.
+      - `groups(string $locale)` lists the `{locale}/*.php` basenames plus a `json` pseudo-group for the root `{locale}.json`.
+      - `read()` / `write()` flatten with `Arr::dot()` and write back in `var_export()` shape. **Decide and record whether saving one key reformats the whole file** - `resources/lang/en/*.php` is already `var_export`-shaped (the old UI wrote it), but `resources/lang/hu/*.php` is hand-written with `return [` and four-space indent, and hu is the only complete locale.
+      - `ensureLocale()` creates the directory, which `Admin\Settings::languageAdd()` has never done.
+      - **Resolve the path through `App::langPath()`, never `resource_path('lang')`.** That is what makes TODO 38 a no-op for this code.
+    - Grow `app/Http/Livewire/Admin/Translation.php` from the 18-line shim into the editor: locale and group selectors, search filter, source-locale reference column, per-key save, add key, add locale. Keep it an `AppComponent` subclass and keep the AdminLTE/Bootstrap markup used by every other admin page - the vendor UI's Tailwind chrome is not being reproduced.
+    - **Salvage before deleting:** `resources/lang/vendor/translation/hu/translation.php` (52 lines) and `hu/errors.php` (6 lines) are project-authored Hungarian strings that do not exist upstream. Fold the reusable labels into the app's own `resources/lang/hu/` tree; the other four locales there are byte-identical to vendor and can go.
+    - Delete: the `joedixon/laravel-translation` line in `composer.json`, `config/translation.php`, `resources/views/vendor/translation/` (12 files), `public/vendor/translation/` (~417 KB), `resources/lang/vendor/translation/`, and the 7 `languages.*` entries from `tests/Fixtures/route-contracts.json`.
+    - **Leave `routes/web.php:195-197` untouched.** `admin.translate` keeps its `can:is-translator` + `password.confirm` stack, which is what preserves production access for `translator` and `mainAdmin`.
+    - **Decide what happens to the orphaned `languages` and `translations` tables.** Both migrations are applied (batch 1) and load from `vendor/`; once the package is gone they vanish from the migration path and the tables remain in the database with two seeded rows. Either add a drop migration or record deliberately that they stay until TODO 32 squashes.
+  - Verification:
+    - **The write path is a live hazard in tests.** The editor writes real files under `App::langPath()`, and under `APP_ENV=testing` that is the **real `resources/lang`** - the same trap TODO 07 hit with `Admin\Settings::saveOthers()` rewriting `.env.testing`. `LangFiles` must take an injectable base path and the tests must point it at a temporary directory. Without that, the suite shreds its own language files.
+    - `tests/Feature/RouteAdditionalBehaviorRegressionTest.php:43-73` is the only test that renders the vendor UI; rewrite it against the new component and keep all three assertions intact (403 / `password.confirm` redirect / 200).
+    - New `tests/Feature/Livewire/AdminTranslationEditorTest.php` for the read/write round trip, both file shapes (PHP group and root JSON), the source-locale column and the add-key / add-locale paths. `AdminComponentsTest:294` and `LivewireRouteMountedComponentsTest:90` stay as they are.
+    - Route fixture 70 -> 63 app routes. `RouteContractSnapshotTest::test_every_named_route_is_accounted_for` needs no edit - it is a set difference with no hardcoded count; only the exact-snapshot test forces the fixture edit.
+    - `migrate:status` and a `RefreshDatabase` boot both lose two tables; confirm no test asserted on them.
+  - Expected changes: 1 new file under `app/Support/Translation/`, 1 component and 1 view rewritten, 4 directories and 1 config deleted, `composer.json`, the route fixture, 2 test files rewritten or added, and `.docs/routes.md`, `.docs/components.md`.
+
 ---
 
 ## Phase 4 - Laravel 8 -> 9 (PHP 8.1)
@@ -689,9 +766,9 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
 
 - [ ] **TODO 38: Move `resources/lang/` to `lang/`**
   - Needed:
-    - Laravel 9 relocates the language directory to the project root. 13+ locale directories plus JSON files.
-    - `joedixon/laravel-translation` hardcodes path assumptions - verify `app/Http/Livewire/Admin/Translation.php` and `config/translation.php` after the move. This directly feeds the TODO 17 decision.
-  - Expected changes: directory move, config updates, translation UI re-tested.
+    - Laravel 9 relocates the language directory to the project root. Measured in TODO 17: **22 locale directories plus `vendor/`**, 130 files, 906 KB - but only 7 locales hold more than the `installer_messages.php` stub, and 5 root JSON files (`de/fr/hu/ro/sk.json`) move with them. `resources/lang/vendor/cookie-consent/` (27 locales) moves too.
+    - **The `joedixon/laravel-translation` path warning previously recorded here was wrong and the package is gone by now.** TODO 17 measured that the driver took its path from `$this->app['path.lang']`, which follows the move; only its publish target was a literal. TODO 33.3 removed the package in Phase 3 and requires the replacement to resolve through `App::langPath()`, so the editor should need no change here - **verify it, do not assume it**: re-run `AdminTranslationEditorTest` and confirm `LangFiles` resolves to the new root.
+  - Expected changes: directory move, `AdminTranslationEditorTest` re-run, translation UI re-tested.
 
 ---
 
@@ -851,7 +928,8 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
 
 - [ ] **TODO 58: Execute the Laravel 11 blocker decisions**
   - Needed:
-    - Apply the TODO 17 (`joedixon/laravel-translation`) and TODO 18 (`pcinaglia/laraupdater`) decisions. Both block here - they declare bounded Laravel constraints, so Composer stops on them.
+    - Apply the TODO 18 (`pcinaglia/laraupdater`) decision. It declares a bounded Laravel constraint, so Composer stops on it here.
+    - **The translation package is no longer part of this item.** TODO 17 measured that its `require` block is **empty**, so it blocks nothing; its removal and the in-house editor that replaces it are done earlier, in **TODO 33.3** (Phase 3), and the `elegantly/laravel-translator` engine arrives later, in **TODO 66.1** (Phase 10). If TODO 33.3 has slipped, do it before touching the framework rather than here - it is Laravel-8-compatible work and does not belong in a hop.
     - **The GDPR package is no longer part of this item.** TODO 16 measured that its constraint is unbounded, so it blocks nothing; its replacement is done earlier, in **TODO 33.2** (Phase 3). If that has slipped, do it before touching the framework rather than here - it is Laravel-8-compatible work and does not belong in a hop.
     - The TODO 12 GDPR/setup tests and the TODO 13 encrypted round-trip tests are the acceptance criteria.
   - Expected changes: depends on the recorded decisions; likely new code under `app/` replacing vendor packages.
@@ -919,6 +997,17 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - Verified as available: `astrotomic/laravel-translatable` (`^13.0` in its constraint), `laravolt/avatar` 7.x, `spatie/laravel-cookie-consent` 3.5+, and the other `spatie/*` packages.
     - `laravolt/avatar` 7.x requires PHP >= 8.3 and Intervention Image 4 - check the avatar generation in `app/Http/Livewire/Groups/Messages.php:173,176`, which writes to the `web` disk.
   - Expected changes: composer bumps plus avatar-generation verification.
+
+- [ ] **TODO 66.1: Adopt `elegantly/laravel-translator` as the engine under the translation editor**
+  - **This is the second half of the TODO 17 decision**, and it is optional in the sense that the feature already works without it: TODO 33.3 delivered the editor in Phase 3, so nothing is broken while this waits. Read TODO 17 first.
+  - It sits in Phase 10 rather than Phase 8 because the package pulls **7 runtime dependencies** (`laravel/ai`, `nikic/php-parser ^5.1`, `spatie/laravel-package-tools`, `spatie/simple-excel`, `symfony/finder ^7.0||^8.0`, `symfony/intl ^7.0||^8.0`, `illuminate/contracts ^11.0||^12.0||^13.0`). Doing it here means one Composer resolution against the final stack instead of three across the 11 -> 12 -> 13 hops. It is technically installable from Phase 8 if it is wanted sooner.
+  - Needed:
+    - Add `elegantly/laravel-translator` and delegate `App\Support\Translation\LangFiles::read()` / `write()` to its `php` and `json` drivers through the `Translator` facade.
+    - Wire the analysis commands the in-house editor deliberately did not reimplement: `translator:missing`, `translator:dead`, `translator:sort`, and the CSV `translator:export` / `translator:import`. Surface missing-key counts per locale in the editor - with 22 locales and 2 complete ones, that is the feature with the most practical value.
+    - Optionally expose AI translation (`translator:translate`, `translator:proofread`) from the editor. It requires `laravel/ai` credentials, so it must degrade cleanly when unconfigured.
+  - **Verify before executing:** whether the facade actually exposes a per-key read/write API. The public documentation only shows the high-level `getMissingTranslations()` / `translateTranslations()` / `sortTranslations()` calls, not a single-key write. **If it does not, keep `LangFiles` as the writer** and use the package purely for analysis, export/import and AI translation. That does not weaken the TODO 17 decision, because the editor is already working by then.
+  - **Explicitly not in scope: Laratranslate.** It is a commercial UI ($29 / $49, licence key plus a private Composer repository) whose Laravel 13 support is unstated and whose production authorization hook is undocumented. If it is ever revisited, both must be confirmed **before** purchase, and it would replace the in-house editor rather than complement it.
+  - Expected changes: `composer.json`, `App\Support\Translation\LangFiles` refactored to delegate, the editor component extended, `AdminTranslationEditorTest` extended, and `.docs/commands.md` for the new Artisan commands.
 
 - [ ] **TODO 67: Walk the official Laravel 13 upgrade guide**
   - Needed:
@@ -999,7 +1088,7 @@ Verified against Packagist at the time of writing. **Re-check before each hop** 
 | `facade/ignition` | 2.17.4 (dev) | 8 | **Replace in Phase 4** with `spatie/laravel-ignition`, then absorbed into the framework at Laravel 11 |
 | `doctrine/dbal` | 3.3.2 | - | **Remove in Phase 8** - Laravel 11 reimplemented `change()` natively |
 | `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | unbounded `>=5.5`, last release **2020-01-06** | **Decided (TODO 16): replace in-house and remove.** Executed in **Phase 3, TODO 33.2**. **Blocks nothing** - the unbounded constraint means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
-| `joedixon/laravel-translation` | 1.1.2 | 10 (v2.2.0; `3.x-dev` exists) | **Blocks Phase 8** - decision required (TODO 17) |
+| `joedixon/laravel-translation` | 1.1.2 | unbounded - **`"require": {}`**, last release **2020-04-13** | **Decided (TODO 17): remove and replace the UI with an in-house Livewire editor.** Executed in **Phase 3, TODO 33.3**; `elegantly/laravel-translator` arrives as the engine in **Phase 10, TODO 66.1**. **Blocks nothing** - the empty require block means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
 | `pcinaglia/laraupdater` | 1.0.2 (exact pin) | 10 (v1.0.3.4) | **Blocks Phase 8** - decision required (TODO 18) |
 | `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0) | **Blocks Phase 10** - decision required (TODO 19) |
 | `rakibdevs/openweather-laravel-api` | 1.9.0 | 12 (v2.0.0) | **Blocks Phase 10** - decision required (TODO 20) |

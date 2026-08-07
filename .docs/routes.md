@@ -171,6 +171,22 @@ Inside nested `verified` -> `profileFull` middleware:
 | Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit/delete, `/groups/{group}/statistics`, `/groups/{group}/history` |
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
+## Package-Registered Translation Routes
+
+These 7 named routes are **not defined in `routes/*.php`**. `joedixon/laravel-translation` registers them from its own route file via `loadRoutesFrom`, using the middleware stack declared in `config/translation.php:26`. They are live in production, they are pinned in `tests/Fixtures/route-contracts.json`, and `Admin\Translation` links to them by hardcoded URL. Roadmap TODO 33.3 removes all of them together with the package.
+
+| Method | URI | Name | Middleware |
+|---|---|---|---|
+| GET | `/languages` | `languages.index` | `web`, `auth`, `can:is-translator`, `password.confirm` |
+| GET | `/languages/create` | `languages.create` | same |
+| POST | `/languages` | `languages.store` | same |
+| GET | `/languages/{language}/translations` | `languages.translations.index` | same |
+| POST | `/languages/{language}` | `languages.translations.update` | same |
+| GET | `/languages/{language}/translations/create` | `languages.translations.create` | same |
+| POST | `/languages/{language}/translations` | `languages.translations.store` | same |
+
+The URL prefix comes from `config('translation.ui_url')`, which is baked into each route path rather than applied as a group prefix - so changing it silently breaks the hardcoded links in `resources/views/livewire/admin/translation.blade.php:53,78`.
+
 ## API Routes (`routes/api.php`)
 
 | Method | URI | Middleware | Action |
