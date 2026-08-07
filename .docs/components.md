@@ -78,7 +78,7 @@ These are used from other Livewire views or layouts.
 |---|---|
 | `Events\Modal` | Day modal for event creation/edit/accept/reject flows, poster and bulk actions. |
 | `Events\EventEdit` | Event editor form used from modal/calendar workflows. |
-| `Groups\Messages` | Embedded group message board block (priority + permission checks). |
+| `Groups\Messages` | Embedded group message board block (priority + permission checks). **Writes files while rendering**: for every message author without one, `render()` generates a `laravolt/avatar` PNG and stores it as `avatars/avatar-{user_id}.png` on the `web` disk, guarded by a `Storage::exists()` check so it happens once per user. The view addresses the same file as `asset('public/avatars/...')`; the `web` disk's root is the relative path `public`, so the two only line up together. This is the project's **only** `laravolt/avatar` call site, and roadmap TODO 39.1 rewrites it for Intervention Image 4. Pinned by `tests/Feature/Avatar/AvatarGenerationTest`. |
 | `Groups\PosterEditModal` | Poster create/update/delete modal for group notices. **The only asset call inside a Livewire view**: `:87` pushes a `Packer::js()` tag for summernote into the `footer_scripts` section, one of the 16 call sites documented in `.docs/assets.md`. Roadmap TODO 33.8 replaces it with a `pwbs_asset()` tag. |
 | `Groups\SpecialDateModal` | Special day configuration modal for date-level overrides. |
 | `Partials\NavBar` | Global top navigation with notifications and language switch. |

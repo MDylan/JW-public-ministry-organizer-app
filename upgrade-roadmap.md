@@ -444,7 +444,9 @@ Every blocker gets its own assess-then-decide pair. The **decision** is recorded
 
 **And the rule cuts both ways - TODO 19 proved it.** The fourth package was misclassified in the **opposite** direction: `protonemedia/laravel-verify-new-email` 1.6.0 requires `illuminate/support: ^8.67 || ^9.0`, a real upper bound, so it fails **five phases earlier** than the "Blocks Phase 10" this roadmap recorded - at Phase 5. So the rule is not "the blockers do not block". It is: **read the installed version's `composer.json`, and read both ends of the constraint.** Note also what that measurement did *not* change: the `composer.json` constraint (`^1.6`) already admits every later 1.x, so an early failure of this kind can be a lock bump rather than a decision. Check the declared range before pricing options.
 
-**And there is a third shape, which TODO 20 found: the bounded constraint need not be on Laravel at all.** `rakibdevs/openweather-laravel-api` 1.9.0 declares **no** framework requirement - by the first rule it blocks nothing - but it does declare `php: ^7.2|^7.3|^7.4|^8.0`, and Laravel 10 requires `php ^8.1`. So it fails at **Phase 5**, on PHP. The full rule is therefore: read the installed version's `composer.json`, read **both ends** of each constraint, and read **every** requirement in it - not just the `illuminate/*` line. Note also what differs from TODO 19: here `composer.json` declares `^1.9`, which does **not** admit the fixed 2.0.0, so this one is a constraint edit rather than a lock bump.
+**And there is a third shape - though the example this paragraph used to give was wrong, which is its own lesson.** It read: *"`rakibdevs/openweather-laravel-api` 1.9.0 declares `php: ^7.2|^7.3|^7.4|^8.0`, and Laravel 10 requires `php ^8.1`, so it fails at Phase 5 on PHP."* **TODO 22 re-measured it and that is false.** Composer's `^8.0` means `>=8.0.0 <9.0.0`, so it admits 8.1, 8.3 and 8.4; the pipe-separated list reads as an enumeration but is not one. The package therefore blocks **nothing at all** - no framework constraint, no PHP ceiling below 9 - which puts it back in the TODO 16/17 category: it would resolve silently all the way to Laravel 13 and misbehave only at runtime. **Read a caret as a range, not as a version.**
+
+**The third shape is real all the same, and TODO 22 found the honest example: the breaking change need not be in the package you are bumping.** `laravolt/avatar` has a normal bounded constraint (`illuminate ^6-^9`), so it fails visibly at Phase 5. What the constraint does not say is that every Laravel-12/13-capable line of it requires `intervention/image ^3.4` or `^4.0`, and that the API the project calls disappeared between Intervention 2 and 3. The full rule is therefore: read the installed version's `composer.json`, read **both ends** of each constraint as ranges, read **every** requirement in it - and when a bump crosses a major of a *transitive* library, look at what the project calls through it.
 
 For each package, "assess" means: list every API the project actually consumes, then price out three options - **fork/vendor into the project**, **replace with an alternative or in-house code**, or **drop the feature**.
 
@@ -666,8 +668,9 @@ For each package, "assess" means: list every API the project actually consumes, 
 
   - **CORRECTION 1, and this package is misclassified in BOTH directions at once.** The roadmap said, in three places: *"installed v1.9.0; latest v2.0.0 supports at most Laravel 12. Blocks Laravel 13."*
     - **The installed v1.9.0 declares no `illuminate/*` or `laravel/*` requirement at all.** Its entire `require` block is `php: ^7.2|^7.3|^7.4|^8.0` and `guzzlehttp/guzzle: ^6.3|^7.0`. It never fails a Composer resolution on the framework version - it would install under Laravel 13 today. That is the TODO 16/17/18 pattern.
-    - **What it does bound is PHP**, and `^8.0` excludes 8.1. Laravel 10 requires `php ^8.1`, so the resolution fails at **Phase 5** - five phases earlier than recorded, and on a dependency the roadmap never mentioned. That is the TODO 19 pattern.
-    - **Unlike TODO 19, this is not merely a lock bump.** `composer.json:32` declares `"^1.9"`, which does **not** admit 2.0.0. Getting past Phase 5 without replacing the package requires editing the constraint.
+    - ~~**What it does bound is PHP**, and `^8.0` excludes 8.1, so the resolution fails at **Phase 5**.~~ **WRONG - corrected by TODO 22 on 2026-08-08.** Composer's `^8.0` is `>=8.0.0 <9.0.0`, so it admits 8.1, 8.3 and 8.4; `^7.2|^7.3|^7.4|^8.0` reads as an enumeration but is a union of ranges. Verified with `Composer\Semver\Semver::satisfies()` against 8.0.9 / 8.1.0 / 8.1.30 / 8.2.0 / 8.3.0 / 8.4.0 - all pass. **The installed 1.9.0 blocks nothing whatsoever**, which moves it into the TODO 16/17 category rather than the TODO 19 one: it would resolve silently through every hop to Laravel 13 and misbehave only at runtime.
+    - **This does not change the decision, and it is worth being clear why.** The package is replaced for the six findings below - the feature does not work - not for what it constrains. What the correction changes is the *fallback*: if TODO 33.6 slips there is now **no forcing function at any hop**, so nothing will fail loudly to remind anyone. That argues for doing 33.6 rather than against it.
+    - ~~**Unlike TODO 19, this is not merely a lock bump.** `composer.json:32` declares `"^1.9"`, which does not admit 2.0.0.~~ Still true as a statement about the constraint, but moot as a *fallback*: there is no resolution failure to escape, so no constraint edit is forced at Phase 5 either.
     - **v2.0.0 is one month old** - released 2026-07-03 after a 3.5-year gap - and requires `php ^8.0|^8.1|^8.2|^8.3|^8.4` with `illuminate/support ^8.0|^9.0|^10.0|^11.0|^12.0`. So the Phase 10 wall the roadmap describes is real, but it belongs to **v2.0.0**, not to the installed version. The package is not marked abandoned.
     - Net: a genuine **double block - Phase 5 on PHP, Phase 10 on Laravel** - and the roadmap stated neither correctly.
 
@@ -794,11 +797,77 @@ For each package, "assess" means: list every API the project actually consumes, 
   - No route and no scheduled command is added, so `RouteContractSnapshotTest` and `SchedulerRegressionTest` are untouched.
   - Expected changes: as delivered - two test files, no application code.
 
-- [ ] **TODO 22: Confirm the remaining dependencies need only version bumps**
-  - Needed:
-    - Verify at execution time that `astrotomic/laravel-translatable`, `laravolt/avatar`, `spatie/laravel-activitylog`, `spatie/laravel-cookie-consent`, `spatie/laravel-failed-job-monitor`, `spatie/calendar-links`, `petercoles/multilingual-country-list`, `laravel/fortify`, `laravel/tinker`, and `guzzlehttp/guzzle` still declare Laravel 13 support.
-    - Appendix A records the state at the time of writing; re-check before each hop, since upstream support moves.
-  - Expected changes: refreshed Appendix A.
+- [x] **TODO 22: Confirm the remaining dependencies need only version bumps** - DONE
+  - Delivered on 2026-08-08. **Answer: eight of the ten do, two do not** - and one of the two is not a version bump at all, but a forced `intervention/image` migration that breaks the only call site it has. Appendix A is rewritten from measurement, including a per-hop version ladder. The characterization suite the answer needed is the new **TODO 22.1**; the execution is the new **TODO 39.1**, in Phase 5. Suite: **1055 -> 1065 tests, 3151 -> 3183 assertions, green.** No application code changed.
+
+  - **Method, so the numbers can be re-derived rather than trusted.** Three sources: `composer.lock` for the **installed** version and its actual `require` block; `composer.json` for the **declared** constraint, which is what decides lock bump versus constraint edit; and `repo.packagist.org/p2/{package}.json` for every stable release. The matching is done with `Composer\Semver\Semver::satisfies()` loaded out of the installed Composer phar, so it is the resolver's own semantics rather than a caret range read by eye. Every figure below is one of those three lookups.
+
+  - **The eight that really are version bumps** - the declared constraint already admits a Laravel-13-capable release, so each is a lock bump:
+
+    | Package | Installed | Declared | L13-capable release |
+    |---|---|---|---|
+    | `astrotomic/laravel-translatable` | 11.10.0 | `^11.9` | 11.17.0 |
+    | `spatie/laravel-activitylog` | 4.4.0 | `^4.0.0` | 4.12.3 |
+    | `spatie/laravel-cookie-consent` | 3.2.0 | `^3.1` | 3.5.0 |
+    | `spatie/laravel-failed-job-monitor` | 4.1.1 | `^4.1` | 4.5.0 |
+    | `spatie/calendar-links` | 1.7.1 | `^1.6` | n/a - **no framework constraint in any version** |
+    | `petercoles/multilingual-country-list` | 1.2.12 | `^1.2` | 1.2.14 |
+    | `laravel/fortify` | 1.10.2 | `^1.7` | 1.36.2 |
+    | `guzzlehttp/guzzle` | 7.4.1 | `^7.0.1` | 7.15.3 - **and not the 8.x line, see correction 4** |
+
+  - **CORRECTION 1: `laravolt/avatar` fails five phases earlier than this roadmap assumes, and it is not a version bump.** TODO 66 (Phase 10) reads *"`laravolt/avatar` 7.x requires PHP >= 8.3 and Intervention Image 4 - check the avatar generation"*. The installed **4.1.7** declares `illuminate/support: ^6.0|^7.0|^8.0|^9.0`, so **Composer fails at Phase 5**, on the Laravel 10 hop. And `composer.json` declares `^4.1`, which admits **no** release that supports Laravel 10 or later - so this is a constraint edit, not a lock bump, and it cannot be deferred by touching the lockfile.
+
+    The version lines, measured:
+
+    | Line | Laravel | PHP | `intervention/image` |
+    |---|---|---|---|
+    | 4.1.7 *(installed)* | `^6`-`^9` | >=7.3 | `^2.5` |
+    | 5.1.0 | `^8`-`^11` | >=8.0 | `^2.7` |
+    | 6.1.2 | `^10`-`^13` | >=8.1 | **`^3.4`** |
+    | 6.5.1 | `^10`-`^13` | >=8.2 | **`^4.0`** |
+    | 7.0.0 | `^10`-`^13` | >=8.3 | `^4.0` |
+
+    The real work is the **Intervention Image 2 -> 3/4** jump, and it lands on exactly one line of application code:
+
+    ```php
+    // app/Http/Livewire/Groups/Messages.php:174-176
+    $avatar = Avatar::create($message->user->name);
+    $image  = $avatar->getImageObject();
+    Storage::disk('web')->put($path.$file, $image->stream("png"));
+    ```
+
+    In Intervention Image 2, `stream()` is **not a real method**: it is an `@method` line on the class docblock (`Image.php:53`) dispatched by `__call()` (`Image.php:106`) to `Commands\StreamCommand`. The v4 `Image.php` has no `stream()`, no `__call()` and no `Commands` namespace - it has `encode(EncoderInterface)` and `encodeUsingFormat(Format)`. `getImageObject()` survives the jump (6.5.1 still declares it, returning `\Intervention\Image\Image`), so the call site fails at the *next* hop rather than at the facade. **Decision: go straight to `^6.5` at Phase 5** - 6.5.1 covers Laravel 10 through 13 and needs PHP >= 8.2, which the phase already provides, so it is one jump and one break instead of two. Executed as **TODO 39.1**; pinned by TODO 22.1.
+
+  - **CORRECTION 2: `laravel/tinker` needs a constraint edit at Phase 10.** No 2.x release supports Laravel 13 - the line stops at 2.10.2 / Laravel 12. Support arrives in **3.0.0** (`php ^8.1`, `illuminate ^8.0` through `^13.0`), which `^2.5` does not admit. Appendix A called this "version bump only", which would have surfaced as a resolution failure in the middle of the Laravel 13 hop.
+
+  - **CORRECTION 3: `barryvdh/laravel-debugbar` is the same shape, in `require-dev`.** The 3.x line stops at 3.15.4 / Laravel 12; Laravel 13 needs **4.0.10+**, and `^3.6` does not admit it. Recorded in TODO 66 with correction 2, since both are one-line constraint edits in the same hop.
+
+  - **CORRECTION 4: the guzzle 8 line is a trap, and Appendix A was inviting it.** `laravel/framework` v13.24.0 declares `guzzlehttp/guzzle: ^7.8.2` in **`require`** - not `require-dev`, not `suggest`. Guzzle **8.0.2** exists (2026-08-05), so "bump it like the others" is a resolution failure rather than an upgrade. The correct verdict is **stay on `^7`**; 7.15.3 is the target.
+
+  - **CORRECTION 5: for three packages the newest release is the wrong target.**
+    - `spatie/laravel-activitylog` **5.0.0** requires `php ^8.4`, above this roadmap's PHP 8.3 target. **Stay on 4.x** - 4.12.3 covers Laravel 13 and needs only `php ^8.1`.
+    - `laravel/fortify` **1.37.0** raises its floor to `illuminate ^11` / `php ^8.2` and adds **`laravel/passkeys` as a hard requirement**. **1.36.2** is the last release covering Laravel 10 through 13 without it. Since `routes/fortify.php` is a hand-patched copy of Fortify's own route file (TODO 69), new passkey routes appear there as a reconciliation problem, not as a feature. **Pin 1.36.2**; 1.37+ is a separate decision.
+    - `spatie/calendar-links` **2.0.1** requires `php ^8.3`, and `^1.6` does not admit the 2.x line. It does not matter: the package declares **no `illuminate/*` constraint in any version**, so it never blocks a hop. 1.11.1 is the last 1.x and is admitted today. Moving to 2.x is an optional cleanup, not upgrade work.
+
+  - **CORRECTION 6, and it is this roadmap's own, in six places: a caret was read as a version.** TODO 20 recorded that `rakibdevs/openweather-laravel-api` 1.9.0 *"declares `php ^7.2|^7.3|^7.4|^8.0`, and `^8.0` excludes 8.1"*, and concluded it fails the Phase 5 resolution on PHP. It does not. Composer's `^8.0` is `>=8.0.0 <9.0.0`; the pipe-separated list looks like an enumeration of minor versions but is a union of ranges, and the last one swallows 8.1 through 8.4. Verified with `Semver::satisfies()` against 8.0.9, 8.1.0, 8.1.30, 8.2.0, 8.3.0 and 8.4.0 - all six pass.
+
+    Combined with the fact TODO 20 got right - no `illuminate/*` requirement at all - **the installed 1.9.0 blocks nothing at any hop**, which puts it in the TODO 16/17 category: it resolves silently to Laravel 13 and misbehaves only at runtime. This changes no decision (the package is replaced because the weather feature does not work), but it removes the forcing function TODO 33.6 was assumed to have, and that is worth knowing before relying on a hop to fail loudly. Corrected in the Phase 2 preamble, TODO 20, TODO 33.6, TODO 39, TODO 65 and Appendix A.
+
+  - **A maintenance question answered rather than deferred.** Appendix A carried *"`petercoles/multilingual-country-list` - small/niche - verify maintenance status at Phase 10"*. It is alive: **1.2.14 (2026-04-11)** added `~13` to its `illuminate/support` list. It is a lock bump, and nothing about it needs to wait for Phase 10.
+
+  - **The per-hop ladder is in Appendix A.** For every package that survives the upgrade, the **lowest** release admitting each of Laravel 9 through 13 is measured and tabulated there, so the Phase 4 / 5 / 8 / 9 / 10 items can read a version number instead of estimating one. Two entries in it are worth carrying in the head: `laravolt/avatar` crosses the Intervention boundary between L11 (5.1.0) and L12 (6.1.2), and `laravel/tinker` crosses a major between L12 (2.10.2) and L13 (3.0.0).
+
+  - **Re-check before each hop.** This measurement is dated 2026-08-08 and upstream moves. The cheap re-run is the method above against the three or four packages whose floor rises during that hop; the ladder column tells you which those are. The one thing not worth re-checking is `spatie/calendar-links`, which has never declared a framework constraint.
+  - Expected changes: as delivered - the answer recorded here, the new TODO 22.1 and TODO 39.1, the TODO 39 / 66 / 69 pointers updated, Appendix A rewritten with the ladder, and `.docs/components.md`, which had never recorded that the message board writes files.
+
+- [x] **TODO 22.1: Build the missing characterization suite for avatar generation** - DONE
+  - Delivered on 2026-08-08 in the TODO 22 change set. Same reason as TODO 19.1, 20.1 and 21.1: correction 1 says a package has to move across a breaking library boundary, and the code it lands on had **zero** tests.
+  - New `tests/Feature/Avatar/AvatarGenerationTest`, **10 tests**: the mechanism (`Avatar::create()->getImageObject()` returns an `Intervention\Image\Image`, `->stream('png')` a PSR-7 `StreamInterface`, the bytes carry the PNG signature and the configured 100x100 size, the driver is GD); the integration (rendering `Groups\Messages` with one message writes `avatars/avatar-{user_id}.png` to the `web` disk, an empty board writes nothing, and a second render does not overwrite); the disk-root and view-prefix pairing; and three gap assertions - the `stream()` tripwire, the single call site, and the declared-constraint measurement from correction 1.
+  - **The tripwire is directional, which is the point.** It asserts four things that all reverse under Intervention Image 4: `stream()` is *not* a real method today, `__call()` *is* one, `Commands\StreamCommand` exists, and `encodeUsingFormat()` does *not*. The moment the new library lands, that test fails and the failure is the review.
+  - **It writes to the real `web` disk**, because only that proves where the file lands - the disk's root is the relative path `'public'` while the view addresses it as `asset('public/avatars/...')`, and that pairing is easy to break during the migration. It adds no new damage: `public/avatars/*` is gitignored (`.gitignore:5`), and `tearDown()` deletes what the test created.
+  - **Control experiment, run twice** (the TODO 14 / 15 / 19 / 20 / 21 discipline). Neutralizing the `Storage::exists()` guard at `Messages.php:173` failed **exactly one** test, the "generated once" one. Commenting out the `Storage::put()` at `:176` failed **exactly two**, that one and the write test - and nothing else in either run. Restored, `git diff` empty.
+  - No route and no scheduled command is added, so `RouteContractSnapshotTest` and `SchedulerRegressionTest` are untouched.
+  - Expected changes: as delivered - one test file, no application code.
 
 ---
 
@@ -977,7 +1046,7 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   - Expected changes: ~250-300 lines under `app/`, one route registration, `config/verify-new-email.php` re-pointed, `composer.json`, two language files, `release/upgrade.php`, and the `.docs` entries added by TODO 19.
 
 - [ ] **TODO 33.6: Replace `rakibdevs/openweather-laravel-api` with a direct `Http::` client**
-  - **This is the first half of the TODO 20 decision.** It sits in Phase 3 for the same reason as 33.5: the installed 1.9.0 blocks at **Phase 5 on PHP** (`php ^8.0` excludes 8.1) and v2.0.0 blocks at **Phase 10 on Laravel** (`illuminate ^12.0`), and writing framework-neutral replacement code here removes both without ever editing the constraint. Read TODO 20 first; it carries the measurements and the six findings.
+  - **This is the first half of the TODO 20 decision.** It sits in Phase 3 for the same reason as 33.5: the replacement code is framework-neutral and provable on Laravel 8 today, so writing it here takes the package out of every later resolution at once. **Note the TODO 22 correction to TODO 20**: the installed 1.9.0 does **not** block at Phase 5 - `php ^8.0` admits 8.1 - so it blocks nothing at any hop, and only v2.0.0 has a Laravel ceiling (`illuminate ^12.0`). That removes the forcing function, not the reason: the weather feature does not work today, which is what this item fixes. Read TODO 20 first; it carries the measurements and the six findings.
   - **The consumed surface is two GETs.** `helpers.php:111-113` is the only place the package is touched: `getCurrentByCity()` -> `data/2.5/weather` and `get3HourlyByCity()` -> `data/2.5/forecast`. Nothing else in the project references `RakibDevs\`.
   - **Acceptance criteria already exist: the 25 tests in `tests/Feature/Weather/` (TODO 20.1)**, written against the vendor code, so they are the before-and-after comparison. **Plus one criterion those tests cannot express today:** the replacement must come with `Http::fake()` coverage of the success and failure branches - the coverage that is impossible while `WeatherClient` hard-wires its own Guzzle client. Follow `tests/Feature/Middleware/CheckRecaptchaTest.php`.
   - Needed:
@@ -1069,8 +1138,21 @@ This is where the interpreter switches. Laravel 10.x supports PHP 8.1 through 8.
     - `laravel/framework` to `^10.0`, `nunomaduro/collision` to `^7.0`, PHPUnit to `^10.0`.
     - Reconcile Monolog 3 logging changes against `config/logging.php`.
     - **`protonemedia/laravel-verify-new-email` fails the resolution here if TODO 33.5 has slipped**, and this is the only place in the roadmap where it does so before Phase 10. Measured in TODO 19: the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`. It is a lock bump, not a decision - `composer.json` already declares `^1.6`, so 1.13.0 resolves once `config.platform.php` stops pinning 8.0.9 (TODO 24). If TODO 33.5 shipped, the package is gone and this line is moot.
-    - **`rakibdevs/openweather-laravel-api` fails the resolution here too if TODO 33.6 has slipped**, and for a different reason than every other blocker: the installed 1.9.0 declares no framework constraint at all, but its `php: ^7.2|^7.3|^7.4|^8.0` excludes the 8.1 this phase requires. Measured in TODO 20. Unlike the line above this one is **not** a lock bump - `composer.json` declares `^1.9`, which does not admit 2.0.0 - so the fallback is a constraint edit to `^2.0`. That buys everything up to Laravel 12 and nothing beyond it, because v2.0.0 requires `illuminate/support ^8.0|...|^12.0`. If TODO 33.6 shipped, the package is gone and this line is moot.
+    - **`rakibdevs/openweather-laravel-api` does NOT fail here - corrected by TODO 22.** This line used to say it did, on PHP. It does not: the installed 1.9.0 declares no framework constraint and its `php ^7.2|^7.3|^7.4|^8.0` admits 8.1 through 8.4, because `^8.0` is a range and not a version. If TODO 33.6 has slipped, the package installs cleanly here and at every later hop, and stays broken at runtime instead - which is worse, not better, since nothing announces it. Do 33.6; do not rely on this phase to force it.
+    - **`laravolt/avatar` fails the resolution here too, and unlike the two above it cannot be waved through.** Measured in TODO 22: the installed 4.1.7 declares `illuminate/support ^6.0|^7.0|^8.0|^9.0`, so Composer stops here - and `composer.json` declares `^4.1`, which admits **no** release supporting Laravel 10 or later. So this is neither a lock bump nor a one-line constraint edit: every Laravel-12/13-capable line of the package requires `intervention/image ^3.4` or `^4.0`, where the API the project calls no longer exists. **TODO 39.1 is the work**; do it in the same PR as this item, because the framework bump does not resolve without it.
   - Expected changes: composer updates plus the PHPUnit work in TODO 40.
+
+- [ ] **TODO 39.1: Migrate `laravolt/avatar` to `^6.5` and Intervention Image 4**
+  - **This is the execution half of TODO 22, correction 1.** Read it first: the package has exactly one call site in the whole project, and the break is in the imaging library underneath it rather than in the package's own API.
+  - **Why `^6.5` and not `^5.1` or `^7.0`.** 6.5.1 covers Laravel 10 through 13, so one jump carries the package to the end of the roadmap; it needs PHP >= 8.2, which this phase already provides. Going to 5.1.0 instead would keep Intervention Image 2 and change no code, but the same break would then land at Phase 9 (Laravel 12 needs 6.1.2), in a busier hop. 7.0.0 buys nothing over 6.5.1 except a PHP 8.3 floor.
+  - Needed:
+    - `composer.json`: `laravolt/avatar` from `^4.1` to `^6.5`. `intervention/image` moves 2.7.2 -> 4.x transitively; it is not declared directly and should not become so.
+    - Rewrite the one call site, `app/Http/Livewire/Groups/Messages.php:174-176`. `$image->stream("png")` has no v4 equivalent by that name - use `$image->encodeUsingFormat(Format::PNG)`, whose `EncodedImageInterface` is stringable, and pass it to the same `Storage::disk('web')->put()`. Keep the `Storage::exists()` guard at `:173`; it is what stops the board regenerating every avatar on every render.
+    - Reconcile `config/laravolt/avatar.php` against the 6.x config: at minimum the `driver` key (Intervention 4 uses driver *classes*, not the string `'gd'`) and the `generator` binding. The font paths (`config/fonts/`) and the 100x100 dimensions should survive unchanged - the suite asserts both.
+    - Rewrite the TODO 22.1 tripwire to the new API. The four reversed assertions are the acceptance criteria, not collateral damage.
+  - **Acceptance, and the split matters.** Three tests in `AvatarGenerationTest` name the old world and are *expected* to be rewritten: the `stream()` tripwire (all four of its assertions reverse), the driver assertion (`'gd'` becomes a driver class), and the constraint measurement, which asserts `^4.1` / 4.1.7 / intervention 2.7.2 and is the record of the starting state. **The other seven must pass untouched**, because none of them mentions the library: a PNG of the configured 100x100 size arrives at `avatars/avatar-{user_id}.png` on the `web` disk, once per author, never on an empty board, never overwritten, with the disk root and the view prefix still a matched pair. If any of those seven needs editing, the migration changed behaviour - that is the thing to look at, not the thing to fix in the test.
+  - **Watch the disk-root pairing.** The `web` disk's root is the relative path `'public'` and the view addresses the same file as `asset('public/avatars/avatar-{id}.png')`. Nothing in this item should touch either, and a test asserts the pair.
+  - Expected changes: `composer.json` / `composer.lock`, one Livewire component, `config/laravolt/avatar.php`, one test file, and `.docs/components.md`.
 
 - [ ] **TODO 40: Migrate the test layer to PHPUnit 10**
   - Needed:
@@ -1292,18 +1374,23 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
 
 - [ ] **TODO 65: Resolve the Laravel 13 package blockers**
   - **`protonemedia/laravel-verify-new-email` is no longer part of this item.** TODO 19 decided to replace it in-house, and the replacement is done earlier, in **TODO 33.5** (Phase 3), because the code is framework-neutral and Laravel 8 compatible. If TODO 33.5 has slipped, do it before touching the framework rather than here. Note the fallback if it slipped *and* the schedule is tight: the package installs fine through Laravel 12 by bumping the lock to 1.13.0, so only the Laravel 13 hop actually forces it.
-  - **`rakibdevs/openweather-laravel-api` is no longer part of this item either.** TODO 20 decided to replace it with a direct `Http::` client, and the replacement is done earlier, in **TODO 33.6** (Phase 3), for the same reason: the code is framework-neutral and Laravel 8 compatible. Note that the roadmap's original claim was wrong in both directions - the installed 1.9.0 declares no framework constraint and so blocks nothing here, while its `php ^8.0` already blocks at Phase 5; the Laravel 13 wall belongs to v2.0.0, which the declared `^1.9` does not even admit.
+  - **`rakibdevs/openweather-laravel-api` is no longer part of this item either.** TODO 20 decided to replace it with a direct `Http::` client, and the replacement is done earlier, in **TODO 33.6** (Phase 3), for the same reason: the code is framework-neutral and Laravel 8 compatible. The roadmap's original "Blocks Laravel 13" was wrong, and so was TODO 20's own replacement for it: **the installed 1.9.0 blocks at no hop at all** - no framework constraint, and `php ^8.0` admits 8.1 through 8.4 (measured in TODO 22). The Laravel 13 wall belongs to v2.0.0, which the declared `^1.9` does not admit - but nothing forces anyone there, so if 33.6 slipped the package is simply still here, still broken.
   - **With both packages moved forward, this item has no blockers left.** It reduces to verification.
   - Needed:
     - Confirm that neither `protonemedia/laravel-verify-new-email` nor `rakibdevs/openweather-laravel-api` is still in `composer.json`, and that `vendor/protonemedia/` and `vendor/rakibdevs/` are gone from deployed hosts (the `release/upgrade.php` lines added by TODO 33.5 and 33.6).
-    - If either replacement slipped, do it before touching the framework rather than here. The fallbacks, both measured: `protonemedia` installs fine through Laravel 12 by bumping the lock to 1.13.0; `rakibdevs` needs a `composer.json` edit to `^2.0` and still stops at Laravel 12.
+    - If either replacement slipped, do it before touching the framework rather than here. The fallbacks, both measured: `protonemedia` installs fine through Laravel 12 by bumping the lock to 1.13.0; `rakibdevs` needs **no** composer change at all to resolve here (TODO 22 correction) - which is exactly why it has to be checked deliberately rather than waited for.
   - Expected changes: verification only, if TODO 33.5 and 33.6 both shipped.
 
 - [ ] **TODO 66: Bump the remaining packages to their Laravel 13 lines**
+  - **Rewritten from the TODO 22 measurement.** `laravolt/avatar` is no longer part of this item - it fails at Phase 5, not here, and its migration is TODO 39.1. What is left is mostly lock bumps plus **two one-line constraint edits** that the previous wording hid.
   - Needed:
-    - Verified as available: `astrotomic/laravel-translatable` (`^13.0` in its constraint), `laravolt/avatar` 7.x, `spatie/laravel-cookie-consent` 3.5+, and the other `spatie/*` packages.
-    - `laravolt/avatar` 7.x requires PHP >= 8.3 and Intervention Image 4 - check the avatar generation in `app/Http/Livewire/Groups/Messages.php:173,176`, which writes to the `web` disk.
-  - Expected changes: composer bumps plus avatar-generation verification.
+    - **Lock bumps, already admitted by `composer.json`:** `astrotomic/laravel-translatable` -> 11.17.0, `spatie/laravel-activitylog` -> 4.12.3, `spatie/laravel-cookie-consent` -> 3.5.0, `spatie/laravel-failed-job-monitor` -> 4.5.0, `petercoles/multilingual-country-list` -> 1.2.14, `laravel/sail` -> 1.65.0. The per-hop ladder in Appendix A has the exact floors if an intermediate hop needs one.
+    - **Constraint edits - these fail the resolution otherwise:** `laravel/tinker` `^2.5` -> `^3.0` (no 2.x release supports Laravel 13; the line stops at 2.10.2), and `barryvdh/laravel-debugbar` `^3.6` -> `^4.0` (the 3.x line stops at 3.15.4).
+    - **`laravel/fortify`: pin at 1.36.2.** It is the last release covering Laravel 10 through 13 without pulling `laravel/passkeys`, which 1.37.0 added as a hard requirement while raising its floor to `illuminate ^11` / `php ^8.2`. Taking 1.37+ means reconciling new passkey routes into the hand-patched `routes/fortify.php` - see TODO 69. That is a feature decision, not an upgrade step, and it does not belong in this hop.
+    - **`guzzlehttp/guzzle`: stay on `^7`.** 8.0.2 exists, and `laravel/framework` v13 declares `guzzlehttp/guzzle: ^7.8.2` in `require` - so bumping the major is a resolution failure. 7.15.3 is the target.
+    - **`spatie/laravel-activitylog`: stay on 4.x.** 5.0.0 requires `php ^8.4`, above this roadmap's target; 4.12.3 covers Laravel 13 on `php ^8.1`.
+    - **`spatie/calendar-links`: nothing to do.** It declares no framework constraint in any version, so it never blocked. The 2.x line (`php ^8.3`) is an optional cleanup outside this roadmap.
+  - Expected changes: `composer.json` (two constraint edits) and `composer.lock`.
 
 - [ ] **TODO 66.1: Adopt `elegantly/laravel-translator` as the engine under the translation editor**
   - **This is the second half of the TODO 17 decision**, and it is optional in the sense that the feature already works without it: TODO 33.3 delivered the editor in Phase 3, so nothing is broken while this waits. Read TODO 17 first.
@@ -1336,6 +1423,7 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
   - Needed:
     - `routes/fortify.php` is a hand-patched copy of Fortify's own route file, loaded via `Fortify::ignoreRoutes()` from `app/Providers/FortifyServiceProvider.php` inside a `Route::group(['namespace' => 'Laravel\Fortify\Http\Controllers'])`. The `namespace` group option is deprecated and should be removed (the file already uses FQCN array syntax).
     - Reconcile against the current Fortify route set: `PasswordController` was added, and the 2FA confirmation flow now uses `two_factor_confirmed_at`.
+    - **Know where the version line sits before starting.** Measured in TODO 22: Fortify **1.37.0** adds `laravel/passkeys` as a hard requirement and registers passkey routes, so a hand-patched route file has to absorb them. TODO 66 deliberately pins at **1.36.2** to keep that out of the upgrade. If this item decides to move closer to default registration, taking 1.37+ becomes reasonable - but it is a feature decision made here, not a side effect of a composer bump.
     - Decide whether to keep fully custom routing or move closer to default registration. The custom `checkRecaptcha` middleware on login/register/forgot-password and the `authenticateThrough()` pipeline with `RedirectIfTwoFactorConfirmed` must be preserved either way.
     - Verify the `DisableTwoFactorAuthentication` singleton override still binds.
   - Expected changes: `routes/fortify.php`, `app/Providers/FortifyServiceProvider.php`, `.docs/fortify-routes.md`.
@@ -1384,36 +1472,63 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
 
 ## Appendix A - Package Compatibility Matrix
 
-Verified against Packagist at the time of writing. **Re-check before each hop** (TODO 22).
+**Re-measured on 2026-08-08 by TODO 22**, and this table is now derived rather than remembered. The method is in that item: `composer.lock` for the installed version's real `require` block, `composer.json` for the declared constraint, Packagist's p2 endpoint for every stable release, and `Composer\Semver\Semver::satisfies()` - the resolver's own matching - to decide which admits what.
 
-| Package | Installed | Highest supported Laravel | Verdict |
-| --- | --- | --- | --- |
-| `laravel/framework` | 8.83.1 | - | Target `^13.0` (PHP `^8.3`) |
-| `laravelcollective/html` | 6.3.0 | - | **Remove** - zero usage, provider already commented out (TODO 23) |
-| `fideloper/proxy` | 4.4.1 | 8 | **Remove in Phase 4** - framework-native since Laravel 9 |
-| `fruitcake/laravel-cors` | 2.1.0 | 8 | **Remove in Phase 4** - framework-native since Laravel 9 |
-| `facade/ignition` | 2.17.4 (dev) | 8 | **Replace in Phase 4** with `spatie/laravel-ignition`, then absorbed into the framework at Laravel 11 |
-| `doctrine/dbal` | 3.3.2 | - | **Remove in Phase 8** - Laravel 11 reimplemented `change()` natively |
-| `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | unbounded `>=5.5`, last release **2020-01-06** | **Decided (TODO 16): replace in-house and remove.** Executed in **Phase 3, TODO 33.2**. **Blocks nothing** - the unbounded constraint means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
-| `joedixon/laravel-translation` | 1.1.2 | unbounded - **`"require": {}`**, last release **2020-04-13** | **Decided (TODO 17): remove and replace the UI with an in-house Livewire editor.** Executed in **Phase 3, TODO 33.3**; `elegantly/laravel-translator` arrives as the engine in **Phase 10, TODO 66.1**. **Blocks nothing** - the empty require block means Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
-| `mdylan/laraupdater` (was `pcinaglia/laraupdater` 1.0.2) | v2.0.0, own fork | declares `^8.12` through `^13.0` | **Decided (TODO 18): keep the self-updater, move it onto the project's own fork.** Executed in **Phase 3, TODO 33.4**. **The old pin blocked nothing** - 1.0.2 required only `php >=5.4.0`; the earlier "Blocks Phase 8" reading came from the Packagist badge for 1.0.3.4, a version this project never used |
-| `protonemedia/laravel-verify-new-email` | 1.6.0 | 12 (v1.13.0, released 2025-04-01) | **Decided (TODO 19): replace in-house and remove.** Executed in **Phase 3, TODO 33.5**. **Blocks twice, and the earlier one was missed:** the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`, so Composer fails at **Phase 5**, not only at Phase 10. That half is a lock bump, not a decision - `composer.json` already declares `^1.6`, which admits 1.13.0. The Phase 10 wall is real: no 1.x line supports Laravel 13 |
-| `rakibdevs/openweather-laravel-api` | 1.9.0 | 12 (v2.0.0, released 2026-07-03) | **Decided (TODO 20): replace with a direct `Http::` client and remove.** Executed in **Phase 3, TODO 33.6**, with the feature finished in TODO 33.7. **Blocks twice, and the roadmap had both wrong:** the installed 1.9.0 declares **no** framework constraint - it would install under Laravel 13 - but its `php ^7.2\|^7.3\|^7.4\|^8.0` excludes 8.1, so Composer fails at **Phase 5**, on PHP. Unlike TODO 19 that half is a **constraint edit**, not a lock bump: `composer.json` declares `^1.9`, which does not admit 2.0.0. The Phase 10 wall is real but belongs to v2.0.0 (`illuminate/support ^8.0\|...\|^12.0`) |
-| `eusonlito/laravel-packer` | 2.2.6 | No constraint in either 2.2.6 or v3.0.1 | **Decided (TODO 21): remove and replace with a `pwbs_asset()` helper.** Executed in **Phase 3, TODO 33.8**; TODO 54 reduces to verification. **Blocks nothing:** the installed 2.2.6 requires only `php >=5.5` and `imagecow/imagecow ^2.4` - no `illuminate/*`, no upper PHP bound - so it resolves under Laravel 13 today. Removed for runtime reasons: it writes into the web root during a request (which left `public/storage` a real directory instead of a symlink), corrupts `data:` URIs while rewriting CSS, and never minifies (both `*_minify` flags are `false`). `imagecow` leaves with it - nothing else requires it, and the API it serves has zero call sites |
-| `livewire/livewire` | 2.10.4 | v3 and v4 both support Laravel 10-13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |
-| `laravel/fortify` | 1.10.2 | current | Bump per hop; the vendored route file is the real work (TODO 69) |
-| `astrotomic/laravel-translatable` | 11.10.0 | 13 (v11.17.0 declares `^13.0`) | Version bump only |
-| `laravolt/avatar` | 4.1.7 | 13 (v7.0.0, needs PHP >= 8.3, Intervention Image 4) | Version bump, verify avatar generation (TODO 66) |
-| `spatie/laravel-cookie-consent` | 3.2.0 | 13 (v3.5.0) | Version bump only |
-| `spatie/laravel-activitylog` | 4.4.0 | current | Version bump; `User` already uses the modern `LogOptions` API |
-| `spatie/laravel-failed-job-monitor` | 4.1.1 | current | Version bump; re-verify after Phase 4 and Phase 8 |
-| `spatie/calendar-links` | 1.7.1 | framework-agnostic | Version bump only |
-| `petercoles/multilingual-country-list` | 1.2.12 | small/niche | Verify maintenance status at Phase 10 |
-| `laravel/tinker`, `guzzlehttp/guzzle` | 2.7.0 / 7.4.1 | current | Version bump only |
-| `phpunit/phpunit` | 9.5.14 (dev) | - | 9.5 -> 10 (Phase 5) -> 11 (Phase 9) -> 12 (Phase 10) |
-| `nunomaduro/collision` | 5.11.0 (dev) | - | 5 -> 6 -> 7 -> 8 -> current, in lockstep with the framework |
-| `barryvdh/laravel-debugbar` | 3.6.7 (dev) | current | Version bump; **stop hard-registering it in `config/app.php`** (TODO 25) |
-| `laravel/sail`, `mockery/mockery`, `fakerphp/faker` | - | current | Version bumps only |
+Two columns carry most of the information. **"Installed fails at"** is the first Laravel major the *installed* version's constraint rejects; `never` means Composer will not stop the upgrade at any hop, which is a silent risk rather than a safe one. **"Admits the target?"** compares the declared `composer.json` constraint against the release that supports Laravel 13: *lock bump* needs no file edit, *constraint edit* does.
+
+**Re-check before each hop** (TODO 22) - upstream moves, and the per-hop ladder below tells you which packages have a floor rising in the hop you are about to do.
+
+| Package | Installed | Declared | Installed fails at | L13 target | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| `laravel/framework` | 8.83.1 | `^8.12` | - | v13.24.0 (`php ^8.3`) | Target `^13.0`, one major per phase from Phase 4 |
+| `laravelcollective/html` | 6.3.0 | `^6.2` | L10 | - | **Remove** (TODO 23) - zero `Form::` / `Html::` usage, provider already commented out |
+| `fideloper/proxy` | 4.4.1 | `^4.4` | L10 | - | **Remove in Phase 4** - framework-native since Laravel 9 |
+| `fruitcake/laravel-cors` | 2.1.0 | `^2.0` | L10 | - | **Remove in Phase 4** - framework-native since Laravel 9 |
+| `facade/ignition` (dev) | 2.17.4 | `^2.5` | **L9** | - | **Replace in Phase 4** with `spatie/laravel-ignition`, then absorbed into the framework at Laravel 11. The earliest failure in the whole table |
+| `doctrine/dbal` | 3.3.2 | `^3.1` | never (no framework constraint) | - | **Remove in Phase 8** - Laravel 11 reimplemented `change()` natively |
+| `dialect/laravel-gdpr-compliance` | 1.4.7 (exact pin) | `1.4.7` | never | - | **Decided (TODO 16): replace in-house and remove.** Executed in **Phase 3, TODO 33.2**. `illuminate/support >=5.5` is unbounded, so Composer never fails on it; the earlier "Blocks Phase 8" reading was wrong |
+| `joedixon/laravel-translation` | 1.1.2 | `^1.1` | never | - | **Decided (TODO 17): remove, replace the UI with an in-house Livewire editor.** Executed in **Phase 3, TODO 33.3**; `elegantly/laravel-translator` arrives as the engine in **Phase 10, TODO 66.1**. Its `require` block is literally `{}` |
+| `mdylan/laraupdater` (was `pcinaglia/laraupdater` 1.0.2) | v2.0.0, own fork | `^2.0` | never | already declares `^13.0` | **Decided (TODO 18): keep the self-updater, move it onto the project's own fork.** Executed in **Phase 3, TODO 33.4**. The old pin blocked nothing either - 1.0.2 required only `php >=5.4.0` |
+| `protonemedia/laravel-verify-new-email` | 1.6.0 | `^1.6` | **L10** | none - no 1.x supports L13 | **Decided (TODO 19): replace in-house and remove.** Executed in **Phase 3, TODO 33.5**. The only package in the table that fails a hop *and* has no L13 line. The Phase 5 half is a lock bump (`^1.6` admits 1.13.0); the Phase 10 wall is real |
+| `rakibdevs/openweather-laravel-api` | 1.9.0 | `^1.9` | **never** | - | **Decided (TODO 20): replace with a direct `Http::` client and remove.** Executed in **Phase 3, TODO 33.6**, feature finished in 33.7. **Corrected by TODO 22:** the roadmap said this blocks at Phase 5 on PHP; it does not - `^8.0` is `>=8.0 <9.0` and admits 8.1-8.4. No framework constraint either, so **nothing forces it at any hop**. Replaced because the feature does not work, not because it blocks |
+| `eusonlito/laravel-packer` | 2.2.6 | `^2.2` | never | - | **Decided (TODO 21): remove, replace with a `pwbs_asset()` helper.** Executed in **Phase 3, TODO 33.8**; TODO 54 reduces to verification. Requires only `php >=5.5` and `imagecow/imagecow ^2.4`. Removed for runtime reasons: it writes into the web root during a request (which left `public/storage` a real directory instead of a symlink), corrupts `data:` URIs while rewriting CSS, and never minifies. `imagecow` leaves with it |
+| `livewire/livewire` | 2.10.4 | `^2.10.4` | L10 | v3 and v4 both cover L10-L13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |
+| `laravolt/avatar` | 4.1.7 | `^4.1` | **L10** | 6.5.1 | **NOT a version bump - the only one in the table.** `^4.1` admits no L10-capable release, and every L12/L13 line requires `intervention/image ^3.4`/`^4.0`, where the `stream()` the project calls no longer exists. Migrated in **Phase 5, TODO 39.1**; pinned by TODO 22.1 |
+| `laravel/tinker` | 2.7.0 | `^2.5` | L10 | **3.0.2** | **Constraint edit** `^2.5` -> `^3.0` at Phase 10. No 2.x release supports Laravel 13 - the line stops at 2.10.2 |
+| `laravel/fortify` | 1.10.2 | `^1.7` | L10 | 1.36.2 | Lock bump, but **pin at 1.36.2**: 1.37.0 adds `laravel/passkeys` as a hard requirement and raises its floor to `illuminate ^11` / `php ^8.2`. The vendored route file is the real work (TODO 69) |
+| `astrotomic/laravel-translatable` | 11.10.0 | `^11.9` | L10 | 11.17.0 | Lock bump. 11.17.0 drops `illuminate ^8`, so it cannot be bumped before Phase 4 |
+| `spatie/laravel-activitylog` | 4.4.0 | `^4.0.0` | L10 | 4.12.3 | Lock bump; **stay on 4.x** - 5.0.0 requires `php ^8.4`, above this roadmap's target. `User` already uses the modern `LogOptions` API |
+| `spatie/laravel-cookie-consent` | 3.2.0 | `^3.1` | L10 | 3.5.0 | Lock bump. 3.5.0 needs `illuminate ^11` / `php ^8.2`, so the intermediate hops need the ladder below |
+| `spatie/laravel-failed-job-monitor` | 4.1.1 | `^4.1` | L10 | 4.5.0 | Lock bump; 4.5.0 covers Laravel 7 through 13 in one release |
+| `spatie/calendar-links` | 1.7.1 | `^1.6` | **never** | n/a | **Declares no framework constraint in any version**, so it never blocks. 1.11.1 is the last 1.x and is admitted today. The 2.x line (`php ^8.3`) is an optional cleanup outside this roadmap |
+| `petercoles/multilingual-country-list` | 1.2.12 | `^1.2` | **L12** | 1.2.14 | Lock bump, and **maintained** - 1.2.14 (2026-04-11) added `~13`. The earlier "verify maintenance status at Phase 10" is answered |
+| `guzzlehttp/guzzle` | 7.4.1 | `^7.0.1` | never | 7.15.3 | **Stay on `^7`.** 8.0.2 exists, but `laravel/framework` v13 declares `guzzlehttp/guzzle: ^7.8.2` in `require`, so bumping the major is a resolution failure |
+| `phpunit/phpunit` (dev) | 9.5.14 | `^9.3.3` | - | 12.5.x | 9.5 -> 10 (Phase 5) -> 11 (Phase 9) -> 12 (Phase 10). **12 is the ceiling** at PHP 8.3 - PHPUnit 13 requires `php >=8.4.1` |
+| `nunomaduro/collision` (dev) | 5.11.0 | `^5.0` | - | 8.9.5 | **Constraint edits**, in lockstep with the framework: `^6` (Phase 4) -> `^7` (Phase 5) -> `^8` (Phase 8). Declares no `illuminate/*`, so Composer will not catch a mismatch |
+| `barryvdh/laravel-debugbar` (dev) | 3.6.7 | `^3.6` | L10 | **4.0.10+** | **Constraint edit** `^3.6` -> `^4.0` at Phase 10 - the 3.x line stops at 3.15.4 / Laravel 12. Also **stop hard-registering it in `config/app.php`** (TODO 25) |
+| `laravel/sail` (dev) | 1.13.4 | `^1.0.1` | L10 | 1.65.0 | Lock bump |
+| `mockery/mockery`, `fakerphp/faker` (dev) | 1.5.0 / 1.19.0 | `^1.4.2` / `^1.9.1` | - | 1.6.12 / 1.24.1 | Lock bumps only; neither declares a framework constraint |
+
+### The per-hop version ladder
+
+For every package that survives the upgrade, the **lowest** release admitting each Laravel major - so a hop's item can read a number instead of estimating one. Measured the same way as the table above.
+
+| Package | L9 (Ph. 4) | L10 (Ph. 5) | L11 (Ph. 8) | L12 (Ph. 9) | L13 (Ph. 10) |
+| --- | --- | --- | --- | --- | --- |
+| `astrotomic/laravel-translatable` | 11.11.0 | 11.12.1 | 11.15.1 | 11.16.1 | 11.17.0 |
+| `laravolt/avatar` | 4.1.7 | 5.0.0 | 5.1.0 | **6.1.2** | 6.4.0 |
+| `spatie/laravel-activitylog` | 4.7.1 | 4.7.3 | 4.10.0 | 4.11.0 | 4.12.3 |
+| `spatie/laravel-cookie-consent` | 3.2.3 | 3.2.4 | 3.3.2 | 3.3.3 | 3.5.0 |
+| `spatie/laravel-failed-job-monitor` | 4.1.0 | 4.2.1 | 4.3.2 | 4.3.5 | 4.5.0 |
+| `petercoles/multilingual-country-list` | 1.2.9 | 1.2.11 | 1.2.12 | 1.2.13 | 1.2.14 |
+| `laravel/fortify` | 1.10.1 | 1.19.1 | 1.21.0 | 1.31.3 | 1.36.2 |
+| `laravel/tinker` | 2.7.3 | 2.8.2 | 2.10.0 | 2.10.2 | **3.0.0** |
+| `laravel/sail` | 1.3.1 | 1.19.0 | 1.27.2 | 1.52.0 | 1.65.0 |
+| `barryvdh/laravel-debugbar` (dev) | 3.6.8 | 3.8.0 | 3.10.2 | 3.15.4 | **4.0.10** |
+
+Two cells are boundaries rather than numbers. `laravolt/avatar` crosses the Intervention Image break between L11 and L12 - which is why **TODO 39.1 jumps straight to 6.5.1 at Phase 5** and does the break once, early, instead of meeting it in Phase 9. `laravel/tinker` and `barryvdh/laravel-debugbar` cross a major between L12 and L13, and neither is admitted by the constraint declared today.
+
+Packages absent from the ladder either leave before Laravel 13 (`laravelcollective/html`, `fideloper/proxy`, `fruitcake/laravel-cors`, `facade/ignition`, `doctrine/dbal`, and the five replaced in Phase 3) or declare no framework constraint at all (`spatie/calendar-links`, `guzzlehttp/guzzle`, `phpunit/phpunit`, `nunomaduro/collision`, `mockery/mockery`, `fakerphp/faker`).
 
 ---
 
