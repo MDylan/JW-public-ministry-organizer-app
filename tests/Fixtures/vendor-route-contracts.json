@@ -1,28 +1,61 @@
 {
-    "livewire.message": {
-        "methods": [
-            "POST"
-        ],
-        "middleware": [
-            "web"
-        ]
-    },
-    "livewire.preview-file": {
-        "methods": [
-            "GET",
-            "HEAD"
-        ],
-        "middleware": [
-            "web"
-        ]
-    },
-    "livewire.upload-file": {
-        "methods": [
-            "POST"
-        ],
-        "middleware": [
-            "throttle:60,1",
-            "web"
-        ]
-    }
+ "laraupdater.check": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "laraupdater.currentVersion": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "laraupdater.update": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "livewire.message": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
+ "livewire.preview-file": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
+ "livewire.upload-file": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "throttle:60,1",
+   "web"
+  ]
+ }
 }

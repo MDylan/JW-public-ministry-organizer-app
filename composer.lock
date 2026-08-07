@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "560de2211952889572054636699f5217",
+    "content-hash": "fd463a19aefdfe556e7eddd6221bd9d9",
     "packages": [
         {
             "name": "astrotomic/laravel-translatable",
@@ -2804,6 +2804,67 @@
             "time": "2022-02-18T22:35:27+00:00"
         },
         {
+            "name": "mdylan/laraupdater",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MDylan/laraupdater.git",
+                "reference": "f807b05b51440b72fcd2d44c3595532c3a783ea4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MDylan/laraupdater/zipball/f807b05b51440b72fcd2d44c3595532c3a783ea4",
+                "reference": "f807b05b51440b72fcd2d44c3595532c3a783ea4",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^8.12|^9.0|^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "MDylan\\LaraUpdater\\LaraUpdaterServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "MDylan\\LaraUpdater\\": "src"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Pietro Cinaglia",
+                    "homepage": "http://linkedin.com/in/pietrocinaglia",
+                    "role": "Original author"
+                },
+                {
+                    "name": "David Molnar",
+                    "homepage": "https://github.com/MDylan",
+                    "role": "Fork maintainer"
+                }
+            ],
+            "description": "LaraUpdater allows your Laravel Application to auto-update itself. Maintained fork of pcinaglia/laraupdater.",
+            "homepage": "https://github.com/MDylan/laraupdater",
+            "keywords": [
+                "backup-restore",
+                "laravel",
+                "self-updater",
+                "update-checker",
+                "update-installer"
+            ],
+            "support": {
+                "source": "https://github.com/MDylan/laraupdater/tree/v2.0.0",
+                "issues": "https://github.com/MDylan/laraupdater/issues"
+            },
+            "time": "2026-08-07T10:50:29+00:00"
+        },
+        {
             "name": "monolog/monolog",
             "version": "2.3.5",
             "source": {
@@ -3332,62 +3393,6 @@
                 "source": "https://github.com/paragonie/constant_time_encoding"
             },
             "time": "2022-01-17T05:32:27+00:00"
-        },
-        {
-            "name": "pcinaglia/laraupdater",
-            "version": "1.0.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/pietrocinaglia/laraupdater.git",
-                "reference": "d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/pietrocinaglia/laraupdater/zipball/d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd",
-                "reference": "d19d88f0b1c1cbe7a2fdb5505d3d5f434939e8dd",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "pcinaglia\\laraupdater\\LaraUpdaterServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "pcinaglia\\laraupdater\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Pietro Cinaglia",
-                    "homepage": "http://linkedin.com/in/pietrocinaglia",
-                    "role": "Developer; Software Engineer."
-                }
-            ],
-            "description": "LaraUpdater allows your Laravel Application to auto-update itself.",
-            "homepage": "https://github.com/pietrocinaglia/laraupdater",
-            "keywords": [
-                "backup-restore",
-                "laravel",
-                "self-updater",
-                "update-checker",
-                "update-installer"
-            ],
-            "support": {
-                "issues": "https://github.com/pietrocinaglia/laraupdater/issues",
-                "source": "https://github.com/pietrocinaglia/laraupdater/tree/master"
-            },
-            "time": "2018-12-03T12:08:48+00:00"
         },
         {
             "name": "petercoles/multilingual-country-list",
@@ -10018,15 +10023,15 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.0"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "platform-overrides": {
         "php": "8.0.9"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

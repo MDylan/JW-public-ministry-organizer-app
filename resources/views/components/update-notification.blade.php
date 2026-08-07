@@ -6,7 +6,7 @@
                     <i class="far fa-arrow-alt-circle-up mr-1"></i>
                     {{ __('laraupdater.Update_Available') }}
                     <span class="badge badge-pill badge-primary ml-1">
-                        {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }}
+                        {{ (new \MDylan\LaraUpdater\LaraUpdaterController)->getCurrentVersion() }}
                         <i class="fas fa-angle-double-right mx-2"></i>
                         {{ $version }}</span>
                 </h5>
@@ -25,7 +25,7 @@
                     <h5><i class="icon fas fa-exclamation-triangle"></i>@lang('app.urgent')!</h5>
                     @lang('app.update_info')
                 </div>
-                <a role="button" href="/updater.update" class="btn btn-warning">
+                <a role="button" href="{{ route('laraupdater.update') }}" class="btn btn-warning">
                     <i class="far fa-check-circle mr-1"></i>
                     {{ __('laraupdater.Update_Now') }}</a>
                     @lang('user.online'): {{ $online }}

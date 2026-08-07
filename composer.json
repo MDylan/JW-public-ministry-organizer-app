@@ -4,6 +4,12 @@
     "description": "The Laravel Framework.",
     "keywords": ["framework", "laravel"],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/MDylan/laraupdater"
+        }
+    ],
     "require": {
         "php": "^8.0",
         "astrotomic/laravel-translatable": "^11.9",
@@ -20,7 +26,7 @@
         "laravelcollective/html": "^6.2",
         "laravolt/avatar": "^4.1",
         "livewire/livewire": "^2.10.4",
-        "pcinaglia/laraupdater": "1.0.2",
+        "mdylan/laraupdater": "^2.0",
         "petercoles/multilingual-country-list": "^1.2",
         "protonemedia/laravel-verify-new-email": "^1.6",
         "rakibdevs/openweather-laravel-api": "^1.9",

@@ -187,6 +187,35 @@ These 7 named routes are **not defined in `routes/*.php`**. `joedixon/laravel-tr
 
 The URL prefix comes from `config('translation.ui_url')`, which is baked into each route path rather than applied as a group prefix - so changing it silently breaks the hardcoded links in `resources/views/livewire/admin/translation.blade.php:53,78`.
 
+## Package-Registered Updater Routes
+
+These 3 routes are **not defined in `routes/*.php`**. `mdylan/laraupdater` registers them from
+its own route file via `loadRoutesFrom`, using the middleware stack declared in
+`config/laraupdater.php:23`. They are live in production and pinned in
+`tests/Fixtures/vendor-route-contracts.json`.
+
+| Method | URI | Name | Middleware |
+|---|---|---|---|
+| GET | `/updater.check` | `laraupdater.check` | `web`, `auth`, `can:is-admin` |
+| GET | `/updater.currentVersion` | `laraupdater.currentVersion` | same |
+| GET | `/updater.update` | `laraupdater.update` | same |
+
+Notes that matter:
+
+- The URI segments contain literal dots. That is inherited from the package and is deliberately
+  unchanged in v2, so existing links keep working.
+- **Until the TODO 33.4 fork switch, `laraupdater.check` and `laraupdater.currentVersion` were
+  unnamed and carried no middleware at all - not even `web`.** Any anonymous visitor could read
+  `version.txt` through `/updater.currentVersion`, and because `config/laraupdater.php` sets
+  `allow_users_id => false` the in-controller id check was off as well. Being unnamed, they also
+  fell out of every route snapshot; `upgrade-notes/baseline-routes.txt:250-252` is the only
+  record of the old state.
+- `laraupdater.update` writes raw HTML with `echo` and ends in `exit`, outside the response
+  lifecycle. It cannot be covered by a feature test that asserts on a response body.
+- `laraupdater.currentVersion` reads `base_path().'/version.txt'` on every call. The same read
+  happens on every admin page render through `layouts/partials/footer.blade.php:32` and
+  `livewire/admin/settings.blade.php:40`.
+
 ## API Routes (`routes/api.php`)
 
 | Method | URI | Middleware | Action |

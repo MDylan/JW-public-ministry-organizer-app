@@ -2,15 +2,16 @@
 /*
 * @author: Pietro Cinaglia
 * 	.website: http://linkedin.com/in/pietrocinaglia
+*
+* Fork maintained by David Molnar (https://github.com/MDylan/laraupdater).
 */
-namespace pcinaglia\laraUpdater;
+namespace MDylan\LaraUpdater;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\File;
-use Artisan;
-use Auth;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use ZipArchive;
 
 class LaraUpdaterController extends Controller
@@ -27,7 +28,9 @@ class LaraUpdaterController extends Controller
             if( config('laraupdater.allow_users_id') === false ) return true;
 
             // 2
-            if( in_array(Auth::User()->id, config('laraupdater.allow_users_id')) === true ) return true;
+            // Auth::user() may be null when the route is not behind the `auth`
+            // middleware; deny instead of fataling on a null property read.
+            if( Auth::check() && in_array(Auth::user()->id, config('laraupdater.allow_users_id')) === true ) return true;
         }
 
         return false;
@@ -36,7 +39,7 @@ class LaraUpdaterController extends Controller
     * Download and Install Update.
     */
     public function update()
-    {  
+    {
         echo "<h2>".trans("laraupdater.LaraUpdater")."</h2>";
         echo '<h4><a href="'.url('/').'">'.trans("laraupdater.Return_to_App_HOME").'</a></h4>';
 
@@ -45,9 +48,13 @@ class LaraUpdaterController extends Controller
             exit;
         }
 
+        // Never start an install from a cached manifest: the cache may be up to
+        // `version_check_time` minutes stale.
         $this->cache = false;
         $lastVersionInfo = $this->getLastVersion();
 
+        // version_compare(), not a string comparison: "1.1.10" <= "1.1.5" is
+        // TRUE as strings, which would hide every release past x.x.9.
         if( version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), "<=") ) {
             echo '<p>&raquo; '.trans("laraupdater.Your_System_IS_ALREADY_UPDATED_to_last version").' ! '.($lastVersionInfo['version']." <= ".$this->getCurrentVersion()).'</p>';
             exit;
@@ -72,15 +79,22 @@ class LaraUpdaterController extends Controller
             $status = $this->install($lastVersionInfo['version'], $update_path, $lastVersionInfo['archive']);
 
             if($status){
-                 if( config('laraupdater.migrate')==true ) {
+                if( config('laraupdater.migrate')==true ) {
                     try {
-                        Artisan::call('migrate --force');
-                    }catch(Exception $e) {
+                        // --force is mandatory: without it `migrate` asks for
+                        // confirmation in production and the HTTP request hangs.
+                        Artisan::call('migrate', ['--force' => true]);
+                    }catch(\Throwable $e) {
                         throw new \Exception(trans("laraupdater.Error_during_download."));
                     }
                 }
                 $this->setCurrentVersion($lastVersionInfo['version']); //update system version
-                Artisan::call('optimize:clear'); //clear the cache after update
+                // optimize:clear runs clear-compiled, which deletes
+                // bootstrap/cache/packages.php and services.php. That is what
+                // lets a release change the installed package set (a renamed or
+                // added provider) without the next request booting into a
+                // "class not found" fatal from a stale discovery cache.
+                Artisan::call('optimize:clear');
                 Artisan::call('up'); //restore system UP status
                 echo '<p>&raquo; '.trans("laraupdater.SYSTEM_Mantence_Mode").' => '.trans("laraupdater.OFF").'</p>';
                 echo '<p class="success">'.trans("laraupdater.SYSTEM_IS_NOW_UPDATED_TO_VERSION").': '.$lastVersionInfo['version'].'</p>';
@@ -119,7 +133,7 @@ class LaraUpdaterController extends Controller
                 if ( is_dir($full_path_tmp) && !file_exists($full_path) ){
                     File::makeDirectory($full_path, $mode = 0755, true, true);
                     $dirname = $filename;
-                    echo '<li>'.trans("laraupdater.Directory").' => '.$dirname.'[ '.trans("laraupdater.OK").' ]</li>';		
+                    echo '<li>'.trans("laraupdater.Directory").' => '.$dirname.'[ '.trans("laraupdater.OK").' ]</li>';
                 }
 
                 if ( !is_dir($full_path_tmp) ){ //Overwrite a file with its last version
@@ -127,7 +141,7 @@ class LaraUpdaterController extends Controller
                     if ( strpos($filename, 'upgrade.php') !== false ) {
                         echo '<li>UPGRADE => '.$filename.'</li>';
                         File::move($full_path_tmp, $upgrade_cmds_path);
-                        $execute_commands = true;                        
+                        $execute_commands = true;
                     } else {
                         echo '<li>'.trans("laraupdater.File").' => '.$filename.' ........... ';
 
@@ -180,7 +194,10 @@ class LaraUpdaterController extends Controller
             $filename_tmp = base_path().config('laraupdater.tmp_path').'/'.$update_name;
 
             if ( !is_file( $filename_tmp ) ) {
-                $newUpdate = file_get_contents(config('laraupdater.update_baseurl').'/'.$update_name);
+                $newUpdate = $this->fetch(
+                    config('laraupdater.update_baseurl').'/'.$update_name,
+                    (int) config('laraupdater.download_timeout', 60)
+                );
 
                 $dlHandler = fopen($filename_tmp, 'w');
 
@@ -196,16 +213,45 @@ class LaraUpdaterController extends Controller
     }
 
     /*
+    * Read a resource from the update channel.
+    *
+    * A bare file_get_contents() has no timeout, so a silent update server
+    * blocks the caller until default_socket_timeout (60s by default) elapses -
+    * and check() runs on every admin page render. The stream context bounds it.
+    * The http wrapper options apply to https too, and are simply ignored when
+    * update_baseurl is a plain local path (which is how this is tested).
+    */
+    private function fetch($url, $timeout)
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => $timeout,
+            ],
+        ]);
+
+        return file_get_contents($url, false, $context);
+    }
+
+    /*
     * Return current version (as plain text).
     */
     public function getCurrentVersion(){
         // todo: env file version
         $version = File::get(base_path().'/version.txt');
+
+        // trim() is load-bearing, not cosmetic: this value is the right-hand
+        // side of every version_compare(), and a trailing newline makes
+        // version_compare("1.1.5", "1.1.5\n", ">") return TRUE - i.e. the app
+        // would advertise an update forever.
         return trim($version);
     }
 
     /*
     * Check if a new Update exist.
+    *
+    * Returns the remote version as a STRING, or '' when up to date. Callers
+    * that also need the changelog call getDescription(), which is served from
+    * the same cache entry.
     */
     public function check()
     {
@@ -223,7 +269,7 @@ class LaraUpdaterController extends Controller
     public function getDescription()
     {
         $lastVersionInfo = $this->getLastVersion();
-        if( version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), ">") )
+        if( is_array($lastVersionInfo) && version_compare($lastVersionInfo['version'], $this->getCurrentVersion(), ">") )
             return $lastVersionInfo['description'];
 
         return '';
@@ -234,14 +280,20 @@ class LaraUpdaterController extends Controller
     }
 
     private function getLastVersion($file = "laraupdater.json") {
+        $timeout = (int) config('laraupdater.request_timeout', 10);
+
         if(!$this->cache) {
-            $content = file_get_contents(config('laraupdater.update_baseurl').'/'.$file);
+            $content = $this->fetch(config('laraupdater.update_baseurl').'/'.$file, $timeout);
         } else {
-            $content = Cache::remember('laraupdater_lastversion', (config('laraupdater.version_check_time') * 60), function () use ($file) {
+            $content = Cache::remember('laraupdater_lastversion', (config('laraupdater.version_check_time') * 60), function () use ($file, $timeout) {
                 try {
-                    return file_get_contents(config('laraupdater.update_baseurl').'/'.$file);
+                    return $this->fetch(config('laraupdater.update_baseurl').'/'.$file, $timeout);
                 } catch(\Exception $e) {
-                    return json_encode(array('version' => false /*$this->getCurrentVersion()*/));
+                    // An unreachable channel raises E_WARNING, which Laravel's
+                    // HandleExceptions turns into an ErrorException. Without
+                    // this catch every admin page render would 500 whenever the
+                    // update server is down.
+                    return json_encode(array('version' => false));
                 }
             });
         }

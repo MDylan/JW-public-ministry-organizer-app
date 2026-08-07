@@ -37,8 +37,8 @@
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
                                 <li class="list-group-item">@lang('settings.status.software_version'): 
-                                    {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }} 
-                                    @if((new \pcinaglia\laraupdater\LaraUpdaterController)->check() == '')
+                                    {{ (new \MDylan\LaraUpdater\LaraUpdaterController)->getCurrentVersion() }} 
+                                    @if((new \MDylan\LaraUpdater\LaraUpdaterController)->check() == '')
                                         <i class="far fa-check-circle mx-1 text-success"></i>
                                     @else
                                         <i class="fas fa-exclamation mx-1 text-danger"></i>

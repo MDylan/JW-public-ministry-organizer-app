@@ -1,3 +1,110 @@
+# LaraUpdater v2 - maintained fork
+
+> This is **`mdylan/laraupdater`**, a maintained fork of
+> [pcinaglia/laraupdater](https://github.com/pietrocinaglia/laraupdater) by
+> [MDylan](https://github.com/MDylan). The original package has not been released
+> since 2018-12-03.
+>
+> **v2 is not a drop-in replacement for v1.** The package name, the namespace and
+> the route middleware all changed - see the change log below.
+
+## Installing (v2)
+
+The package is not on Packagist. Add the repository, then require it:
+
+```json
+"repositories": [
+    { "type": "vcs", "url": "https://github.com/MDylan/laraupdater" }
+],
+"require": {
+    "mdylan/laraupdater": "^2.0"
+}
+```
+
+Auto-discovery registers the provider. To register it by hand instead:
+
+```php
+'providers' => [
+    // ...
+    MDylan\LaraUpdater\LaraUpdaterServiceProvider::class,
+];
+```
+
+Publish the config, language files and the sample view:
+
+```
+php artisan vendor:publish --provider="MDylan\LaraUpdater\LaraUpdaterServiceProvider"
+```
+
+## v2 change log
+
+### Breaking
+
+- Package renamed `pcinaglia/laraupdater` -> **`mdylan/laraupdater`**, so the
+  install path becomes `vendor/mdylan/laraupdater`. A self-updating host app must
+  clean up the old `vendor/pcinaglia/` tree from its release `upgrade.php`,
+  because `install()` only ever adds and overwrites files - it never deletes.
+- Namespace `pcinaglia\laraUpdater` -> **`MDylan\LaraUpdater`**. The old
+  declaration used a capital `U` while the PSR-4 map used a lowercase one; that
+  only ever worked because PHP class lookups are case-insensitive, and it
+  produced a mismatched entry under `composer dump-autoload --optimize`.
+- `updater.check` and `updater.currentVersion` now sit behind
+  `config('laraupdater.middleware')` as well. In v1 they carried no middleware
+  at all - not even `web` - so anyone could read the installed version.
+- All three routes are named (`laraupdater.check`, `laraupdater.currentVersion`,
+  `laraupdater.update`). The URIs are unchanged. Generate links with `route()`
+  rather than hardcoding `/updater.update`, which breaks in subdirectory installs.
+- The controller extends `Illuminate\Routing\Controller` instead of the host
+  app's `App\Http\Controllers\Controller`, which the Laravel 11 skeleton no
+  longer ships.
+
+### Fixed
+
+- `update()` compares versions with `version_compare()`, not string comparison.
+  As strings `"1.1.10" <= "1.1.5"` is TRUE, which hid every release past `x.x.9`.
+- `getCurrentVersion()` trims `version.txt`. A trailing newline makes
+  `version_compare("1.1.5", "1.1.5\n", ">")` return TRUE, i.e. the app would
+  advertise an update forever.
+- `migrate` runs with `--force`. Without it the command asks for confirmation in
+  production and the update request hangs.
+- `optimize:clear` runs after a successful install. It reaches `clear-compiled`,
+  which deletes `bootstrap/cache/packages.php` - so a release that changes the
+  installed package set cannot boot into a stale-discovery-cache fatal.
+- The `catch` around `migrate` was `catch(Exception $e)` unqualified inside a
+  namespace, so it resolved to a class that does not exist and never caught
+  anything. It is `\Throwable` now.
+- `loadTranslationsFrom()` pointed at `src/lang`, which does not exist. The
+  `laraupdater::` namespace resolved to nothing.
+- Language files publish to `lang_path()` on Laravel 9+ and `resource_path('lang')`
+  below that.
+- `checkPermission()` no longer fatals on `Auth::user()->id` when nobody is
+  authenticated; it denies instead.
+- The default `tmp_path` is `/tmp`, not `/../tmp`. The path is resolved against
+  `base_path()`, so the old default pointed outside the project.
+
+### Added
+
+- Multi-step updates: a manifest may declare `previous_version`, and the updater
+  installs that intermediate release first so its migrations are not skipped.
+- `getDescription()` returns the changelog of the pending release, served from the
+  same cache entry as `check()`.
+- Manifest reads are cached for `version_check_time` minutes, and an unreachable
+  channel degrades to "no update" instead of throwing.
+- `request_timeout` (10s) and `download_timeout` (60s) config keys. A bare
+  `file_get_contents()` has no timeout, and `check()` runs on every admin page
+  render.
+- Laravel 8.12 - 13 and PHP 8.0+ support declared in `composer.json`.
+
+### Known limitations (unchanged from v1)
+
+- `update()` writes raw HTML with `echo` and ends with `exit`, outside the
+  response lifecycle. It cannot be unit tested and ignores middleware buffering.
+- An update archive containing `upgrade.php` gets that file `include`d and its
+  `main()` called. This is by design, and it means the update channel must be
+  trusted absolutely - it is remote code execution with extra steps.
+- `version.txt` lives at `base_path().'/version.txt'` and is not configurable.
+
+---
 ## Author
 * **Pietro Cinaglia** - Contact me using [GitHub](https://github.com/pietrocinaglia) or [LinkedIn](https://linkedin.com/in/pietrocinaglia)
 

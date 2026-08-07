@@ -65,7 +65,7 @@ Located in `app/View/Components`.
 | `Footer` | `components.footer` | Footer static page links (role-aware visibility in view). |
 | `Modal` | `components.modal` | Generic modal wrapper with slots and size/id inputs. |
 | `SideStaticPages` | `components.side-static-pages` | Side-menu static page links. |
-| `UpdateNotification` | `components.update-notification` | Displays updater info and online user count when update is available. |
+| `UpdateNotification` | `components.update-notification` | Displays updater info and online user count when an update is available. Mounted from `layouts/app.blade.php` inside `@can('is-admin')`, so it renders on every admin page load. Instantiates `MDylan\LaraUpdater\LaraUpdaterController` directly (not through the container) and calls `check()`; if that returns a version it also calls `getDescription()`, which is served from the same 15-minute cache entry, so the pair costs one channel read. Returns an empty string when the system is current. Pinned by `tests/Feature/Updater/UpdaterContractTest.php`. |
 
 ## Anonymous/Utility Blade Components
 

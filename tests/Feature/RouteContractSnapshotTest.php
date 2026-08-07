@@ -18,8 +18,11 @@ use Tests\TestCase;
  *    holott a forrásban kettő van, és az egyik árnyékban marad. A TODO 26 majd
  *    törli a halott definíciót; az itteni tesztek teszik azt a törlést
  *    szándékos, olvasható diffé egy csendes viselkedésváltozás helyett.
- * 2. A LIVEWIRE VENDOR ROUTE-OK, amiket a prefix-szűrő kihagy - így a Phase 6
- *    (Livewire 2 -> 3) routing-változása néma maradna.
+ * 2. A VENDOR ROUTE-OK, amiket a prefix-szűrő kihagy - így a Phase 6
+ *    (Livewire 2 -> 3) routing-változása néma maradna. TODO 33.4 óta a
+ *    laraupdater három végpontja is ide tartozik: v1-ben NÉVTELENEK voltak,
+ *    ezért kiestek minden pillanatképből, és kettő közülük semmilyen
+ *    middleware-t nem viselt.
  */
 class RouteContractSnapshotTest extends TestCase
 {
@@ -52,13 +55,31 @@ class RouteContractSnapshotTest extends TestCase
         //
         // A Debugbar szándékosan marad kint: dev-only csomag, amit a TODO 25 amúgy
         // is kivesz a config/app.php-ból, tehát hamis csatolást hozna ide.
-        $expected = $this->fixture('vendor-route-contracts.json');
+        $expected = $this->fixtureSubset('vendor-route-contracts.json', 'livewire.');
 
-        $this->assertIsArray($expected);
+        $this->assertNotEmpty($expected);
         $this->assertSame(
             $expected,
             $this->currentRouteContracts('livewire.'),
             'Livewire route contracts changed. Regenerate tests/Fixtures/vendor-route-contracts.json when the change is intentional.'
+        );
+    }
+
+    public function test_the_laraupdater_vendor_routes_match_the_snapshot(): void
+    {
+        // TODO 33.4: a mdylan/laraupdater v2 mind a HÁROM végpontot a
+        // config('laraupdater.middleware') mögé teszi, és nevesíti őket. Az
+        // v1-ben az updater.check és az updater.currentVersion NÉVTELEN volt és
+        // semmilyen middleware-t nem kapott - még `web`-et sem -, tehát bárki
+        // kiolvashatta a telepített verziót. Névtelenül ki is estek ebből a
+        // pillanatképből; ez a teszt zárja be azt a vakfoltot.
+        $expected = $this->fixtureSubset('vendor-route-contracts.json', 'laraupdater.');
+
+        $this->assertNotEmpty($expected);
+        $this->assertSame(
+            $expected,
+            $this->currentRouteContracts('laraupdater.'),
+            'LaraUpdater route contracts changed. Regenerate tests/Fixtures/vendor-route-contracts.json when the change is intentional.'
         );
     }
 
@@ -229,7 +250,9 @@ class RouteContractSnapshotTest extends TestCase
             }
 
             if ($onlyPrefix === null) {
-                if (str_starts_with($name, 'debugbar.') || str_starts_with($name, 'livewire.')) {
+                if (str_starts_with($name, 'debugbar.')
+                    || str_starts_with($name, 'livewire.')
+                    || str_starts_with($name, 'laraupdater.')) {
                     continue;
                 }
             } elseif (! str_starts_with($name, $onlyPrefix)) {
@@ -269,6 +292,18 @@ class RouteContractSnapshotTest extends TestCase
         }
 
         return $normalized;
+    }
+
+    /**
+     * A fixture azon bejegyzései, amelyek neve az adott prefixszel kezdődik.
+     */
+    private function fixtureSubset(string $file, string $prefix): array
+    {
+        return array_filter(
+            $this->fixture($file),
+            fn (string $name) => str_starts_with($name, $prefix),
+            ARRAY_FILTER_USE_KEY
+        );
     }
 
     private function fixture(string $file): array

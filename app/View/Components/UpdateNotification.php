@@ -24,7 +24,7 @@ class UpdateNotification extends Component
      */
     public function render()
     {        
-        $update = new \pcinaglia\laraupdater\LaraUpdaterController;
+        $update = new \MDylan\LaraUpdater\LaraUpdaterController;
         $version = $update->check();
         //TODO: cache törlés utána. Talán ajax kérés kéne a frissítéshez? Lásd view fájlokat!
         
