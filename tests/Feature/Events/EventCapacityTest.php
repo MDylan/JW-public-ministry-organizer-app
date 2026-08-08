@@ -337,20 +337,22 @@ class EventCapacityTest extends FeatureTestCase
         $this->assertSame(1, $this->eventCount($group));
     }
 
-    public function test_lowering_the_maximum_below_the_existing_event_count_breaks_the_day_table(): void
+    public function test_lowering_the_maximum_below_the_existing_event_count_still_opens_the_day(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy elérhető összeomlásról.
+        // MEGFORDÍTVA a v1-patch B11 javításával.
         //
         // A getInfo() minden sávhoz (max_publishers + events.max_columns) cellát
-        // foglal (:241-243), és eseményenként egyet elhasznál (:280, :287). Ha
-        // több esemény van egy sávon, mint ahány cella, a min(array_keys([]))
-        // hívás ValueError-t dob.
+        // foglal, és eseményenként egyet elhasznál. Ha egy sávon több esemény
+        // van, mint ahány cella, a cellalista kiürül, és a korábbi feltétel
+        // nélküli min(array_keys([])) PHP 8 alatt ValueError-t dobott - amitől a
+        // nap MEGNYITHATATLANNÁ vált, nem csak hibásan rajzolttá.
         //
-        // Ez elérhető állapot: az események a régi, magasabb maximum mellett
-        // jönnek létre, majd egy admin lejjebb viszi a date_max_publishers-t
-        // (vagy egy jövőbeli csoportmódosítás írja felül). Ettől a nap
-        // megnyithatatlanná válik - a naptár teljesen használhatatlan lesz
-        // arra a napra.
+        // Ez elérhető állapot, nem elméleti: az események a régi, magasabb
+        // maximum mellett jönnek létre, majd egy admin lejjebb viszi a
+        // date_max_publishers-t, vagy egy jövőbeli csoportmódosítás írja felül.
+        // A meglévő eseményeket ilyenkor senki nem törli.
+        //
+        // A túlcsordult esemény most külön oszlopot kap; a nap megnyílik.
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -364,9 +366,39 @@ class EventCapacityTest extends FeatureTestCase
         // Az admin visszaveszi a maximumot: 1 + 4 = 5 cella marad 6 eseményre.
         $date->update(['date_max_publishers' => 1]);
 
-        $this->expectExceptionMessageMatches('/at least one element/');
-
         Livewire::actingAs($actor)
+            ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $this->date])
+            ->assertOk();
+    }
+
+    public function test_the_overflowing_slot_is_still_described_correctly(): void
+    {
+        // A B11 érdemi fele: nem elég, hogy nem hasal el - a sávnak helyesen
+        // kell leírva lennie utána is. Öt cellára hat esemény jut, tehát az
+        // összes előre foglalt cella elfogy, és a sáv megtelik.
+        //
+        // (A `publishers` számláló szándékosan nem szerepel itt: azt a
+        // getInfo() csak ELFOGADOTT eseményekre növeli, a hat jelentkezés
+        // viszont függő.)
+        config(['events.max_columns' => 4]);
+
+        $group = $this->createGroup(['need_approval' => 1]);
+        $date = $this->createEventDate($group, $this->date, ['date_max_publishers' => 6]);
+
+        $actor = $this->newMember($group, 'cap-overflow-cells@example.test');
+        $this->actingAs($actor);
+
+        $this->fillSlotRange($group, $this->date, '09:00', '10:00', 6, false, 'cap-ovfc');
+
+        $date->update(['date_max_publishers' => 1]);
+
+        $component = Livewire::actingAs($actor)
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $this->date]);
+
+        $slot = $component->get('day_data')['table']["'0900'"];
+
+        $this->assertSame([], $slot['cells'], 'Mind az öt előre foglalt cella elfogyott.');
+        $this->assertSame('full', $slot['status'], 'A sáv megtelt.');
+        $this->assertSame(6, $this->eventCount($group), 'Egyetlen esemény sem veszett el.');
     }
 }

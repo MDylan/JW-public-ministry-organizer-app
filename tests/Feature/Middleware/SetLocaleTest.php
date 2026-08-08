@@ -287,18 +287,20 @@ class SetLocaleTest extends FeatureTestCase
         $this->assertTrue(Cache::has('sidemenu_auth'));
     }
 
-    public function test_a_page_created_outside_the_editor_never_reaches_the_cached_menu(): void
+    public function test_a_page_created_outside_the_editor_reaches_the_cached_menu(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy látens hibáról.
+        // MEGFORDÍTVA a v1-patch B4 javításával.
         //
         // A Cache::rememberForever kulcsai (sidemenu_guest, sidemenu_auth)
-        // MINDÖSSZE két helyen ürülnek: Admin\StaticPageEdit:91-92 és a
-        // setup AccountController:50-51. Bármely más úton - seeder, konzol,
-        // közvetlen modellírás, adatimport - létrehozott vagy módosított
-        // statikus oldal tehát SOHA nem jelenik meg a menüben, amíg valaki
-        // kézzel nem szerkeszt egy oldalt a felületen.
+        // MINDÖSSZE két helyen ürültek: Admin\StaticPageEdit és a telepítő
+        // AccountController. Bármely más úton - seeder, konzol, közvetlen
+        // modellírás, adatimport - létrehozott vagy módosított statikus oldal
+        // tehát SOHA nem jelent meg a menüben, amíg valaki kézzel nem
+        // szerkesztett egy oldalt a felületen. Lejárat nincs: a
+        // rememberForever örökre szól.
         //
-        // Lejárat nincs: a rememberForever örökre szól.
+        // Az ürítés most a StaticPageObserverben van, tehát a menü FORRÁSÁHOZ
+        // kötve, nem a hívási helyekhez.
         $this->get($this->homeUrl())->assertStatus(200);
         $this->assertSame(['home'], $this->sharedMenuSlugs());
 
@@ -307,15 +309,44 @@ class SetLocaleTest extends FeatureTestCase
         $this->get($this->homeUrl())->assertStatus(200);
 
         $this->assertSame(
-            ['home'],
+            ['home', 'uj-oldal'],
             $this->sharedMenuSlugs(),
-            'Az új oldal nem jelenik meg, mert a cache nem ürült.'
+            'Az új oldal a szerkesztő megkerülésével is megjelenik.'
         );
+    }
 
-        // A szerkesztő ürítése után viszont igen:
-        Cache::forget('sidemenu_guest');
+    public function test_a_deleted_page_leaves_the_cached_menu(): void
+    {
+        // A B4 másik iránya: a törlésnek is ürítenie kell, különben egy már
+        // nem létező oldal marad a menüben - lejárat nélkül, örökre.
+        $page = $this->makeStaticPage(1, 'mulando');
+
         $this->get($this->homeUrl())->assertStatus(200);
+        $this->assertSame(['home', 'mulando'], $this->sharedMenuSlugs());
 
-        $this->assertSame(['home', 'uj-oldal'], $this->sharedMenuSlugs());
+        $page->delete();
+
+        $this->get($this->homeUrl())->assertStatus(200);
+        $this->assertSame(['home'], $this->sharedMenuSlugs());
+    }
+
+    public function test_renaming_a_page_title_alone_also_clears_the_menu(): void
+    {
+        // A menü a CÍMEKET mutatja, azok pedig a static_page_translations
+        // táblában élnek - egy puszta címátírás a StaticPage sorát nem is
+        // érinti. Ezért figyeli az observer a fordítást is.
+        $page = $this->makeStaticPage(1, 'atnevezendo');
+
+        $this->get($this->homeUrl())->assertStatus(200);
+        $this->assertTrue(Cache::has('sidemenu_guest'));
+
+        $translation = $page->translations()->firstOrFail();
+        $translation->title = 'Új cím';
+        $translation->save();
+
+        $this->assertFalse(
+            Cache::has('sidemenu_guest'),
+            'A fordítás mentése is üríti a gyorsítótárat.'
+        );
     }
 }

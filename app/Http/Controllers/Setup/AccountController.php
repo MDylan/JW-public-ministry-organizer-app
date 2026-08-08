@@ -47,8 +47,7 @@ class AccountController extends Controller
         (new DatabaseSeeder())->callWith(\Database\Seeders\StaticPagesSetupSeeder::class, [
             'user_id' => $user->id
         ]);
-        cache()->forget('sidemenu_auth');
-        cache()->forget('sidemenu_guest');
+        // A gyorsítótár ürítését a StaticPageObserver végzi (v1-patch B4).
 
         Auth::login($user, true);
 

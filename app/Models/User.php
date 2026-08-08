@@ -266,6 +266,16 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
         $this->anonymizeAttributes($modelChecker);
 
+        // A függő e-mail cím NEM anonimizálódik magától: a
+        // pending_user_emails sor külön táblában áll, nincs rá idegen kulcs,
+        // és a nyolc observer egyike sem nyúl hozzá. A users.email tehát
+        // lecserélődött, miközben a felhasználó VALÓDI címe határozatlan
+        // ideig bennmaradt a függő táblában - pontosan az az adat, aminek a
+        // törlését kérte.
+        //
+        // A kiadott alairt link masik feleert lasd App\Models\PendingUserEmail.
+        $this->clearPendingEmail();
+
         return true;
     }
 

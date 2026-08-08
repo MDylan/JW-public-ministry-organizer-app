@@ -121,6 +121,31 @@ class EventEdit extends AppComponent
         return false;
     }
 
+    /**
+     * A következő szabad cellaindex, ha a sáv előre foglalt cellái elfogytak.
+     *
+     * A `cells` tömb kulcsai 1-től indulnak, és az elhasznált cellák
+     * kikerülnek belőle - a "meddig jutottunk" tehát nem olvasható ki
+     * közvetlenül. Az egész napra vett legnagyobb valaha kiosztott index után
+     * adunk egyet, így az érték a sávon belül biztosan egyedi, és a
+     * túlcsordult esemény saját oszlopot kap.
+     *
+     * Lásd a hívási hely magyarázatát (v1-patch B11).
+     */
+    private function overflowCellFor(array $day_table, string $key): int
+    {
+        $allocated = 0;
+
+        foreach($day_table as $slot) {
+            $cells = array_keys($slot['cells'] ?? []);
+            if(count($cells) > 0) {
+                $allocated = max($allocated, max($cells));
+            }
+        }
+
+        return $allocated + 1;
+    }
+
     public function getInfo($saveProcess = false) {
         if($this->eventId == null) $this->editEvent = null;
 
@@ -277,7 +302,27 @@ class EventEdit extends AppComponent
             $key = "'".date('Hi', $event['start'])."'";
             $cell = 1;
             if(isset($slots[$key])) {
-                $cell = min(array_keys($day_table[$key]['cells']));
+                // A getInfo() sávonként (max_publishers + events.max_columns)
+                // cellát foglal (:241-243), és eseményenként egyet elhasznál.
+                // Ha egy sávon több esemény van, mint ahány cella, a cellalista
+                // kiürül, és a korábbi feltétel nélküli min() PHP 8 alatt
+                // ValueError-t dobott ("must contain at least one element") -
+                // amitől a nap MEGNYITHATATLANNÁ vált, nem csak hibásan
+                // rajzolttá.
+                //
+                // Ez elérhető állapot, nem elméleti: az események a régi,
+                // magasabb maximum mellett jönnek létre, majd egy admin
+                // lejjebb viszi a date_max_publishers-t - vagy egy jövőbeli
+                // csoportmódosítás írja felül. A meglévő eseményeket ilyenkor
+                // senki nem törli.
+                //
+                // A táblázat szélessége innentől a foglalt cellák számához
+                // igazodik: a túlcsordult esemény új oszlopot kap a sorban
+                // ahelyett, hogy az egész napot ledöntené.
+                $freeCells = array_keys($day_table[$key]['cells']);
+                $cell = count($freeCells) > 0
+                    ? min($freeCells)
+                    : $this->overflowCellFor($day_table, $key);
             }
             
             $cell_start = $event['start'];

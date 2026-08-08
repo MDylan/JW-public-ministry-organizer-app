@@ -24,8 +24,12 @@ return [
 
     /**
      * Model class that will be used to store and retrieve the tokens.
+     *
+     * A projekt saját leszármazottja, hogy az activate() ne írhassa vissza a
+     * valódi címet egy már anonimizált felhasználóra - lásd az osztály
+     * magyarázatát (v1-patch B13).
      */
-    'model' => \ProtoneMedia\LaravelVerifyNewEmail\PendingUserEmail::class,
+    'model' => \App\Models\PendingUserEmail::class,
 
     /**
      * The Mailable that will be sent when the User wants to verify

@@ -188,40 +188,70 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_statistics_mount_defaults_to_the_current_month(): void
     {
+        // A v1-patch B3 után a komponens nem $year/$month párban gondolkodik,
+        // hanem dátumtartományban - ez az, amit a nézet is kínál. Az alapérték
+        // változatlanul az aktuális hónap.
         Livewire::actingAs($this->admin)
             ->test(Statistics::class, ['group' => $this->group->id])
-            ->assertSet('year', date('Y'))
-            ->assertSet('month', date('m'))
+            ->assertSet('startDate', date('Y-m-').'01')
+            ->assertSet('endDate', date('Y-m-t'))
             ->assertOk();
     }
 
-    public function test_statistics_month_selector_is_currently_a_no_op(): void
+    public function test_statistics_applies_the_submitted_date_range(): void
     {
-        // Jellemzés-teszt egy meglévő hibáról, nem elvárt viselkedés.
+        // MEGFORDÍTVA a v1-patch B3 javításával.
         //
-        // A Groups\Statistics osztályban a `public $months` deklaráció ki van
-        // kommentelve (Statistics.php:16), miközben getMonthListFromDate() és
-        // setMonth() továbbra is használja. Így $this->months dinamikus
-        // property lesz, amit a Livewire nem perzisztál a kérések között -
-        // setMonth() hívásakor tehát üres, és az isset() ellenőrzés mindig
-        // hamis. A hónapválasztó soha nem vált hónapot.
+        // A Groups\Statistics-ban a `public $months` deklaráció ki volt
+        // kommentelve, miközben a getMonthListFromDate() és a setMonth()
+        // továbbra is használta. $this->months így dinamikus property lett,
+        // amit a Livewire nem perzisztál a kérések között, tehát az isset()
+        // mindig hamisra futott és a setMonth() semmit nem csinált. A gomb
+        // mégis "működött", mert BÁRMELY Livewire-akció újraküldi a
+        // wire:model.defer mezőket - a hatás a metódustól független volt.
         //
-        // Ugyanez a kód a Groups\History komponensben működik, mert ott a
-        // $months deklarált publikus property.
-        //
-        // Külön kockázat az upgrade szempontjából: PHP 8.2-től a dinamikus
-        // property-k deprecated-ek, tehát ez a Laravel 11 fázisban (PHP 8.2)
-        // deprecation notice-t fog dobni. Lásd: roadmap TODO 07.
-        Group::where('id', $this->group->id)->update(['created_at' => now()->subMonths(3)]);
-        $target = now()->subMonth()->format('Y-m-01');
+        // A hónapválasztót a nézetben már régen date-range páros váltotta fel,
+        // ezért a maradékok (getMonthListFromDate, setMonth törzse, $months,
+        // $year, $month, $current_month) törölve lettek, az akció pedig a
+        // szerepét megnevező applyDateRange() nevet kapta. A dinamikus property
+        // PHP 8.2-es deprecationje ezzel a Phase 8 elől is eltűnt.
+        $target = now()->subMonth();
 
         Livewire::actingAs($this->admin)
             ->test(Statistics::class, ['group' => $this->group->id])
-            ->set('state.month', $target)
-            ->call('setMonth')
-            // Változatlanul az aktuális hónap marad, a kérés ellenére.
-            ->assertSet('month', date('m'))
-            ->assertSet('year', date('Y'));
+            ->set('startDate', $target->format('Y-m-01'))
+            ->set('endDate', $target->format('Y-m-t'))
+            ->call('applyDateRange')
+            ->assertSet('startDate', $target->format('Y-m-01'))
+            ->assertSet('endDate', $target->format('Y-m-t'))
+            ->assertOk();
+    }
+
+    public function test_the_statistics_month_selector_leftovers_are_gone(): void
+    {
+        // A B3 lényege a holt kód eltávolítása; ha bármelyik darab visszatér,
+        // a dinamikus property csapdája is vele jön.
+        // Csak a KÓDRA állítunk, nem a magyarázó kommentre - az szándékosan
+        // leírja, mi volt itt korábban.
+        $this->assertFalse(
+            method_exists(Statistics::class, 'setMonth'),
+            'A setMonth() nem térhet vissza.'
+        );
+        $this->assertFalse(
+            method_exists(Statistics::class, 'getMonthListFromDate'),
+            'A getMonthListFromDate() nem térhet vissza.'
+        );
+        $this->assertTrue(method_exists(Statistics::class, 'applyDateRange'));
+
+        foreach (['months', 'year', 'month', 'current_month'] as $property) {
+            $this->assertFalse(
+                property_exists(Statistics::class, $property),
+                $property.': a hónapválasztó maradéka visszakerült.'
+            );
+        }
+
+        $view = file_get_contents(resource_path('views/livewire/groups/statistics.blade.php'));
+        $this->assertStringNotContainsString('setMonth', $view);
     }
 
     public function test_statistics_renders_with_accepted_events_present(): void

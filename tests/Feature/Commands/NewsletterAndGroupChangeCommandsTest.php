@@ -106,25 +106,50 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
         Notification::assertSentTo($groupAdmin, Newsletter::class);
     }
 
-    public function test_an_unknown_recipient_group_silently_blocks_the_whole_queue(): void
+    public function test_an_unknown_recipient_group_no_longer_blocks_the_queue(): void
     {
-        // Jellemzés-teszt egy meglévő hibáról, nem elvárt viselkedés.
+        // MEGFORDÍTVA a v1-patch B1 javításával.
         //
-        // Ismeretlen send_to értéknél az eredeti closure return-nel lépett ki,
-        // ami a ciklus HÁTRALÉVŐ hírleveleit is kihagyta. A sent_time sem
-        // íródik ki, így a parancs percenként újrapróbálkozik és tartósan
-        // blokkolja a mögötte állókat. A viselkedés az upgrade alatt
-        // szándékosan változatlan. Lásd: roadmap TODO 06.
+        // Ismeretlen send_to értéknél a parancs `return`-nel lépett ki, ami a
+        // ciklus HÁTRALÉVŐ hírleveleit is kihagyta - nem csak az aktuálisat. A
+        // sent_time sem íródott ki, így percenként újrapróbálkozott, tartósan a
+        // sor elé állva: egyetlen elgépelt címzett-érték minden további
+        // hírlevelet határozatlan ideig blokkolt.
+        //
+        // Most a hibás sort átugorja, a mögötte állókat kézbesíti, és nem nulla
+        // kilépési kóddal jelzi, hogy volt kihagyott elem.
         Notification::fake();
 
         // A hibás hírlevél kerül előbb a sorba (kisebb id).
-        $this->dueNewsletter('somethingUnknown');
+        $broken = $this->dueNewsletter('somethingUnknown');
         $valid = $this->dueNewsletter('groupCreators');
 
-        $this->artisan('newsletters:send-due')->assertExitCode(0);
+        $this->artisan('newsletters:send-due')->assertExitCode(1);
 
-        Notification::assertNothingSent();
-        $this->assertNull($valid->fresh()->sent_time, 'The valid newsletter behind the broken one is never sent.');
+        Notification::assertSentTo($this->creator, Newsletter::class);
+
+        $this->assertNotNull(
+            $valid->fresh()->sent_time,
+            'A hibás mögött álló hírlevél kimegy.'
+        );
+
+        // A hibás sor NEM lesz kézbesítettnek jelölve - nem ment ki -, de már
+        // nem is akadályoz senkit.
+        $this->assertNull(
+            $broken->fresh()->sent_time,
+            'A kihagyott hírlevél nem lehet kézbesítettnek jelölve.'
+        );
+    }
+
+    public function test_a_valid_batch_still_reports_success(): void
+    {
+        // A B1 kontroll-kísérlete: a nem nulla kilépési kód CSAK a kihagyás
+        // jelzése, nem lett a parancs alapállapota.
+        Notification::fake();
+
+        $this->dueNewsletter('groupCreators');
+
+        $this->artisan('newsletters:send-due')->assertExitCode(0);
     }
 
     // --- groups:apply-future-changes ---

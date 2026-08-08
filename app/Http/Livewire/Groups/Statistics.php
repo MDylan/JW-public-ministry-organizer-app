@@ -14,10 +14,6 @@ class Statistics extends AppComponent
 
     protected $group;
     public $groupId = 0;
-    // public $months = [];
-    public $year = 0;
-    public $month = 0;
-    public $current_month = 0;
     public $filter_sub_group = false;
     public $filter_all_event = false;
     public $period = null;
@@ -26,13 +22,7 @@ class Statistics extends AppComponent
 
     public function mount($group) {
         $this->groupId = $group;
-        
-        if(!isset($this->state['month'])) {
-            $this->state['month'] = date("Y-m-")."01";
-        }
-        $this->year = date("Y");
-        $this->month = date("m");
-        
+
         if(!$this->startDate) {
             $this->startDate = date("Y-m-")."01";
         }
@@ -41,20 +31,27 @@ class Statistics extends AppComponent
         }
     }
 
-    public function getMonthListFromDate(Carbon $start)
-    {
-        $period = $start->monthsUntil(Carbon::today());
-        foreach ($period as $month) {
-            $this->months[$month->format('Y-m-01')] = $month->format('Y')." ".__($month->format('F'));
-        }        
-    }
-
-    public function setMonth() {
-        if(isset($this->months[$this->state['month']])) {
-            $month = strtoTime($this->state['month']);
-            $this->year = date("Y", $month);
-            $this->month = date("m", $month);
-        }
+    /**
+     * A szűrőűrlap elküldése.
+     *
+     * Ez a metódus korábban setMonth() volt, és egy hónapválasztóhoz tartozott.
+     * A választót date-range páros váltotta fel - a select a nézetben ki van
+     * kommentelve -, a metódus törzse viszont ottmaradt: egy `$this->months`
+     * tömbre hivatkozott, aminek a DEKLARÁCIÓJA is ki volt kommentelve. Így
+     * dinamikus property lett belőle, amit a Livewire nem perzisztál, tehát az
+     * isset() mindig hamis volt, és a metódus semmit nem csinált. A gomb csak
+     * azért működött, mert BÁRMELY Livewire-akció újraküldi a `wire:model.defer`
+     * mezőket - a hatás a metódustól teljesen független volt.
+     *
+     * A törzs ezért törölve. A metódus megmarad, mert a szerepe valódi: ez az
+     * akció küldi be a halasztott dátummezőket. A render() a $startDate és az
+     * $endDate alapján dolgozik, más bemenete nincs.
+     *
+     * (A dinamikus property PHP 8.2-től deprecated - ezzel az a csapda is
+     * eltűnik a Phase 8 elől.)
+     */
+    public function applyDateRange() {
+        // A render() mindent a frissített $startDate / $endDate alapján számol.
     }
 
     public function render()
@@ -74,10 +71,6 @@ class Statistics extends AppComponent
         $this->first_day = $this->startDate;
         $this->last_day = $this->endDate;
 
-        // $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
-        // $this->current_month = date('F', $firstDayOfMonth);
-        // $this->first_day = date("Y-m-d", $firstDayOfMonth);
-        // $this->last_day = date("Y-m-t", $firstDayOfMonth);
 
         $this->group = Group::with([
                 'dates' => function($q) {
@@ -85,8 +78,6 @@ class Statistics extends AppComponent
                 },
                 'literatures'
                 ])->firstWhere('id', '=', $this->groupId);
-        $start = strtotime($this->group->created_at);
-        // $this->getMonthListFromDate(Carbon::parse(date("Y-m-01", $start)));
 
         $stats = DayStat::where('group_id', $this->group->id)
                             ->whereBetween('day', [$this->first_day, $this->last_day])

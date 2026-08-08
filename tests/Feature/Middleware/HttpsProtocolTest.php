@@ -14,7 +14,11 @@ use Tests\Feature\FeatureTestCase;
  * a törzse viszont három feltétel mögött van, és a jelenlegi
  * konfigurációval egyik sem teljesül maradéktalanul:
  *
- *     !$request->secure() && app()->environment('production') && env('USE_HTTPS', "false") == "true"
+ *     !$request->secure() && app()->environment('production') && $this->httpsEnforced()
+ *
+ * A harmadik feltétel a v1-patch B14-ig `env('USE_HTTPS', "false") == "true"`
+ * volt, azaz a literális "true" sztringhez hasonlított; most filter_var()-ral
+ * értelmezi a szokásos igaz alakokat.
  *
  * Ezért nulla lefedettsége van, és a bekapcsolt állapota ismeretlen terület.
  * A production környezet HTTP-tesztből nem állítható, ezért itt közvetlenül
@@ -112,23 +116,66 @@ class HttpsProtocolTest extends FeatureTestCase
     // 3. A sztring-összehasonlítás csapdája
     // =========================================================================
 
-    public function test_a_truthy_but_non_string_true_value_does_not_enable_the_redirect(): void
+    /**
+     * @dataProvider truthyFlagProvider
+     */
+    public function test_every_common_truthy_spelling_enables_the_redirect(string $value): void
     {
-        // KARAKTERIZÁLÓ TESZT. A feltétel env('USE_HTTPS', "false") == "true",
-        // vagyis a KONKRÉT "true" sztringhez hasonlít. A .env-ben szokásos
-        // USE_HTTPS=1 tehát NEM kapcsolja be az átirányítást, pedig a
-        // szándék nyilvánvalóan az lenne.
+        // MEGFORDÍTVA a v1-patch B14 javításával.
         //
-        // A Laravel env()-je a "true"/"false" sztringeket bool-lá alakítja,
-        // az "1"-et viszont sztringként adja vissza - így az összehasonlítás
-        // "1" == "true" alakot ölt, ami hamis.
+        // A feltétel `env('USE_HTTPS', "false") == "true"` volt, tehát a
+        // KONKRÉT "true" sztringhez hasonlított. A Laravel env()-je a
+        // "true"/"false" szavakat bool-lá alakítja, az "1"-et viszont
+        // sztringként adja vissza - így az összehasonlítás "1" == "true"
+        // alakot öltött, ami hamis. A .env-ben legszokásosabb USE_HTTPS=1
+        // ezért hatástalan volt, és a HTTPS-kényszerítés némán nem működött.
         $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
             'USE_HTTPS',
-            '1',
+            $value,
             fn () => $this->runMiddleware($this->insecureRequest())
         ));
 
-        $this->assertSame('ok', $response->getContent(), 'Az USE_HTTPS=1 hatástalan.');
+        $this->assertSame(302, $response->getStatusCode(), $value.': át kell irányítani.');
+        $this->assertStringStartsWith('https://', $response->headers->get('Location'));
+    }
+
+    public static function truthyFlagProvider(): array
+    {
+        return [
+            'true'  => ['true'],
+            'one'   => ['1'],
+            'on'    => ['on'],
+            'yes'   => ['yes'],
+            'TRUE'  => ['TRUE'],
+        ];
+    }
+
+    /**
+     * @dataProvider falsyFlagProvider
+     */
+    public function test_no_other_value_enables_the_redirect(string $value): void
+    {
+        // A B14 kontroll-kísérlete: a lazább értelmezés nem kapcsolhatja be a
+        // kényszerítést ott, ahol senki nem kérte.
+        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
+            'USE_HTTPS',
+            $value,
+            fn () => $this->runMiddleware($this->insecureRequest())
+        ));
+
+        $this->assertSame('ok', $response->getContent(), $value.': nem szabad átirányítani.');
+    }
+
+    public static function falsyFlagProvider(): array
+    {
+        return [
+            'false'    => ['false'],
+            'zero'     => ['0'],
+            'off'      => ['off'],
+            'no'       => ['no'],
+            'empty'    => [''],
+            'nonsense' => ['talan'],
+        ];
     }
 
     public function test_the_default_is_off_when_the_variable_is_missing_entirely(): void
