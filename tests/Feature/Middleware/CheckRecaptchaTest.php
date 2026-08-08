@@ -7,6 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -158,29 +159,52 @@ class CheckRecaptchaTest extends FeatureTestCase
     // 4. A kapcsolathiba - látens hiba
     // =========================================================================
 
-    public function test_a_connection_failure_escapes_the_middleware_as_a_fatal_error(): void
+    public function test_a_connection_failure_lets_the_request_through(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy éles üzemeltetési kockázatról.
+        // MEGFORDÍTVA a v1-patch D3 javításával, a felhasználó jóváhagyásával.
         //
-        // A Http::asForm()->post() (:22) NINCS try/catch-ben. HTTP-hibakódra
-        // a Laravel Response-t ad - azt a kód kezeli (lásd a fenti 500-as
-        // tesztet) -, KAPCSOLATHIBÁRA viszont ConnectionException-t dob,
-        // amit itt senki nem kap el.
+        // A Http::asForm()->post() try/catch NÉLKÜL futott. HTTP-hibakódra a
+        // Laravel Response-t ad - azt a kód helyesen kezeli (lásd a fenti
+        // 500-as tesztet) -, KAPCSOLATHIBÁRA (timeout, DNS, hálózat) viszont
+        // ConnectionException száll fel, amit senki nem kapott el.
         //
-        // Következmény: ha a Google elérhetetlen (hálózati hiba, timeout,
-        // DNS), a POST /login, POST /register és POST /forgot-password
-        // 500-as hibát ad. Egy külső szolgáltatás kimaradása tehát teljesen
-        // kizárná a bejelentkezést.
+        // Következmény: egy Google-kimaradás 500-at adott a POST /login, a
+        // POST /register és a POST /forgot-password végponton - senki nem
+        // tudott belépni, regisztrálni vagy jelszót visszaállítani, amíg a
+        // Google vissza nem jött. Ma alszik a USE_RECAPTCHA=false miatt, de a
+        // recaptcha bekapcsolása előtt ez blokkoló hiba lett volna.
         //
-        // Ma alszik a USE_RECAPTCHA=false miatt. Javítás: roadmap TODO 33.1 -
-        // a recaptcha bekapcsolása előtt kötelező.
+        // A választott politika FAIL-OPEN: rendelkezésre állás a botvédelem
+        // előtt. A kérés átmegy, a hiba naplózódik. A fail-closed ugyanennyire
+        // védhető lett volna (captcha-hibaüzenet az 500 helyett); a korábbi
+        // viselkedés egyik sem volt.
         Http::fake(function () {
             throw new ConnectionException('cURL error 28: Operation timed out');
         });
 
-        $this->expectException(ConnectionException::class);
+        Log::spy();
 
-        $this->runEnabled();
+        $response = $this->runEnabled();
+
+        $this->assertSame('atengedve', $response->getContent(), 'A kérés átmegy.');
+
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->withArgs(fn (string $message) => str_contains($message, 'reCAPTCHA'));
+    }
+
+    public function test_the_verification_call_carries_an_explicit_timeout(): void
+    {
+        // A híváson korábban SEMMILYEN időkorlát nem volt, tehát egy beragadt
+        // Google-végpont a PHP workert tartotta fogva - épp a bejelentkezési
+        // útvonalon, ahol ez meríti ki leggyorsabban a processzeket.
+        $reflection = new \ReflectionClass(CheckRecaptcha::class);
+
+        $this->assertTrue(
+            $reflection->hasConstant('TIMEOUT'),
+            'A middleware-nek explicit időkorláttal kell hívnia.'
+        );
+        $this->assertGreaterThan(0, $reflection->getConstant('TIMEOUT'));
     }
 
     // =========================================================================

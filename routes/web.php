@@ -76,34 +76,50 @@ Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVe
 //installer available only if file not exists
 if (!Storage::exists('installed.txt')) {
     // Setup routes
+    //
+    // A csoport KORÁBBAN egyetlen jogosultsági ellenőrzést sem hordozott: se
+    // auth, se gate, se aláírás. A telepítési ablakban tehát bárki, aki ismerte
+    // a címet, létrehozhatott mainAdmin fiókot - ismételten -, és bárki
+    // lezárhatta a telepítőt. Bejelentkezéshez kötni nem lehet, mert a
+    // telepítés pontosan az a szakasz, amikor még nincs felhasználó; ezért az
+    // `installer` middleware fájlrendszer-hozzáférést bizonyíttat egy tokennel.
+    // Lásd App\Http\Middleware\EnsureInstallerToken.
     Route::prefix('setup')->group(function () {
+        // A nyitóképernyő és a token beküldése SZÁNDÉKOSAN a kapun kívül van:
+        // ide kell beírni a tokent, tehát nem lehet mögötte. Érdemi műveletet
+        // egyik sem végez.
         Route::get('/start', [MetaController::class, 'welcome'])
             ->name('setup.welcome');
-        Route::get('/requirements', [RequirementsController::class, 'index'])
-            ->name('setup.requirements');
+        Route::post('/start', [MetaController::class, 'unlock'])
+            ->name('setup.unlock');
 
-        Route::get('/basics', [BasicsController::class, 'index'])
-            ->name('setup.basics');
-        Route::post('/basics', [BasicsController::class, 'configure'])
-            ->name('setup.save-basics');
+        Route::middleware('installer')->group(function () {
+            Route::get('/requirements', [RequirementsController::class, 'index'])
+                ->name('setup.requirements');
 
-        Route::get('/database', [DatabaseController::class, 'index'])
-            ->name('setup.database');
-        Route::post('/database', [DatabaseController::class, 'configure'])
-            ->name('setup.save-database');
+            Route::get('/basics', [BasicsController::class, 'index'])
+                ->name('setup.basics');
+            Route::post('/basics', [BasicsController::class, 'configure'])
+                ->name('setup.save-basics');
 
-        Route::get('/mail', [MailController::class, 'index'])
-            ->name('setup.mail');
-        Route::post('/mail', [MailController::class, 'configure'])
-            ->name('setup.save-mail');
+            Route::get('/database', [DatabaseController::class, 'index'])
+                ->name('setup.database');
+            Route::post('/database', [DatabaseController::class, 'configure'])
+                ->name('setup.save-database');
 
-        Route::get('/account', [AccountController::class, 'index'])
-            ->name('setup.account');
-        Route::post('/account', [AccountController::class, 'register'])
-            ->name('setup.save-account');
+            Route::get('/mail', [MailController::class, 'index'])
+                ->name('setup.mail');
+            Route::post('/mail', [MailController::class, 'configure'])
+                ->name('setup.save-mail');
 
-        Route::get('/complete', [MetaController::class, 'complete'])
-            ->name('setup.complete');
+            Route::get('/account', [AccountController::class, 'index'])
+                ->name('setup.account');
+            Route::post('/account', [AccountController::class, 'register'])
+                ->name('setup.save-account');
+
+            Route::get('/complete', [MetaController::class, 'complete'])
+                ->name('setup.complete');
+        });
     });
 }
 

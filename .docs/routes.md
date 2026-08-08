@@ -111,6 +111,7 @@ the export's shape is data-dependent.
 | Method | URI | Name | Action |
 |---|---|---|---|
 | GET | `/setup/start` | `setup.welcome` | `Setup\MetaController::welcome` |
+| POST | `/setup/start` | `setup.unlock` | `Setup\MetaController::unlock` |
 | GET | `/setup/requirements` | `setup.requirements` | `Setup\RequirementsController::index` |
 | GET/POST | `/setup/basics` | `setup.basics` / `setup.save-basics` | `Setup\BasicsController@index/configure` |
 | GET/POST | `/setup/database` | `setup.database` / `setup.save-database` | `Setup\DatabaseController@index/configure` |
@@ -124,12 +125,25 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   `storage/app/installed.txt` present the routes do not exist at all - the URLs
   are 404, not 403, and `Route::has('setup.welcome')` is false. This is also why
   the route-contract fixture contains no `setup.` entry.
-- **No route in the group carries `auth`, a gate, or a signature.** While the
-  installer is open, any visitor can complete it: `setup.save-account` creates a
-  `mainAdmin` and logs in as it, and it can be called repeatedly, creating one
+- **Everything except `setup.welcome` and `setup.unlock` sits behind the
+  `installer` middleware** (`App\Http\Middleware\EnsureInstallerToken`), added in
+  v1-patch D2. Before that no route in the group carried `auth`, a gate or a
+  signature, so while the installer was open ANY visitor could finish it:
+  `setup.save-account` creates a `mainAdmin` and logs in as it, repeatedly, one
   admin per call.
-- **`setup.complete` closes the installer on a GET**, by writing the sentinel.
-  Anyone can therefore end the install window early.
+
+  `auth` is still absent, and deliberately so - installation is precisely the
+  window in which no user exists yet. The middleware instead requires proof of
+  filesystem access: on first use it writes a 32-character random token to
+  `storage/app/installer-token.txt`, and the operator enters it on the welcome
+  screen. The welcome screen and the token POST stay outside the gate because
+  that is where the token is entered. The file is deleted when the installer
+  closes.
+- **`setup.complete` only writes the sentinel once a `mainAdmin` exists.** It
+  used to write it unconditionally on a GET, so anyone could end the install
+  window early - and since the route group then stops registering, the real
+  installation became impossible to finish. The sentinel means "installation
+  complete", which is exactly "an administrator account exists".
 - `Setup\MailController::configure` is the only place where the `languages` and
   `default_language` settings rows are created, and it advances only if the test
   message sends successfully.

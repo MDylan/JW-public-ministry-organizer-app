@@ -121,6 +121,15 @@ class SetupFlowTest extends SetupTestCase
     {
         $this->assertFileDoesNotExist($this->sentinelPath());
 
+        // A v1-patch D2 óta a sentinel kiírásának feltétele, hogy létezzen
+        // adminisztrátori fiók - a fájl jelentése ugyanis "a telepítés
+        // befejeződött". A feltétel nélküli kiírást az InstallerAccessTest
+        // méri, mindkét irányból.
+        \App\Models\User::factory()->create([
+            'role'  => 'mainAdmin',
+            'email' => 'flow-admin@example.test',
+        ]);
+
         $this->get(route('setup.complete'))
             ->assertStatus(200)
             ->assertViewIs('setup.complete');
@@ -132,18 +141,28 @@ class SetupFlowTest extends SetupTestCase
         );
     }
 
-    public function test_nothing_in_the_installer_requires_authentication(): void
+    public function test_the_installer_is_guarded_by_a_token_not_by_authentication(): void
     {
-        // KARAKTERIZÁLÁS: a teljes csoporton nincs se auth, se gate, se
-        // aláírás. A telepítési ablakban tehát bárki végigviheti a folyamatot
-        // és létrehozhatja a mainAdmin fiókot - és bárki le is zárhatja a
-        // telepítőt egy sima GET-tel a setup.complete-re, még mielőtt a
-        // tulajdonos hozzáférne.
+        // MEGFORDÍTVA a v1-patch D2 javításával, a felhasználó jóváhagyásával.
+        //
+        // Korábban a teljes csoporton NEM volt se auth, se gate, se aláírás: a
+        // telepítési ablakban bárki végigvihette a folyamatot és létrehozhatta
+        // a mainAdmin fiókot - és bárki le is zárhatta a telepítőt egy sima
+        // GET-tel a setup.complete-re, még mielőtt a tulajdonos hozzáfért volna.
+        //
+        // `auth` továbbra sincs, és ez SZÁNDÉKOS: a telepítés pontosan az a
+        // szakasz, amikor még nincs felhasználó, akihez kötni lehetne. A
+        // védelem fájlrendszer-hozzáférést bizonyíttat egy tokennel; ezt méri
+        // az InstallerAccessTest.
         $this->assertGuest();
 
-        foreach (['setup.welcome', 'setup.requirements', 'setup.account', 'setup.complete'] as $name) {
+        // A leszármazott alapból feloldott állapotból indul (SetupTestCase),
+        // ezért ezek most is 200-at adnak - a kaput a másik fájl méri.
+        foreach (['setup.welcome', 'setup.requirements', 'setup.account'] as $name) {
             $this->get(route($name))->assertStatus(200);
         }
+
+        $guarded = [];
 
         foreach (Route::getRoutes()->getRoutesByName() as $name => $route) {
             if (! str_starts_with($name, 'setup.')) {
@@ -152,8 +171,33 @@ class SetupFlowTest extends SetupTestCase
 
             $middleware = $route->gatherMiddleware();
 
-            $this->assertNotContains('auth', $middleware, "A(z) {$name} mégis auth mögött van.");
-            $this->assertNotContains('signed', $middleware, "A(z) {$name} mégis aláírt.");
+            $this->assertNotContains('auth', $middleware, "A(z) {$name} nem lehet auth mögött.");
+            $this->assertNotContains('signed', $middleware, "A(z) {$name} nem lehet aláírt.");
+
+            // A gatherMiddleware() az ALIAST adja vissza, nem az osztálynevet.
+            if (in_array('installer', $middleware, true)) {
+                $guarded[] = $name;
+            }
         }
+
+        sort($guarded);
+
+        // A nyitóképernyő és a token beküldése SZÁNDÉKOSAN marad kívül: oda
+        // kell beírni a tokent. Minden más a kapun belül van.
+        $this->assertSame(
+            [
+                'setup.account',
+                'setup.basics',
+                'setup.complete',
+                'setup.database',
+                'setup.mail',
+                'setup.requirements',
+                'setup.save-account',
+                'setup.save-basics',
+                'setup.save-database',
+                'setup.save-mail',
+            ],
+            $guarded
+        );
     }
 }

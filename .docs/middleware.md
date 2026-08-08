@@ -53,6 +53,7 @@ Executed on every HTTP request:
 | `profileFull` | `ProfileFull` | Require non-empty profile name before protected area access. |
 | `setGuestLanguage` | `SetGuestLanguage` | Set locale for signed guest flows (finish registration). |
 | `checkRecaptcha` | `CheckRecaptcha` | Validate Google reCAPTCHA token on selected auth endpoints. |
+| `installer` | `EnsureInstallerToken` | Gate the `setup/*` group on a token written to `storage/app/installer-token.txt`. |
 
 Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed`, `throttle`, `verified`) use default Laravel middleware classes.
 
@@ -68,7 +69,8 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 | `PreventRequestsDuringMaintenance` | Laravel default | Standard maintenance-mode gate; no custom allowlist. |
 | `TrustHosts` | Laravel default | Host trust helper class present but not enabled in kernel stack. |
 | `TrustProxies` | Laravel default | Proxy/header trust configuration. |
-| `CheckRecaptcha` | Custom | Optional anti-bot check using Google reCAPTCHA score (`USE_RECAPTCHA` env flag). |
+| `CheckRecaptcha` | Custom | Optional anti-bot check using Google reCAPTCHA score (`USE_RECAPTCHA` env flag). **Fails open** on a connection error and uses an explicit 5s timeout (v1-patch D3): the call previously had neither, so a Google outage returned 500 on `POST /login`, `/register` and `/forgot-password`, and a hung endpoint held the PHP worker. Availability was chosen over bot protection; the failure is logged. |
+| `EnsureInstallerToken` | Custom | Guards the `setup/*` group during installation, when no user exists to authenticate. Requires a token the operator reads from `storage/app/installer-token.txt` on the server; deleted once the installer closes. |
 | `GroupAdmin` | Custom | Authorizes by membership in `userGroupsEditable`. |
 | `GroupMember` | Custom | Authorizes by membership in `groupsAccepted`. |
 | `ProfileFull` | Custom | Redirects to profile page if user name is missing. |

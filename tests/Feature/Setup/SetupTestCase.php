@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Setup;
 
+use App\Http\Middleware\EnsureInstallerToken;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsDomainFixtures;
@@ -31,6 +32,31 @@ abstract class SetupTestCase extends TestCase
     use BuildsDomainFixtures;
 
     protected string $temporaryStorage;
+
+    /**
+     * A telepítő token-kapuja alapból FELOLDVA.
+     *
+     * A v1-patch D2 óta a `setup/*` csoport (a nyitóképernyőt kivéve) az
+     * `installer` middleware mögött áll: a telepítést végzőnek be kell írnia a
+     * szerveren generált tokent. A csoport ettől függetlenül ugyanazt csinálja,
+     * amit eddig, ezért az itteni leszármazottak alapból feloldott állapotból
+     * indulnak - így minden meglévő teszt továbbra is azt méri, amiért íródott.
+     *
+     * MAGÁT A KAPUT az InstallerAccessTest méri, ami ezt szándékosan nem hívja.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->unlockInstaller();
+    }
+
+    protected function unlockInstaller(): void
+    {
+        $this->withSession([
+            EnsureInstallerToken::SESSION_KEY => EnsureInstallerToken::currentToken(),
+        ]);
+    }
 
     public function createApplication()
     {
@@ -79,10 +105,12 @@ abstract class SetupTestCase extends TestCase
             }
         }
 
-        $sentinel = $path.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'installed.txt';
+        foreach (['installed.txt', EnsureInstallerToken::TOKEN_FILE] as $file) {
+            $full = $path.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$file;
 
-        if (file_exists($sentinel)) {
-            unlink($sentinel);
+            if (file_exists($full)) {
+                unlink($full);
+            }
         }
 
         return $path;
