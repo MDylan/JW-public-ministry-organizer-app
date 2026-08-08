@@ -49,6 +49,8 @@ class Kernel extends ConsoleKernel
         // Az események előbb, a belőlük származtatott csoportadatok utána.
         $schedule->command('gdpr:purge-old-events')->dailyAt('3:30');
 
+        $schedule->command('maintenance:purge-old-group-data')->dailyAt('3:40');
+
         $schedule->command('maintenance:purge-log-history')->daily();
 
         $schedule->command('maintenance:daily-cleanup')->daily();

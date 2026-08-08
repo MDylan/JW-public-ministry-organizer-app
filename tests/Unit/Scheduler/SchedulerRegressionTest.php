@@ -24,6 +24,7 @@ class SchedulerRegressionTest extends TestCase
         // 00:00-s torlódásba essen. Az események előbb, a belőlük
         // származtatott csoportadatok utána.
         'gdpr:purge-old-events' => '30 3 * * *',
+        'maintenance:purge-old-group-data' => '40 3 * * *',
         'maintenance:purge-log-history' => '0 0 * * *',
         'maintenance:daily-cleanup' => '0 0 * * *',
         'statistics:record-daily-users' => '0 0 * * *',

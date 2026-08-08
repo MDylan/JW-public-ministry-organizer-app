@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Commands;
 
+use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\EventServiceReport;
 use App\Models\Group;
+use App\Models\GroupDate;
 use App\Models\GroupLiterature;
 use App\Models\LogHistory;
 use App\Models\User;
@@ -174,5 +176,128 @@ class RetentionCommandsTest extends FeatureTestCase
         $this->artisan('gdpr:purge-old-events', ['--dry-run' => true])->assertExitCode(0);
 
         $this->assertNotNull(Event::find($old->id));
+    }
+
+    // --- maintenance:purge-old-group-data ---
+
+    private function dayStatOn(string $day): DayStat
+    {
+        return DayStat::factory()->create([
+            'group_id' => $this->group->id,
+            'day' => $day,
+            'time_slot' => $day.' 09:00:00',
+            'events' => 2,
+        ]);
+    }
+
+    private function groupDateOn(string $day): GroupDate
+    {
+        return GroupDate::factory()->create([
+            'group_id' => $this->group->id,
+            'date' => $day,
+            'date_start' => $day.' 08:00:00',
+            'date_end' => $day.' 12:00:00',
+        ]);
+    }
+
+    public function test_purge_old_group_data_is_a_no_op_while_the_setting_is_disabled(): void
+    {
+        config(['settings_group_data_retention' => '0']);
+        $stat = $this->dayStatOn($this->monthsAgo(36));
+
+        $this->artisan('maintenance:purge-old-group-data')->assertExitCode(0);
+
+        $this->assertNotNull(DayStat::find($stat->id));
+    }
+
+    public function test_purge_old_group_data_is_a_no_op_while_the_setting_is_missing(): void
+    {
+        config(['settings_group_data_retention' => null]);
+        $stat = $this->dayStatOn($this->monthsAgo(36));
+
+        $this->artisan('maintenance:purge-old-group-data');
+
+        $this->assertNotNull(DayStat::find($stat->id));
+    }
+
+    /**
+     * A settings tábla értéke a felületről érkezik, és a $state publikus
+     * Livewire property. Egy nem whitelistelt érték castolva nulla hónapos
+     * ablakot adna, azaz a MAI napig mindent törölne. Itt is no-op kell
+     * legyen, nem "óvatosabb" viselkedés.
+     */
+    public function test_purge_old_group_data_is_a_no_op_on_a_tampered_setting_value(): void
+    {
+        config(['settings_group_data_retention' => 'abc']);
+        $stat = $this->dayStatOn($this->monthsAgo(36));
+        $recent = $this->dayStatOn($this->monthsAgo(1));
+
+        $this->artisan('maintenance:purge-old-group-data');
+
+        $this->assertNotNull(DayStat::find($stat->id));
+        $this->assertNotNull(DayStat::find($recent->id));
+    }
+
+    public function test_purge_old_group_data_honours_the_one_year_window(): void
+    {
+        config(['settings_group_data_retention' => '12']);
+        $old = $this->dayStatOn($this->monthsAgo(13));
+        $recent = $this->dayStatOn($this->monthsAgo(11));
+
+        $this->artisan('maintenance:purge-old-group-data')->assertExitCode(0);
+
+        $this->assertNull(DayStat::find($old->id));
+        $this->assertNotNull(DayStat::find($recent->id));
+    }
+
+    public function test_purge_old_group_data_honours_the_two_year_window(): void
+    {
+        config(['settings_group_data_retention' => '24']);
+        $old = $this->dayStatOn($this->monthsAgo(25));
+        $recent = $this->dayStatOn($this->monthsAgo(23));
+
+        $this->artisan('maintenance:purge-old-group-data');
+
+        $this->assertNull(DayStat::find($old->id));
+        $this->assertNotNull(DayStat::find($recent->id));
+    }
+
+    /**
+     * A Groups\Statistics a napi sorokat a group_dates-ből építi. Ha csak a
+     * day_stats tűnne el, a felület nem üres táblát mutatna, hanem azt
+     * állítaná, hogy a csoport 0 órát szolgált N elérhetőből.
+     */
+    public function test_purge_old_group_data_removes_the_group_dates_on_the_same_floor(): void
+    {
+        config(['settings_group_data_retention' => '12']);
+        $old = $this->groupDateOn($this->monthsAgo(13));
+        $recent = $this->groupDateOn($this->monthsAgo(11));
+
+        $this->artisan('maintenance:purge-old-group-data');
+
+        $this->assertNull(GroupDate::find($old->id));
+        $this->assertNotNull(GroupDate::find($recent->id));
+    }
+
+    public function test_purge_old_group_data_runs_even_while_gdpr_is_disabled(): void
+    {
+        config(['gdpr.enabled' => false, 'settings_group_data_retention' => '12']);
+        $old = $this->dayStatOn($this->monthsAgo(13));
+
+        $this->artisan('maintenance:purge-old-group-data');
+
+        $this->assertNull(DayStat::find($old->id));
+    }
+
+    public function test_purge_old_group_data_dry_run_deletes_nothing(): void
+    {
+        config(['settings_group_data_retention' => '12']);
+        $old = $this->dayStatOn($this->monthsAgo(13));
+        $oldDate = $this->groupDateOn($this->monthsAgo(13));
+
+        $this->artisan('maintenance:purge-old-group-data', ['--dry-run' => true])->assertExitCode(0);
+
+        $this->assertNotNull(DayStat::find($old->id));
+        $this->assertNotNull(GroupDate::find($oldDate->id));
     }
 }
