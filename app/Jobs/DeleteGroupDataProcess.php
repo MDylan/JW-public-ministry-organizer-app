@@ -56,7 +56,6 @@ class DeleteGroupDataProcess implements ShouldQueue
         GroupDay::where('group_id', $this->groupId)->delete();
         DayStat::where('group_id', $this->groupId)->delete();
         GroupDayDisabledSlots::where('group_id', $this->groupId)->delete();
-        GroupDayDisabledSlots::where('group_id', $this->groupId)->delete();
         GroupLiterature::where('group_id', $this->groupId)->delete();
         GroupNews::where('group_id', $this->groupId)->delete();
         GroupNewsUserLogs::where('group_id', $this->groupId)->delete();
@@ -68,11 +67,34 @@ class DeleteGroupDataProcess implements ShouldQueue
         GroupUser::withoutEvents(function () {
             $users = GroupUser::with('user', 'user.userGroups')->where('group_id', $this->groupId)->get();
             foreach($users as $user) {
-                if($this->deleteUsers !== false) {
-                    if(count($user->user->userGroups ?? []) == 0 && $user->user !== null) {
+                if($this->deleteUsers !== false && $user->user !== null) {
+                    // A feltétel korábban `count($user->user->userGroups) == 0`
+                    // volt, ami CSAK akkor teljesült, ha a csoport a job
+                    // futásakor MÁR soft-deleted: a userGroups reláció a groups
+                    // táblához joinol, és az onnan kiesett sor nem számított
+                    // bele. Az éles GroupDelete útvonal előbb töröl, aztán
+                    // dispatch-el, ezért működött - de a jobot élő csoportra
+                    // hívva az anonimizálás NÉMÁN kimaradt.
+                    //
+                    // Most explicit: a saját csoportot zárjuk ki a számlálásból,
+                    // tehát az eredmény független attól, mikor törlik a
+                    // csoportot magát.
+                    $otherGroups = $user->user->userGroups
+                        ->filter(function ($group) {
+                            return (int) $group->id !== (int) $this->groupId;
+                        })
+                        ->count();
+
+                    if($otherGroups === 0) {
+                        // A User::anonymize() maga is elutasíthatja a kérést,
+                        // ha az utódlási szabály nem teljesül (TODO 12.2).
                         $user->user->anonymize();
                     }
                 }
+
+                // A null-ellenőrzés SORRENDJE is hibás volt: a régi feltétel
+                // előbb olvasta a $user->user->userGroups-ot, és csak utána
+                // vizsgálta, hogy $user->user egyáltalán létezik-e.
                 $user->delete();
             }
         });

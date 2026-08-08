@@ -5,7 +5,6 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\CalculateDateProcess;
 use App\Jobs\CalulcateUserNameIndexProcess;
 use App\Jobs\DeleteGroupDataProcess;
-use App\Jobs\EventAutoCheck;
 use App\Jobs\GenerateStatProcess;
 use App\Jobs\GroupDayUpdatedProcess;
 use App\Jobs\UserLogoutFromGroupProcess;
@@ -58,32 +57,58 @@ class JobSerializationTest extends FeatureTestCase
         ]);
     }
 
-    private function event(): Event
-    {
-        return Event::factory()->create([
-            'group_id' => $this->group->id,
-            'user_id' => $this->member->id,
-            'day' => $this->date,
-            'start' => $this->date.' 09:00:00',
-            'end' => $this->date.' 10:00:00',
-            'status' => 0,
-        ]);
-    }
-
     /** Minden job egy-egy realisztikus példánya. */
     private function jobs(): array
     {
-        $event = $this->event();
-
         return [
             CalculateDateProcess::class => new CalculateDateProcess($this->group->id, $this->date, $this->member->id),
             CalulcateUserNameIndexProcess::class => new CalulcateUserNameIndexProcess(),
             DeleteGroupDataProcess::class => new DeleteGroupDataProcess($this->group->id, false),
-            EventAutoCheck::class => new EventAutoCheck($event, strtotime($event->start), strtotime($event->end)),
             GenerateStatProcess::class => new GenerateStatProcess($this->group->id, $this->date, false),
             GroupDayUpdatedProcess::class => new GroupDayUpdatedProcess($this->date, $this->group->id, 3, '08:00', '12:00', $this->member->id),
             UserLogoutFromGroupProcess::class => new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User'),
         ];
+    }
+
+    public function test_the_job_set_matches_what_is_actually_on_disk(): void
+    {
+        // ÚJ a v1-patch B9-cel.
+        //
+        // Ez a fájl a jobok TELJES készletét nevezi meg egyenként, tehát csak
+        // akkor ér valamit, ha a lista nem csúszik el a valóságtól. A korábbi
+        // változat 8, majd 7 jobot sorolt fel; az EventAutoCheck törlésével 6
+        // maradt. Egy új job hozzáadása innentől megbuktatja ezt a tesztet -
+        // ami pontosan a szándék: a sorozatosíthatóságát is fel kell venni ide.
+        $files = glob(app_path('Jobs/*.php'));
+
+        $onDisk = array_map(
+            fn (string $file): string => 'App\\Jobs\\'.basename($file, '.php'),
+            $files
+        );
+        sort($onDisk);
+
+        $declared = array_keys($this->jobs());
+        sort($declared);
+
+        $this->assertSame($onDisk, $declared);
+    }
+
+    public function test_the_deleted_event_auto_check_job_stays_deleted(): void
+    {
+        // Az EventAutoCheck futásképtelen volt - üres foreach, érvénytelen
+        // '=<' SQL operátor, és a törzse tömbelemen olvasott objektum-
+        // property-t -, a két dispatch helye pedig kezdettől ki volt
+        // kommentelve, tehát bizonyíthatóan soha nem futott. Törölve a
+        // v1-patch B9-ben.
+        //
+        // Ha valaki egyszer megírja az automatikus jóváhagyást, azt új
+        // jobbal kell, nem ennek a felélesztésével - ezért az osztály nevére
+        // is őrt teszünk, nem csak a fájlra.
+        $this->assertFalse(class_exists('App\\Jobs\\EventAutoCheck'));
+        $this->assertFileDoesNotExist(app_path('Jobs/EventAutoCheck.php'));
+
+        $observer = file_get_contents(app_path('Observers/EventObserver.php'));
+        $this->assertStringNotContainsString('EventAutoCheck::dispatch', $observer);
     }
 
     public function test_every_job_survives_a_serialize_unserialize_round_trip(): void

@@ -2,7 +2,14 @@
 
 namespace App\Observers;
 
-// use App\Jobs\EventAutoCheck;
+// Az EventAutoCheck job a v1-patch B9-ben törölve lett. Futásképtelen volt
+// (üres foreach, érvénytelen '=<' SQL operátor, és a törzse tömbelemen olvasott
+// objektum-property-t), a két dispatch helye pedig kezdettől ki volt
+// kommentelve - lásd lentebb -, tehát bizonyíthatóan soha nem futott.
+//
+// Az automatikus jóváhagyás mint FUNKCIÓ nem szűnt meg: az auto_approval és az
+// auto_back csoportmezők megmaradnak, csak nincs mögöttük megvalósítás. Ha
+// egyszer megírják, új jobbal kell, nem ennek a felélesztésével.
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\LogHistory;
@@ -61,9 +68,7 @@ class EventObserver
             );
         }
 
-        // if($event->groups->need_approval && $event->groups->auto_approval) {
-        //     EventAutoCheck::dispatch($event, $event->start, $event->end);
-        // }
+        // Itt állt az EventAutoCheck kikommentelt dispatch-e (v1-patch B9).
     }
 
     /**
@@ -152,9 +157,7 @@ class EventObserver
                     new EventStatusChangedNotification($data)
                 );
 
-                // if ($event->groups->need_approval && $event->groups->auto_approval) {
-                //     EventAutoCheck::dispatch($event, $event->start, $event->end);
-                // }
+                // Itt állt az EventAutoCheck másik kikommentelt dispatch-e (v1-patch B9).
 
                 if($event->status == 1) {
                     //accept this event, delete in other groups

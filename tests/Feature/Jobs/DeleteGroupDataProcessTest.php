@@ -132,12 +132,12 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
 
     public function test_handle_anonymizes_a_member_who_has_no_other_group(): void
     {
-        // Fontos a sorrend: a GroupDelete controller előbb soft-deleteli a
-        // csoportot, és csak utána dispatch-eli a jobot. Az anonimizálás
-        // feltétele (count($user->user->userGroups) == 0) csak így teljesül,
-        // mert a userGroups reláció a groups táblához joinol, és a
-        // soft-deleted csoport kiesik belőle. A job önmagában, élő csoporton
-        // futtatva soha nem anonimizálna.
+        // A v1-patch B10 előtt ez a teszt csak azért volt zöld, mert a
+        // csoportot előtte soft-deleteltük: az anonimizálás feltétele
+        // (count($user->user->userGroups) == 0) a groups táblához joinoló
+        // reláción múlt. Most a job maga zárja ki a saját csoportját, tehát a
+        // sorrend már nem számít - a soft-delete itt csak az éles
+        // GroupDelete útvonalat utánozza.
         $this->softDeleteGroupLikeTheController($this->group);
 
         (new DeleteGroupDataProcess($this->group->id, true))->handle();
@@ -158,11 +158,33 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
         $this->assertSame('delete-member@example.test', User::find($this->member->id)->email);
     }
 
-    public function test_handle_does_not_anonymize_while_the_group_is_still_live(): void
+    public function test_handle_anonymizes_even_while_the_group_is_still_live(): void
     {
-        // Jellemzés-teszt a fenti sorrendfüggőségre: ha a csoport nincs
-        // soft-deletelve, a tag még hozzá tartozik, ezért az anonimizálás
-        // kimarad - akkor is, ha a deleteUsers igaz.
+        // MEGFORDÍTVA a v1-patch B10 javításával.
+        //
+        // A job némán sorrendfüggő volt: csak akkor anonimizált, ha a csoport a
+        // futásakor MÁR soft-deleted volt, mert a userGroups reláció a groups
+        // táblához joinol, és a törölt csoport kiesett belőle. Az éles
+        // GroupDelete útvonal előbb töröl, aztán dispatch-el, ezért működött -
+        // de a jobot élő csoportra hívva (kézi futtatás, más hívó, megváltozott
+        // sorrend) az anonimizálás teljesen kimaradt, hibaüzenet nélkül.
+        //
+        // A feltétel most explicit: a saját csoportot zárjuk ki a számlálásból.
+        (new DeleteGroupDataProcess($this->group->id, true))->handle();
+
+        $fresh = User::find($this->member->id);
+
+        $this->assertNotNull($fresh, 'A felhasználó sora megmarad, csak az adatai tűnnek el.');
+        $this->assertNotSame('delete-member@example.test', $fresh->email);
+    }
+
+    public function test_handle_still_spares_a_member_of_another_live_group(): void
+    {
+        // A B10 kontroll-kísérlete: a tágabb feltétel nem anonimizálhat olyat,
+        // akinek van másik csoportja - függetlenül attól, hogy az éppen
+        // törlendő csoport él-e még.
+        $this->attachUserToGroup($this->member, $this->otherGroup);
+
         (new DeleteGroupDataProcess($this->group->id, true))->handle();
 
         $this->assertSame('delete-member@example.test', User::find($this->member->id)->email);
