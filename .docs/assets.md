@@ -47,6 +47,13 @@ The test suite writes them too: `SetupFlowTest` renders the setup layout under `
 
 All four are pinned by `tests/Feature/Assets/AssetPipelineKnownGapsTest.php`; the TODO that owns each is named there.
 
+> **Carried knowingly into the `v1-patch` release.** TODO 33.8 was deliberately
+> left out of that scope. Traps 1 and 2 below are LIVE on every deployed host and
+> stay live - but neither is a regression: both already ship on `v1` today, since
+> the packer pipeline predates the branch. They are the strongest remaining
+> argument for doing TODO 33.8 in the next release, and the release notes should
+> say so rather than let them look like new breakage.
+
 1. **`data:` URIs in packed CSS are corrupted.** The `url(` rewrite is unconditional, so `toastr.min.css`'s four `data:image/png;base64,...` icons come out as `url(http://host/plugins/toastr/data:image/png;base64,...)`. **All four toastr icons are broken in every non-`local` environment** - and fine locally, because `local` skips packing. The project gains nothing from the rewrite: both of its own stylesheets contain zero `url(`. Roadmap TODO 33.8.
 
 2. **`public/storage` is a real directory, not a symlink.** `setup.blade.php` sends its packed output to `/storage/cache/...`, and Packer creates the missing directory. `php artisan storage:link` then reports *"The [public/storage] link already exists"* and **skips the link** - `--force` does not help, since it only removes an `is_link()` - so every public-disk URL 404s. On a fresh deploy the installer wizard renders before anyone runs `storage:link`, which reproduces it. The repair is per-install, not per-release. Roadmap TODO 33.8.

@@ -151,6 +151,7 @@ Full coverage is required **before** any framework change. Every item here is La
   - Test-writing notes worth carrying forward: `Notification::fake()` also captures the `EventObserver`-driven notification fired when a test creates an event, so job assertions must be targeted (`assertNotSentTo`) rather than `assertNothingSent`. Jobs touching events need `actingAs()` for the same observer reason as TODO 04.
 
 - [x] **TODO 06: Extract scheduler closures into testable commands**
+  - **Follow-up shipped on `v1-patch`:** the `newsletters:send-due` defect this TODO preserved verbatim is fixed. An unknown `send_to` used to `return`, skipping every REMAINING newsletter in the batch, and since `sent_time` was never stamped it retried every minute and sat at the head of the queue indefinitely - one mistyped recipient value blocked every later newsletter for good. The row is now skipped and reported, the rest are delivered, and the command exits non-zero. `sent_time` deliberately stays null on the skipped row.
   - Delivered on 2026-08-05. **Suite: 304 -> 342 tests, 945 assertions, green.**
   - The ~200 lines of anonymous closures in `app/Console/Kernel::schedule()` became **11 named Artisan commands** under `app/Console/Commands` (a directory `commands()` was already loading but which did not exist). `schedule()` is now a 12-line list of `$schedule->command(...)` calls.
   - Two closures were split because they bundled unrelated work: the daily cleanup closure became `maintenance:daily-cleanup` + `statistics:record-daily-users`, and the every-minute closure became `groups:apply-future-changes` + `newsletters:send-due`. Every original cron expression is preserved; verified against `upgrade-notes/baseline-schedule.txt`.
@@ -185,7 +186,7 @@ Full coverage is required **before** any framework change. Every item here is La
     - once `accepted` reaches `max_publishers`, both errors appear together.
   - **Two latent bugs found, both pinned rather than fixed** (fixing changes behaviour and belongs to TODO 77, which owns this code):
     1. The `publishers` counting divergence above. `Events\Modal.php:352` increments `publishers` for **every** event while `EventEdit.php:288` restricts it to accepted ones - so the same data yields different numbers in the calendar view and in the save check. `EventModalSlotTableTest::test_the_modal_counts_pending_events_as_publishers_but_the_editor_does_not` measures the gap directly and is the reference point for the TODO 77 extraction.
-    2. **Lowering `date_max_publishers` below the number of existing events on a slot makes the day unopenable.** `getInfo()` allocates `max_publishers + events.max_columns` cells per slot (`:241-243`) and consumes one per event via `min(array_keys(...))` (`:280`); once the cells run out, PHP 8 throws a `ValueError` from `min([])`. Reachable in production: the events are created under a high maximum, then an admin lowers it (or a scheduled future group change overwrites it). Pinned by `EventCapacityTest::test_lowering_the_maximum_below_the_existing_event_count_breaks_the_day_table`.
+    2. ~~**Lowering `date_max_publishers` below the number of existing events on a slot makes the day unopenable.**~~ **FIXED on `v1-patch`.** `getInfo()` allocated `max_publishers + events.max_columns` cells per slot and consumed one per event via `min(array_keys(...))`; once the cells ran out, PHP 8 threw a `ValueError` from `min([])` and the whole day became unopenable, not merely misdrawn. Reachable in production: events created under a high maximum, then an admin lowers it (or a scheduled future group change overwrites it), and nobody deletes the existing events. Overflowing events now get a column of their own; the pinning test was inverted. **Finding 1 above still stands** - it needs a product decision and stays with TODO 77.
   - Also covered: capacity is per-slot not per-day; a member cannot book the same slot twice in the same group (`getInfo():292-294` marks the applicant's own slots disabled); `disabled_slots` suppress slots with zero events; the `ready` status requires **accepted** events, so a pending-only slot stays `free`; the full cross-group `busy` matrix (overlap rejected, exact touch allowed, pending / soft-deleted event / soft-deleted group all ignored, and same-group overlaps deliberately out of its scope).
   - `Events\Modal` got its **first direct test coverage** - `CalendarEventsComponentTest` only exercises `Events\Events`. Its state is private (`day_data`, `date_data`, `day_events`), so `assertSet()` does not work; the tests use `viewData()` instead, since `render()` passes those arrays to the view (`Modal.php:551-558`). Worth remembering for Phase 6.
   - `GenerateSlots` notes now pinned: the `$max_hour` correction (`GenerateSlots.php:16,26-29`) is **dead code** since the rewrite to a `while` loop; a half-hour start keeps its offset across whole-hour steps while a half-hour end leaves the last slot hanging over the closing time; `ceil()` makes the Modal's `height` a **float** that reaches the view's `rowspan`. DST is covered under `Europe/Budapest` (the test timezone is UTC, so it needs an explicit switch): spring-forward is absorbed by the array-key deduplication, while **fall-back silently skips the repeated hour**, making that day appear an hour shorter in the calendar.
@@ -875,6 +876,48 @@ For each package, "assess" means: list every API the project actually consumes, 
 
 Everything in this phase is Laravel 8 compatible and shortens every later phase. Nothing here changes the framework version.
 
+### The `v1-patch` branch - a last Laravel 8 release, cut before the framework moves
+
+Branched from `v2-dev` (which already contains all of `dev`, so the Phase 0-2 test
+suite sits directly on top of the production line). The goal was a final Laravel 8
+patch carrying the test suite and the measured bug fixes to the `v1` line, so the
+value of Phases 0-2 does not have to wait for the whole upgrade.
+
+**Scope decision, taken by the user:** behaviour-neutral fixes plus the real
+production defects, the weather feature fixed and finished, and three
+behaviour-changing items explicitly approved. Deliberately OUT of scope, and
+still open below: TODO 33.8 (packer), TODO 33.2 and 33.5 (GDPR and pending-email
+package replacements, though two GDPR-relevant defects were fixed without
+replacing anything), and the pure upgrade-preparation items TODO 23, 24, 27, 29
+and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays as
+it is.
+
+Suite: **1065 -> 1125 tests, 3405 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
+The route table is byte-identical to the TODO 03 baseline apart from the three
+`laraupdater.*` names TODO 33.4 already added.
+
+**Closed on that branch (see the individual TODOs below):**
+
+| Item | What shipped |
+|---|---|
+| TODO 26 | The dead `verification.verify` closure in `routes/web.php` is gone - zero runtime change, as TODO 03 predicted. `password.confirm` deliberately keeps both definitions. |
+| TODO 30 | The `web` disk root is `public_path()` instead of a CWD-relative `'public'`, the view's URL prefix moved with it, and every disk declares `'throw'`. |
+| TODO 33 | `setUserLastActivity` -> `SetUserLastActivity`; the `function_exists()` guard that named the wrong function; the dead `->namespace()` calls in `RouteServiceProvider`; **and the `is-groupCreator` gate typo**, which is why a plain `groupCreator` never received their newsletters. |
+| TODO 33.1 | `CheckRecaptcha` now fails **open** on a connection error and carries an explicit 5s timeout. |
+| TODO 33.6 + 33.7 | The weather feature rebuilt in-house and finished: `App\Support\Weather\*`, a `weather:refresh` command on `0 */3 * * *`, the country code on both endpoints, no more double JSON encoding, guards in the calendar, a real foreign key, en/de translations, and `OPENWAETHER_` -> `OPENWEATHER_`. `rakibdevs/openweather-laravel-api` removed. |
+| TODO 06 | `newsletters:send-due` no longer blocks its whole queue forever on one unknown `send_to`. |
+| TODO 77, defect 2 | The `min([])` `ValueError` that made a day unopenable after lowering `date_max_publishers`. Defect 1 (the publishers-counting divergence) still needs a product decision and stays where it is. |
+| (new, unrecorded) | **All seven audit loops filtered with `isset($changes[$field])`, which is false for null**, so every change setting a field to null was invisible in the audit trail, application-wide. |
+| (new, unrecorded) | The `setup/*` group had no authorization at all. It is now behind an installer-token middleware, and `setup.complete` only writes the sentinel once an administrator exists. |
+
+Also fixed there, with no owning TODO: the `ListUsers` pagination/transaction/
+notification/silent-error set, `DeleteGroupDataProcess`'s order dependence, the
+`Groups\Statistics` month-selector leftovers (which also removes a PHP 8.2
+dynamic-property deprecation from Phase 8's path), the side-menu cache that never
+expired, `HttpsProtocol`'s literal `"true"` comparison, and two GDPR defects
+around pending e-mail addresses. `EventAutoCheck` was deleted - unrunnable, and
+provably never dispatched.
+
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:
     - Verified: zero `Form::` or `Html::` usages anywhere, and the provider is already commented out at `config/app.php:167`. Remove the requirement outright.
@@ -894,7 +937,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - Review the `\Debugbar::enable()` call in `app/Providers/AppServiceProvider.php`.
   - Expected changes: `config/app.php`, `app/Providers/AppServiceProvider.php`.
 
-- [ ] **TODO 26: Resolve duplicate route names**
+- [x] **TODO 26: Resolve duplicate route names** - DONE on `v1-patch`
+  - Delivered: the `routes/web.php` `verification.verify` closure deleted (zero runtime change - the Fortify definition always won), `password.confirm` deliberately left with both definitions and documented, `verification.notice` left alone. `RouteContractSnapshotTest`'s two tripwires inverted; the route fixture needed no edit because the closure never reached the routing table.
   - Needed:
     - **`verification.verify`: resolved empirically in TODO 03.** Only one entry reaches the routing table - `Route::get()` overwrites by `method + domain + uri`, and **the Fortify definition wins** (`Laravel\Fortify\Http\Controllers\VerifyEmailController@__invoke`, middleware `web, Authenticate:web, ValidateSignature, ThrottleRequests:6,1`). The closure at `routes/web.php:122` is **dead code that never executes** and can be deleted with zero runtime change - confirm the Fortify middleware stack above is the intended one first.
     - `password.confirm` is defined twice in `routes/web.php` (`:128` GET, `:138` POST). **Both survive** because they differ by HTTP method, but `route('password.confirm')` resolves against the *last* registration, so URL generation points at the POST route. Confirm that is intended. Note `password.confirm` is also a middleware alias in `app/Http/Kernel.php:68`.
@@ -922,7 +966,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - `app/Models/Group.php:16` (`['deleted_at']` - already handled by `SoftDeletes`, likely just removable) and `app/Models/GroupUser.php:29` (a `Pivot` model, `['created_at','updated_at','deleted_at']`).
   - Expected changes: two model edits; removes a Laravel 10 blocker early.
 
-- [ ] **TODO 30: Fix filesystem disk configuration**
+- [x] **TODO 30: Fix filesystem disk configuration** - DONE on `v1-patch`
+  - Delivered: the `web` disk root is `public_path()`, every disk declares `'throw' => false`, and the avatar URL prefix in `livewire/groups/messages.blade.php` moved with it - the pair is only correct together, which is what `AvatarGenerationTest` now pins. **Release note:** deployed hosts carry their generated avatars under `public/public/avatars/`; they are regenerated on first render, so no data migration is needed, but the old directory can be removed by the release hook.
   - Needed:
     - `config/filesystems.php` `web` disk root is the bare relative path `'public'` instead of `public_path()`. It resolves against the PHP working directory and is fragile under Flysystem 3. Used by `app/Http/Livewire/Groups/Messages.php:173,176`.
     - Add an explicit `'throw'` value to every disk, since Flysystem 3 changes `exists()`/`delete()` semantics.
@@ -944,7 +989,9 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
     - The TODO 13 encrypted round-trip tests must pass against the squashed schema.
   - Expected changes: `database/schema/*.sql` baseline, archived migrations, green test suite on a freshly migrated `kozter_testing`.
 
-- [ ] **TODO 33: Clean up middleware naming and dead code**
+- [x] **TODO 33: Clean up middleware naming and dead code** - MOSTLY DONE on `v1-patch`
+  - Delivered: the middleware rename, the `RouteServiceProvider` leftover, the `helpers.php:23` guard, and defect 1 (the `is-groupCreator` gate typo, with the user's go-ahead - `AuthorizationGateTest` inverted, and a new test records that `translator` now receives those newsletters too, since the gate admits it).
+  - **Still open: defect 2.** `isNotHelper()` and `isNotEditor()` remain identical - the user did NOT approve giving the `helper` role write access, so `test_a_helper_cannot_open_the_user_editor_either` stays as it is. Revisit as a product decision.
   - Needed:
     - Rename `app/Http/Middleware/setUserLastActivity.php` to `SetUserLastActivity` (PSR-4 tolerates the current name locally, but case-sensitive deploy targets will not).
     - ~~Decide the fate of `RedirectIfUnansweredTerms`, which is never registered in `app/Http/Kernel.php`.~~ **Decided in TODO 16: it is deleted with the rest of the consent feature, in TODO 33.2.**
@@ -955,7 +1002,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
       3. **`helpers.php:23` guards on `pwbs_check_group_admins` while defining `pwbs_check_group_other_admins`** - the `function_exists()` check never matches its own function.
   - Expected changes: `app/Http/Kernel.php`, middleware files, `app/Helpers/helpers.php`, `app/Http/Livewire/Groups/ListUsers.php`, `.docs/middleware.md`.
 
-- [ ] **TODO 33.1: Make `CheckRecaptcha` survive a Google outage**
+- [x] **TODO 33.1: Make `CheckRecaptcha` survive a Google outage** - DONE on `v1-patch`
+  - Policy chosen with the user: **fail-open**. A `ConnectionException` lets the request through and logs it; availability beat bot protection. An explicit 5s timeout was added - there was none, so a hung Google endpoint held the PHP worker on the login path. `CheckRecaptchaTest`'s fatal-error case rewritten.
   - Context: found by TODO 09. `app/Http/Middleware/CheckRecaptcha.php:22` calls `Http::asForm()->post()` with **no try/catch**. HTTP error codes come back as a `Response` and are handled correctly, but a connection failure (timeout, DNS, network) throws `Illuminate\Http\Client\ConnectionException`, which nothing catches. The middleware guards `POST /login`, `POST /register` and `POST /forgot-password`, so **a Google outage returns 500 on all three** - nobody can log in, register or reset a password until Google comes back.
   - Dormant today only because `USE_RECAPTCHA=false`. **This must be resolved before recaptcha is ever switched on**, independently of the upgrade.
   - Needed:
@@ -1045,7 +1093,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   - **The release note that must not be lost**, the same shape as TODO 33.4: `install()` never deletes, so the release carrying this must extend `release/upgrade.php` to remove `vendor/protonemedia/` and `resources/views/vendor/verify-new-email/` from deployed hosts.
   - Expected changes: ~250-300 lines under `app/`, one route registration, `config/verify-new-email.php` re-pointed, `composer.json`, two language files, `release/upgrade.php`, and the `.docs` entries added by TODO 19.
 
-- [ ] **TODO 33.6: Replace `rakibdevs/openweather-laravel-api` with a direct `Http::` client**
+- [x] **TODO 33.6: Replace `rakibdevs/openweather-laravel-api` with a direct `Http::` client** - DONE on `v1-patch`
+  - Delivered as described, plus the coverage that was the real reason for the swap: `tests/Feature/Weather/OpenWeatherClientTest.php` (15 cases) finally exercises the SUCCESS path with `Http::fake()`, which the package's inline Guzzle client made impossible. One extra defect found while doing it: a failed refresh used to bump `updated_at`, so an unreachable API marked stale data fresh for an hour.
   - **This is the first half of the TODO 20 decision.** It sits in Phase 3 for the same reason as 33.5: the replacement code is framework-neutral and provable on Laravel 8 today, so writing it here takes the package out of every later resolution at once. **Note the TODO 22 correction to TODO 20**: the installed 1.9.0 does **not** block at Phase 5 - `php ^8.0` admits 8.1 - so it blocks nothing at any hop, and only v2.0.0 has a Laravel ceiling (`illuminate ^12.0`). That removes the forcing function, not the reason: the weather feature does not work today, which is what this item fixes. Read TODO 20 first; it carries the measurements and the six findings.
   - **The consumed surface is two GETs.** `helpers.php:111-113` is the only place the package is touched: `getCurrentByCity()` -> `data/2.5/weather` and `get3HourlyByCity()` -> `data/2.5/forecast`. Nothing else in the project references `RakibDevs\`.
   - **Acceptance criteria already exist: the 25 tests in `tests/Feature/Weather/` (TODO 20.1)**, written against the vendor code, so they are the before-and-after comparison. **Plus one criterion those tests cannot express today:** the replacement must come with `Http::fake()` coverage of the success and failure branches - the coverage that is impossible while `WeatherClient` hard-wires its own Guzzle client. Follow `tests/Feature/Middleware/CheckRecaptchaTest.php`.
@@ -1060,7 +1109,8 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   - **The release note that must not be lost**, the same shape as TODO 33.4 and 33.5: `install()` never deletes, so the release carrying this must extend `release/upgrade.php` to remove `vendor/rakibdevs/` from deployed hosts.
   - Expected changes: ~80-120 lines under `app/`, `config/openweather.php`, `composer.json`, `WeatherCityFactory`, `release/upgrade.php`, and new `Http::fake()` tests.
 
-- [ ] **TODO 33.7: Finish the weather feature**
+- [x] **TODO 33.7: Finish the weather feature** - DONE on `v1-patch`
+  - Delivered as described. The `weather_monthly_call` counter was **deleted** (written on every call, read nowhere). The calendar view needed one guard the TODO did not list: `current_weather['weather'][0]` and `['main']` were dereferenced unguarded, and a rate-limited response body carries neither.
   - **This is the second half of the TODO 20 decision, and it is a product requirement rather than an upgrade one** - the feature is wanted and today it cannot work. Do it after 33.6, so the refresh loop is written against the new client.
   - **The core gap: nothing ever refreshes the cache.** Rows are written only when a group admin saves the group form; the calendar is a pure reader. A new `weather:refresh` command must iterate the **distinct** cities of groups with `weather_enabled = 1` and a non-null `city_id`, and refresh each.
   - **Budget, and it decides the cadence.** The free tier allows 1000 calls/day and 60/minute; one refresh costs 2 calls per city. The forecast itself is only 3-hourly, so hourly refreshing buys nothing on that half. **Schedule it `0 */3 * * *`** - at 2 calls per city per run that supports roughly 60 cities well inside the cap, and the existing `last_try` throttle stays as the backstop. Register it in `Kernel.php` **and** add it to `SchedulerRegressionTest::EXPECTED_SCHEDULE`, which is a whitelist and will fail until you do.
@@ -1554,7 +1604,7 @@ Deliberately scheduled **after** the Laravel 13 upgrade is released and stable. 
   - **The drift, measured (TODO 07.1).** `Modal.php:352` increments `publishers` for every event; `EventEdit.php:288-291` increments it only for accepted ones, and always in lockstep with `accepted`. Consequences to resolve here:
     - In `EventEdit` the two counters are always equal, which makes the approval-based ceiling in `saveEvent()` (`:477-482`) **unreachable dead code** - the `+ config('events.max_columns')` branch can never fire. The ceiling is enforced only indirectly, via the `$slots` count and the `day_selects` filter, which is why users hitting it see `event.invalid_value` instead of `event.reach_max_publisher`.
     - The extraction must therefore make an explicit decision: **should pending applications consume publisher capacity?** The calendar view (Modal) says yes, the save check (EventEdit) says no. Whichever is chosen, both the counter semantics and the user-facing error message need to follow it, and `EventModalSlotTableTest` plus the ceiling tests in `EventCapacityTest` must be rewritten to the decided behaviour rather than merely re-pointed.
-    - While in here, fix the `min([])` crash pinned by `EventCapacityTest::test_lowering_the_maximum_below_the_existing_event_count_breaks_the_day_table`: the cell allocation must tolerate more events on a slot than the current maximum allows.
+    - ~~While in here, fix the `min([])` crash~~ **Already fixed on `v1-patch`** - the cell allocation tolerates more events on a slot than the current maximum allows, and the pinning test was inverted. Nothing left here for that half; the counter-semantics decision above is what remains.
   - Needed:
     - Extract the shared logic into a dedicated service or action class (for example `app/Classes/DayScheduleBuilder.php`, alongside the existing `app/Classes/GenerateSlots.php`), and have both components consume it.
     - Move the capacity and overlap rules out of the Livewire components entirely, so they can be unit-tested without a component harness.
