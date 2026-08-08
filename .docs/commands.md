@@ -23,6 +23,8 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 | `gdpr:anonymize-inactive` | `AnonymizeInactiveUsers` | Anonymizes users inactive beyond `gdpr.settings.ttl` months. Skips anyone the succession rule blocks (see below), then detaches group memberships and anonymizes. Reports the skipped count. No-op when `gdpr.enabled` is false. |
 | `gdpr:notify-anonymization` | `NotifyUpcomingAnonymization` | Warns users approaching the retention limit, and separately alerts group editors (`roler`, `admin`) about members in a narrow 6-7 day window. Both halves apply the same succession rule as the anonymizer, so a user who cannot be anonymized is not warned either. No-op when `gdpr.enabled` is false. |
 | `gdpr:anonymizeInactiveUsers` | `PackageAnonymizeInactiveUsers` | Overrides the Dialect package command of the same name (see below). Same behaviour as the package's, minus the redundant `isAnonymized` write that bypassed the succession rule. |
+| `gdpr:purge-old-events` | `PurgeOldEvents` | Permanently deletes events whose `day` is older than `retention.events_months` (13), together with their `event_service_reports` rows via the FK cascade. No-op when `gdpr.enabled` is false. Accepts `--dry-run`. |
+| `maintenance:purge-old-group-data` | `PurgeOldGroupData` | Permanently deletes `DayStat` and `GroupDate` rows older than the `group_data_retention` setting (`0` off, `12` or `24` months). Not gated on GDPR - these tables hold no personal data. Accepts `--dry-run`. |
 | `maintenance:purge-log-history` | `PurgeLogHistory` | Deletes `LogHistory` entries older than three months. |
 | `maintenance:daily-cleanup` | `DailyCleanup` | Force-deletes soft-deleted events older than three months and `GroupMessage` rows older than a week. |
 | `statistics:record-daily-users` | `RecordDailyUserStatistics` | Records the daily active user count as statistics type `dialy_users`. |
@@ -142,6 +144,9 @@ Consequences worth knowing before changing either one:
 | Every 5 minutes | `events:expire-pending` |
 | Daily at `07:00` | `gdpr:anonymize-inactive` |
 | Daily at `07:10` | `gdpr:notify-anonymization` |
+| Daily at `03:20` | `activitylog:clean --force` (Spatie's own command, scheduled here since v1-patch E; skipped by a `when()` filter while `gdpr.enabled` is false) |
+| Daily at `03:30` | `gdpr:purge-old-events` |
+| Daily at `03:40` | `maintenance:purge-old-group-data` |
 | Daily | `maintenance:purge-log-history` |
 | Daily | `maintenance:daily-cleanup` |
 | Daily | `statistics:record-daily-users` |
@@ -171,6 +176,32 @@ unchanged during the framework upgrade:
   `WeatherCache` 15-minute `last_try` throttle remains the backstop, and a
   failed refresh deliberately does NOT touch `updated_at`, so stale data never
   looks fresh.
+- **`activitylog:clean` must be scheduled with `--force`.** The Spatie command
+  opens with `ConfirmableTrait::confirmToProceed()`, which prompts in
+  `production`. Run from the scheduler there is no TTY, `confirm()` returns its
+  `false` default, the command prints `Command Cancelled!`, exits 1 and deletes
+  nothing - silently, since nothing surfaces a scheduler exit code. "Already
+  clean" and "cancelled every night" are indistinguishable from the outside.
+  `SchedulerRegressionTest::EXPECTED_SCHEDULE` carries the flag inside the
+  command string, so dropping it turns the test red. Its window is
+  `config('activitylog.delete_records_older_than_days')` = 90 days, which had
+  been declared but never applied before v1-patch E4.
+- **The retention purges delete through the query builder, never per model.**
+  `Eloquent\Builder::forceDelete()` is a bare `$this->query->delete()` and fires
+  no model events. Deleting events per model instance would run
+  `EventObserver::deleted()` on every row - a mail to the publisher and to every
+  group admin, plus one `log_histories` row each. On the first production run
+  that is 121,000 events.
+  `RetentionCommandsTest::test_purge_old_events_fires_no_model_events` pins it.
+- **`maintenance:purge-old-group-data` takes `group_dates` with `day_stats`.**
+  `Groups\Statistics` builds its daily rows from `group_dates`, not from
+  `day_stats`. Purging only the statistics would leave a fully populated table
+  claiming the group served 0 hours out of N available on every historical day.
+- **An unrecognised `group_data_retention` value is a no-op, not a fallback.**
+  The value is whitelisted (`config('retention.group_data_options')`) rather than
+  cast, in both `Admin\Settings::saveGroupDataRetention()` and
+  `RetentionWindow`. Cast to int an `'x'` would become `0`, and a zero-month
+  window would put the floor on today.
 - **`statistics:record-daily-users` writes the type `dialy_users`.** The typo is
   intentional: existing data rows and the `Admin\Statistics` component both
   filter on that exact string. Renaming it requires a data migration.

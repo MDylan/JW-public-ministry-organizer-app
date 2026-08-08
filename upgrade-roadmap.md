@@ -895,9 +895,15 @@ replacing anything), and the pure upgrade-preparation items TODO 23, 24, 27, 29
 and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays as
 it is.
 
-Suite: **1065 -> 1130 tests, 3436 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
+Suite: **1065 -> 1185 tests, 3539 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
 The route table is byte-identical to the TODO 03 baseline apart from the three
 `laraupdater.*` names TODO 33.4 already added.
+
+The suite is run with **`composer test`**, never `artisan test` - the script
+clears the build caches first, because a leftover `bootstrap/cache/config.php`
+makes the tests read the APPLICATION configuration (production database
+included) and once produced 110 false failures in a single run.
+`tests/CreatesApplication.php` carries two guards for anyone who bypasses it.
 
 **Closed on that branch (see the individual TODOs below):**
 
@@ -913,6 +919,7 @@ The route table is byte-identical to the TODO 03 baseline apart from the three
 | TODO 77, defect 2 | The `min([])` `ValueError` that made a day unopenable after lowering `date_max_publishers`. Defect 1 (the publishers-counting divergence) still needs a product decision and stays where it is. |
 | (new, unrecorded) | **All seven audit loops filtered with `isset($changes[$field])`, which is false for null**, so every change setting a field to null was invisible in the audit trail, application-wide. |
 | (new, unrecorded) | The `setup/*` group had no authorization at all. It is now behind an installer-token middleware, and `setup.complete` only writes the sentinel once an administrator exists. |
+| (new, unrecorded) | **Nothing in the application deleted old data by age** (see "Data retention" below). `day_stats` had grown to 471,754 rows, live `events` to 164,371 and `group_dates` to 48,033, all back to June 2022; `config/activitylog.php` had declared a 90-day retention since installation, but the Spatie command that applies it was never scheduled, so 7,581 of 7,739 rows sat past their window. |
 | (new, unrecorded) | **`artisan optimize` has never completed on this codebase - not on `v1` either.** A duplicate route name is not merely untidy: `route:cache` rebuilds the table as a Symfony collection keyed by name and throws `LogicException: Unable to prepare route [confirm-password] for serialization` on the second one. Verified by running `route:cache` against `git show v1:routes/web.php`, which fails identically. Every deployment that ran `optimize` silently fell back to an uncached route table. |
 
 Also fixed there, with no owning TODO: the `ListUsers` pagination/transaction/
@@ -922,6 +929,60 @@ dynamic-property deprecation from Phase 8's path), the side-menu cache that neve
 expired, `HttpsProtocol`'s literal `"true"` comparison, and two GDPR defects
 around pending e-mail addresses. `EventAutoCheck` was deleted - unrunnable, and
 provably never dispatched.
+
+#### Data retention (v1-patch E)
+
+Measured before the work, on the live database: `day_stats` 471,754 rows (72%
+past 13 months), live `events` 164,371 (73%), `group_dates` 48,033 (71%),
+`activity_log` 7,739 (90%). The only age-based deletes in the whole application
+were `maintenance:purge-log-history` (`log_histories`, 3 months) and
+`maintenance:daily-cleanup`, which only empties the event **trash**. The three
+GDPR commands anonymize `users` and delete no rows anywhere.
+
+Three datasets, three separate gates - deliberately not one switch:
+
+| Dataset | Gate | Window |
+|---|---|---|
+| `events` + cascading `event_service_reports` | `gdpr.enabled` | 13 months (`config/retention.php`) |
+| `day_stats` + `group_dates` | new admin setting `group_data_retention` | off / 12 / 24 months |
+| `activity_log` | `gdpr.enabled`, via a scheduler `when()` | 90 days, already declared |
+
+`day_stats` and `group_dates` are **not** on the GDPR switch: they hold group,
+day, time slot and a count - no personal data - so a size problem must not be
+blocked by a privacy switch that is off on this deployment. They get an
+admin-facing three-state control instead, with its own save action rather than
+`saveOthers()`, which rewrites the whole `.env` and is the one deliberately
+untested method in that component.
+
+Four findings that shaped the implementation:
+
+- **`event_service_reports` loses 873 of its 874 rows** on the first run (last
+  entry belongs to a 2025-09-04 event). Accepted by the user against that
+  number, not against a vague expectation. `--dry-run` on both commands, and a
+  database backup, are the safety net.
+- **`group_dates` had to go with `day_stats`.** `Groups\Statistics` builds its
+  daily rows from `group_dates` (`isset($dates[$key])`), so purging only the
+  statistics would not blank the screen - it would render a full table claiming
+  the group served 0 hours out of N available, every day, for years.
+- **`activitylog:clean` needs `--force`.** Without it the command hits
+  `ConfirmableTrait::confirmToProceed()`, gets no TTY from the scheduler, prints
+  `Command Cancelled!`, exits 1 and deletes nothing - forever, silently.
+- **`GenerateStatProcess` could resurrect purged days as all-zero rows.**
+  `GroupDateHelper::generateDate()`'s past-date guard is broken (it evaluates
+  `$date_info->toArray()`, discards it and falls through to `updateOrCreate`),
+  so a template edit dispatches the job for old days. It now returns early below
+  the floor. **The broken guard itself is still there** and is worth its own fix.
+
+All floors come from `App\Support\Retention\RetentionWindow` - the commands and
+the four UI clamps read the same source, so they cannot drift. Two traps are
+solved there once: the setting value is **whitelisted, never cast** (an `'x'`
+cast to int is 0, and a zero-month window deletes everything up to today), and
+`subMonthsNoOverflow()` with day-granular comparison, because `subMonths()`
+overflows at month end and `day` is a `DATE` column.
+
+Still open, noted but not done: `Statistics` (the `statistics` table, not the
+component) grows ~9,000 rows/year while only the last 25 hours and 7 days are
+ever read, and nothing purges it.
 
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:

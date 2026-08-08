@@ -23,6 +23,28 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   into `eventsOnly` and `groupsAccepted` and call `anonymize()` on each. Remove the
   trait from either model and the user anonymization fatals. Neither declares
   `$gdprWith`, so the cascade stops one level deep.
+- **Data retention (v1-patch E).** Four models are now purged by age; every floor
+  comes from `App\Support\Retention\RetentionWindow`, which is the only place a
+  cutoff date is computed. Do not recompute one inline - the commands and the
+  UI clamps must not drift apart.
+
+  | Model | Floor | Gate |
+  |---|---|---|
+  | `Event` (+ `EventServiceReport` via FK cascade) | `retention.events_months` = 13 | `gdpr.enabled` |
+  | `DayStat`, `GroupDate` | `settings.group_data_retention` (`0` / `12` / `24` months) | the setting itself |
+  | Spatie `Activity` (`activity_log`) | `activitylog.delete_records_older_than_days` = 90 | `gdpr.enabled`, via a scheduler `when()` |
+
+  `DayStat` and `GroupDate` are deliberately **not** on the GDPR switch: they
+  carry group, day, time slot and a count, no personal data, so their retention
+  answers to size. `Event` and `activity_log` are personal data and follow GDPR.
+  `LogHistory` keeps its own separate three-month rule in
+  `maintenance:purge-log-history`.
+
+  Two consequences worth knowing: `day_stats` is derived from `events`
+  (`GenerateStatProcess`), so once the events are gone it cannot be regenerated -
+  and the job now refuses to try below the floor, because it would write all-zero
+  rows. And `User::$gdprWith` exports `eventsOnly` with no date filter, so the
+  Article 20 export naturally shrinks to the retained window.
 - **Pending e-mail changes** use `ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail` on `User`.
   A requested address is parked in `pending_user_emails` (a vendor model, `PendingUserEmail`, related
   through `morphs('user')`) and only reaches `users.email` when the signed link is opened. The trait
