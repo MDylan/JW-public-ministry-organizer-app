@@ -347,6 +347,7 @@ return array (
       'email_language' => 'Die E-Mail-Benachrichtigung sollte in dieser Sprache verfasst sein (falls er noch kein Konto hat):',
       'email_language_error' => 'Die gewählte Sprache ist nicht verfügbar.',
       'info' => 'Wenn du auf den Knopf "Hinzufügen" klickst, wird der Verkündiger sofort als Gruppenmitglied hinzugefügt. Er wird per E-mail benachrichtigt, dass du ihn in die Gruppe eingeladen hast, und wenn er noch kein Konto hat, wird das System automatisch eines für ihn erstellen.',
+      'error_this_is_child' => 'Ein neuer Verkündiger kann nur in der Hauptgruppe hinzugefügt werden, nicht hier. Verkündiger, die der Hauptgruppe hinzugefügt werden, werden automatisch auch hierher kopiert.',
       'success' => 'Hinzugefügt wurden :number neue Verkündiger!',
       'title' => 'Einen neuen Verkündiger hinzufügen',
     ),

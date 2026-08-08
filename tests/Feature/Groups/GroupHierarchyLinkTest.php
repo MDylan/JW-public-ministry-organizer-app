@@ -4,6 +4,7 @@ namespace Tests\Feature\Groups;
 
 use App\Http\Livewire\Groups\ListUsers;
 use App\Models\Group;
+use App\Models\LogHistory;
 use App\Models\User;
 use App\Notifications\GroupParentGroupAttachedNotification;
 use App\Notifications\GroupParentGroupDetachedNotification;
@@ -222,18 +223,51 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_a_child_group_cannot_be_used_as_a_parent(): void
     {
+        // MEGFORDÍTVA a v1-patch B8 javításával.
+        //
         // A user_admin_groups() eleve kiszűri a gyerekcsoportokat
         // (whereNull('groups.parent_group_id')), ezért erre az esetre KÉT
-        // hibaüzenet is bekerül a hibazsákba: az error_not_in_group és az
-        // error_this_is_child. A felhasználó így egy félrevezető "nem vagy
-        // tagja" üzenetet is kap. Karakterizálva, nem javítva.
+        // hibaüzenet került a hibazsákba: az error_not_in_group ÉS az
+        // error_this_is_child. A felhasználó tehát azt is olvasta, hogy "nem
+        // vagy csoportfelvigyázó benne", holott éppen ő az - a csoport csak
+        // már máshoz van kötve.
+        //
+        // Most egyetlen, a valódi okot megnevező üzenet jelenik meg.
         Notification::fake();
 
         $grandParent = $this->createGroup(['name' => 'Nagyszülő csoport']);
         $alreadyChild = $this->createChildGroup($grandParent, ['name' => 'Már gyerek']);
         $this->attachUserToGroup($this->actor, $alreadyChild, 'admin');
 
-        $this->link($alreadyChild->id)->assertHasErrors('parent_group_id');
+        $component = $this->link($alreadyChild->id);
+        $component->assertHasErrors('parent_group_id');
+
+        $this->assertSame(
+            [__('group.link.error_this_is_child')],
+            $component->instance()->getErrorBag()->get('parent_group_id'),
+            'Pontosan egy üzenet, és az a valódi ok.'
+        );
+
+        $this->assertNull($this->child->fresh()->parent_group_id);
+        Notification::assertNothingSent();
+    }
+
+    public function test_a_group_the_actor_does_not_administer_still_says_so(): void
+    {
+        // A B8 kontroll-kísérlete: a másik ág üzenete nem tűnhetett el. Egy
+        // idegen FŐcsoportnál továbbra is az "nem vagy csoportfelvigyázó
+        // benne" a helyes és egyetlen indoklás.
+        Notification::fake();
+
+        $foreign = $this->createGroup(['name' => 'Idegen csoport']);
+
+        $component = $this->link($foreign->id);
+        $component->assertHasErrors('parent_group_id');
+
+        $this->assertSame(
+            [__('group.link.error_not_in_group')],
+            $component->instance()->getErrorBag()->get('parent_group_id')
+        );
 
         $this->assertNull($this->child->fresh()->parent_group_id);
         Notification::assertNothingSent();
@@ -324,14 +358,19 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         );
     }
 
-    public function test_detaching_the_same_link_from_the_parent_side_notifies_nobody(): void
+    public function test_detaching_the_same_link_from_the_parent_side_notifies_the_same_people(): void
     {
-        // KARAKTERIZÁLÓ TESZT, ASZIMMETRIA: a detachChildGroup() (:642)
-        // ugyanazt a kapcsolatot bontja el, csak a másik oldalról - és
-        // EGYETLEN értesítést sem küld. Ráadásul tömeges update()-tel
-        // dolgozik (:651), tehát modell-esemény sem sül el, vagyis a
-        // GroupObserver naplóbejegyzése is elmarad.
+        // MEGFORDÍTVA a v1-patch B6 javításával.
+        //
+        // A detachChildGroup() ugyanazt a kapcsolatot bontja el, csak a másik
+        // oldalról - és korábban EGYETLEN értesítést sem küldött, miközben a
+        // detachParentGroup() küld. Az érintettek tehát attól függően kaptak
+        // tájékoztatást, hogy melyik képernyőről nyúlt hozzá valaki.
+        //
+        // A payload alakja szándékosan azonos a szülő oldali ágéval: groupName
+        // a szülő, childGroupName a gyerek, userName a beavatkozó.
         $this->linkedChild();
+        $actorName = $this->actor->name;
         Notification::fake();
 
         $this->listUsers(null, $this->parent)
@@ -343,7 +382,55 @@ class GroupHierarchyLinkTest extends FeatureTestCase
             $this->child->fresh()->parent_group_id,
             'A kapcsolat ugyanúgy megszűnik.'
         );
-        Notification::assertNothingSent();
+
+        Notification::assertSentTo(
+            $this->actor,
+            GroupParentGroupDetachedNotification::class,
+            function ($notification) use ($actorName) {
+                $property = new \ReflectionProperty($notification, 'data');
+                $property->setAccessible(true);
+                $payload = $property->getValue($notification);
+
+                return $payload['groupName'] === 'Szülő csoport'
+                    && $payload['childGroupName'] === 'Gyerek csoport'
+                    && $payload['userName'] === $actorName;
+            }
+        );
+    }
+
+    public function test_detaching_a_child_group_writes_an_audit_record(): void
+    {
+        // A B6 másik fele: a korábbi tömeges ->childGroups()->update() megkerülte
+        // az Eloquent eseményeket, tehát a GroupObserver naplóbejegyzése is
+        // elmaradt. A szülő oldalról bontott UGYANEZ a kapcsolat naplózódott.
+        $this->linkedChild();
+
+        $before = LogHistory::where('group_id', $this->child->id)->count();
+
+        $this->listUsers(null, $this->parent)
+            ->call('confirmChildDetach', $this->child->id)
+            ->call('detachChildGroup')
+            ->assertHasNoErrors();
+
+        $this->assertGreaterThan(
+            $before,
+            LogHistory::where('group_id', $this->child->id)->count(),
+            'A lecsatolásnak nyoma kell maradjon a naplóban.'
+        );
+    }
+
+    public function test_detaching_an_unknown_child_group_is_forbidden_not_fatal(): void
+    {
+        // A B6 harmadik fele: a ->first() null is lehet, és a korábbi
+        // `!$selected_group->id` ilyenkor NULL-on hívott property-t, tehát fatal
+        // jött 403 helyett - ugyanaz a hibaosztály, amit a detachParentGroup()-nál
+        // a TODO 11.1 javított.
+        $this->linkedChild();
+
+        $this->listUsers(null, $this->parent)
+            ->set('detachId', 999999)
+            ->call('detachChildGroup')
+            ->assertForbidden();
     }
 
     public function test_a_non_admin_cannot_detach_the_parent(): void

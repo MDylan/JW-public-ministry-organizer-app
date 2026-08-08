@@ -211,13 +211,15 @@ class GroupUserInviteTest extends FeatureTestCase
         $this->invite('blocked@example.test', $member)->assertForbidden();
     }
 
-    public function test_a_child_group_silently_swallows_the_invitation(): void
+    public function test_a_child_group_rejects_the_invitation_with_a_visible_message(): void
     {
-        // KARAKTERIZÁLÓ TESZT: gyerekcsoportba nem lehet közvetlenül tagot
-        // felvenni (a tagságot a szülőcsoport adja), de a :93-95 őre PUSZTA
-        // return-nel lép ki - se hibaüzenet, se modal-visszajelzés. A
-        // felhasználó azt látja, hogy elküldte a meghívót. Lásd roadmap
-        // TODO 11.
+        // MEGFORDÍTVA a v1-patch B7 javításával.
+        //
+        // Gyerekcsoportba nem lehet közvetlenül tagot felvenni - a tagságot a
+        // szülőcsoport adja -, de az őr PUSZTA return-nel lépett ki: se
+        // hibaüzenet, se modal-visszajelzés. Az adminisztrátor abban a hitben
+        // maradt, hogy elküldte a meghívót. A tiltás maga helyes; csak a
+        // hallgatás nem volt az.
         Notification::fake();
 
         $child = $this->createChildGroup($this->group);
@@ -225,13 +227,26 @@ class GroupUserInviteTest extends FeatureTestCase
         $this->attachUserToGroup($childAdmin, $child, 'admin');
 
         $this->invite('never-invited@example.test', $childAdmin, $child)
-            ->assertHasNoErrors();
+            ->assertHasErrors(['new_users']);
 
         $this->assertNull(
             User::where('email', 'never-invited@example.test')->first(),
-            'A felhasználó létre sem jön.'
+            'A felhasználó továbbra sem jön létre.'
         );
         Notification::assertNothingSent();
+    }
+
+    public function test_the_child_group_rejection_message_exists_in_every_maintained_locale(): void
+    {
+        // A hibaüzenet csak akkor ér valamit, ha nem nyers kulcsként jelenik
+        // meg. A projekt három karbantartott lokálja a hu, az en és a de.
+        foreach (['hu', 'en', 'de'] as $locale) {
+            $this->assertNotSame(
+                'group.user.add.error_this_is_child',
+                __('group.user.add.error_this_is_child', [], $locale),
+                $locale.': hiányzik a fordítás.'
+            );
+        }
     }
 
     // =========================================================================

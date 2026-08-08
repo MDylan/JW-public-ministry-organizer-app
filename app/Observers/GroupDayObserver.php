@@ -50,7 +50,12 @@ class GroupDayObserver
         if(count($changes)) {
             $fillable = $groupDay->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $groupDay->getOriginal($field);
                     $new = $groupDay->$field;
                     if($old !== $new) {
@@ -71,7 +76,11 @@ class GroupDayObserver
             $history = new LogHistory($saved_data);
             $groupDay->histories()->save($history);
 
-            if(isset($changes['start_time']) || isset($changes['end_time'])) {
+            // Ugyanaz az isset()-csapda, mint fent, csak itt nem naplózás a
+            // tét, hanem egy job: ha a nyitás vagy zárás idejét NULL-ra
+            // állítják, az éppúgy időpont-változás, és a hatókörön kívülre
+            // került eseményeket akkor is takarítani kell.
+            if(array_key_exists('start_time', $changes) || array_key_exists('end_time', $changes)) {
                 // //we must delete feature events, which not in right timeslot
 
                 GroupDayUpdatedProcess::dispatch(

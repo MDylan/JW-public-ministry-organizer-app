@@ -416,18 +416,23 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_finish_guest_registration_flag_never_reaches_the_pivot_table(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy törékeny keretrendszer-függésről.
+        // MEGERŐSÍTVE a v1-patch B15 javításával. A megfigyelhető viselkedés
+        // nem változik - a kulcs eddig sem került a pivot táblába -, de az OK
+        // igen, és ezért érdemes ezt a tesztet elolvasni.
         //
-        // Az updateUser() a TELJES $validatedData-t adja a
-        // syncWithoutDetaching()-nek (:257-259), és a
-        // finish_guest_registration mindig benne van (az editUser() :193-on
-        // beállítja). A group_user táblában viszont NINCS ilyen oszlop.
+        // Korábban az updateUser() a TELJES $validatedData-t adta a
+        // syncWithoutDetaching()-nek, és a finish_guest_registration mindig
+        // benne volt (az editUser() beállítja). A group_user táblában viszont
+        // nincs ilyen oszlop. A mentés kizárólag azért nem hasalt el, mert a
+        // GroupUser egyedi Pivot osztály $fillable listával: a Laravel az
+        // updateExistingPivotUsingCustomClass() ágon fill()-lel CSENDBEN
+        // eldobta az ismeretlen kulcsot. Ez keretrendszer-verziótól függő
+        // útvonal - pontosan az a fajta, amit egy 8->13 ugrás megpiszkál -, és
+        // egy nyers update/insert fallbacken ismeretlen oszlop hibával járt
+        // volna.
         //
-        // A mentés kizárólag azért nem hasal el, mert a GroupUser egyedi
-        // Pivot osztály $fillable listával: a Laravel az
-        // updateExistingPivotUsingCustomClass() ágon fill()-lel csendben
-        // eldobja az ismeretlen kulcsot. Ez keretrendszer-verzió-függő
-        // útvonal, pontosan az a fajta, amit egy 8->13 ugrás megpiszkál.
+        // A kulcsot most az updateUser() maga veszi ki a payloadból, tehát a
+        // helyes viselkedés nem a Pivot osztály mellékhatásán múlik.
         $actor = $this->member('ra-fgr-actor@example.test', 'admin');
         $target = $this->member('ra-fgr-target@example.test', 'member');
 
@@ -443,6 +448,21 @@ class GroupRoleAssignmentTest extends FeatureTestCase
             'Marad',
             $this->group->groupUsers()->where('user_id', $target->id)->firstOrFail()->pivot->note,
             'A többi pivot-mező viszont megérkezett.'
+        );
+    }
+
+    public function test_the_updater_strips_the_flag_before_it_reaches_the_pivot_writer(): void
+    {
+        // A B15 lényege: a payload tisztítása a komponens felelőssége, nem a
+        // GroupUser Pivot $fillable listájának mellékhatása. Ha ez a szűrés
+        // elmarad, egy nyers pivot-írás "Unknown column" hibával hasal el -
+        // ezért a forrást is állítjuk, nem csak a végeredményt.
+        $source = file_get_contents(app_path('Http/Livewire/Groups/ListUsers.php'));
+
+        $this->assertStringContainsString(
+            "unset(\$validatedData['finish_guest_registration']);",
+            $source,
+            'A kulcsot expliciten ki kell venni a pivot payloadból.'
         );
     }
 
@@ -579,31 +599,55 @@ class GroupRoleAssignmentTest extends FeatureTestCase
         Notification::assertNothingSent();
     }
 
-    public function test_the_profile_validation_runs_after_the_pivot_data_is_already_saved(): void
+    public function test_a_rejected_profile_leaves_no_partial_save_behind(): void
     {
-        // KARAKTERIZÁLÓ TESZT: az updateUser() két lépcsőben ment. A
-        // pivot-adatok a :259-en már elmentődnek, a profilmezők validációja
-        // viszont csak a :265-269-en fut le, KÜLÖN Validator::make()-kel.
+        // MEGFORDÍTVA a v1-patch B5 javításával.
         //
-        // Egy hibás névvel tehát részleges mentés keletkezik: a jegyzet és a
-        // szerep már az adatbázisban van, a profil viszont nem, és a
-        // felhasználó hibaüzenetet lát. Tranzakció nincs körülötte.
+        // Az updateUser() két lépcsőben mentett: a pivot-adatok már az
+        // adatbázisban voltak, mire a profilmezők validációja lefutott, KÜLÖN
+        // Validator::make()-kel és tranzakció nélkül. Egy hibás név ezért
+        // részleges mentést hagyott maga után - a jegyzet és a szerep
+        // elmentődött, a profil nem -, a felhasználó pedig csak egy
+        // hibaüzenetet látott, és nem tudhatta, mi maradt bent.
+        //
+        // Most minden validáció az első írás ELŐTT fut, a maradék pedig egyetlen
+        // tranzakcióban: vagy minden elmentődik, vagy semmi.
         $actor = $this->member('ra-partial-actor@example.test', 'admin');
         $target = $this->member('ra-partial-target@example.test', 'member', [
             'name' => 'Eredeti Név',
         ]);
 
         $this->edit($actor, $target)
-            ->set('state.note', 'Ez már elmentődött')
+            ->set('state.note', 'Ez NEM mentődhet el')
             ->set('state.user.name', 'X')
             ->call('updateUser')
             ->assertHasErrors(['name']);
 
         $this->assertSame('Eredeti Név', $target->fresh()->name, 'A profil nem változott.');
-        $this->assertSame(
-            'Ez már elmentődött',
+        $this->assertNull(
             $this->group->groupUsers()->where('user_id', $target->id)->firstOrFail()->pivot->note,
-            'A pivot-adat viszont igen - a mentés részleges.'
+            'És a pivot-adat sem - a mentés atomi.'
+        );
+    }
+
+    public function test_a_valid_save_still_writes_both_halves(): void
+    {
+        // A B5 kontroll-kísérlete: a tranzakció nem ronthatja el a jó utat.
+        $actor = $this->member('ra-atomic-actor@example.test', 'admin');
+        $target = $this->member('ra-atomic-target@example.test', 'member', [
+            'name' => 'Eredeti Név',
+        ]);
+
+        $this->edit($actor, $target)
+            ->set('state.note', 'Ez elmentődik')
+            ->set('state.user.name', 'Új Név')
+            ->call('updateUser')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Új Név', $target->fresh()->name);
+        $this->assertSame(
+            'Ez elmentődik',
+            $this->group->groupUsers()->where('user_id', $target->id)->firstOrFail()->pivot->note
         );
     }
 

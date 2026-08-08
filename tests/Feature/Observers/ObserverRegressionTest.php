@@ -110,6 +110,52 @@ class ObserverRegressionTest extends FeatureTestCase
         ]);
     }
 
+    public function test_setting_a_field_to_null_is_audited_too(): void
+    {
+        // ÚJ a v1-patch B16-tal.
+        //
+        // Mind a hét audit-hurok `isset($changes[$field])`-del szűrt, és az
+        // isset() NULL értékű kulcsra HAMIS. Minden olyan módosítás tehát,
+        // ami egy mezőt NULL-ra állít, láthatatlan maradt a naplóban - a
+        // csoportkapcsolat bontása (parent_group_id => null) éppúgy, mint
+        // bármely nullázható mező törlése. A getDirty() csak ténylegesen
+        // változott mezőket ad vissza, és az `$old !== $new` őr megmaradt,
+        // ezért az array_key_exists() pontosan a hiányzó eseteket engedi be.
+        $user = $this->createUser(['email' => 'null-audit@example.test']);
+        $parent = $this->createGroup(['name' => 'Napló szülő']);
+        $child = $this->createGroup(['name' => 'Napló gyerek']);
+
+        $this->actingAs($user);
+
+        $child->parent_group_id = $parent->id;
+        $child->save();
+
+        $before = LogHistory::where('model_type', Group::class)
+            ->where('model_id', $child->id)
+            ->count();
+
+        $child->parent_group_id = null;
+        $child->save();
+
+        $this->assertSame(
+            $before + 1,
+            LogHistory::where('model_type', Group::class)
+                ->where('model_id', $child->id)
+                ->count(),
+            'A NULL-ra állításnak is nyoma kell maradjon.'
+        );
+
+        $latest = LogHistory::where('model_type', Group::class)
+            ->where('model_id', $child->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        $changes = json_decode($latest->changes, true);
+
+        $this->assertSame($parent->id, $changes['old']['parent_group_id']);
+        $this->assertNull($changes['new']['parent_group_id']);
+    }
+
     public function test_group_user_observer_logs_update_and_delete(): void
     {
         $user = $this->createUser(['email' => 'group-user-observer@example.test']);

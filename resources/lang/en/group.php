@@ -409,6 +409,7 @@ Except these actions, everything else can be performed by the group servant as w
     array (
       'email_language' => 'The notification email should be written in the following language (if he/she does not have an account yet):',
       'email_language_error' => 'The selected language is not available.',
+      'error_this_is_child' => 'A new publisher can be added only in the main group, not here. Publishers added to the main group are copied here automatically.',
       'info' => 'By clicking on the "Add" button, the publisher will be added to the group immediately, granted with group member access permission. The publisher will be informed about your invitation via email. If he/she does not have an account, a new one will be automatically created for him/her in the system.',
       'success' => 'Added :number new publisher(s)!',
       'title' => 'Add new publisher',

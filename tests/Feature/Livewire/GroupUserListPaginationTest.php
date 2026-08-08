@@ -228,29 +228,38 @@ class GroupUserListPaginationTest extends FeatureTestCase
         $this->assertSame($this->expectedEmails(1, 10), $this->emailsOnPage($component));
     }
 
-    public function test_the_online_filter_narrows_the_list_without_resetting_the_cursor(): void
+    public function test_the_online_filter_resets_the_cursor_like_every_other_filter(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy következetlenségről.
+        // MEGFORDÍTVA a v1-patch B2 javításával.
         //
-        // Négy metódus hív resetPage()-et - updatedSearchTerm() (:382),
-        // filterMyself() (:393), filterIcon() (:405) és filterOff() (:409) -,
-        // a filterOnline() (:413-419) és a filterInactive() (:421-427)
-        // viszont NEM, pedig ugyanúgy szűkítik a találati halmazt.
-        //
-        // Következmény: a 3. oldalon állva az "online" szűrőre kattintva a
-        // lista üresen marad, pedig van találat - a felhasználó számára úgy
-        // néz ki, mintha senki nem lenne online.
+        // Négy metódus hívott resetPage()-et - updatedSearchTerm(),
+        // filterMyself(), filterIcon() és filterOff() -, a filterOnline() és a
+        // filterInactive() viszont NEM, pedig ugyanúgy szűkíti a találati
+        // halmazt. A 3. oldalon állva az "online" szűrőre kattintva a lista
+        // ezért üresen maradt, holott volt találat: a felhasználó számára úgy
+        // nézett ki, mintha senki nem lenne online.
         $this->attachManyUsersToGroup($this->group, 25);
 
         User::where('email', 'page-001@example.test')->update(['last_activity' => now()]);
 
         $component = $this->list()->call('gotoPage', 3)->call('filterOnline');
 
-        $this->assertSame(3, $component->get('page'), 'A lapszám nem állt vissza.');
+        $this->assertSame(1, $component->get('page'), 'A szűrés visszaáll az első oldalra.');
 
         $paginator = $component->viewData('users');
-        $this->assertSame(1, $paginator->total(), 'Pedig van egy online tag.');
-        $this->assertCount(0, $paginator->items(), 'A 3. oldalon mégsem látszik semmi.');
+        $this->assertSame(1, $paginator->total(), 'Egy online tag van.');
+        $this->assertCount(1, $paginator->items(), 'És most látszik is.');
+    }
+
+    public function test_the_inactive_filter_resets_the_cursor_too(): void
+    {
+        // A filterInactive() ugyanannak a hibának a másik fele volt; a
+        // filterOnline() mellett ez is a v1-patch B2 hatálya alá tartozik.
+        $this->attachManyUsersToGroup($this->group, 25);
+
+        $component = $this->list()->call('gotoPage', 3)->call('filterInactive');
+
+        $this->assertSame(1, $component->get('page'), 'A szűrés visszaáll az első oldalra.');
     }
 
     // =========================================================================

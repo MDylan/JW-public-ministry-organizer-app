@@ -34,7 +34,12 @@ class GroupUserObserver
         if(count($changes)) {
             $fillable = $groupUser->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $groupUser->getOriginal($field);
                     $new = $groupUser->$field;
                     if($old !== $new) {
