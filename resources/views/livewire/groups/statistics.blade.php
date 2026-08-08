@@ -40,11 +40,16 @@
                             <div class="input-group-prepend">
                                 <div class="input-group-text">@lang('statistics.period')</div>
                             </div>
-                            <input wire:model.defer="startDate" type="date" class="form-control" placeholder="@lang('statistics.date_from')" />
+                        {{-- A picker.minDate-et a render() régóta átadta, de egyetlen
+                             nézet sem használta. A v1-patch E óta van értelme: a
+                             retenciós padló alatt már nincs mit mutatni. A `min` csak
+                             tanácsadó, a valódi korlát a komponens
+                             clampToRetentionFloor() metódusa. --}}
+                            <input wire:model.defer="startDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_from')" />
                             <div class="input-group-prepend">
                                 <div class="input-group-text">-</div>
                             </div>
-                            <input wire:model.defer="endDate" type="date" class="form-control" placeholder="@lang('statistics.date_to')" />
+                            <input wire:model.defer="endDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_to')" />
                         </div>
                         <button wire:loading.attr="disabled" wire:click="applyDateRange" type="submit" class="btn btn-primary mb-2">
                             <i class="fa fa-check-square mr-1"></i>

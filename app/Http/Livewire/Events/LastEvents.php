@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Events;
 
 use App\Http\Livewire\AppComponent;
 use App\Models\Event;
+use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,34 @@ class LastEvents extends AppComponent
         }
         $this->year = date("Y");
         $this->month = date("m");
-        $this->getMonthListFromDate(Carbon::parse(Auth()->user()->created_at));
+        $this->getMonthListFromDate($this->earliestSelectableMonth());
+    }
+
+    /**
+     * A hónaplista kezdete: a regisztráció és a retenciós padló közül a
+     * KÉSŐBBI, hónap elejére kerekítve.
+     *
+     * Itt az eventsFloor() a helyes padló, NEM a displayFloor(): ez a nézet
+     * csak eseményt kérdez, day_stats-ot nem. A displayFloor() 12 hónapos
+     * csoportadat-beállítás mellett későbbi lenne a 13 hónapos
+     * eseményablaknál, tehát egy hónapnyi létező, szerkeszthető eseményt
+     * rejtene el.
+     *
+     * A felső korlát a mai hónap: enélkül egy jövőbe csúszott padló üres
+     * CarbonPeriod-ot adna, és a választó eltűnne.
+     */
+    private function earliestSelectableMonth(): Carbon
+    {
+        $start = Carbon::parse(Auth()->user()->created_at)->startOfMonth();
+        $floor = RetentionWindow::eventsFloor();
+
+        if ($floor !== null && $floor->startOfMonth()->greaterThan($start)) {
+            $start = $floor->startOfMonth();
+        }
+
+        $currentMonth = Carbon::today()->startOfMonth();
+
+        return $start->greaterThan($currentMonth) ? $currentMonth : $start;
     }
 
     public function getMonthListFromDate(Carbon $start)

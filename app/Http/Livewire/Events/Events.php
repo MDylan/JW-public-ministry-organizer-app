@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
+use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
@@ -61,8 +62,19 @@ class Events extends AppComponent
             $this->month = date('m');
         }
 
-
-    }    
+        // A /calendar/{year}/{month} útvonal bármelyik hónapot elérné
+        // közvetlenül, a "vissza" link elrejtése önmagában csak kozmetika.
+        // A retenciós padló alatti hónapok forrása (események, day_stats,
+        // group_dates) már törölve van, ezért a padló hónapjára emeljük.
+        $floor = RetentionWindow::displayFloor();
+        if($floor !== null) {
+            $requested = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
+            if($requested->lt($floor->startOfMonth())) {
+                $this->year = (int) $floor->format('Y');
+                $this->month = (int) $floor->format('m');
+            }
+        }
+    }
 
     function build_pagination($created_at) {
  
@@ -75,7 +87,15 @@ class Events extends AppComponent
         } else {
             $prevYear = $this->year;
         }
+        // A visszalépés alsó határa a csoport létrehozása ÉS a retenciós
+        // padló közül a későbbi. A naptár eseményt és day_stats-ot is
+        // rajzol, ezért itt a displayFloor() a helyes padló - a padló alatt
+        // a színsávok forrása már nincs meg.
         $created = strtotime(date("Y-m-01", strtotime($created_at)));
+        $floor = RetentionWindow::displayFloor();
+        if($floor !== null) {
+            $created = max($created, strtotime($floor->format("Y-m-01")));
+        }
         $prev = strtotime($prevYear."-".$prevMonth."-01");
         if($prev < $created) {
             $prevYear = false;

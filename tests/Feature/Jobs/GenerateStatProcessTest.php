@@ -168,6 +168,54 @@ class GenerateStatProcessTest extends FeatureTestCase
         $this->assertSame(0, DayStat::where('group_id', $this->group->id)->count());
     }
 
+    /**
+     * v1-patch E6. A GroupDateHelper::generateDate() múltvédelme hibás: a
+     * $date_info ágon kiértékeli a toArray()-t, eldobja, majd átesik az
+     * updateOrCreate-re. Egy csoportsablon-szerkesztés emiatt a retenciós
+     * padló alatti napokra is dispatch-eli ezt a jobot - és mivel a
+     * forrásesemények ott már törölve vannak, egy vadonatúj, csupa nullás
+     * day_stats sor keletkezne arról, hogy ott senki nem szolgált.
+     */
+    public function test_handle_writes_nothing_below_the_group_data_retention_floor(): void
+    {
+        $oldDate = now()->subMonths(14)->toDateString();
+        config(['settings_group_data_retention' => '12']);
+
+        GroupDate::factory()->create([
+            'group_id' => $this->group->id,
+            'date' => $oldDate,
+            'date_start' => $oldDate.' 08:00:00',
+            'date_end' => $oldDate.' 12:00:00',
+            'date_min_time' => 60,
+            'date_min_publishers' => 1,
+            'date_max_publishers' => 3,
+        ]);
+
+        (new GenerateStatProcess($this->group->id, $oldDate, false))->handle();
+
+        $this->assertSame(0, DayStat::where('group_id', $this->group->id)->where('day', $oldDate)->count());
+    }
+
+    public function test_handle_still_writes_below_the_floor_while_retention_is_off(): void
+    {
+        $oldDate = now()->subMonths(14)->toDateString();
+        config(['settings_group_data_retention' => '0']);
+
+        GroupDate::factory()->create([
+            'group_id' => $this->group->id,
+            'date' => $oldDate,
+            'date_start' => $oldDate.' 08:00:00',
+            'date_end' => $oldDate.' 12:00:00',
+            'date_min_time' => 60,
+            'date_min_publishers' => 1,
+            'date_max_publishers' => 3,
+        ]);
+
+        (new GenerateStatProcess($this->group->id, $oldDate, false))->handle();
+
+        $this->assertSame(4, DayStat::where('group_id', $this->group->id)->where('day', $oldDate)->count());
+    }
+
     public function test_handle_with_force_reset_deletes_the_group_date_first(): void
     {
         (new GenerateStatProcess($this->group->id, $this->date, true))->handle();

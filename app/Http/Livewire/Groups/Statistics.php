@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
+use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 
@@ -54,8 +55,55 @@ class Statistics extends AppComponent
         // A render() mindent a frissített $startDate / $endDate alapján számol.
     }
 
+    /**
+     * A választott időszakot felhúzza a retenciós padlóra.
+     *
+     * A padló alatt a day_stats és a group_dates sorok már törölve vannak, az
+     * események is elfogyhattak - a nézet viszont nem üres táblát rajzolna,
+     * hanem a group_dates hiányában is végigmenne a napokon, és minden régi
+     * napra azt állítaná, hogy a csoport 0 órát szolgált. A hamis adat
+     * rosszabb, mint a hiányzó, ezért a korlát SZERVEROLDALI: a nézetbeli
+     * `min` attribútum csak tanácsadó, a wire:model.defer bármit felküldhet.
+     *
+     * A displayFloor() azért a helyes padló, mert ez a nézet eseményt ÉS
+     * day_stats-ot is olvas - csak addig hiteles, ameddig mindkettő él.
+     */
+    private function clampToRetentionFloor(): void
+    {
+        $floor = RetentionWindow::displayFloor();
+
+        if ($floor === null) {
+            return;
+        }
+
+        if (Carbon::parse($this->startDate)->lt($floor)) {
+            $this->startDate = $floor->toDateString();
+        }
+
+        if (Carbon::parse($this->endDate)->lt($floor)) {
+            $this->endDate = $floor->toDateString();
+        }
+    }
+
+    /**
+     * A dátumválasztó legkorábbi napja: a csoport létrehozása és a retenciós
+     * padló közül a KÉSŐBBI.
+     */
+    private function earliestSelectableDate(): string
+    {
+        $floor = RetentionWindow::displayFloor();
+        $created = Carbon::parse($this->group->created_at)->startOfDay();
+
+        if ($floor !== null && $floor->greaterThan($created)) {
+            return $floor->toDateString();
+        }
+
+        return $created->toDateString();
+    }
+
     public function render()
     {
+        $this->clampToRetentionFloor();
 
         $startDate = Carbon::parse($this->startDate);
         $endDate = Carbon::parse($this->endDate);
@@ -338,7 +386,7 @@ class Statistics extends AppComponent
             'date_info' => $date_info,
             'literatures' => count($this->group->literatures),
             'picker' => [
-                'minDate' => $this->group->created_at->format("Y-m-d")
+                'minDate' => $this->earliestSelectableDate()
             ]
         ]);
     }
