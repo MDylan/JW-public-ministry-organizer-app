@@ -356,7 +356,7 @@
                                                 <div class="col-md-12">
                                                     <div class="form-group" wire:ignore>
                                                         <label for="weather_api_key">@lang('settings.weather_api_key')</label><br/>
-                                                        <input wire:model.lazy="state.env.OPENWAETHER_API_KEY" type="text" class="form-control" id="weather_api_key">
+                                                        <input wire:model.lazy="state.env.OPENWEATHER_API_KEY" type="text" class="form-control" id="weather_api_key">
                                                     </div>
                                                 </div>
                                             </div>

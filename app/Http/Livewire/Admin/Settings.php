@@ -54,7 +54,12 @@ class Settings extends AppComponent
         'MAIL_USERNAME',
         'MAIL_PASSWORD',
         'MAIL_FROM_ADDRESS',
-        'OPENWAETHER_API_KEY'
+        // A kulcs neve KORÁBBAN OPENWAETHER_API_KEY volt - elírás, ami
+        // következetesen szerepelt öt helyen, ezért működött. A
+        // config/openweather.php egy kiadás erejéig a régi nevet is olvassa
+        // fallbackként, mert a telepített hostok .env fájlja még azt hordozza;
+        // ez a lista viszont már az új nevet írja ki mentéskor (v1-patch C).
+        'OPENWEATHER_API_KEY'
     ];
 
     public $mailtest = null;

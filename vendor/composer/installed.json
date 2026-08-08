@@ -6006,63 +6006,6 @@
             "install-path": "../psy/psysh"
         },
         {
-            "name": "rakibdevs/openweather-laravel-api",
-            "version": "v1.9.0",
-            "version_normalized": "1.9.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/rakibdevs/openweather-laravel-api.git",
-                "reference": "168d0002c5338ee2033848cefa0ccd6c257a1545"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/rakibdevs/openweather-laravel-api/zipball/168d0002c5338ee2033848cefa0ccd6c257a1545",
-                "reference": "168d0002c5338ee2033848cefa0ccd6c257a1545",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^6.3|^7.0",
-                "php": "^7.2|^7.3|^7.4|^8.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.0|^9.0"
-            },
-            "time": "2022-11-30T08:22:14+00:00",
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "RakibDevs\\Weather\\WeatherServiceProvider"
-                    ]
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "psr-4": {
-                    "RakibDevs\\Weather\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Md. Rakibul Islam",
-                    "email": "rakib1708@gmail.com",
-                    "homepage": "https://rakibul.dev"
-                }
-            ],
-            "description": "Laravel package to connect https://openweathermap.org/ to get customized weather data for any location on the globe immediately",
-            "keywords": [
-                "api",
-                "laravel",
-                "open-weather",
-                "weather"
-            ],
-            "install-path": "../rakibdevs/openweather-laravel-api"
-        },
-        {
             "name": "ralouphie/getallheaders",
             "version": "3.0.3",
             "version_normalized": "3.0.3.0",

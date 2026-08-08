@@ -42,27 +42,29 @@ class WeatherCacheTest extends FeatureTestCase
         // táblából. A teszt ezért közvetlenül a configot állítja.
         config(['weather' => 1]);
 
-        // Biztonsági rögzítés, nem díszlet: üres kulcsnál a WeatherClient a
-        // konstruktorában dob (:57-63), MIELŐTT bármilyen kapcsolat nyílna. Ez
-        // garantálja, hogy ez a fájl akkor sem indít valódi hálózati kérést, ha
-        // valaki később OPENWAETHER_API_KEY-t tesz a .env-be.
+        // Biztonsági rögzítés, nem díszlet: üres kulcsnál az OpenWeatherClient
+        // dob, MIELŐTT bármilyen kapcsolat nyílna. Ez garantálja, hogy ez a fájl
+        // akkor sem indít valódi hálózati kérést, ha valaki később
+        // OPENWEATHER_API_KEY-t tesz a .env-be. A sikeres ágat a
+        // WeatherClientTest fedi, Http::fake()-kel.
         config(['openweather.api_key' => '']);
     }
 
     /**
-     * Egy gyorsítótár-sor az ÉLES alakban.
+     * Gyorsítótár-sor az éles alakban.
      *
-     * A helpers.php:116-117 `json_encode()`-ol, majd a modell 'json' castja íráskor
-     * még egyszer kódol. Ha a teszt tömböt írna (ahogy a WeatherCityFactory teszi),
-     * olyan alakot rögzítene, ami élesben nem fordulhat elő.
+     * A v1-patch C csomagja előtt a mentés KÉTSZER kódolt: kézi json_encode() a
+     * modell `json` castja MELLETT, tehát az oszlopban JSON-ba csomagolt
+     * JSON-sztring állt, és minden olvasónak kézzel kellett dekódolnia. A cast
+     * innentől az egyetlen kódolási pont, ezért a fixture nyers tömböt ír.
      */
     private function cacheRow(string $city, string $country, ?array $current = null, ?array $forecast = null): WeatherCity
     {
         return WeatherCity::create([
             'city'             => $city,
             'country'          => $country,
-            'current_weather'  => $current === null ? null : json_encode($current),
-            'forecast_weather' => $forecast === null ? null : json_encode($forecast),
+            'current_weather'  => $current,
+            'forecast_weather' => $forecast,
             'last_try'         => now(),
         ]);
     }
@@ -113,8 +115,9 @@ class WeatherCacheTest extends FeatureTestCase
         $this->assertSame($row->id, $result['city_id']);
         $this->assertArrayNotHasKey('error', $result);
 
-        // A visszaadott érték TÖMB, mert a helper a cast által stringként visszaadott
-        // értéket még egyszer dekódolja (helpers.php:96-97).
+        // A visszaadott érték TÖMB - a `json` cast adja így, egyetlen
+        // dekódolással. Korábban a mentés kétszer kódolt, ezért a helpernek
+        // kézzel kellett még egyszer dekódolnia.
         $this->assertSame(21.5, $result['current_weather']['main']['temp']);
         $this->assertSame('Szeged', $result['current_weather']['name']);
         $this->assertSame('2026-08-08 09:00:00', $result['forecast_weather']['list'][0]['dt_txt']);
@@ -160,32 +163,44 @@ class WeatherCacheTest extends FeatureTestCase
 
         $this->assertSame($row->id, $result['city_id']);
         $this->assertSame(__('group.weather.too_many_requests'), $result['error']);
-        $this->assertArrayNotHasKey('current_weather', $result);
+
+        // A v1-patch C óta a fék MELLETT a legutóbbi ismert adatot is
+        // visszakapjuk, ha van. Egy órás késésű előrejelzés használhatóbb, mint
+        // a semmi, és a naptár így nem ürül ki csak azért, mert épp fékezünk.
+        $this->assertSame(21.5, $result['current_weather']['main']['temp']);
     }
 
     // =========================================================================
     // 4. A hiányzó API-kulcs útja
     // =========================================================================
 
-    public function test_a_missing_api_key_is_caught_and_surfaces_as_an_empty_error_message(): void
+    public function test_a_missing_api_key_surfaces_as_a_real_message(): void
     {
+        // MEGFORDÍTVA a v1-patch C csomagjával.
+        //
+        // A csomag `InvalidConfiguration` kivétele ÜZENET NÉLKÜL példányosult,
+        // ezért a helper `['error' => '']`-t adott vissza: a csoportadmin üres
+        // hibapanelt kapott, és semmi nem árulta el, hogy a kulcs hiányzik. A
+        // WeatherException minden gyártó metódusa megnevezi az okot.
         $result = pwbs_weather_api_call('Szeged', 'HU');
 
         $this->assertArrayHasKey('error', $result);
-        $this->assertSame(
-            '',
-            $result['error'],
-            'Az InvalidConfiguration üzenet nélkül példányosul (WeatherClient.php:61), '
-            .'így a helpers.php:158 üres hibaszöveget ad tovább. Mai viselkedés, nem megőrzendő.'
-        );
+        $this->assertNotSame('', $result['error']);
+        $this->assertStringContainsString('OPENWEATHER_API_KEY', $result['error']);
 
-        // A hívó ezen az ágon city_id-t sem kap - lásd a következő tesztet.
-        $this->assertArrayNotHasKey('city_id', $result);
-        $this->assertSame(0, WeatherCity::count(), 'A kivétel a sor létrehozása előtt száll fel.');
+        // A hívó city_id-t IS kap: a sikertelen kísérlet is létrehozza a sort,
+        // különben a csoport mentése blokkolódna - lásd lentebb.
+        $this->assertArrayHasKey('city_id', $result);
+        $this->assertSame(1, WeatherCity::count());
     }
 
-    public function test_the_missing_key_path_never_records_a_last_try_so_the_throttle_never_engages(): void
+    public function test_the_missing_key_path_records_a_last_try_so_the_throttle_engages(): void
     {
+        // MEGFORDÍTVA a v1-patch C csomagjával.
+        //
+        // A kivétel korábban a WeatherCity::updateOrCreate() ELÉ esett, tehát a
+        // last_try nem frissült: rosszul konfigurált kulcsnál a 15 perces fék
+        // SOHA nem kapcsolt be, és minden oldalletöltés újrapróbálkozott.
         $row = $this->cacheRow('Szeged', 'HU', ['main' => ['temp' => 21.5]]);
         $this->age(
             $row,
@@ -195,28 +210,34 @@ class WeatherCacheTest extends FeatureTestCase
 
         pwbs_weather_api_call('Szeged', 'HU');
 
-        // A kivétel a WeatherCity::updateOrCreate() elé esik (helpers.php:110-156),
-        // tehát a last_try nem frissül: rosszul konfigurált kulcsnál a 15 perces fék
-        // SOHA nem kapcsol be, és minden mentés újrapróbálkozik.
         $this->assertTrue(
-            $row->fresh()->last_try->lt(now()->subHour()),
-            'A last_try változatlan maradt, tehát a fék nem lép működésbe.'
+            $row->fresh()->last_try->gt(now()->subMinute()),
+            'A sikertelen kísérlet is időbélyeget kap.'
         );
 
         $second = pwbs_weather_api_call('Szeged', 'HU');
-        $this->assertNotSame(__('group.weather.too_many_requests'), $second['error'] ?? null);
+        $this->assertSame(__('group.weather.too_many_requests'), $second['error'] ?? null);
     }
 
     // =========================================================================
     // 5. A csoportmentés, amit egy hibázó hívás megbénít
     // =========================================================================
 
-    public function test_a_failing_call_wipes_an_existing_city_id_and_blocks_the_save(): void
+    public function test_a_failing_call_no_longer_blocks_the_group_save(): void
     {
-        // A csoportnak MÁR VAN működő városa - ezt kell a hibázó hívásnak elrontania.
-        // Enélkül a teszt akkor is zöld maradna, ha a hívás egyszerűen kikerülne a
-        // kódból: "a csoport nem menthető" ugyanis igaz marad, ha a city_id eleve null.
-        // (Ezt a rést a kontroll-kísérlet mutatta ki, a TODO 19.1 mintájára.)
+        // MEGFORDÍTVA a v1-patch C csomagjával.
+        //
+        // A hibaág korábban NULLÁZTA a city_id-t (UpdateGroupForm.php:219),
+        // miközben a :251 required_if:weather_enabled,1-et validál rá. Aki tehát
+        // bekapcsolta az időjárást és az API épp nem válaszolt, EGYÁLTALÁN nem
+        // tudta menteni a csoportot - a hiba ráadásul olyan mezőre esett,
+        // aminek nincs beviteli eleme az űrlapon. Egy külső szolgáltatás
+        // elérhetetlensége blokkolta a teljes űrlapot, olyan mezőkkel együtt,
+        // amiknek semmi közük az időjáráshoz.
+        //
+        // A sikertelen kísérlet is létrehozza a weather_cities sort, tehát van
+        // city_id, és a mentés mehet; a hibát a felhasználó a
+        // weather_messages panelen látja.
         $city = $this->cacheRow('Szeged', 'HU', ['main' => ['temp' => 21.5]]);
 
         $group = $this->createGroup(['weather_enabled' => 1, 'city_id' => $city->id]);
@@ -246,14 +267,12 @@ class WeatherCacheTest extends FeatureTestCase
             ->set('days.1.end_time', '10:00')
             ->set('change_date', now()->toDateString())
             ->call('updateGroup')
-            // A hibázó hívás city_id = null-t állít (UpdateGroupForm.php:219), a :251
-            // pedig required_if:weather_enabled,1-et validál rá. A csoport tehát
-            // MENTHETETLEN, és a hiba olyan mezőre esik, aminek nincs beviteli eleme.
-            ->assertHasErrors(['city_id']);
+            ->assertHasNoErrors();
 
         $fresh = $group->fresh();
-        $this->assertNotSame('Weather Group', $fresh->name, 'A validáció a teljes mentést megállította.');
-        $this->assertSame($city->id, (int) $fresh->city_id, 'Az adatbázisban a régi város maradt.');
+        $this->assertSame('Weather Group', $fresh->name, 'A mentés végigment.');
+        $this->assertNotNull($fresh->city_id, 'A city_id nem nullázódik egy hibás lekéréstől.');
+        $this->assertNotSame($city->id, (int) $fresh->city_id, 'És az új városra mutat.');
     }
 
     public function test_a_warm_cache_lets_the_group_save_and_writes_city_id(): void
@@ -302,18 +321,26 @@ class WeatherCacheTest extends FeatureTestCase
     // 6. Az éles oszlopalak
     // =========================================================================
 
-    public function test_what_the_helper_writes_reads_back_from_the_cast_as_a_string_not_an_array(): void
+    public function test_what_the_helper_writes_reads_back_from_the_cast_as_an_array(): void
     {
+        // MEGFORDÍTVA a v1-patch C csomagjával.
+        //
+        // A mentés KÉTSZER kódolt: kézi json_encode() a modell `json` castja
+        // MELLETT. Az oszlopban ezért JSON-ba csomagolt JSON-sztring állt, a cast
+        // egyszer dekódolt, és sztringet adott vissza - minden olvasónak kézzel
+        // kellett még egyszer dekódolnia (helpers.php:96-97, Events.php:297,300).
+        // A cast innentől az egyetlen kódolási pont.
         $row = $this->cacheRow('Szeged', 'HU', ['main' => ['temp' => 21.5]]);
 
-        // A kettős kódolás következménye: a cast egyszer dekódol, és a JSON-stringet
-        // adja vissza, nem a tömböt.
-        $this->assertIsString($row->fresh()->current_weather);
+        $this->assertIsArray($row->fresh()->current_weather);
 
-        // A factory viszont TÖMBÖT ír, tehát onnan tömb jön vissza - ezt állítja a
-        // ModelFactoryTest:197-204 is. A két alak kizárja egymást, és a factory
-        // alakja az, amelyik élesben nem fordulhat elő.
+        // A factory ugyanezt az alakot írja - korábban a kettő KIZÁRTA egymást:
+        // a factory tömböt, a termelés kétszer kódolt sztringet, tehát a
+        // ModelFactoryTest olyan alakot állított, amit éles kód nem tudott
+        // előállítani. Innentől egyetlen alak van.
         $fromFactory = WeatherCity::factory()->withWeatherData()->create();
         $this->assertIsArray($fromFactory->fresh()->current_weather);
+        $this->assertIsArray($fromFactory->fresh()->forecast_weather);
+        $this->assertArrayHasKey('list', $fromFactory->fresh()->forecast_weather);
     }
 }

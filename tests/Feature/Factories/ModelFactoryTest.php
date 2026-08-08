@@ -200,8 +200,16 @@ class ModelFactoryTest extends FeatureTestCase
         $this->assertIsArray($change->fresh()->days);
         $this->assertIsArray($change->fresh()->disabled_slots);
 
+        // A WeatherCityFactory a v1-patch C csomagja óta az OpenWeather VALÓDI
+        // válaszalakját írja. Korábban egy kitalált, lapos szerkezet állt itt
+        // (['temp' => 21.5]), amit a termelés nem tudott előállítani: a mentés
+        // kétszer kódolt, tehát élesben sztring volt az oszlopban.
         $this->assertIsArray($weather->fresh()->current_weather);
-        $this->assertSame(21.5, $weather->fresh()->current_weather['temp']);
+        $this->assertSame(21.5, $weather->fresh()->current_weather['main']['temp']);
+
+        $this->assertIsArray($weather->fresh()->forecast_weather);
+        $this->assertArrayHasKey('list', $weather->fresh()->forecast_weather);
+        $this->assertArrayHasKey('dt_txt', $weather->fresh()->forecast_weather['list'][0]);
     }
 
     public function test_log_history_factory_binds_a_morph_target(): void

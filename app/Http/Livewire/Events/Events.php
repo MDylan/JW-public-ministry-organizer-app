@@ -292,15 +292,25 @@ class Events extends AppComponent
             $dates[$date['date']] = $date;
         }
         // dd($dates);
-        if($this->cal_group_data['weather_enabled'] && config('weather') == 1) {
+        // Az őrök: weather_enabled = 1 ÖNMAGÁBAN nem jelenti, hogy van város.
+        // A city_id lehet null - korábban pontosan ezt az állapotot állította
+        // elő a hibaág, ami nullázta -, és a `weather` reláció ilyenkor null,
+        // amin a dereferálás fatalt dobott a naptár renderelése közben.
+        if($this->cal_group_data['weather_enabled']
+            && config('weather') == 1
+            && !empty($this->cal_group_data['weather'])) {
             if($this->cal_group_data['weather']['current_weather'] !== null) {
-                $current_weather = json_decode($this->cal_group_data['weather']['current_weather'], true);
-                $this->cal_group_data['weather']['current_weather'] = $current_weather;
+                // Nincs json_decode: a WeatherCity modell `json` castja már
+                // tömbként adja vissza mindkét mezőt. Korábban a mentés KÉTSZER
+                // kódolt (kézi json_encode + cast), ezért kellett itt kézzel
+                // dekódolni - a tárolt alak most valódi JSON objektum.
+                $current_weather = $this->cal_group_data['weather']['current_weather'];
+                $forecast_weather = $this->cal_group_data['weather']['forecast_weather'];
 
-                $forecast_weather = json_decode($this->cal_group_data['weather']['forecast_weather'], true);
-                $this->cal_group_data['weather']['forecast_weather'] = $forecast_weather;
                 $forecast_list = array();
-                if(count($forecast_weather['list'])) {
+                // A blob 'list' kulcsa hiányozhat: hibás vagy csonka válasz
+                // esetén a korábbi count($forecast_weather['list']) fatalt dobott.
+                if(!empty($forecast_weather['list'])) {
                     foreach($forecast_weather['list'] as $key => $forecast) {
                         $weather_time = Carbon::parse($forecast['dt_txt'], "UTC");
                         $day = $weather_time->format("Y-m-d");

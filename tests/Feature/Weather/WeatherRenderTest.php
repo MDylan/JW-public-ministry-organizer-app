@@ -62,16 +62,19 @@ class WeatherRenderTest extends FeatureTestCase
     }
 
     /**
-     * Gyorsítótár-sor az ÉLES alakban (kétszeres JSON-kódolás - lásd WeatherCacheTest),
-     * és egy hozzá kötött csoport.
+     * Gyorsítótár-sor az éles alakban, és egy hozzá kötött csoport.
+     *
+     * A v1-patch C csomagja előtt itt kétszeres JSON-kódolás állt (kézi
+     * json_encode a `json` cast mellett), amit az olvasóknak kézzel kellett
+     * visszabontaniuk. A cast innentől az egyetlen kódolási pont.
      */
     private function groupWithWeather(array $current, array $forecastSlots, int $weatherEnabled = 1): Group
     {
         $city = WeatherCity::create([
             'city'             => 'Szeged',
             'country'          => 'HU',
-            'current_weather'  => json_encode($current),
-            'forecast_weather' => json_encode(['list' => $forecastSlots]),
+            'current_weather'  => $current,
+            'forecast_weather' => ['list' => $forecastSlots],
             'last_try'         => now(),
         ]);
 

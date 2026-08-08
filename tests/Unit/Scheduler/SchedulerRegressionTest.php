@@ -27,6 +27,10 @@ class SchedulerRegressionTest extends TestCase
         'newsletters:send-due' => '* * * * *',
         'statistics:record-active-users' => '0 * * * *',
         'scheduler:heartbeat' => '* * * * *',
+        // v1-patch C: az időjárás-gyorsítótár frissítése. Az ingyenes
+        // OpenWeather keret (1000 hívás/nap) és a 3 óránkénti előrejelzés
+        // együtt indokolja ezt a gyakoriságot - lásd RefreshWeatherCache.
+        'weather:refresh' => '0 */3 * * *',
         // A Dialect GDPR csomag saját ütemezése.
         'gdpr:anonymizeInactiveUsers' => '0 0 * * *',
     ];

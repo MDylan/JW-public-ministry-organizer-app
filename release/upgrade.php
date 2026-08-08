@@ -27,9 +27,17 @@
 |
 | WHEN TO REMOVE IT
 |
-| This is a one-off for the release that carries the rename. It is idempotent
-| and safe to run twice, but once 1.1.6 has reached every install, empty the
-| body of main() or drop this file so later archives stop carrying it.
+| The laraupdater rename half is a one-off for the release that carries it, and
+| so is the vendor/rakibdevs removal added with the v1-patch C group. The hook is
+| idempotent and safe to run twice, but once the release has reached every
+| install, empty the body of main() or drop this file so later archives stop
+| carrying it.
+|
+| NOTE for whoever ships the OpenWeather change: deployed .env files still carry
+| the misspelled OPENWAETHER_API_KEY. config/openweather.php reads the new
+| OPENWEATHER_API_KEY first and falls back to the old name for exactly one
+| release, so nothing breaks on upgrade - but that fallback has to be removed
+| once the key has been renamed everywhere.
 */
 
 if (! function_exists('main')) {
@@ -58,6 +66,12 @@ if (! function_exists('main')) {
         //    survives even if that Artisan call fails.
         $ok = laraupdater_upgrade_remove(base_path('bootstrap/cache/packages.php')) && $ok;
         $ok = laraupdater_upgrade_remove(base_path('bootstrap/cache/services.php')) && $ok;
+
+        // 4) The OpenWeather package removed by the v1-patch C group. Its two
+        //    consumed endpoints moved into App\Support\Weather, so the vendor
+        //    tree is dead weight - and install() never deletes, so without this
+        //    line every deployed host would keep it forever.
+        $ok = laraupdater_upgrade_remove(base_path('vendor/rakibdevs')) && $ok;
 
         return $ok;
     }

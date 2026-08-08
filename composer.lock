@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fd463a19aefdfe556e7eddd6221bd9d9",
+    "content-hash": "a44837ebb9ecd3c19aec5c1d4d1705bd",
     "packages": [
         {
             "name": "astrotomic/laravel-translatable",
@@ -4123,60 +4123,6 @@
                 "source": "https://github.com/bobthecow/psysh/tree/v0.11.1"
             },
             "time": "2022-01-03T13:58:38+00:00"
-        },
-        {
-            "name": "rakibdevs/openweather-laravel-api",
-            "version": "v1.9.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/rakibdevs/openweather-laravel-api.git",
-                "reference": "168d0002c5338ee2033848cefa0ccd6c257a1545"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/rakibdevs/openweather-laravel-api/zipball/168d0002c5338ee2033848cefa0ccd6c257a1545",
-                "reference": "168d0002c5338ee2033848cefa0ccd6c257a1545",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^6.3|^7.0",
-                "php": "^7.2|^7.3|^7.4|^8.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.0|^9.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "RakibDevs\\Weather\\WeatherServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "RakibDevs\\Weather\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Md. Rakibul Islam",
-                    "email": "rakib1708@gmail.com",
-                    "homepage": "https://rakibul.dev"
-                }
-            ],
-            "description": "Laravel package to connect https://openweathermap.org/ to get customized weather data for any location on the globe immediately",
-            "keywords": [
-                "api",
-                "laravel",
-                "open-weather",
-                "weather"
-            ],
-            "time": "2022-11-30T08:22:14+00:00"
         },
         {
             "name": "ralouphie/getallheaders",

@@ -365,4 +365,22 @@ return array (
   'users' => 'Verkündiger',
   'users_helper' => 'Gebe einfach die E-Mail Adresse ein. Wenn es noch kein Registration hat, wird es automatisch freigeschaltet und derjeniger wird per E-mail benachrichtigt. Er muss dann seinen Namen und Telefonnummer eingeben.',
   'waiting_approval' => 'Du hast die Einladung noch nicht angenommen.',
+  'weather' =>
+  array (
+    'check_settings' => 'Einstellungen prüfen',
+    'city' => 'Stadt',
+    'country' => 'Land',
+    'currently' => 'Aktuell',
+    'enable' => 'Wettervorhersage aktivieren',
+    'error' => 'Fehler beim Einrichten der Wettervorhersage.',
+    'error_message' => 'Bitte gib sowohl die Stadt als auch das Land an.',
+    'error_weather_message' => 'Beim Abrufen der Wettervorhersage ist ein Fehler aufgetreten. Überprüfe die Daten und versuche es erneut.',
+    'humidity' => 'Luftfeuchtigkeit',
+    'info' => 'Die Wettervorhersage zeigt das Wetter für die Diensttage der Gruppe. Verkündiger sehen im Kalender die Vorhersage für die nächsten 5 Tage.',
+    'km_h' => 'km/h',
+    'no_data' => 'Keine Daten verfügbar',
+    'title' => 'Wettervorhersage',
+    'too_many_requests' => 'Zu viele Versuche, bitte warte 15 Minuten.',
+    'wind' => 'Wind',
+  ),
 );

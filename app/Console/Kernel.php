@@ -57,6 +57,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('statistics:record-active-users')->hourly();
 
         $schedule->command('scheduler:heartbeat')->everyMinute();
+
+        // Háromóránként. Az ingyenes OpenWeather szint 1000 hívás/nap, egy
+        // település frissítése 2 hívás - ez így nagyjából 60 települést bír el
+        // a kereten belül. Az előrejelzés maga is 3 óránkénti felbontású, tehát
+        // sűrűbb futás nem adna több információt.
+        $schedule->command('weather:refresh')->cron('0 */3 * * *');
     }
 
     /**

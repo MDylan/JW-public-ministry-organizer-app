@@ -212,12 +212,21 @@ class UpdateGroupForm extends AppComponent
                 'country' => 'required|string|max:2'
             ])->validate();
             
+            // A hibaág KORÁBBAN nullázta a city_id-t, miközben a lenti
+            // validáció megköveteli (required_if:weather_enabled,1). Aki tehát
+            // bekapcsolta az időjárást, és az API épp nem válaszolt, EGYÁLTALÁN
+            // nem tudta menteni a csoportot - egy külső szolgáltatás
+            // elérhetetlensége blokkolta a teljes űrlapot, olyan mezőkkel
+            // együtt, amiknek semmi közük az időjáráshoz.
+            //
+            // A WeatherCache hibaágon is visszaadja a város azonosítóját (a
+            // sort a sikertelen kísérlet is létrehozza), tehát a mentés
+            // mehet; a hiba magát a felhasználó a weather_messages panelen
+            // látja.
             $weather = pwbs_weather_api_call($this->weather['city'], $this->weather['country']);
-            if(!isset($weather['error'])) {
+            if(isset($weather['city_id'])) {
                 $this->state['city_id'] = $weather['city_id'];
-            } else {
-                $this->state['city_id'] = null;
-            }            
+            }
         }
 
         $pattern = "/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/";

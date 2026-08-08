@@ -30,6 +30,7 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 | `newsletters:send-due` | `SendDueNewsletters` | Sends admin newsletters dated today that are published, flagged for sending, and not yet sent. |
 | `statistics:record-active-users` | `RecordActiveUserStatistics` | Records the hourly active user count as statistics type `active_users`. |
 | `scheduler:heartbeat` | `RecordSchedulerHeartbeat` | Updates `settings.last_schedule_run`, which the admin UI uses to show whether cron is alive. |
+| `weather:refresh` | `RefreshWeatherCache` | Refreshes the cached OpenWeather data for every DISTINCT city used by a group with `weather_enabled = 1` and a non-null `city_id`. No-op when the global `weather` setting is off. Partial failures are warnings, not a non-zero exit - an unknown city must not alarm the scheduler. |
 
 ### Anonymization is conditional on succession, not on role
 
@@ -148,6 +149,7 @@ Consequences worth knowing before changing either one:
 | Every minute | `newsletters:send-due` |
 | Hourly | `statistics:record-active-users` |
 | Every minute | `scheduler:heartbeat` |
+| `0 */3 * * *` | `weather:refresh` |
 | Daily | `gdpr:anonymizeInactiveUsers` (scheduled by the Dialect GDPR package itself; served by `PackageAnonymizeInactiveUsers`) |
 
 ## Known Behavioural Quirks
@@ -155,11 +157,20 @@ Consequences worth knowing before changing either one:
 These are documented deliberately, pinned by characterization tests, and left
 unchanged during the framework upgrade:
 
-- **`newsletters:send-due` stops on an unknown recipient group.** If a
-  newsletter's `send_to` is not one of `groupCreators`, `groupAdmins` or
-  `groupServants`, the command returns immediately, skipping every remaining
-  newsletter in the batch. Because `sent_time` is never stamped, it retries
-  every minute and blocks the queue behind it indefinitely.
+- ~~**`newsletters:send-due` stops on an unknown recipient group.**~~ **Fixed in
+  v1-patch B1.** It used to `return` on an unrecognised `send_to`, skipping every
+  REMAINING newsletter in the batch, and since `sent_time` was never stamped it
+  retried every minute and blocked the queue indefinitely. The offending row is
+  now skipped and reported, the rest are delivered, and the command exits
+  non-zero to say something was left behind. `sent_time` deliberately stays null
+  on the skipped row: nothing was sent.
+- **`weather:refresh` costs 2 API calls per city per run.** The free OpenWeather
+  tier allows 1000 calls/day and 60/minute, which is why the schedule is
+  `0 */3 * * *` rather than hourly - roughly 60 cities fit inside the cap. The
+  forecast itself is only 3-hourly, so a tighter cadence would buy nothing. The
+  `WeatherCache` 15-minute `last_try` throttle remains the backstop, and a
+  failed refresh deliberately does NOT touch `updated_at`, so stale data never
+  looks fresh.
 - **`statistics:record-daily-users` writes the type `dialy_users`.** The typo is
   intentional: existing data rows and the `Admin\Statistics` component both
   filter on that exact string. Renaming it requires a data migration.

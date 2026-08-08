@@ -129,7 +129,17 @@
 
                                             <div class="weather-widget mx-auto rounded-lg bg-light">
                                                 <!-- Current Weather -->
-                                                @if(isset($cal_group_data['weather']['current_weather']))
+                                                {{-- Nem elég a 'current_weather' kulcs LÉTE: egy csonka
+                                                     vagy hibaüzenetet hordozó válasz (pl. 429) esetén a
+                                                     blobból hiányzik a 'weather' és a 'main' ág, és a lenti
+                                                     dereferálás fatalt dobott a naptár renderelése közben.
+                                                     v1-patch C. --}}
+                                                @if(isset(
+                                                    $cal_group_data['weather']['current_weather']['weather'][0]['icon'],
+                                                    $cal_group_data['weather']['current_weather']['main']['temp'],
+                                                    $cal_group_data['weather']['current_weather']['name'],
+                                                    $cal_group_data['weather']['current_weather']['wind']['speed']
+                                                ))
                                                     <div class="current-weather p-3 border-right">
                                                         <div class="d-flex align-items-center">                                                        
                                                             <div class="ml-3">

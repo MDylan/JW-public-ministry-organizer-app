@@ -1,8 +1,6 @@
 <?php
 
 use App\Models\Group;
-use App\Models\Settings;
-use App\Models\WeatherCity;
 use Illuminate\Support\Facades\DB;
 
 if(!function_exists('pwbs_poster_set_read')) {
@@ -88,83 +86,20 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
 }
 
 if(!function_exists('pwbs_weather_api_call')) {
+    /**
+     * Egy település időjárása, gyorsítótárral.
+     *
+     * A törzs a v1-patch C csomagjában az App\Support\Weather\WeatherCache
+     * osztályba költözött (TODO 33.6). Ez a függvény szándékosan megmaradt
+     * átjárónak, hogy a két Livewire hívási hely - Groups\UpdateGroupForm
+     * :215 és :524 - ne mozduljon ugyanabban a változtatásban.
+     *
+     * A visszatérési szerződés változatlan: 'city_id' plusz vagy
+     * 'current_weather' + 'forecast_weather', vagy 'error'.
+     */
     function pwbs_weather_api_call(string $city, string $country) {
         if(config('weather') != 1) return;
-        
-        $city = ucfirst(trim($city));
-        $country = strtoupper(trim($country));
 
-        $last_get = WeatherCity::where('city', $city)->where('country', $country)->first();
-        // dd($last_get);
-        if(!empty($last_get) && $last_get->updated_at > now()->subMinutes(59)) {
-            return [
-                'city_id' => $last_get->id,
-                'current_weather' => json_decode( $last_get->current_weather, true ),
-                'forecast_weather' => json_decode($last_get->forecast_weather, true)
-            ];
-        } else {
-            if(!empty($last_get)) {
-                if($last_get->last_try > now()->subMinutes(15)) {
-                    return [
-                        'city_id' => $last_get->id,
-                        'error' => __('group.weather.too_many_requests')
-                    ];
-                }
-            }
-            //get weather info
-            
-            try {
-                $wt = new \RakibDevs\Weather\Weather();
-                $f_weather = $wt->get3HourlyByCity($city, $country);
-                $c_weather = $wt->getCurrentByCity($city . ", " . $country);
-
-                if (!empty($c_weather) && !empty($f_weather)) {
-                    $current_weather = json_encode((array) $c_weather);
-                    $forecast_weather = json_encode((array) $f_weather);
-
-                    $res = WeatherCity::updateOrCreate(
-                        ['city' => $city, 'country' => $country],
-                        [
-                            'current_weather' => $current_weather,
-                            'forecast_weather' => $forecast_weather,
-                            'last_try' => now()
-                        ]
-                    );
-                    // dd("na");
-                    // dd($weather_data);
-                    //update monthly usage value
-                    Settings::updateOrCreate(
-                        [
-                            'name' => 'weather_monthly_call'
-                        ],
-                        [
-                            'value' => DB::raw("IF(ISNULL(value + 2),2,value+2)"),
-                        ]
-                    );
-                    return [
-                        'city_id' => $res->id,
-                        'current_weather' => json_decode($current_weather, true),
-                        'forecast_weather' => json_decode($forecast_weather, true)
-                    ];
-                } else {
-                    //I will update the last try time, for avoid too many requests
-                    $res = WeatherCity::updateOrCreate(
-                        ['city' => $city, 'country' => $country],
-                        [
-                            'last_try' => now()
-                        ]
-                    );
-                    return [
-                        'city_id' => $res->id,
-                        'error' => __('group.weather.no_data')
-                    ];
-                }
-            } catch (Exception $e) {
-                return [
-                    'error' => $e->getMessage()
-                ];
-            }
-            
-        }
+        return app(\App\Support\Weather\WeatherCache::class)->forCity($city, $country);
     }
 }

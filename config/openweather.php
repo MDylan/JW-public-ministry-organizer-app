@@ -3,68 +3,38 @@
 return [
 
     /**
-     * Get a free Open Weather Map API key
-     * https://openweathermap.org/price.
+     * OpenWeather API kulcs.
+     * Ingyenes kulcs: https://openweathermap.org/price
      *
-     */
-
-    'api_key' => env('OPENWAETHER_API_KEY', ""),
-
-    /**
-     * Current weather API endpoint : https://api.openweathermap.org/data/2.5/weather.
-     * See documentation to get the correct version: https://openweathermap.org/current.
-     */
-    'weather_api_version' => '2.5',
-
-    /**
-     * Onecall API endpoint : https://api.openweathermap.org/data/2.5/onecall. Version 3.0 is available now.
-     * See documentation : https://openweathermap.org/api/one-call-api
-     */
-    'onecall_api_version' => '2.5',
-
-    /**
-     * last 5 Days history API endpoint : https://api.openweathermap.org/data/2.5/onecall/timemachine.
-     * See documentation : https://openweathermap.org/api/one-call-api#history
-     */
-    'historical_api_version' => '2.5',
-
-    /**
-     * Hourly forecast API endpoint https://api.openweathermap.org/data/2.5/forecast.
-     * See documentation : https://openweathermap.org/forecast5.
-     */
-    'forecast_api_version' => '2.5',
-
-    /**
-     * Air pollution api endpoint : https://api.openweathermap.org/data/2.5/air_pollution.
-     * See documentation : https://openweathermap.org/api/air-pollution.
-     */
-    'polution_api_version' => '2.5',
-
-    /**
-     * Geocoding API: https://openweathermap.org/api/geocoding-api
-     */
-    'geo_api_version' => '1.0',
-
-    /**
-     * Library Configuration
+     * A kulcs neve KORÁBBAN OPENWAETHER_API_KEY volt - egy elírás, ami
+     * következetesen szerepelt öt helyen (.env.example, ez a fájl, az admin
+     * beállítás-komponens és a hozzá tartozó nézet), ezért működött. A helyes
+     * név innentől OPENWEATHER_API_KEY.
      *
-     * https://openweathermap.org/current#multi
-     *
+     * A régi név EGY KIADÁS EREJÉIG fallbackként megmarad, mert a telepített
+     * hostok .env fájlja még azt hordozza. Amint a kiadás minden helyre
+     * eljutott, a fallback törölhető.
      */
+    'api_key' => env('OPENWEATHER_API_KEY', env('OPENWAETHER_API_KEY', '')),
 
-    'lang' => env('OPENWAETHER_API_LANG', 'en'),
+    /**
+     * A válasz nyelve.
+     *
+     * Üresen hagyva az alkalmazás aktuális lokálja dönt
+     * (OpenWeatherClient::language()). Korábban bedrótozott 'en' volt, ezért a
+     * magyar és német felületen is angol időjárás-leírások jelentek meg.
+     */
+    'lang' => env('OPENWEATHER_API_LANG', env('OPENWAETHER_API_LANG', '')),
+
+    /**
+     * Mértékegység-rendszer: metric (Celsius, m/s), imperial (Fahrenheit,
+     * mérföld/óra) vagy standard (Kelvin).
+     */
+    'units' => env('OPENWEATHER_UNITS', 'metric'),
+
+    /**
+     * A megjelenítéshez használt dátumformátum.
+     */
     'date_format' => 'Y-m-d',
-    'time_format' => 'h:i',
-    'day_format' => 'w',
 
-    /**
-     * Unit Configuration
-     * --------------------------------------
-     * Available units are c, f, k. (k is default)
-     *
-     * For temperature in Fahrenheit (f) and wind speed in miles/hour, use units=imperial
-     * For temperature in Celsius (c) and wind speed in meter/sec, use units=metric
-     */
-
-    'temp_format' => 'c',
 ];
