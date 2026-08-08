@@ -22,9 +22,13 @@ class SeederTest extends FeatureTestCase
 
         $this->seed(DatabaseSeeder::class);
 
-        foreach (['registration', 'claim_group_creator', 'default_language', 'languages', 'terms_checkbox', 'maintenance'] as $name) {
+        foreach (['registration', 'claim_group_creator', 'default_language', 'languages', 'terms_checkbox', 'maintenance', 'group_data_retention'] as $name) {
             $this->assertDatabaseHas('settings', ['name' => $name]);
         }
+
+        // A megőrzési idő alapból kikapcsolt: egy friss telepítés semmit nem
+        // törölhet, amíg az adminisztrátor tudatosan be nem kapcsolja.
+        $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '0']);
     }
 
     public function test_core_settings_seeder_is_idempotent_and_preserves_existing_values(): void

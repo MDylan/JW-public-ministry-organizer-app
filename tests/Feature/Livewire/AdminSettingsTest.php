@@ -76,6 +76,73 @@ class AdminSettingsTest extends FeatureTestCase
             ->assertViewHas('failed_jobs');
     }
 
+    // --- csoportadatok megőrzése (v1-patch E5) ---
+
+    public function test_mount_loads_the_stored_group_data_retention(): void
+    {
+        SettingsModel::updateOrCreate(['name' => 'group_data_retention'], ['value' => '24']);
+
+        $component = Livewire::actingAs($this->admin)->test(Settings::class);
+
+        $this->assertSame('24', $component->get('state')['retention']['group_data']);
+    }
+
+    public function test_mount_falls_back_to_disabled_group_data_retention(): void
+    {
+        SettingsModel::where('name', 'group_data_retention')->delete();
+
+        $component = Livewire::actingAs($this->admin)->test(Settings::class);
+
+        $this->assertSame('0', $component->get('state')['retention']['group_data']);
+    }
+
+    public function test_saving_the_group_data_retention_stores_the_chosen_window(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->set('state.retention.group_data', '12')
+            ->call('saveGroupDataRetention')
+            ->assertDispatchedBrowserEvent('success');
+
+        $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '12']);
+    }
+
+    /**
+     * A $state publikus Livewire property, tehát a böngészőből tetszőleges
+     * érték felküldhető. Enélkül a whitelist nélkül egy 'x' a settings táblába
+     * kerülne, a RetentionWindow-nak kellene egyedül védenie, és egy castoló
+     * olvasó nulla hónapos ablakot - azaz teljes táblatörlést - kapna.
+     */
+    public function test_saving_the_group_data_retention_refuses_a_value_outside_the_whitelist(): void
+    {
+        SettingsModel::updateOrCreate(['name' => 'group_data_retention'], ['value' => '12']);
+
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->set('state.retention.group_data', '1')
+            ->call('saveGroupDataRetention')
+            ->assertDispatchedBrowserEvent('error')
+            ->assertNotDispatchedBrowserEvent('success')
+            ->assertSet('state.retention.group_data', '12');
+
+        $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '12']);
+        $this->assertDatabaseMissing('settings', ['name' => 'group_data_retention', 'value' => '1']);
+    }
+
+    /**
+     * A $others tömböt a nézet bootstrap-switch ciklusa iterálja, a
+     * state['others'] ág pedig a saveOthers() hatókörébe esne - ami az egész
+     * .env fájlt újraírja, és a komponens egyetlen teszteletlen metódusa.
+     * Egy végleges törlést vezérlő beállítás egyikbe sem kerülhet.
+     */
+    public function test_the_group_data_retention_is_not_one_of_the_checkbox_settings(): void
+    {
+        $component = Livewire::actingAs($this->admin)->test(Settings::class);
+
+        $this->assertArrayNotHasKey('group_data_retention', $component->get('others'));
+        $this->assertArrayNotHasKey('group_data_retention', $component->get('state')['others']);
+    }
+
     // --- nyelvkezelés ---
 
     public function test_adding_a_language_stores_it_as_visible(): void

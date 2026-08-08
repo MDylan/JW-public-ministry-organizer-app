@@ -91,7 +91,14 @@ class Settings extends AppComponent
         $this->state['homepage_message'] = $this->settings['homepage_message'] ?? '';
         foreach($this->from_env as $key) {
             $this->state['env'][$key] = setEnvironment::value($key, '');
-        }        
+        }
+
+        // A csoportadatok megőrzési ideje szándékosan KÍVÜL van a $others
+        // tömbön és a state['others'] ágon is. A $others elemeit a nézet
+        // kapcsoló-ciklusa rendereli (bootstrap-switch), ez viszont
+        // háromértékű választó; a state['others'] pedig a saveOthers()
+        // hatókörébe esne - lásd a saveGroupDataRetention() magyarázatát.
+        $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
     }
 
     private function getLanguages() {
@@ -182,6 +189,41 @@ class Settings extends AppComponent
 
             $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.visibility_changed')]);
         } 
+    }
+
+    /**
+     * A csoportadatok (day_stats, group_dates) megőrzési ideje.
+     *
+     * Saját mentője van, nem a saveOthers()-é, három okból:
+     *
+     *  - a saveOthers() a settings sorok után az EGÉSZ .env fájlt újraírja
+     *    (USE_HTTPS, GDPR_ENABLED, minden MAIL_*, APP_URL) és config:clear-t
+     *    hív; egy megőrzési beállításnak nincs szüksége ekkora hatósugárra,
+     *  - a setEnvironmentValue() abort(403)-mal elszállhat AZUTÁN, hogy a
+     *    settings sorok már elmentek - részleges sikert hagyva maga után,
+     *  - a saveOthers() a komponens egyetlen szándékosan teszteletlen
+     *    metódusa (a .env.testing fájlt írná felül, lásd az AdminSettingsTest
+     *    osztálydokját). Egy VÉGLEGES TÖRLÉST vezérlő beállítás nem
+     *    maradhat lefedettség nélkül.
+     *
+     * A whitelist itt is kötelező, nem csak a RetentionWindow-ban: a settings
+     * táblába érvénytelen érték se kerüljön be.
+     */
+    public function saveGroupDataRetention() {
+        $value = (string) ($this->state['retention']['group_data'] ?? '0');
+
+        if(!in_array($value, config('retention.group_data_options'), true)) {
+            $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
+            $this->dispatchBrowserEvent('error', ['message' => __('settings.retention.invalid')]);
+            return;
+        }
+
+        ModelsSettings::updateOrCreate(
+            ['name' => 'group_data_retention'],
+            ['value' => $value]
+        );
+
+        $this->dispatchBrowserEvent('success', ['message' => __('settings.retention.saved')]);
     }
 
     public function saveOthers() {

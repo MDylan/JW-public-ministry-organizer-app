@@ -43,6 +43,11 @@ class AppServiceProvider extends ServiceProvider
             'show_homepage_alert' => false,
             'homepage_message' => '',
             'weather' => false,
+            // v1-patch E: a csoportadatok megőrzési ideje hónapban, '0' a
+            // kikapcsolt állapot. Alapérték nélkül a config kulcs friss
+            // telepítésen fel sem oldódna - a RetentionWindow ezt is
+            // kikapcsoltként kezeli, de itt legyen kimondva.
+            'group_data_retention' => '0',
         ];
         try {
             $settings = ModelsSettings::all();

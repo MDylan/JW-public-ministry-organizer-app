@@ -360,6 +360,25 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            {{--
+                                                A megőrzési idő NEM a fenti kapcsoló-ciklus része (háromértékű),
+                                                és nem is a lap alján lévő "Módosítások mentése" gombhoz tartozik:
+                                                saját mentője van, mert a saveOthers() az egész .env fájlt
+                                                újraírná. Ezért nem eshet a wire:ignore blokkba sem.
+                                            --}}
+                                            <div class="row mb-1 mt-3">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label for="group_data_retention">@lang('settings.retention.group_data'):</label>
+                                                        <select wire:model.defer="state.retention.group_data" wire:change="saveGroupDataRetention" class="form-control" id="group_data_retention">
+                                                            <option value="0">@lang('settings.retention.off')</option>
+                                                            <option value="12">@lang('settings.retention.months_12')</option>
+                                                            <option value="24">@lang('settings.retention.months_24')</option>
+                                                        </select>
+                                                        <small class="form-text text-muted">@lang('settings.retention.help')</small>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>                                    
                                 </div>

@@ -48,6 +48,15 @@ return [
     ],
     'homepage_message' => 'A nyitólapi üzenet tartalma',
     'others_saved'  => 'A beállítások sikeresen mentve lettek.',
+    'retention' => [
+        'group_data' => 'Csoportadatok megőrzése (napi statisztika és időpontok)',
+        'help' => 'A megadottnál régebbi napi statisztikák és időpont-beállítások éjszaka véglegesen törlődnek. Ezek az adatok nem tartalmaznak személyes adatot, a törlésük az adatbázis méretét csökkenti. A törölt időszak a statisztikában és a naptárban már nem lesz megnyitható.',
+        'off' => 'Kikapcsolva (minden adat megmarad)',
+        'months_12' => '1 évet őrzök',
+        'months_24' => '2 évet őrzök',
+        'saved' => 'A megőrzési idő elmentve.',
+        'invalid' => 'Érvénytelen megőrzési idő, a beállítás nem változott.',
+    ],
     'run' => [
         'title'    => 'Artisan parancsok futtatása',
         'optimize' => 'Parancs futtatása',

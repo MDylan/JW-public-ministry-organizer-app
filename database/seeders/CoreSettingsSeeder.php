@@ -30,6 +30,10 @@ class CoreSettingsSeeder extends Seeder
             'weather' => '0',
             'terms_checkbox' => '0',
             'maintenance' => '0',
+            // v1-patch E: a csoportadatok megőrzési ideje hónapban. A '0' a
+            // kikapcsolt állapot - egy friss telepítés semmit nem töröl,
+            // amíg az adminisztrátor tudatosan be nem kapcsolja.
+            'group_data_retention' => '0',
         ];
 
         foreach ($defaults as $name => $value) {
