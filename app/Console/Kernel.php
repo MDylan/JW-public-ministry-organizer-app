@@ -44,6 +44,11 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('gdpr:notify-anonymization')->dailyAt('7:10');
 
+        // A retenciós takarítás hajnali 3 után fut, nem a 00:00-s torlódásban
+        // (purge-log-history, daily-cleanup, record-daily-users mind ott van).
+        // Az események előbb, a belőlük származtatott csoportadatok utána.
+        $schedule->command('gdpr:purge-old-events')->dailyAt('3:30');
+
         $schedule->command('maintenance:purge-log-history')->daily();
 
         $schedule->command('maintenance:daily-cleanup')->daily();

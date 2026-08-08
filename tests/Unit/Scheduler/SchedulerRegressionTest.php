@@ -20,6 +20,10 @@ class SchedulerRegressionTest extends TestCase
         'events:expire-pending' => '*/5 * * * *',
         'gdpr:anonymize-inactive' => '0 7 * * *',
         'gdpr:notify-anonymization' => '10 7 * * *',
+        // v1-patch E: a retenciós takarítás hajnali 3 után fut, hogy ne a
+        // 00:00-s torlódásba essen. Az események előbb, a belőlük
+        // származtatott csoportadatok utána.
+        'gdpr:purge-old-events' => '30 3 * * *',
         'maintenance:purge-log-history' => '0 0 * * *',
         'maintenance:daily-cleanup' => '0 0 * * *',
         'statistics:record-daily-users' => '0 0 * * *',
