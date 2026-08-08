@@ -20,7 +20,7 @@ if(!function_exists('pwbs_poster_set_read')) {
     }
 }
 
-if(!function_exists('pwbs_check_group_admins')) {
+if(!function_exists('pwbs_check_group_other_admins')) {
     function pwbs_check_group_other_admins(int $groupId, int $userId) {
         $group = Group::findOrFail($groupId);
         // Utódnak csak nem anonimizált, elfogadott admin számít - lásd a

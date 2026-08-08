@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 09: a setUserLastActivity middleware.
+ * TODO 09: a SetUserLastActivity middleware.
  *
  * A web csoport tagja (Kernel.php:46), tehát MINDEN webes kérésen lefut, és
  * a users.last_activity mezőt tartja karban. Erre a mezőre épül a

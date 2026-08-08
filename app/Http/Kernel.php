@@ -5,7 +5,7 @@ namespace App\Http;
 use App\Http\Middleware\HttpsProtocol;
 use App\Http\Middleware\SetGuestLanguage;
 use App\Http\Middleware\SetLocale;
-use App\Http\Middleware\setUserLastActivity;
+use App\Http\Middleware\SetUserLastActivity;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -42,7 +42,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             SetLocale::class,
-            setUserLastActivity::class,
+            SetUserLastActivity::class,
             HttpsProtocol::class
         ],
 

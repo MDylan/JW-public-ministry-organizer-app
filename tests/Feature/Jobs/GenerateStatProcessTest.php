@@ -176,18 +176,25 @@ class GenerateStatProcessTest extends FeatureTestCase
         $this->assertSame(0, GroupDate::where('group_id', $this->group->id)->where('date', $this->date)->count());
     }
 
-    public function test_handle_with_force_reset_fatals_when_no_group_date_exists(): void
+    public function test_handle_with_force_reset_survives_a_missing_group_date(): void
     {
-        // Meglévő hiba, jellemzés-teszt: a forceReset ág feltétel nélkül
-        // hívja a ->first()->delete()-et, így hiányzó GroupDate esetén
-        // null-on hív metódust. A CalculateDateProcess/GenerateStat útvonal
-        // ma mindig létező dátummal hívja, ezért éles környezetben nem jött
-        // elő. Ha ezt egyszer javítjuk, ez a teszt fog elbukni - akkor a
-        // várt viselkedést kell ide átírni.
+        // MEGFORDÍTVA a v1-patch A6 javításával.
+        //
+        // Korábban a forceReset ág feltétel nélkül hívta a ->first()->delete()-et,
+        // így hiányzó GroupDate esetén null-on hívott metódust. A queue a jobot
+        // akkor is lefuttatja, ha a sor a dispatch óta eltűnt (párhuzamos törlés,
+        // csoport-törlés, kézi adatjavítás) - ilyenkor a job fatallal halt meg,
+        // holott a reset célja épp az, hogy a sor NE legyen ott.
+        //
+        // Most a hiányzó sor a kívánt végállapot, nem hiba: a job végigfut.
         GroupDate::where('group_id', $this->group->id)->delete();
 
-        $this->expectException(\Throwable::class);
-
         (new GenerateStatProcess($this->group->id, $this->date, true))->handle();
+
+        $this->assertSame(
+            0,
+            GroupDate::where('group_id', $this->group->id)->where('date', $this->date)->count(),
+            'A forceReset után a nap GroupDate sora nem létezhet.'
+        );
     }
 }

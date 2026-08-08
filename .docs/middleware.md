@@ -34,7 +34,7 @@ Executed on every HTTP request:
 - `VerifyCsrfToken`
 - `SubstituteBindings`
 - `SetLocale` (custom)
-- `setUserLastActivity` (custom)
+- `SetUserLastActivity` (custom)
 - `HttpsProtocol` (custom)
 
 ## API Group (`$middlewareGroups['api']`)
@@ -75,11 +75,11 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 | `SetGuestLanguage` | Custom | Sets locale from invited user language using route `id` parameter. |
 | `SetLocale` | Custom | Resolves locale from query/session/user defaults, handles maintenance logout for non-admin users, and shares static-page side menu via cache. |
 | `HttpsProtocol` | Custom | Redirects to HTTPS in production when `USE_HTTPS=true`. |
-| `setUserLastActivity` | Custom | Updates authenticated user `last_activity` (at most once per minute). |
+| `SetUserLastActivity` | Custom | Updates authenticated user `last_activity` (at most once per minute). |
 | `RedirectIfUnansweredTerms` | Custom (unregistered alias) | Redirects users without GDPR response to `gdpr-terms`; class exists but alias is not registered in kernel. **Reads `Auth::user()->accepted_gdpr` with no null check, so registering it in the `web` group would turn every guest request into a 500.** Its redirect target is broken as well - see `.docs/routes.md`. Covered by `tests/Feature/Gdpr/UnansweredTermsMiddlewareTest.php`. |
 
 ## Practical Notes
 
 - Locale and menu sharing are coupled inside `SetLocale`, so menu cache behavior is middleware-dependent.
 - `checkRecaptcha` is used by custom Fortify routes (`POST /login`, `POST /register`, `POST /forgot-password`).
-- Naming style is mixed (`setUserLastActivity` lower-case class name), which is valid in PHP but worth normalizing in future cleanup.
+- Naming is now consistent: the former lower-case `setUserLastActivity` class was renamed to `SetUserLastActivity` (v1-patch, TODO 33). The old name was valid under PSR-4 on a case-insensitive filesystem but would not autoload on a case-sensitive deploy target.

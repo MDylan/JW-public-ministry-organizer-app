@@ -144,10 +144,19 @@ class GenerateStatProcess implements ShouldQueue
         // $this->date = $date;
         if($this->forceReset) {
             //we reset timeslot for this day
-            GroupDate::where('group_id', '=', $this->groupId)
+            // A ->first() null is lehet: a jobot a queue akkor is lefuttatja,
+            // ha a GroupDate sor a dispatch óta eltűnt (párhuzamos törlés,
+            // csoport-törlés, kézi adatjavítás). A korábbi feltétel nélküli
+            // ->delete() ilyenkor null-on hívott metódust, tehát a job fatal
+            // hibával halt meg ahelyett, hogy egyszerűen továbbment volna -
+            // a reset célja pedig épp az, hogy a sor NE legyen ott.
+            $groupDate = GroupDate::where('group_id', '=', $this->groupId)
                         ->where('date', '=', $this->date)
-                        ->first()
-                        ->delete();
+                        ->first();
+
+            if($groupDate !== null) {
+                $groupDate->delete();
+            }
         } 
 
         $res = $this->getInfo();

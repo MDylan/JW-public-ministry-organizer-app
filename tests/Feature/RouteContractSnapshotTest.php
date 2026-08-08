@@ -129,16 +129,26 @@ class RouteContractSnapshotTest extends TestCase
         );
     }
 
-    public function test_the_web_php_verification_verify_closure_never_reaches_the_routing_table(): void
+    public function test_the_web_php_verification_verify_closure_is_gone(): void
     {
-        // A forrásban két definíció van, a gyűjteményben egy: a különbség maga a
-        // halott kód. A TODO 26 ezt a closure-t törli, nulla futásidejű hatással.
-        $this->assertSame(2, $this->sourceRouteNameCounts()['verification.verify']);
+        // MEGFORDÍTVA a v1-patch A4 javításával (TODO 26).
+        //
+        // Korábban a forrásban KÉT definíció volt, a routing táblában egy - a
+        // különbség maga volt a halott kód. A routes/web.php-beli closure most
+        // törölve, tehát a forrás és a futásidejű tábla végre egyetért.
+        $this->assertSame(1, $this->sourceRouteNameCounts()['verification.verify']);
         $this->assertCount(1, $this->routesNamed('verification.verify'));
 
         foreach ($this->routesNamed('verification.verify') as $route) {
             $this->assertNotSame('Closure', $route->getActionName());
         }
+
+        // A törlés nulla futásidejű változást jelentett: ami maradt, az
+        // pontosan az, ami eddig is nyert.
+        $this->assertStringNotContainsString(
+            "name('verification.verify')",
+            file_get_contents(base_path('routes/web.php'))
+        );
     }
 
     public function test_both_password_confirm_definitions_survive_with_different_middleware(): void
@@ -197,8 +207,12 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_route_files_contain_exactly_the_known_duplicate_names(): void
     {
-        // Ez az őr bukik el a TODO 26-ban, amikor a duplikátumok eltűnnek - ez a
-        // szándék. Új duplikátum megjelenését is elkapja.
+        // MEGFORDÍTVA a v1-patch A4 javításával (TODO 26): a `verification.verify`
+        // duplikátum eltűnt. A `password.confirm` SZÁNDÉKOSAN marad kettő: a két
+        // definíció HTTP metódusban tér el (GET űrlap + POST ellenőrzés), tehát
+        // mindkettő él, és ez a kívánt viselkedés - lásd
+        // test_both_password_confirm_definitions_survive_with_different_middleware.
+        // Ez az őr innentől új duplikátum megjelenését kapja el.
         //
         // FIGYELEM: a forrásszkennert soha ne vessük össze DARABSZÁMRA a
         // route-contracts.json-nal. A setup.* route-ok a routes/web.php:78
@@ -213,7 +227,6 @@ class RouteContractSnapshotTest extends TestCase
         $this->assertSame(
             [
                 'password.confirm' => 2,
-                'verification.verify' => 2,
             ],
             $duplicates
         );

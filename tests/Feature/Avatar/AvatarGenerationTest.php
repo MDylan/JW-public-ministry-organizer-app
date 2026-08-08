@@ -164,14 +164,27 @@ class AvatarGenerationTest extends FeatureTestCase
 
     public function test_the_disk_root_and_the_views_url_prefix_are_a_matched_pair(): void
     {
-        // A `web` disk gyökere RELATÍV útvonal ('public'), a nézet pedig
-        // asset('public/avatars/...')-szal címzi ugyanazt a fájlt. A kettő csak
-        // együtt helyes, és a migráció során könnyű elrontani.
-        $this->assertSame('public', config('filesystems.disks.web.root'));
+        // MEGFORDÍTVA a v1-patch A5 javításával.
+        //
+        // Korábban a `web` disk gyökere a csupasz relatív 'public' volt, a
+        // nézet pedig asset('public/avatars/...')-szal címezte ugyanazt a
+        // fájlt. A kettő csak WEBKÉRÉSBEN találkozott, ahol a PHP
+        // munkakönyvtára maga a public/ könyvtár, tehát a relatív 'public'
+        // public/public/-ra oldódott - pontosan oda, ahova az URL is mutatott.
+        // Artisan, queue worker vagy teszt alatt viszont a munkakönyvtár a
+        // projekt gyökere, így ugyanaz a diszk public/-ba írt, miközben a
+        // nézet továbbra is public/public/-ból kérte. A régi .gitignore sora
+        // (`/public/public/avatars/*`) ennek a lenyomata volt.
+        //
+        // Most a gyökér abszolút (public_path()), az URL-előtag pedig
+        // elvesztette a duplikált 'public/' szegmenst. A pár továbbra is csak
+        // EGYÜTT helyes - ezért marad ez a teszt egy fájlban a kettővel.
+        $this->assertSame(public_path(), config('filesystems.disks.web.root'));
 
         $view = file_get_contents(resource_path('views/livewire/groups/messages.blade.php'));
 
-        $this->assertStringContainsString("asset('public/avatars/avatar-'", $view);
+        $this->assertStringContainsString("asset('avatars/avatar-'", $view);
+        $this->assertStringNotContainsString("asset('public/avatars/avatar-'", $view);
     }
 
     // =========================================================================

@@ -38,7 +38,6 @@ use App\Http\Livewire\Groups\NewsList;
 use App\Http\Livewire\Groups\Statistics;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Http\Livewire\Home;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -116,10 +115,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/loginback/{id}', [LoginToUserController::class, 'loginback'])
             ->name('admin.loginback')->middleware(['signed']);
 
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $result = $request->fulfill();
-        return redirect('/home');
-    })->name('verification.verify');
+    // A `verification.verify` NEVET a routes/fortify.php:87-89 regisztrálja
+    // (Laravel\Fortify\Http\Controllers\VerifyEmailController@__invoke,
+    // middleware: web, Authenticate:web, ValidateSignature, ThrottleRequests:6,1).
+    //
+    // Itt korábban egy MÁSODIK definíció állt ugyanerre a metódus+URI párra egy
+    // closure-rel. A Route::get() metódus+domain+URI szerint felülír, a Fortify
+    // pedig a routes/web.php UTÁN töltődik be (config/app.php provider-sorrend),
+    // ezért a closure soha nem került be a routing táblába - a TODO 03 ezt
+    // empirikusan igazolta. Törölve, nulla futásidejű hatással. A boot-sorrendet
+    // a RouteContractSnapshotTest::test_the_winner_depends_on_the_service_provider_boot_order
+    // őrzi, mert egy provider-sorrendcsere némán visszabillentené a halott ágra.
 
     Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
 
