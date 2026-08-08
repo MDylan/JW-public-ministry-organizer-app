@@ -23,6 +23,11 @@ class SchedulerRegressionTest extends TestCase
         // v1-patch E: a retenciós takarítás hajnali 3 után fut, hogy ne a
         // 00:00-s torlódásba essen. Az események előbb, a belőlük
         // származtatott csoportadatok utána.
+        //
+        // A --force a parancsnév RÉSZE, és annak is kell maradnia: nélküle a
+        // Spatie parancsa ütemezőből futva megerősítést kérne, TTY híján
+        // nemleges választ kapna, és némán nem törölne semmit.
+        'activitylog:clean --force' => '20 3 * * *',
         'gdpr:purge-old-events' => '30 3 * * *',
         'maintenance:purge-old-group-data' => '40 3 * * *',
         'maintenance:purge-log-history' => '0 0 * * *',

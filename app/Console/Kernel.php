@@ -47,6 +47,26 @@ class Kernel extends ConsoleKernel
         // A retenciós takarítás hajnali 3 után fut, nem a 00:00-s torlódásban
         // (purge-log-history, daily-cleanup, record-daily-users mind ott van).
         // Az események előbb, a belőlük származtatott csoportadatok utána.
+
+        // A Spatie parancsa eddig SOHA nem futott, pedig a
+        // config/activitylog.php 90 napos retenciót deklarál - a beállítás
+        // ezért négy éve nem lépett életbe (élesben a 7739 sorból 7581 már
+        // túl van a 90 napon).
+        //
+        // A --force nem elhagyható: a CleanActivitylogCommand a
+        // ConfirmableTrait::confirmToProceed()-del indul, ami production
+        // környezetben megerősítést kér. Ütemezőből futva nincs TTY, a
+        // confirm() a false alapértéket adja, a parancs kiírja, hogy
+        // "Command Cancelled!", 1-gyel kilép és SEMMIT nem töröl - némán,
+        // mert a scheduler kilépőkódját semmi nem jelzi ki.
+        //
+        // Az őr itt when()-ben van, nem a parancs törzsében: a vendor
+        // parancsba nem tudunk beleírni. Kézzel indítva ezért megkerülhető -
+        // az viszont explicit üzemeltetői művelet.
+        $schedule->command('activitylog:clean --force')
+                    ->dailyAt('3:20')
+                    ->when(fn () => (bool) config('gdpr.enabled'));
+
         $schedule->command('gdpr:purge-old-events')->dailyAt('3:30');
 
         $schedule->command('maintenance:purge-old-group-data')->dailyAt('3:40');
