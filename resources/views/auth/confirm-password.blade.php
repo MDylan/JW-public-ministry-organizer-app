@@ -19,7 +19,7 @@
                 </div>
                 <div class="row mt-4">
                     <div class="col-12 justify-content-center text-center">
-                        <form class="input-group has-validation" method="POST" action="{{ route('password.confirm') }}">
+                        <form class="input-group has-validation" method="POST" action="{{ route('password.confirm.store') }}">
                             @csrf
                             <div class="input-group-prepend">
                                 <span class="input-group-text">@lang('Password'):</span>

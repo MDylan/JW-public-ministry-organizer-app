@@ -145,6 +145,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
 
+    // A két definíció URI-ja azonos, a nevet viszont NEM oszthatják meg: a
+    // route:cache (és vele az `artisan optimize`) LogicExceptionnel elhasal a
+    // második azonos nevű route-on. A `password.confirm` a Laravel konvenciója
+    // szerint az űrlapot mutató GET ág - ide mutat a `password.confirm`
+    // middleware-alias (app/Http/Kernel.php:68) átirányítása is.
     Route::get('/confirm-password', function () {
         return view('auth.confirm-password');
     })->name('password.confirm');
@@ -157,7 +162,7 @@ Route::middleware(['auth'])->group(function () {
         }    
         $request->session()->passwordConfirmed();    
         return redirect()->intended();
-    })->middleware(['throttle:6,1'])->name('password.confirm');
+    })->middleware(['throttle:6,1'])->name('password.confirm.store');
 
     //Only for verified users
     Route::middleware(['verified'])->group(function () {

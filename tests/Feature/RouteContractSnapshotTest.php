@@ -13,11 +13,14 @@ use Tests\TestCase;
  * metódusait és middleware-eit unióba olvasztja. Emiatt két dolog láthatatlan,
  * és a TODO 14 pontosan ezt a két vakfoltot zárja be:
  *
- * 1. A DUPLIKÁLT NEVEK. A `password.confirm` egyetlen sorként jelenik meg, a
- *    `verification.verify` pedig úgy néz ki, mintha egyetlen definíció lenne -
- *    holott a forrásban kettő van, és az egyik árnyékban marad. A TODO 26 majd
- *    törli a halott definíciót; az itteni tesztek teszik azt a törlést
- *    szándékos, olvasható diffé egy csendes viselkedésváltozás helyett.
+ * 1. A DUPLIKÁLT NEVEK. A `password.confirm` egyetlen sorként jelent meg, a
+ *    `verification.verify` pedig úgy nézett ki, mintha egyetlen definíció lenne -
+ *    holott a forrásban kettő volt, és az egyik árnyékban maradt. A v1-patch
+ *    mindkettőt feloldotta (A4 és A7), és az itteni tesztek tették azt szándékos,
+ *    olvasható diffé egy csendes viselkedésváltozás helyett. A duplikátum nem
+ *    csak rendetlenség volt: egyetlen ismétlődő név is LogicExceptionnel
+ *    megbuktatja a `route:cache`-t, tehát az `artisan optimize` ezen a
+ *    kódbázison sosem futott le.
  * 2. A VENDOR ROUTE-OK, amiket a prefix-szűrő kihagy - így a Phase 6
  *    (Livewire 2 -> 3) routing-változása néma maradna. TODO 33.4 óta a
  *    laraupdater három végpontja is ide tartozik: v1-ben NÉVTELENEK voltak,
@@ -151,37 +154,67 @@ class RouteContractSnapshotTest extends TestCase
         );
     }
 
-    public function test_both_password_confirm_definitions_survive_with_different_middleware(): void
+    public function test_the_two_confirm_password_definitions_carry_different_names(): void
     {
-        // Itt a két definíció HTTP metódusban tér el (routes/web.php:126 GET és
-        // :130 POST), tehát külön kulcsra kerül, és mindkettő életben marad. Az
-        // unió-alapú pillanatkép ezt egy sorrá mossa össze, és elrejti, hogy a
-        // throttle CSAK a POST-on van.
-        $routes = $this->routesNamed('password.confirm');
-        $this->assertCount(2, $routes);
+        // MEGFORDÍTVA a v1-patch A7 javításával (TODO 26). Korábban mindkét
+        // definíció a `password.confirm` nevet viselte, és ez a teszt azt rögzítette,
+        // hogy MINDKETTŐ életben van - ami igaz is volt, de egyben
+        // cachelhetetlenné tette a route-táblát, lásd
+        // test_the_route_table_survives_route_cache.
+        //
+        // A két definíció továbbra is él, változatlan URI-val és middleware-rel,
+        // csak már külön névvel. Az unió-alapú pillanatkép eddig egy sorrá mosta
+        // össze őket, és elrejtette, hogy a throttle CSAK a POST-on van.
+        $get = $this->routesNamed('password.confirm');
+        $post = $this->routesNamed('password.confirm.store');
 
-        $get = $this->firstRouteWithMethod($routes, 'GET');
-        $post = $this->firstRouteWithMethod($routes, 'POST');
+        $this->assertCount(1, $get);
+        $this->assertCount(1, $post);
 
-        $this->assertSame(['auth', 'web'], $this->sortedMiddleware($get));
-        $this->assertSame(['auth', 'throttle:6,1', 'web'], $this->sortedMiddleware($post));
+        $this->assertSame(['auth', 'web'], $this->sortedMiddleware($get[0]));
+        $this->assertSame(['auth', 'throttle:6,1', 'web'], $this->sortedMiddleware($post[0]));
 
-        $this->assertSame('confirm-password', $get->uri());
-        $this->assertSame('confirm-password', $post->uri());
+        // Az URI változatlanul azonos, ezért a javítás egyetlen URL-t sem mozdít el.
+        $this->assertSame('confirm-password', $get[0]->uri());
+        $this->assertSame('confirm-password', $post[0]->uri());
+        $this->assertContains('GET', $get[0]->methods());
+        $this->assertContains('POST', $post[0]->methods());
     }
 
-    public function test_url_generation_resolves_password_confirm_to_the_post_definition(): void
+    public function test_url_generation_resolves_password_confirm_to_the_get_definition(): void
     {
-        // Az URL-generálás a nameList-ből dolgozik, amit a RouteServiceProvider az
-        // app->booted() callbackben refreshNameLookups()-szal épít újra az
-        // allRoutes beszúrási sorrendje szerint - tehát az UTOLSÓ definíció nyer.
-        // A `password.confirm` middleware-alias (app/Http/Kernel.php:68) is erre a
-        // névre irányít át.
+        // MEGFORDÍTVA a v1-patch A7 javításával. Korábban a nameList-ből az UTOLSÓ
+        // definíció nyert - vagyis a POST -, és a `password.confirm`
+        // middleware-alias (app/Http/Kernel.php:68) egy POST route nevére
+        // irányított át. Kizárólag azért működött, mert a két URI azonos volt.
+        // A név most a Laravel konvenciója szerint az űrlapot mutató GET ágra
+        // mutat, tehát a RequirePassword átirányítása végre a saját metódusára esik.
         $resolved = app('router')->getRoutes()->getByName('password.confirm');
 
         $this->assertNotNull($resolved);
-        $this->assertContains('POST', $resolved->methods());
-        $this->assertNotContains('GET', $resolved->methods());
+        $this->assertContains('GET', $resolved->methods());
+        $this->assertNotContains('POST', $resolved->methods());
+
+        // A generált URL viszont betűre ugyanaz, mint a javítás előtt.
+        $this->assertSame('/confirm-password', route('password.confirm', [], false));
+        $this->assertSame('/confirm-password', route('password.confirm.store', [], false));
+    }
+
+    public function test_the_route_table_survives_route_cache(): void
+    {
+        // EZ A JAVÍTÁS VALÓDI TÉTJE. Az `artisan optimize` (és a `route:cache`) a
+        // teljes táblát Symfony route-gyűjteménnyé alakítja, ahol a név EGYEDI
+        // KULCS: a második azonos nevű route LogicExceptiont dob, és az egész
+        // parancs elhasal. A duplikált `password.confirm` miatt tehát ezen a
+        // kódbázison SOHA nem futott le a route-cache - a v1-en sem.
+        //
+        // Ugyanazt a kódutat járjuk be, mint a parancs, csak nem írunk fájlt:
+        // AbstractRouteCollection::toSymfonyRouteCollection() az, ami dob.
+        $symfony = app('router')->getRoutes()->toSymfonyRouteCollection();
+
+        $this->assertNotEmpty($symfony->all());
+        $this->assertNotNull($symfony->get('password.confirm'));
+        $this->assertNotNull($symfony->get('password.confirm.store'));
     }
 
     public function test_the_winner_depends_on_the_service_provider_boot_order(): void
@@ -205,14 +238,12 @@ class RouteContractSnapshotTest extends TestCase
         );
     }
 
-    public function test_the_route_files_contain_exactly_the_known_duplicate_names(): void
+    public function test_the_route_files_contain_no_duplicate_names(): void
     {
-        // MEGFORDÍTVA a v1-patch A4 javításával (TODO 26): a `verification.verify`
-        // duplikátum eltűnt. A `password.confirm` SZÁNDÉKOSAN marad kettő: a két
-        // definíció HTTP metódusban tér el (GET űrlap + POST ellenőrzés), tehát
-        // mindkettő él, és ez a kívánt viselkedés - lásd
-        // test_both_password_confirm_definitions_survive_with_different_middleware.
-        // Ez az őr innentől új duplikátum megjelenését kapja el.
+        // MEGFORDÍTVA a v1-patch A4 (`verification.verify` törlése) és A7
+        // (`password.confirm` szétválasztása) javításával, TODO 26. Mindkét
+        // definíciópár él, csak már külön néven - lásd
+        // test_the_two_confirm_password_definitions_carry_different_names.
         //
         // FIGYELEM: a forrásszkennert soha ne vessük össze DARABSZÁMRA a
         // route-contracts.json-nal. A setup.* route-ok a routes/web.php:78
@@ -224,12 +255,13 @@ class RouteContractSnapshotTest extends TestCase
             fn (int $count): bool => $count > 1
         );
 
-        $this->assertSame(
-            [
-                'password.confirm' => 2,
-            ],
-            $duplicates
-        );
+        // MEGFORDÍTVA a v1-patch A7 javításával: a `password.confirm` második
+        // definíciója `password.confirm.store` nevet kapott, tehát a forrásban
+        // már EGYETLEN duplikált név sincs. Az őr innentől bármely új duplikátum
+        // megjelenését elkapja - és mivel egyetlen duplikátum is
+        // cachelhetetlenné teszi a route-táblát, ez immár telepítési hiba, nem
+        // csak rendezetlenség.
+        $this->assertSame([], $duplicates);
     }
 
     public function test_the_route_files_use_no_group_level_name_prefixes(): void
@@ -343,20 +375,6 @@ class RouteContractSnapshotTest extends TestCase
         }
 
         return $matches;
-    }
-
-    /**
-     * @param  \Illuminate\Routing\Route[]  $routes
-     */
-    private function firstRouteWithMethod(array $routes, string $method): Route
-    {
-        foreach ($routes as $route) {
-            if (in_array($method, $route->methods(), true)) {
-                return $route;
-            }
-        }
-
-        $this->fail('Nincs '.$method.' definíció a kapott route-ok között.');
     }
 
     private function sortedMiddleware(Route $route): array

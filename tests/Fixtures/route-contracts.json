@@ -522,7 +522,15 @@
     "password.confirm": {
         "methods": [
             "GET",
-            "HEAD",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "password.confirm.store": {
+        "methods": [
             "POST"
         ],
         "middleware": [

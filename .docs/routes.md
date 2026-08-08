@@ -170,7 +170,7 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
 | GET | `/email/verify/{id}/{hash}` | `verification.verify` | **Inactive.** An inline closure using `EmailVerificationRequest` is defined here, but it is shadowed by the identical Fortify route (see Route Observations); the request is served by `Laravel\Fortify\Http\Controllers\VerifyEmailController` |
 | GET | `/profile/resend-new-email-verification` | `user.resendNewEmailVerification` | `User\Profile::resendNewEmailVerification` — re-sends the pending-address mail with a **new** token, or flashes `profile_message` when nothing is pending |
 | GET | `/confirm-password` | `password.confirm` | Inline closure returning the `auth.confirm-password` view |
-| POST | `/confirm-password` | `password.confirm` | Inline closure verifying the password, throttled `6,1`. **Two distinct routes share this name**; URL generation resolves the name to this POST definition |
+| POST | `/confirm-password` | `password.confirm.store` | Inline closure verifying the password, throttled `6,1`. Renamed in v1-patch A7 - it used to share the `password.confirm` name with the GET route above |
 
 ### Verified + Profile-Complete Routes
 
@@ -284,10 +284,22 @@ so links already in flight keep working.
     and the closure in `routes/web.php` never executes**. The effective middleware stack is
     `web, auth:web, signed, throttle:6,1`. Note that this outcome depends purely on service
     provider order.
-  - `password.confirm` is defined twice in `routes/web.php`, as a GET and as a POST route. They
-    differ by HTTP method, so **both survive**, but the name look-up table keeps the last
-    registration, so `route('password.confirm')` resolves to the POST definition. The
-    `password.confirm` middleware alias (`app/Http/Kernel.php`) redirects to that name.
+  - `password.confirm` used to be defined twice in `routes/web.php`, as a GET and as a POST
+    route. They differ by HTTP method, so **both survived**, but the name look-up table keeps
+    the last registration, so `route('password.confirm')` resolved to the POST definition -
+    and the `password.confirm` middleware alias (`app/Http/Kernel.php`), which issues a GET
+    redirect, therefore pointed at a POST route. It only worked because the two URIs are
+    identical.
+
+    **A duplicate route name makes the route table uncacheable.** `route:cache`, and with it
+    `artisan optimize`, converts the table into a Symfony collection where the name is a unique
+    key, and throws `LogicException: Unable to prepare route [confirm-password] for
+    serialization` on the second one. Neither command has ever completed on this codebase,
+    including on `v1`. v1-patch A7 renamed the POST definition to `password.confirm.store`
+    (the Laravel convention keeps `password.confirm` for the GET form) and pointed the form
+    action in `auth/confirm-password.blade.php` at the new name. **No URL moved** - both
+    definitions still answer on `/confirm-password` with unchanged middleware.
+    `RouteContractSnapshotTest::test_the_route_table_survives_route_cache` is the guard.
 - The named Livewire routes (`livewire.message`, `livewire.upload-file`, `livewire.preview-file`)
   are snapshotted separately in `tests/Fixtures/vendor-route-contracts.json`. The two Livewire
   asset routes (`livewire/livewire.js`, `livewire/livewire.js.map`) are unnamed and therefore
