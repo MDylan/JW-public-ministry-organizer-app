@@ -197,34 +197,47 @@ class AuthorizationGateTest extends FeatureTestCase
     // A gate-nevek kis-nagybetű érzékenysége - látens hiba
     // =========================================================================
 
-    public function test_a_group_creator_never_receives_group_creator_newsletters(): void
+    public function test_a_group_creator_receives_group_creator_newsletters(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy éles hatású hibáról.
+        // MEGFORDÍTVA a v1-patch D1 javításával (TODO 33), a felhasználó
+        // kifejezett jóváhagyásával, mert ez éles viselkedést változtat.
         //
-        // A helpers.php:68 can('is-groupCreator')-t kér, a gate viszont
+        // A helpers.php can('is-groupCreator')-t kért, a gate viszont
         // 'is-groupcreator' néven van definiálva (AuthServiceProvider.php:37).
         // A Laravel a gate-eket kulcs szerinti tömbben tartja, tehát a nevek
-        // kis-nagybetű érzékenyek: ez a feltétel MINDIG hamis.
-        //
-        // Következmény: a 'groupCreators'-nek célzott hírlevelek csak a
-        // mainAdmin-hoz jutnak el, az is-admin ág miatt. Érintett:
-        // Admin\AdminNewsletters, Partials\NavBar, Partials\SideMenu.
-        //
-        // Javítás: roadmap TODO 33. Itt szándékosan a hibás viselkedést
-        // rögzítjük, hogy az upgrade ismert alapról induljon.
+        // kis-nagybetű érzékenyek: a feltétel MINDIG hamis volt, és a
+        // 'groupCreators'-nek célzott hírlevelek csak a mainAdmin-hoz jutottak
+        // el, az is-admin ágon keresztül. Érintett: Admin\AdminNewsletters,
+        // Partials\NavBar, Partials\SideMenu.
         $creator = $this->userWithRole('groupCreator', 'nl-gc@example.test');
         $this->actingAs($creator);
 
-        $this->assertNotContains('groupCreators', pwbs_get_newsletter_roles());
+        $this->assertContains('groupCreators', pwbs_get_newsletter_roles());
     }
 
     public function test_a_main_admin_does_receive_group_creator_newsletters(): void
     {
-        // A mainAdmin csak azért kapja meg, mert az is-admin ág átviszi -
-        // ez bizonyítja, hogy az elírt gate-név az egyetlen ok a fenti
-        // teszt eredményére.
+        // A mainAdmin a javítás előtt is megkapta, de az is-admin ágon. Most
+        // már mindkét ág átviszi - a teszt attól még értékes, mert a
+        // mainAdmin-nak akkor is meg kell kapnia, ha az is-groupcreator gate
+        // definíciója egyszer szűkül.
         $admin = $this->userWithRole('mainAdmin', 'nl-ma@example.test');
         $this->actingAs($admin);
+
+        $this->assertContains('groupCreators', pwbs_get_newsletter_roles());
+    }
+
+    public function test_a_translator_also_receives_group_creator_newsletters(): void
+    {
+        // A D1 javítás MÁSODIK, kevésbé nyilvánvaló következménye: az
+        // is-groupcreator gate (AuthServiceProvider.php:37-41) a mainAdmin és a
+        // groupCreator mellett a translator szerepet is átengedi. Amíg a
+        // helpers.php elírt nevet kért, ez a hatás nem létezett; most létezik.
+        // Szándékos - a gate definíciója a jogosultsági szerződés, nem az
+        // elírás -, de rögzítve, mert egy hírlevélcímzett-lista bővülése
+        // magyarázat nélkül meglepetés lenne.
+        $translator = $this->userWithRole('translator', 'nl-tr@example.test');
+        $this->actingAs($translator);
 
         $this->assertContains('groupCreators', pwbs_get_newsletter_roles());
     }

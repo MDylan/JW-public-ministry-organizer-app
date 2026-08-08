@@ -67,7 +67,13 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
     function pwbs_get_newsletter_roles() {
         $in = [];
 
-        if(auth()->user()->can('is-groupCreator') || auth()->user()->can('is-admin')) {
+        // A gate neve 'is-groupcreator', csupa kisbetűvel (AuthServiceProvider.php:37).
+        // Itt korábban 'is-groupCreator' állt, és mivel a Laravel a gate-eket
+        // kulcs szerinti tömbben tartja, a nevek kis-nagybetű érzékenyek: a
+        // feltétel MINDIG hamis volt, tehát egy sima groupCreator soha nem kapta
+        // meg a neki címzett hírleveleket - csak a mainAdmin jutott át az
+        // is-admin ágon.
+        if(auth()->user()->can('is-groupcreator') || auth()->user()->can('is-admin')) {
             //create group
             $in[] = 'groupCreators';
         } 
