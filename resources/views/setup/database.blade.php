@@ -32,7 +32,7 @@
                             </label>
                             <input type="text" name="db_host" id="db_host" required
                                 class="form-control{{ $errors->has('db_host') ? ' is-invalid' : '' }}"
-                                placeholder="localhost" value="{{ old('db_host') ?: env('DB_HOST', 'localhost') }}">
+                                placeholder="localhost" value="{{ old('db_host') ?: $dbHost }}">
                             @if ($errors->has('db_host'))
                                 <p class="invalid-feedback" role="alert">
                                     {{ $errors->first('db_host') }}
@@ -46,7 +46,7 @@
                             </label>
                             <input type="number" name="db_port" id="db_port" required
                                 class="form-control{{ $errors->has('db_port') ? ' is-invalid' : '' }}"
-                                placeholder="3306" value="{{ old('db_port') ?: env('DB_PORT', 3306) }}">
+                                placeholder="3306" value="{{ old('db_port') ?: $dbPort }}">
                             @if ($errors->has('db_port'))
                                 <p class="invalid-feedback" role="alert">
                                     {{ $errors->first('db_port') }}
@@ -60,7 +60,7 @@
                             </label>
                             <input type="text" name="db_name" id="db_name" required
                                 class="form-control{{ $errors->has('db_name') ? ' is-invalid' : '' }}"
-                                value="{{ old('db_name') ?: env('DB_DATABASE') }}">
+                                value="{{ old('db_name') ?: $dbName }}">
                             @if ($errors->has('db_name'))
                                 <p class="invalid-feedback" role="alert">
                                     {{ $errors->first('db_name') }}
@@ -74,7 +74,7 @@
                             </label>
                             <input type="text" name="db_user" id="db_user" required
                                 class="form-control{{ $errors->has('db_user') ? ' is-invalid' : '' }}"
-                                value="{{ old('db_user') ?: env('DB_USERNAME') }}">
+                                value="{{ old('db_user') ?: $dbUser }}">
                             @if ($errors->has('db_user'))
                                 <p class="invalid-feedback" role="alert">
                                     {{ $errors->first('db_user') }}

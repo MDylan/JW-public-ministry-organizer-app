@@ -42,7 +42,7 @@ class UserRoleIsGroupCreatorNotification extends Notification implements ShouldQ
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->bcc(env('MAIL_FROM_ADDRESS'))
+            ->bcc(config('mail.from.address'))
             ->subject(Lang::get('email.groupCreator.subject'))
             ->line(Lang::get('email.groupCreator.line_1'))
             ->line(Lang::get('email.groupCreator.line_2'))

@@ -34,11 +34,17 @@ class HttpsProtocol
     /**
      * Be van-e kapcsolva a HTTPS-kényszerítés.
      *
-     * Igazra értékelődik "1", "true", "on" és "yes" esetén (kis- és nagybetűtől
-     * függetlenül), minden másra hamisra - beleértve a hiányzó változót is.
+     * A kapcsoló KORÁBBAN közvetlenül env()-ből jött. A Laravel a .env fájlt
+     * csak akkor tölti be, ha nincs gyorsítótárazott konfiguráció, tehát egy
+     * `php artisan config:cache` után az env('USE_HTTPS') null lett volna, és a
+     * HTTPS-kényszerítés némán kikapcsol - pontosan azon a telepítésen, amelyik
+     * elég gondos volt ahhoz, hogy gyorsítótárazza a konfigurációt.
+     *
+     * A config/security.php ugyanazt a filter_var() értelmezést végzi, tehát a
+     * "1", "true", "on" és "yes" alakok továbbra is igazak.
      */
     private function httpsEnforced(): bool
     {
-        return filter_var(env('USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN);
+        return (bool) config('security.use_https', false);
     }
 }

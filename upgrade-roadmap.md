@@ -892,7 +892,7 @@ replacing anything), and the pure upgrade-preparation items TODO 23, 24, 27, 29
 and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays as
 it is.
 
-Suite: **1065 -> 1125 tests, 3405 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
+Suite: **1065 -> 1130 tests, 3436 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
 The route table is byte-identical to the TODO 03 baseline apart from the three
 `laraupdater.*` names TODO 33.4 already added.
 
@@ -906,6 +906,7 @@ The route table is byte-identical to the TODO 03 baseline apart from the three
 | TODO 33.1 | `CheckRecaptcha` now fails **open** on a connection error and carries an explicit 5s timeout. |
 | TODO 33.6 + 33.7 | The weather feature rebuilt in-house and finished: `App\Support\Weather\*`, a `weather:refresh` command on `0 */3 * * *`, the country code on both endpoints, no more double JSON encoding, guards in the calendar, a real foreign key, en/de translations, and `OPENWAETHER_` -> `OPENWEATHER_`. `rakibdevs/openweather-laravel-api` removed. |
 | TODO 06 | `newsletters:send-due` no longer blocks its whole queue forever on one unknown `send_to`. |
+| TODO 28 | Every runtime `env()` call is gone from `app/`, `routes/`, `database/` and `resources/views/` - 24 of them. `config:cache` is finally safe, which matters because A7 made `optimize` reachable in the first place. |
 | TODO 77, defect 2 | The `min([])` `ValueError` that made a day unopenable after lowering `date_max_publishers`. Defect 1 (the publishers-counting divergence) still needs a product decision and stays where it is. |
 | (new, unrecorded) | **All seven audit loops filtered with `isset($changes[$field])`, which is false for null**, so every change setting a field to null was invisible in the audit trail, application-wide. |
 | (new, unrecorded) | The `setup/*` group had no authorization at all. It is now behind an installer-token middleware, and `setup.complete` only writes the sentinel once an administrator exists. |
@@ -959,8 +960,17 @@ provably never dispatched.
     - Consumers to update: `CreateNewUser`, `ResetUserPassword`, `UpdateUserPassword`, `FinishRegistration`.
   - Expected changes: small, isolated, high-value. Existing auth tests cover the flows.
 
-- [ ] **TODO 28: Move `env()` calls out of runtime code into config**
-  - Needed:
+- [x] **TODO 28: Move `env()` calls out of runtime code into config** - DONE on `v1-patch`
+  - **Why it was pulled into this release.** `artisan optimize` had never completed on this codebase (see TODO 26): `route:cache` threw on the duplicate `password.confirm` name before `config:cache` could do any harm. The moment A7 fixed that, `config:cache` became something an operator would realistically run - and every item below turned from theoretical into live. Fixing the two together was not scope creep; shipping A7 without this would have handed operators a command that quietly disables HTTPS enforcement and bot protection.
+  - **Measured, not assumed.** `php artisan config:cache` followed by `tinker` shows `env('USE_HTTPS')`, `env('USE_RECAPTCHA')` and `env('MAIL_FROM_ADDRESS')` all returning `NULL`, while `config('security.use_https')` and friends keep their values.
+  - Delivered, all 24 occurrences:
+    - **New `config/security.php`** with `use_https` and `use_recaptcha`, both parsed with `filter_var()` so `1`, `true`, `on` and `yes` all work. `HttpsProtocol` and `CheckRecaptcha` read the config; so do the six Blade views that render the captcha field. The orphaned `events.use_recaptcha` key - defined in a *calendar* config file and read by nothing - moved here rather than staying as a second home. **No `.env` change is needed on deployed hosts:** the variable names are unchanged.
+    - **The six notifications** now read `config('mail.from.address')` / `config('app.name')`.
+    - **The `.env`-editing screens read the `.env` FILE.** `Admin\Settings`, the installer's basics form and its database form all edit `.env`, so `env()` was the wrong source twice over: cached configuration would have shown them **blank fields**, and `saveOthers()` writes every `from_env` key back unconditionally - one click would have wiped `APP_NAME`, `APP_URL` and every `MAIL_*` value out of the file. New `setEnvironment::value()` parses the file with Dotenv's array-backed reader (same quoting rules as Laravel's own loader, no `$_ENV`/`putenv` side effects) and is invalidated whenever the file is written.
+    - `MailController` and `StaticPagesSetupSeeder` use `config('app.locale')`, which is defined as exactly `env('APP_LANG', 'en')`.
+  - **Standing guard: `tests/Feature/ConfigCacheSafetyTest.php`.** It tokenizes every PHP file under `app/`, `routes/`, `database/` and `resources/views/` and fails on any `env()`/`getenv()` call. Tokenizing, not grepping, because the fixes' own comments quote the old `env('USE_HTTPS')` form. **Blade views are compiled first** - a control experiment proved they had to be: an `@if (env('PROBE'))` planted in `auth/login.blade.php` sailed straight through the uncompiled scanner, because everything outside `<?php` is one `T_INLINE_HTML` token.
+  - Tests inverted: `NotificationEnvFallbackTest`'s whole "what config:cache causes" section (the hard-failure send now succeeds), plus `HttpsProtocolTest` and `CheckRecaptchaTest`'s `test_the_flag_is_read_from_the_environment_on_every_request` - each replaced by a case proving the environment variable alone no longer moves the middleware. The truthy/falsy spelling coverage moved onto `config/security.php` itself, which is where that parsing now lives.
+  - Original notes:
     - 25 occurrences outside `config/`, notably `app/Http/Middleware/HttpsProtocol.php:19`, `app/Http/Middleware/CheckRecaptcha.php:20`, `app/Http/Livewire/Admin/Settings.php:77,78,81`, `app/Http/Controllers/Setup/MailController.php:67`, 7 in Blade views (`auth/login`, `auth/register`, `auth/forgot-password`, `livewire/groups/update-group-form`), and 6 in notifications.
     - **Highest priority: the mailer ones.** `->replyTo(env('MAIL_FROM_ADDRESS'))` in `EventCreatedNotification.php:68`, `EventDeletedNotification.php:66`, `EventStatusChangedNotification.php:71`, `EventUpdatedNotification.php:75`, `UserWillBeAnonymizeNotification.php:62`, and `->bcc(...)` in `UserRoleIsGroupCreatorNotification.php:45`. Symfony Mailer (Phase 4) throws on a null address; SwiftMailer did not.
     - The two middleware occurrences are now **covered and provably runtime-dependent**: `HttpsProtocolTest` and `CheckRecaptchaTest` (TODO 09) toggle `$_SERVER['USE_HTTPS']` / `$_SERVER['USE_RECAPTCHA']` mid-test and get different behaviour from the same request, which is exactly what `config:cache` would freeze. Both files carry a `test_the_flag_is_read_from_the_environment_on_every_request` case that must be rewritten once the value moves into config - treat that rewrite as part of this TODO.
@@ -1166,7 +1176,7 @@ provably never dispatched.
 - [ ] **TODO 36: Validate the SwiftMailer -> Symfony Mailer switch**
   - Needed:
     - Verified low risk: zero direct SwiftMailer usage, zero Mailables, all 25 notifications use the stable `MailMessage` API, `config/mail.php` already uses the modern `mailers` shape.
-    - The real exposure is address strictness: Symfony Mailer throws on invalid or empty `replyTo`/`bcc`. TODO 28 must be complete first.
+    - The real exposure is address strictness: Symfony Mailer throws on invalid or empty `replyTo`/`bcc`. TODO 28 was the prerequisite and is **done on `v1-patch`** - the six `env('MAIL_FROM_ADDRESS')` sites now read `config('mail.from.address')`, so a cached configuration no longer produces the empty address that Symfony Mailer would reject.
     - Re-verify `spatie/laravel-failed-job-monitor`, which is wired to queued notifications.
   - Expected changes: mostly verification; the notification test suite is the gate.
 

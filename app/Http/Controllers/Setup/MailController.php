@@ -64,7 +64,7 @@ class MailController extends Controller
         
         setEnvironment::setEnvironmentValue($save_config);
 
-        $lang = env('APP_LANG', 'en');
+        $lang = config('app.locale', 'en');
         $insert_languages[$lang] = [
             'name' => '',
             'visible' => true

@@ -12,23 +12,25 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Tests\TestCase;
 
 /**
- * TODO 11: a Phase 4 riasztóhuzalja.
+ * TODO 11 -> TODO 28: a riasztóhuzalból bizonyíték lett.
  *
- * Hat értesítés olvas FUTÁSIDŐBEN env()-et. A Laravel a .env fájlt csak
- * akkor tölti be, ha nincs gyorsítótárazott konfiguráció - config:cache
- * után tehát az env() a config-fájlokon KÍVÜL null-t ad. Ez a Phase 4
- * tárgya, és ma semmi nem jelezné, ha a viselkedés némán megváltozik.
+ * Hat értesítés olvasott FUTÁSIDŐBEN env()-et. A Laravel a .env fájlt csak
+ * akkor tölti be, ha nincs gyorsítótárazott konfiguráció - config:cache után
+ * tehát az env() a config-fájlokon KÍVÜL null-t ad. Ez a fájl eredetileg azt
+ * rögzítette, mi történik olyankor; a v1-patch TODO 28 óta azt rögzíti, hogy
+ * MÁR NEM TÖRTÉNIK SEMMI.
  *
- * Két súlyossági osztály van, és a tesztek nevei is ezt választják szét:
+ * Két súlyossági osztály volt, és a tesztek nevei is ezt választják szét:
  *  - a négy Event*Notification ->replyTo()-ja és az
- *    UserRoleIsGroupCreatorNotification ->bcc()-je magát a CÍMET olvassa
- *    env()-ből,
- *  - az UserWillBeAnonymizeNotification csak a levél SZÖVEGÉBE teszi az
- *    APP_NAME-et.
+ *    UserRoleIsGroupCreatorNotification ->bcc()-je magát a CÍMET olvasta
+ *    env()-ből, tehát a küldés MEGHIÚSULT (Swift_RfcComplianceException),
+ *  - az UserWillBeAnonymizeNotification csak a levél SZÖVEGÉBE tette az
+ *    APP_NAME-et, tehát a levél kiment, üres névvel.
  *
- * A javítás mindkét esetben egysoros lesz (config('mail.from.address'),
- * illetve config('app.name')) - de csak akkor látszik a különbség, ha ma
- * van rá teszt.
+ * A javítás mindkét esetben egysoros volt - config('mail.from.address'),
+ * illetve config('app.name') -, de csak azért volt látható, mert volt rá
+ * teszt. Az itteni esetek most a fordítottját bizonyítják: a környezeti
+ * változó eltüntetése a levélen többé nem változtat semmit.
  */
 class NotificationEnvFallbackTest extends TestCase
 {
@@ -79,7 +81,8 @@ class NotificationEnvFallbackTest extends TestCase
      * a clear() no-op.
      *
      * FONTOS, hogy ez szimuláció: valódi config:cache mellett MINDEN kulcsra
-     * null jön vissza, nem csak erre az egyre.
+     * null jön vissza, nem csak erre az egyre. A konfigurációhoz viszont nem
+     * nyúl - és pontosan ez teszi a 2. szakasz eseteit bizonyítékká.
      */
     private function withoutEnv(string $key, callable $callback)
     {
@@ -119,29 +122,24 @@ class NotificationEnvFallbackTest extends TestCase
         $this->assertSame('group@example.test', $mail->replyTo[0][0]);
     }
 
-    public function test_a_whitespace_only_reply_to_falls_back_to_the_environment(): void
+    public function test_a_whitespace_only_reply_to_falls_back_to_the_configured_address(): void
     {
         // A strlen(trim(...)) > 0 vizsgálat miatt a csupa szóköz is
         // "üresnek" számít - a csoport replyTo mezője pontosan így viselkedik.
         $mail = (new EventDeletedNotification($this->payload(['replyTo' => '   '])))
             ->toMail($this->notifiable());
 
-        $this->assertSame(env('MAIL_FROM_ADDRESS'), $mail->replyTo[0][0]);
+        $this->assertSame(config('mail.from.address'), $mail->replyTo[0][0]);
     }
 
     /**
      * @dataProvider replyToNotificationProvider
      */
-    public function test_every_event_notification_falls_back_to_the_same_environment_value(string $class): void
+    public function test_every_event_notification_falls_back_to_the_same_configured_value(string $class): void
     {
         $mail = (new $class($this->payload()))->toMail($this->notifiable());
 
-        $this->assertSame(env('MAIL_FROM_ADDRESS'), $mail->replyTo[0][0]);
-        $this->assertSame(
-            config('mail.from.address'),
-            $mail->replyTo[0][0],
-            'Ma az env() és a config ugyanazt adja - ezért lesz a Phase 4 javítása egysoros.'
-        );
+        $this->assertSame(config('mail.from.address'), $mail->replyTo[0][0]);
     }
 
     public function replyToNotificationProvider(): array
@@ -154,127 +152,107 @@ class NotificationEnvFallbackTest extends TestCase
         ];
     }
 
-    public function test_the_group_creator_notification_bccs_the_environment_address(): void
+    public function test_the_group_creator_notification_bccs_the_configured_address(): void
     {
         $mail = (new UserRoleIsGroupCreatorNotification())->toMail($this->notifiable());
 
-        $this->assertSame(env('MAIL_FROM_ADDRESS'), $mail->bcc[0][0]);
         $this->assertSame(config('mail.from.address'), $mail->bcc[0][0]);
     }
 
     // =========================================================================
-    // 2. Amit a config:cache okoz
+    // 2. Amit a config:cache OKOZOTT - és amit ma már nem
     // =========================================================================
 
-    public function test_without_the_environment_variable_the_reply_to_address_becomes_null(): void
+    public function test_the_reply_to_address_survives_a_missing_environment_variable(): void
     {
+        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        //
+        // Korábban ez a cím null lett, mert az értesítés env()-ből olvasta.
+        // A konfiguráció a betöltéskor rögzítette az értéket, tehát a
+        // környezeti változó eltüntetése már nem ér el hozzá - és pont ez az,
+        // amit egy config:cache csinál.
         $mail = $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
             $this->assertNull(env('MAIL_FROM_ADDRESS'), 'A szimuláció valóban kiüríti a kulcsot.');
 
             return (new EventDeletedNotification($this->payload()))->toMail($this->notifiable());
         });
 
-        // A MailMessage maga még felépül - a hiba csak a küldésnél derül ki.
-        $this->assertNull($mail->replyTo[0][0]);
+        $this->assertSame(config('mail.from.address'), $mail->replyTo[0][0]);
+        $this->assertNotNull($mail->replyTo[0][0]);
     }
 
-    public function test_without_the_environment_variable_the_bcc_address_becomes_null(): void
+    public function test_the_bcc_address_survives_a_missing_environment_variable(): void
     {
         $mail = $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
             return (new UserRoleIsGroupCreatorNotification())->toMail($this->notifiable());
         });
 
-        $this->assertNull($mail->bcc[0][0]);
+        $this->assertSame(config('mail.from.address'), $mail->bcc[0][0]);
     }
 
     /**
-     * A "kemény hiba" nem feltételezés: itt tényleg elküldjük a levelet.
+     * A "kemény hiba" nem volt feltételezés, és a megszűnése sem az: itt
+     * tényleg elküldjük a levelet.
      *
      * A MAIL_MAILER a phpunit.xml-ben 'array', de a levél borítékja akkor is
-     * felépül, és a címzett-ellenőrzés ott csap le. A KIMÉRT hiba ma:
+     * felépül, és a címzett-ellenőrzés ott csap le. A KIMÉRT hiba korábban:
      *
      *   Swift_RfcComplianceException
      *   "Address in mailbox given [] does not comply with RFC 2822, 3.6.2."
      *
-     * Az osztálynevet szándékosan csak a végződésére vizsgáljuk: a Phase 5
-     * (Laravel 9) a SwiftMailert Symfony Mailerre cseréli, ahol ugyanez a
-     * hiba Symfony\Component\Mime\Exception\RfcComplianceException néven jön.
-     * A lényeg - hogy a küldés MEGHIÚSUL, nem csak csúnya lesz - ugyanaz.
+     * A Phase 5 (Laravel 9) a SwiftMailert Symfony Mailerre cseréli, ahol
+     * ugyanez a hiba Symfony\Component\Mime\Exception\RfcComplianceException
+     * néven jönne - vagyis a javítás nélkül a Phase 5 után is ugyanígy
+     * meghiúsulna a küldés, csak más kivételnévvel.
      */
-    private function sendFailure(callable $send): \Throwable
+    public function test_sending_without_the_environment_variable_no_longer_fails(): void
     {
-        try {
-            $send();
-        } catch (\Throwable $e) {
-            return $e;
-        }
-
-        $this->fail('A küldésnek el kellett volna hasalnia az üres címen.');
-    }
-
-    public function test_sending_without_the_environment_variable_is_a_hard_failure(): void
-    {
-        $exception = $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
-            return $this->sendFailure(function () {
-                NotificationFacade::route('mail', 'probe@example.test')
-                    ->notify(new EventDeletedNotification($this->payload()));
-            });
+        // MEGFORDÍTVA a v1-patch TODO 28 javításával: ez az eset korábban
+        // KIVÉTELT VÁRT, és azt is kapott.
+        $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
+            NotificationFacade::route('mail', 'probe@example.test')
+                ->notify(new EventDeletedNotification($this->payload()));
         });
 
-        $this->assertStringEndsWith('RfcComplianceException', get_class($exception));
+        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
     }
 
-    public function test_the_same_send_succeeds_while_the_environment_variable_is_present(): void
+    public function test_the_group_creator_notification_sends_the_same_way(): void
     {
-        // Kontroll: a fenti hibát az env() hiánya okozza, nem a teszt
-        // felállása.
-        NotificationFacade::route('mail', 'probe@example.test')
-            ->notify(new EventDeletedNotification($this->payload()));
-
-        $this->assertNotNull(env('MAIL_FROM_ADDRESS'));
-    }
-
-    public function test_the_group_creator_notification_fails_the_same_way(): void
-    {
-        $exception = $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
-            return $this->sendFailure(function () {
-                NotificationFacade::route('mail', 'probe@example.test')
-                    ->notify(new UserRoleIsGroupCreatorNotification());
-            });
+        $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
+            NotificationFacade::route('mail', 'probe@example.test')
+                ->notify(new UserRoleIsGroupCreatorNotification());
         });
 
-        $this->assertStringEndsWith('RfcComplianceException', get_class($exception));
+        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
     }
 
     public function test_the_missing_app_name_still_sends(): void
     {
-        // A súlyossági határ másik oldala: az APP_NAME hiánya nem akadályozza
-        // meg a küldést.
+        // A súlyossági határ másik oldala: az APP_NAME hiánya korábban sem
+        // akadályozta meg a küldést, csak a levél szövegét rontotta el.
         $this->withoutEnv('APP_NAME', function () {
             NotificationFacade::route('mail', 'probe@example.test')
                 ->notify(new UserWillBeAnonymizeNotification($this->payload()));
         });
 
-        $this->assertFalse(false, 'A küldés kivétel nélkül lefutott.');
+        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
     }
 
-    public function test_the_missing_app_name_only_degrades_the_message_body(): void
+    public function test_the_message_body_keeps_the_application_name(): void
     {
-        // KÜLÖN SÚLYOSSÁG: itt az env() csak egy fordítási placeholderbe
-        // kerül, tehát a levél kimegy, csak hiányos névvel.
+        // MEGFORDÍTVA a v1-patch TODO 28 javításával. Korábban a két szöveg
+        // ELTÉRT: a környezeti változó nélkül a levélből kiesett az
+        // alkalmazás neve. Most a konfigurációból jön, tehát ugyanaz.
         $withName = (new UserWillBeAnonymizeNotification($this->payload()))
             ->toMail($this->notifiable());
 
-        $withoutName = $this->withoutEnv('APP_NAME', function () {
+        $withoutEnv = $this->withoutEnv('APP_NAME', function () {
             return (new UserWillBeAnonymizeNotification($this->payload()))
                 ->toMail($this->notifiable());
         });
 
-        $this->assertNotSame(
-            $withName->introLines[0],
-            $withoutName->introLines[0],
-            'A levél szövege megváltozik, de a küldés nem hiúsul meg.'
-        );
-        $this->assertNotEmpty($withoutName->introLines[0]);
+        $this->assertSame($withName->introLines[0], $withoutEnv->introLines[0]);
+        $this->assertStringContainsString(config('app.name'), $withoutEnv->introLines[0]);
     }
 }

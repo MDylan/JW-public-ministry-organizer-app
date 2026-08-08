@@ -85,7 +85,7 @@
                                                     <label for="inputName">{{__('group.replyToAddress')}}</label>
                                                     <input type="email" class="form-control @error('replyTo') is-invalid @enderror" id="replyTo" wire:model.defer="state.replyTo" value="" placeholder=""  aria-describedby="replyToHelper" />
                                                     <small id="replyToHelper" class="form-text text-muted">
-                                                        @lang('group.replyToHelper', ['defaultMail' => env('MAIL_FROM_ADDRESS')])
+                                                        @lang('group.replyToHelper', ['defaultMail' => config('mail.from.address')])
                                                     </small>
                                                     @error('replyTo')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>

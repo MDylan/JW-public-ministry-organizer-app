@@ -26,7 +26,7 @@
 
                         <div class="form-group">
                             <label for="app_name">@lang('settings.app_name'):</label>
-                            <input name="APP_NAME" value="{{ old('APP_NAME') ?: getenv('APP_NAME') }}" type="text" class="form-control" id="app_name">
+                            <input name="APP_NAME" value="{{ old('APP_NAME') ?: $appName }}" type="text" class="form-control" id="app_name">
                         </div>
                         <div class="form-group">
                             <label for="app_url">@lang('settings.app_url'):</label>

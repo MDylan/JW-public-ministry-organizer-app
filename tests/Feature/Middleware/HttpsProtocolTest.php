@@ -17,8 +17,9 @@ use Tests\Feature\FeatureTestCase;
  *     !$request->secure() && app()->environment('production') && $this->httpsEnforced()
  *
  * A harmadik feltétel a v1-patch B14-ig `env('USE_HTTPS', "false") == "true"`
- * volt, azaz a literális "true" sztringhez hasonlított; most filter_var()-ral
- * értelmezi a szokásos igaz alakokat.
+ * volt, azaz a literális "true" sztringhez hasonlított; a TODO 28 óta pedig
+ * nem is env()-ből jön, hanem a config('security.use_https') kulcsból, ami a
+ * szokásos igaz alakokat filter_var()-ral értelmezi.
  *
  * Ezért nulla lefedettsége van, és a bekapcsolt állapota ismeretlen terület.
  * A production környezet HTTP-tesztből nem állítható, ezért itt közvetlenül
@@ -57,6 +58,24 @@ class HttpsProtocolTest extends FeatureTestCase
         return Request::create('http://kozter.test/csoportok?szures=aktiv');
     }
 
+    /**
+     * A HTTPS-kapcsoló beállítása a hívás idejére.
+     *
+     * A TODO 28 előtt ez a $_SERVER tömböt írta (withEnvValue), mert a
+     * middleware futásidőben olvasott env()-et. Most a konfiguráció dönt.
+     */
+    private function withHttps(bool $enabled, callable $callback)
+    {
+        $original = config('security.use_https');
+        config(['security.use_https' => $enabled]);
+
+        try {
+            return $callback();
+        } finally {
+            config(['security.use_https' => $original]);
+        }
+    }
+
     // =========================================================================
     // 1. Miért nem fut ma soha
     // =========================================================================
@@ -66,16 +85,15 @@ class HttpsProtocolTest extends FeatureTestCase
         // A tesztkörnyezet 'testing', a fejlesztői 'local' - a middleware
         // tehát csak élesben aktív. Ez az oka annak, hogy a teljes suite
         // futása alatt egyetlen egyszer sem irányít át.
-        $response = $this->withEnvValue('USE_HTTPS', 'true', fn () => $this->runMiddleware($this->insecureRequest()));
+        $response = $this->withHttps(true, fn () => $this->runMiddleware($this->insecureRequest()));
 
         $this->assertSame('ok', $response->getContent());
     }
 
     public function test_the_redirect_is_skipped_in_production_when_https_is_disabled(): void
     {
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            'false',
+        $response = $this->inEnvironment('production', fn () => $this->withHttps(
+            false,
             fn () => $this->runMiddleware($this->insecureRequest())
         ));
 
@@ -88,9 +106,8 @@ class HttpsProtocolTest extends FeatureTestCase
 
     public function test_an_insecure_production_request_is_redirected_to_https(): void
     {
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            'true',
+        $response = $this->inEnvironment('production', fn () => $this->withHttps(
+            true,
             fn () => $this->runMiddleware($this->insecureRequest())
         ));
 
@@ -103,9 +120,8 @@ class HttpsProtocolTest extends FeatureTestCase
 
     public function test_an_already_secure_production_request_passes_through(): void
     {
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            'true',
+        $response = $this->inEnvironment('production', fn () => $this->withHttps(
+            true,
             fn () => $this->runMiddleware(Request::create('https://kozter.test/csoportok'))
         ));
 
@@ -121,7 +137,7 @@ class HttpsProtocolTest extends FeatureTestCase
      */
     public function test_every_common_truthy_spelling_enables_the_redirect(string $value): void
     {
-        // MEGFORDÍTVA a v1-patch B14 javításával.
+        // MEGFORDÍTVA előbb a v1-patch B14, majd a TODO 28 javításával.
         //
         // A feltétel `env('USE_HTTPS', "false") == "true"` volt, tehát a
         // KONKRÉT "true" sztringhez hasonlított. A Laravel env()-je a
@@ -129,9 +145,18 @@ class HttpsProtocolTest extends FeatureTestCase
         // sztringként adja vissza - így az összehasonlítás "1" == "true"
         // alakot öltött, ami hamis. A .env-ben legszokásosabb USE_HTTPS=1
         // ezért hatástalan volt, és a HTTPS-kényszerítés némán nem működött.
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            $value,
+        //
+        // Az értelmezés a TODO 28 óta a config/security.php dolga, ezért a
+        // vizsgálat is oda költözött: a fájlt a változó beállított értékével
+        // töltjük be, és a belőle kijövő bool-t nézzük. A middleware maga
+        // ugyanezt a bool-t kapja - lásd a 2. szakasz eseteit.
+        $security = $this->withEnvValue('USE_HTTPS', $value, fn () => require config_path('security.php'));
+
+        $this->assertTrue($security['use_https'], $value.': be kell kapcsolnia.');
+
+        // És a bekapcsolt kulcs tényleg átirányít.
+        $response = $this->inEnvironment('production', fn () => $this->withHttps(
+            $security['use_https'],
             fn () => $this->runMiddleware($this->insecureRequest())
         ));
 
@@ -157,9 +182,12 @@ class HttpsProtocolTest extends FeatureTestCase
     {
         // A B14 kontroll-kísérlete: a lazább értelmezés nem kapcsolhatja be a
         // kényszerítést ott, ahol senki nem kérte.
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            $value,
+        $security = $this->withEnvValue('USE_HTTPS', $value, fn () => require config_path('security.php'));
+
+        $this->assertFalse($security['use_https'], $value.': nem szabad bekapcsolnia.');
+
+        $response = $this->inEnvironment('production', fn () => $this->withHttps(
+            $security['use_https'],
             fn () => $this->runMiddleware($this->insecureRequest())
         ));
 
@@ -180,34 +208,49 @@ class HttpsProtocolTest extends FeatureTestCase
 
     public function test_the_default_is_off_when_the_variable_is_missing_entirely(): void
     {
-        $response = $this->inEnvironment('production', fn () => $this->withEnvValue(
-            'USE_HTTPS',
-            null,
-            fn () => $this->runMiddleware($this->insecureRequest())
-        ));
+        $security = $this->withEnvValue('USE_HTTPS', null, fn () => require config_path('security.php'));
 
-        $this->assertSame('ok', $response->getContent());
+        $this->assertFalse($security['use_https']);
     }
 
     // =========================================================================
-    // 4. A futásidejű env() olvasás - TODO 28
+    // 4. A kapcsoló forrása - TODO 28
     // =========================================================================
 
-    public function test_the_flag_is_read_from_the_environment_on_every_request(): void
+    public function test_the_flag_comes_from_configuration_not_from_the_environment(): void
     {
-        // A middleware nem konfigurációból, hanem közvetlenül env()-ből
-        // olvas. Ez a teszt azt bizonyítja, hogy a viselkedés kéréstől
-        // kérésre változik a környezeti változóval - vagyis egy
-        // `php artisan config:cache` NEM fagyasztja be, viszont a TODO 28
-        // config-ba mozgatása után ennek a tesztnek az alapja megváltozik.
+        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        //
+        // Korábban ugyanaz a kérés két különböző $_SERVER['USE_HTTPS']
+        // értékkel két különböző eredményt adott: a middleware közvetlenül a
+        // környezetből olvasott. Egy `php artisan config:cache` után viszont a
+        // Laravel be sem tölti a .env-et, az env() null-t ad - a HTTPS-re
+        // kényszerítés tehát némán kikapcsolt volna, méghozzá pontosan azon a
+        // telepítésen, amelyik elég gondos ahhoz, hogy gyorsítótárazza a
+        // konfigurációt. Semmi nem jelezte volna.
+        //
+        // Most a környezeti változó önmagában nem mozdít semmit; a
+        // konfiguráció dönt, az pedig gyorsítótárazható.
         $request = $this->insecureRequest();
 
         $this->inEnvironment('production', function () use ($request) {
-            $off = $this->withEnvValue('USE_HTTPS', 'false', fn () => $this->runMiddleware($request));
-            $on = $this->withEnvValue('USE_HTTPS', 'true', fn () => $this->runMiddleware($request));
+            $envOnly = $this->withHttps(
+                false,
+                fn () => $this->withEnvValue('USE_HTTPS', 'true', fn () => $this->runMiddleware($request))
+            );
 
-            $this->assertSame('ok', $off->getContent());
-            $this->assertInstanceOf(RedirectResponse::class, $on);
+            $this->assertSame(
+                'ok',
+                $envOnly->getContent(),
+                'A környezeti változó már nem kapcsolhatja be az átirányítást a konfiguráció mögött.'
+            );
+
+            $configured = $this->withHttps(
+                true,
+                fn () => $this->withEnvValue('USE_HTTPS', 'false', fn () => $this->runMiddleware($request))
+            );
+
+            $this->assertInstanceOf(RedirectResponse::class, $configured);
         });
     }
 }

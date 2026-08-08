@@ -104,20 +104,22 @@ Two consequences worth knowing:
 
 ## Environment dependencies
 
-Six notifications read `env()` at **runtime**, outside a config file. When configuration is cached (`php artisan config:cache`) Laravel never loads the `.env` file, so those calls return `null`. Two severity classes, and the difference matters:
+**Fixed in v1-patch (roadmap TODO 28).** Six notifications used to read `env()` at **runtime**, outside a config file. When configuration is cached (`php artisan config:cache`) Laravel never loads the `.env` file, so those calls returned `null`. Two severity classes, and the difference mattered:
 
-| Notification | Call | Effect once `env()` returns null |
+| Notification | Call before | Effect once `env()` returned null |
 |---|---|---|
-| `EventCreatedNotification:68` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending fails** |
-| `EventDeletedNotification:66` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending fails** |
-| `EventStatusChangedNotification:71` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending fails** |
-| `EventUpdatedNotification:75` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending fails** |
-| `UserRoleIsGroupCreatorNotification:45` | `->bcc(env('MAIL_FROM_ADDRESS'))` | **Sending fails** |
-| `UserWillBeAnonymizeNotification:62` | `env('APP_NAME')` in a translation placeholder | Mail still goes out, with an empty app name |
+| `EventCreatedNotification:68` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending failed** |
+| `EventDeletedNotification:66` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending failed** |
+| `EventStatusChangedNotification:71` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending failed** |
+| `EventUpdatedNotification:75` | `->replyTo(env('MAIL_FROM_ADDRESS'))` | **Sending failed** |
+| `UserRoleIsGroupCreatorNotification:45` | `->bcc(env('MAIL_FROM_ADDRESS'))` | **Sending failed** |
+| `UserWillBeAnonymizeNotification:62` | `env('APP_NAME')` in a translation placeholder | Mail still went out, with an empty app name |
 
-The `replyTo`/`bcc` fallback only applies when the group's own `replyTo` is blank, so the failure is data-dependent rather than universal. The measured failure today is `Swift_RfcComplianceException: Address in mailbox given [] does not comply with RFC 2822, 3.6.2.`; after Phase 5 swaps SwiftMailer for Symfony Mailer the same condition surfaces as `Symfony\Component\Mime\Exception\RfcComplianceException`.
+All six now read `config('mail.from.address')` / `config('app.name')` — the same values through the cacheable path. The `replyTo`/`bcc` fallback only applies when the group's own `replyTo` is blank, so the failure was data-dependent rather than universal. The measured failure was `Swift_RfcComplianceException: Address in mailbox given [] does not comply with RFC 2822, 3.6.2.`; after Phase 5 swaps SwiftMailer for Symfony Mailer the same condition would have surfaced as `Symfony\Component\Mime\Exception\RfcComplianceException`.
 
-`tests/Unit/Notifications/NotificationEnvFallbackTest.php` pins all of it, including a real send that proves the hard failure is a failure and not a cosmetic one. The fix in Phase 4 is one line per site — `config('mail.from.address')` and `config('app.name')`, which read the same values through the cacheable path.
+`tests/Unit/Notifications/NotificationEnvFallbackTest.php` pinned all of it, including a real send that proved the hard failure was a failure and not a cosmetic one; every one of those cases is now inverted and asserts that removing the environment variable changes nothing. `tests/Feature/ConfigCacheSafetyTest.php` is the standing guard: it tokenizes `app/`, `routes/`, `database/` and `resources/views/` — compiling the Blade views first — and fails on any runtime `env()` call outside `config/`.
+
+**Why this mattered right then.** `artisan optimize` had never completed on this codebase, because a duplicate route name made `route:cache` throw (v1-patch A7). The moment that was fixed, `config:cache` became reachable in practice, and with it every trap in the table above.
 
 ## Notes
 

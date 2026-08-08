@@ -13,7 +13,7 @@
                 <p class="text-center">{{ __('Reset Password') }}</p>
                 <form method="POST" action="{{ route('password.email') }}" id="lostpasswordForm">
                     @csrf
-                    @if (env('USE_RECAPTCHA', false))
+                    @if (config('security.use_recaptcha'))
                         <input type="hidden" class="g-recaptcha" name="recaptcha_token" id="recaptcha_token">
                     @endif
                     <div class="form-group row">
@@ -49,6 +49,6 @@
     </div>
 </div>
 @endsection
-@if (env('USE_RECAPTCHA', false))
+@if (config('security.use_recaptcha'))
     @include('auth.recaptcha-script', ['formId' => 'lostpasswordForm'])
 @endif

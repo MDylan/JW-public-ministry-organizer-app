@@ -25,7 +25,11 @@ class BasicsController extends Controller
 
         return view('setup.basics', [
             'timezone' => $timezone,
-            'languages' => $languages
+            'languages' => $languages,
+            // A nézet KORÁBBAN getenv('APP_NAME')-et hívott. Ez az űrlap a .env
+            // fájlt írja, tehát a fájlból kell olvasnia - a getenv() ráadásul
+            // gyorsítótárazott konfiguráció mellett semmit nem ad vissza.
+            'appName' => setEnvironment::value('APP_NAME', ''),
         ]);
     }
 

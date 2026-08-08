@@ -28,7 +28,12 @@ class CheckRecaptcha
      */
     public function handle(Request $request, Closure $next)
     {
-        $check_needed = env('USE_RECAPTCHA', false);
+        // A kapcsoló KORÁBBAN közvetlenül env()-ből jött, tehát egy
+        // `php artisan config:cache` után hamisra váltott volna, és a
+        // reCAPTCHA-ellenőrzés némán kikapcsol. A hat Blade nézet ugyanezt a
+        // kapcsolót olvasta, ugyanúgy env()-ből, így a captcha mező sem került
+        // volna ki - vagyis semmi nem jelezte volna, hogy a botvédelem eltűnt.
+        $check_needed = config('security.use_recaptcha', false);
         if($check_needed) {
             try {
                 $response = Http::asForm()

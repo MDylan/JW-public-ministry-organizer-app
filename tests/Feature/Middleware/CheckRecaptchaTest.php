@@ -19,9 +19,14 @@ use Tests\Feature\FeatureTestCase;
  *
  * Ma soha nem fut le érdemben, mert a phpunit.xml és a .env.testing egyaránt
  * USE_RECAPTCHA=false értéket ad - a bekapcsolt állapot tehát teljesen
- * lefedetlen. A middleware futásidőben olvas env()-et (:20), ezért a
- * bekapcsoláshoz a $_SERVER-t kell írni (withEnvValue), és ez egyben a
- * TODO 28-as env()-függés bizonyítéka is.
+ * lefedetlen.
+ *
+ * A middleware a v1-patch TODO 28-ig FUTÁSIDŐBEN olvasott env()-et, ezért a
+ * bekapcsoláshoz a $_SERVER tömböt kellett írni. Most a
+ * config('security.use_recaptcha') kulcsot olvassa, tehát a tesztek is azt
+ * állítják - és ez az igazi különbség: a régi olvasás egy config:cache után
+ * NÉMÁN hamisra váltott volna, vagyis a botvédelem eltűnik anélkül, hogy
+ * bármi jelezné.
  *
  * A Http::fake() ebben a suite-ban itt jelenik meg először.
  */
@@ -47,7 +52,9 @@ class CheckRecaptchaTest extends FeatureTestCase
     /** Bekapcsolt recaptcha mellett futtatja a middleware-t. */
     private function runEnabled(?string $token = 'teszt-token')
     {
-        return $this->withEnvValue('USE_RECAPTCHA', 'true', fn () => $this->runMiddleware($token));
+        config(['security.use_recaptcha' => true]);
+
+        return $this->runMiddleware($token);
     }
 
     private function fakeGoogle(array $body, int $status = 200): void
@@ -65,7 +72,9 @@ class CheckRecaptchaTest extends FeatureTestCase
     {
         Http::fake();
 
-        $response = $this->withEnvValue('USE_RECAPTCHA', 'false', fn () => $this->runMiddleware());
+        config(['security.use_recaptcha' => false]);
+
+        $response = $this->runMiddleware();
 
         $this->assertSame('atengedve', $response->getContent());
         Http::assertNothingSent();
@@ -208,20 +217,51 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. A futásidejű env() olvasás - TODO 28
+    // 5. A kapcsoló forrása - TODO 28
     // =========================================================================
 
-    public function test_the_flag_is_read_from_the_environment_on_every_request(): void
+    public function test_the_flag_comes_from_configuration_not_from_the_environment(): void
     {
-        // Ugyanaz a kérés, két különböző környezeti értékkel, két különböző
-        // eredmény - a middleware nem konfigurációból dolgozik. A TODO 28
-        // config-ba mozgatása után ez a teszt írandó át.
+        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        //
+        // Korábban ugyanaz a kérés két különböző $_SERVER['USE_RECAPTCHA']
+        // értékkel két különböző eredményt adott - vagyis a middleware
+        // közvetlenül a környezetből olvasott. Pontosan ezt fagyasztotta volna
+        // be egy `php artisan config:cache`: a .env olyankor be sem töltődik,
+        // az env() null-t ad, és a botvédelem némán kikapcsol.
+        //
+        // Most a környezeti változó önmagában semmit nem mozdít; a
+        // konfiguráció dönt, az pedig gyorsítótárazható.
         $this->fakeGoogle(['success' => true, 'score' => 0.1]);
 
-        $disabled = $this->withEnvValue('USE_RECAPTCHA', 'false', fn () => $this->runMiddleware());
-        $enabled = $this->withEnvValue('USE_RECAPTCHA', 'true', fn () => $this->runMiddleware());
+        config(['security.use_recaptcha' => false]);
+        $envSaysYes = $this->withEnvValue('USE_RECAPTCHA', 'true', fn () => $this->runMiddleware());
 
-        $this->assertSame('atengedve', $disabled->getContent());
-        $this->assertInstanceOf(RedirectResponse::class, $enabled);
+        $this->assertSame(
+            'atengedve',
+            $envSaysYes->getContent(),
+            'A környezeti változó már nem kapcsolhatja be a middleware-t a konfiguráció mögött.'
+        );
+
+        config(['security.use_recaptcha' => true]);
+        $configSaysYes = $this->withEnvValue('USE_RECAPTCHA', 'false', fn () => $this->runMiddleware());
+
+        $this->assertInstanceOf(RedirectResponse::class, $configSaysYes);
+    }
+
+    public function test_the_configuration_file_still_reads_the_environment_variable(): void
+    {
+        // A .env -> config út maga nem veszhet el: a config/security.php a
+        // betöltésekor olvassa a változót, és a szokásos igaz alakokat
+        // egységesen értelmezi.
+        foreach (['true', '1', 'on', 'yes'] as $value) {
+            $security = $this->withEnvValue('USE_RECAPTCHA', $value, fn () => require config_path('security.php'));
+            $this->assertTrue($security['use_recaptcha'], $value.': be kell kapcsolnia.');
+        }
+
+        foreach (['false', '0', 'off', '', 'talan'] as $value) {
+            $security = $this->withEnvValue('USE_RECAPTCHA', $value, fn () => require config_path('security.php'));
+            $this->assertFalse($security['use_recaptcha'], $value.': nem szabad bekapcsolnia.');
+        }
     }
 }

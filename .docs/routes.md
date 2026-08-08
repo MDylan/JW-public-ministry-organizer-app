@@ -300,6 +300,16 @@ so links already in flight keep working.
     action in `auth/confirm-password.blade.php` at the new name. **No URL moved** - both
     definitions still answer on `/confirm-password` with unchanged middleware.
     `RouteContractSnapshotTest::test_the_route_table_survives_route_cache` is the guard.
+
+    **One consequence of route caching now being possible.** The `setup/*` group is registered
+    behind `if (!Storage::exists('installed.txt'))`, which is evaluated once, at
+    route-registration time. `route:cache` therefore freezes that decision: an operator who
+    runs `optimize` *before* installing bakes the setup routes into the cache, and they stay
+    registered after installation until the cache is rebuilt. They are not reachable without
+    the installer token (v1-patch D2), and `setup.complete` only writes the sentinel once a
+    `mainAdmin` exists, so this is an operational wrinkle rather than an exposure — but the
+    install instructions should say to run `optimize` *after* the installer finishes, not
+    before.
 - The named Livewire routes (`livewire.message`, `livewire.upload-file`, `livewire.preview-file`)
   are snapshotted separately in `tests/Fixtures/vendor-route-contracts.json`. The two Livewire
   asset routes (`livewire/livewire.js`, `livewire/livewire.js.map`) are unnamed and therefore

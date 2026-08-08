@@ -79,11 +79,18 @@ class Settings extends AppComponent
             }
         }
 
-        $this->state['recaptcha']['site_key'] = env('RECAPTCHA_SITE_KEY', '');
-        $this->state['recaptcha']['secret_key'] = env('RECAPTCHA_SECRET_KEY', '');
+        // Ez az űrlap magát a .env FÁJLT szerkeszti, tehát a fájlból kell
+        // olvasnia. Korábban env()-ből olvasott, ami gyorsítótárazott
+        // konfiguráció mellett null - a szerkesztő ilyenkor csupa ÜRES mezőt
+        // mutatott, és a saveOthers() minden from_env kulcsot feltétel nélkül
+        // visszaír, tehát egyetlen mentés kitörölte volna az APP_NAME, APP_URL
+        // és az összes MAIL_* beállítást a .env-ből. Lásd
+        // App\Classes\setEnvironment::value().
+        $this->state['recaptcha']['site_key'] = setEnvironment::value('RECAPTCHA_SITE_KEY', '');
+        $this->state['recaptcha']['secret_key'] = setEnvironment::value('RECAPTCHA_SECRET_KEY', '');
         $this->state['homepage_message'] = $this->settings['homepage_message'] ?? '';
         foreach($this->from_env as $key) {
-            $this->state['env'][$key] = env($key, '');
+            $this->state['env'][$key] = setEnvironment::value($key, '');
         }        
     }
 
@@ -222,7 +229,10 @@ class Settings extends AppComponent
             }
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
 
-            if($setEnv['USE_HTTPS'] != getenv('USE_HTTPS')) {
+            // A getenv() ugyanabba a csapdába esett, mint az env(): gyorsítótárazott
+            // konfiguráció mellett a .env be sem töltődik, tehát hamisat ad, és a
+            // CSS-gyorsítótár minden mentésnél fölöslegesen kiürült.
+            if($setEnv['USE_HTTPS'] != setEnvironment::value('USE_HTTPS')) {
                 //clear css cache
                 foreach (glob(public_path()."/plugins/fontawesome-free/css/*-cache_fontawesome.css") as $filename) {
                     unlink($filename);

@@ -29,7 +29,7 @@ class StaticPagesSetupSeeder extends Seeder
             return;
         }
 
-        $lang = env('APP_LANG', 'en');
+        $lang = config('app.locale', 'en');
         $home = [
             'status' => 2,
             'slug' => 'home',
