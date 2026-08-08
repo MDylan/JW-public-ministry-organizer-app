@@ -5,6 +5,7 @@
    "HEAD"
   ],
   "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
    "auth",
    "can:is-admin",
    "web"
@@ -16,6 +17,7 @@
    "HEAD"
   ],
   "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
    "auth",
    "can:is-admin",
    "web"
@@ -27,6 +29,7 @@
    "HEAD"
   ],
   "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
    "auth",
    "can:is-admin",
    "web"

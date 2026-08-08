@@ -56,3 +56,38 @@ body of `main()` or delete the file so later archives stop carrying it.
 archive has to carry the full `vendor/` tree, and anything Composer adds needs an
 explicit `git add -f` or it will be missing from the release and every updated
 site will fatal on boot.
+
+## Manifest shape — what the major ceiling depends on
+
+Since the update branch ceiling landed (`App\Support\Updates\UpdateBranch`), an
+install refuses to auto-install a release whose **major** is higher than its own.
+It renders a "manual update required" card instead, and `/updater.update` answers
+403.
+
+That guard only protects installs **already running the release that contains it**.
+Older ones have to be routed through it first, and the package's `previous_version`
+chain is the mechanism — so publishing a new major on the `/v1` channel means
+publishing two manifests, not one:
+
+```json
+// /v1/laraupdater.json
+{ "version": "2.0.0", "archive": "RELEASE-2.0.0.zip",
+  "previous_version": "1.2.0", "description": "…" }
+
+// /v1/laraupdater-1.2.0.json
+{ "version": "1.2.0", "archive": "RELEASE-1.2.0.zip", "description": "…" }
+```
+
+where `1.2.0` is the last 1.x release — the one carrying the ceiling.
+
+| Installed | `check()` resolves to | Result |
+|---|---|---|
+| 1.1.5 (pre-ceiling) | `1.2.0` (chain steps back) | auto-updates onto the ceiling release |
+| 1.2.0 (has the ceiling) | `2.0.0` | blocked → manual update card |
+
+Drop the `previous_version` key and every pre-ceiling install jumps straight to
+2.0.0 — the exact accident the ceiling exists to prevent. **Ship the ceiling
+release before any 2.x manifest reaches the `/v1` channel.**
+
+The `description` of the blocked release is rendered verbatim on the manual card,
+so the upgrade instructions are edited on the server, not in the application.

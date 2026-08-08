@@ -357,24 +357,38 @@ class UpdaterContractTest extends FeatureTestCase
         $this->assertSame('', (new UpdateNotification())->render());
     }
 
+    /*
+     * A hármas blokk verziószáma SZÁNDÉKOSAN 1.9.9, nem 9.9.9, mint fentebb.
+     *
+     * A frissítési ág plafonja óta (App\Support\Updates\UpdateBranch) a 9.9.9
+     * már nem egyszerűen "újabb kiadás", hanem MAGASABB MAJOR - vagyis a
+     * komponens a kézi frissítés kártyáját adná rá, nem ezt. Ezek a tesztek a
+     * szokásos, gombos kártyáról szólnak, tehát ágon belüli verzió kell hozzá.
+     * A fenti check()/getDescription() blokkok maradhatnak 9.9.9-en: azok a
+     * vendort pinelik, amit a plafon nem érint.
+     *
+     * A plafon saját szerződése a UpdateBranchCeilingTestben van.
+     */
+
     public function test_the_notification_component_renders_the_card_when_an_update_exists(): void
     {
         $this->publishManifest([
-            'version'     => '9.9.9',
-            'archive'     => 'RELEASE-9.9.9.zip',
+            'version'     => '1.9.9',
+            'archive'     => 'RELEASE-1.9.9.zip',
             'description' => 'Valtozasnaplo szovege.',
         ]);
 
         $rendered = (new UpdateNotification())->render();
 
         $this->assertInstanceOf(View::class, $rendered);
-        $this->assertSame('9.9.9', $rendered->getData()['version']);
+        $this->assertSame('components.update-notification', $rendered->name());
+        $this->assertSame('1.9.9', $rendered->getData()['version']);
         $this->assertSame('Valtozasnaplo szovege.', $rendered->getData()['description']);
 
         $html = $rendered->render();
 
         $this->assertStringContainsString($this->localVersion(), $html);
-        $this->assertStringContainsString('9.9.9', $html);
+        $this->assertStringContainsString('1.9.9', $html);
         $this->assertStringContainsString('Valtozasnaplo szovege.', $html);
     }
 
@@ -384,7 +398,7 @@ class UpdaterContractTest extends FeatureTestCase
         // volt, ami minden alkönyvtáras telepítésen eltörik. A v2 nevesíti a
         // route-ot, így route() generálhatja. Az APP_URL a phpunit.xml szerint
         // http://kozter.test, tehát az abszolút alak csak generálásból jöhet.
-        $this->publishManifest(['version' => '9.9.9', 'archive' => 'RELEASE-9.9.9.zip', 'description' => 'x']);
+        $this->publishManifest(['version' => '1.9.9', 'archive' => 'RELEASE-1.9.9.zip', 'description' => 'x']);
 
         $html = (new UpdateNotification())->render()->render();
 
@@ -393,7 +407,7 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_the_notification_component_reports_the_online_user_count(): void
     {
-        $this->publishManifest(['version' => '9.9.9', 'archive' => 'RELEASE-9.9.9.zip', 'description' => 'x']);
+        $this->publishManifest(['version' => '1.9.9', 'archive' => 'RELEASE-1.9.9.zip', 'description' => 'x']);
 
         $this->createUser(['email' => 'online@example.test', 'last_activity' => now()->subSeconds(30)]);
 

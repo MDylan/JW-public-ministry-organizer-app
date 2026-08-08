@@ -36,10 +36,23 @@
                         <div class="card-body p-1">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
-                                <li class="list-group-item">@lang('settings.status.software_version'): 
-                                    {{ (new \MDylan\LaraUpdater\LaraUpdaterController)->getCurrentVersion() }} 
-                                    @if((new \MDylan\LaraUpdater\LaraUpdaterController)->check() == '')
+                                @php
+                                    // Egy példány, egy lekérdezés: korábban két
+                                    // külön new hívás ment ide. A harmadik állapot
+                                    // (magasabb major => kézi frissítés) ugyanabból
+                                    // az UpdateBranch döntésből jön, amit a
+                                    // frissítési kártya és az /updater.update kapuja
+                                    // is használ.
+                                    $updater = new \MDylan\LaraUpdater\LaraUpdaterController;
+                                    $available = $updater->check();
+                                @endphp
+                                <li class="list-group-item">@lang('settings.status.software_version'):
+                                    {{ $updater->getCurrentVersion() }}
+                                    @if($available == '')
                                         <i class="far fa-check-circle mx-1 text-success"></i>
+                                    @elseif(! \App\Support\Updates\UpdateBranch::allows($available))
+                                        <i class="fas fa-exclamation-triangle mx-1 text-danger"></i>
+                                        @lang('app.update_manual_title') ({{ $available }})
                                     @else
                                         <i class="fas fa-exclamation mx-1 text-danger"></i>
                                         @lang('laraupdater.UPDATE_FOUND')

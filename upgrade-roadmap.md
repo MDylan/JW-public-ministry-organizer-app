@@ -895,7 +895,7 @@ replacing anything), and the pure upgrade-preparation items TODO 23, 24, 27, 29
 and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays as
 it is.
 
-Suite: **1065 -> 1185 tests, 3539 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
+Suite: **1065 -> 1199 tests, 3578 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
 The route table is byte-identical to the TODO 03 baseline apart from the three
 `laraupdater.*` names TODO 33.4 already added.
 
@@ -920,6 +920,7 @@ included) and once produced 110 false failures in a single run.
 | (new, unrecorded) | **All seven audit loops filtered with `isset($changes[$field])`, which is false for null**, so every change setting a field to null was invisible in the audit trail, application-wide. |
 | (new, unrecorded) | The `setup/*` group had no authorization at all. It is now behind an installer-token middleware, and `setup.complete` only writes the sentinel once an administrator exists. |
 | (new, unrecorded) | **Nothing in the application deleted old data by age** (see "Data retention" below). `day_stats` had grown to 471,754 rows, live `events` to 164,371 and `group_dates` to 48,033, all back to June 2022; `config/activitylog.php` had declared a 90-day retention since installation, but the Spatie command that applies it was never scheduled, so 7,581 of 7,739 rows sat past their window. |
+| (new, unrecorded) | **The self-updater carried no compatibility limit of any kind.** One admin click would have installed a 2.x release - PHP 8.3, a different Laravel major - onto a PHP 8.1 production system, migrations included and unrollbackable (see "Update branch ceiling" below). |
 | (new, unrecorded) | **`artisan optimize` has never completed on this codebase - not on `v1` either.** A duplicate route name is not merely untidy: `route:cache` rebuilds the table as a Symfony collection keyed by name and throws `LogicException: Unable to prepare route [confirm-password] for serialization` on the second one. Verified by running `route:cache` against `git show v1:routes/web.php`, which fails identically. Every deployment that ran `optimize` silently fell back to an uncached route table. |
 
 Also fixed there, with no owning TODO: the `ListUsers` pagination/transaction/
@@ -983,6 +984,67 @@ overflows at month end and `day` is a `DATE` column.
 Still open, noted but not done: `Statistics` (the `statistics` table, not the
 component) grows ~9,000 rows/year while only the last 25 hours and 7 days are
 ever read, and nothing purges it.
+
+#### Update branch ceiling (v1-patch F)
+
+The self-updater installs whatever the channel advertises, on exactly one
+condition: `version_compare($remote, $local, '>')`. There is no PHP-version,
+Laravel-version or major-version check anywhere in it. The moment a 2.x manifest
+reaches `https://updates.teruletek.hu/v1`, every 1.x install is one admin click
+away from downloading it, dropping into maintenance mode and running
+`migrate --force` against a codebase that wants PHP 8.3 and a different Laravel
+major. `restore()` brings the overwritten files back; it does **not** roll back
+migrations. That is the accident this closes, and `v1-patch` is the last release
+where closing it still helps - the guard only protects installs that already run
+it.
+
+**The rule: a major is never crossed automatically.** Within the installed major
+nothing changes - one click, exactly as before. A higher major is *announced*,
+not installed.
+
+- **The ceiling is derived, not configured.** It comes from the major in
+  `version.txt`, so there is no config key to maintain and none to empty by
+  accident - and the 2.x line will be protected from 3.x by the same code, with
+  no edit. `App\Support\Updates\UpdateBranch` is the single source, the same
+  discipline as `RetentionWindow` in section E: an unreadable version on either
+  side answers **blocked**, because a needless block costs a manual update while
+  a needless allow costs a production system.
+- **Enforced at the endpoint, not just in the UI.** Hiding the button is not
+  protection - `/updater.update` is a plain GET that survives in bookmarks and
+  history. `App\Http\Middleware\EnsureUpdateWithinBranch` joins
+  `config('laraupdater.middleware')`, so it covers all three updater routes, but
+  it only acts on `laraupdater.update`; `check` and `currentVersion` are
+  read-only and pass through. It sits **last** in the stack, so the channel is
+  queried only after `auth` and `can:is-admin` admitted the request, and it
+  **forgets the cache first**: `update()` deliberately reads the manifest fresh,
+  and a guard reading a 15-minute-old cache entry could wave through exactly the
+  release the installer would then fetch.
+- **The `previous_version` chain protects the pre-ceiling installs.** Publishing
+  2.0.0 on the `/v1` channel means publishing *two* manifests: the head advertises
+  2.0.0 with `previous_version` set to the last 1.x release, and that release gets
+  its own manifest. An install still on 1.1.5 then resolves to the last 1.x, takes
+  it automatically, and only after that sees 2.0.0 - blocked. No install can reach
+  a new major without passing through the release that carries the ceiling. The
+  contract is written down in `release/README.md`.
+- **The blocked state is a card of its own**
+  (`components/update-notification-manual`), warning-coloured, with no update
+  button and a link to the project page. Its body is the manifest's `description`
+  field verbatim, so the upgrade instructions are edited on the update server, not
+  in the application. The Settings status line gained the same third state.
+- **Nothing in `vendor/mdylan/laraupdater` changed.** No new fork tag, no
+  `composer.lock` churn, no re-packaging of the vendor tree - the ceiling is a
+  project-side layer *above* the package, and `UpdaterContractTest` pins that the
+  package still reports the blocked version unchanged. It also means no PHP- or
+  Laravel-version gate: the manifest carries no such field, and reading one would
+  need a vendor change. The major check rules out the same accident.
+
+Tests: `tests/Feature/Updater/UpdateBranchCeilingTest.php`, 14 tests. Three
+component tests in `UpdaterContractTest` moved from `9.9.9` to `1.9.9`: under the
+ceiling `9.9.9` is a *blocked* release, so they would have been asserting against
+the manual card while claiming to test the normal one. The `check()` tests keep
+`9.9.9` - they pin the vendor, which the ceiling does not touch. The three
+`laraupdater.*` entries in `tests/Fixtures/vendor-route-contracts.json` carry the
+new middleware.
 
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:
@@ -1156,6 +1218,7 @@ ever read, and nothing purges it.
   - **Two operational notes that must not be lost:**
     1. `vendor/` is git-tracked by force-add past `.gitignore`. The new `vendor/mdylan/laraupdater` will therefore **not** be picked up by a plain `git add` - it needs `git add -f`, or it will be missing from the release zip and every updated install will fatal.
     2. The release that ships this must carry an `upgrade.php` whose `main()` deletes `vendor/pcinaglia/`. `install()` never deletes, so the dead tree would otherwise stay on every deployed host forever. **Written and verified: `release/upgrade.php`**, with `release/README.md` documenting the hook contract. It removes `vendor/pcinaglia/`, the orphaned published view at `resources/views/vendor/laraupdater/`, and `bootstrap/cache/packages.php` / `services.php` - the last two belt-and-braces, since `optimize:clear` reaches them a few lines later but a failed Artisan call would otherwise leave a manifest naming a class that no longer exists. Verified against the booted application with the targets planted: every branch exercised (directory tree, plain file, "already gone"), idempotent on a second run, and no collateral damage to `vendor/mdylan/`, the sibling `resources/views/vendor/*` directories or the published `laraupdater` language files. It is a one-off - once 1.1.6 has reached every install, empty `main()` or drop the file so later archives stop carrying it.
+  - **Follow-up, same branch: the ceiling on top of it.** The fork inherited the package's one and only update condition - "the channel advertises something newer" - and nothing else. `v1-patch F` adds the major-version limit *above* the package, in project code, and leaves `vendor/mdylan/laraupdater` untouched (no new tag, no `composer.lock` change). See "Update branch ceiling (v1-patch F)" in the branch section above; the ops constraint it introduces - two manifests, chained by `previous_version`, when the new major ships - is written down in `release/README.md`.
   - Expected changes: as delivered.
 
 - [ ] **TODO 33.5: Replace `protonemedia/laravel-verify-new-email` with in-house code**

@@ -211,7 +211,7 @@ its own route file via `loadRoutesFrom`, using the middleware stack declared in
 
 | Method | URI | Name | Middleware |
 |---|---|---|---|
-| GET | `/updater.check` | `laraupdater.check` | `web`, `auth`, `can:is-admin` |
+| GET | `/updater.check` | `laraupdater.check` | `web`, `auth`, `can:is-admin`, `EnsureUpdateWithinBranch` |
 | GET | `/updater.currentVersion` | `laraupdater.currentVersion` | same |
 | GET | `/updater.update` | `laraupdater.update` | same |
 
@@ -219,6 +219,11 @@ Notes that matter:
 
 - The URI segments contain literal dots. That is inherited from the package and is deliberately
   unchanged in v2, so existing links keep working.
+- **`EnsureUpdateWithinBranch` is on all three because the config array is shared, but it only
+  acts on `laraupdater.update`.** It blocks an update that would cross a major version
+  (`App\Support\Updates\UpdateBranch`) with a 403; `check` and `currentVersion` are read-only
+  and pass straight through. It sits **last** in the stack on purpose: the channel is only
+  queried after `auth` and `can:is-admin` have already admitted the request.
 - **Until the TODO 33.4 fork switch, `laraupdater.check` and `laraupdater.currentVersion` were
   unnamed and carried no middleware at all - not even `web`.** Any anonymous visitor could read
   `version.txt` through `/updater.currentVersion`, and because `config/laraupdater.php` sets
