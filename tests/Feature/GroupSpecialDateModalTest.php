@@ -101,6 +101,35 @@ class GroupSpecialDateModalTest extends FeatureTestCase
         ]);
     }
 
+    public function test_openmodal_without_date_clears_previous_edit_state(): void
+    {
+        $editor = $this->createUser(['email' => 'special-reopen@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($editor, $group, 'roler', true);
+        $date = now()->addDays(4)->toDateString();
+
+        GroupDate::factory()->create([
+            'group_id' => $group->id,
+            'date' => $date,
+            'date_status' => 2,
+            'note' => 'Előző különleges nap',
+        ]);
+
+        // Szerkesztés -> "Mégsem" (csak data-dismiss, szerveren nem fut semmi)
+        // -> "Hozzáadás": a form itt üres kell legyen, nem az előző nap adataival.
+        Livewire::actingAs($editor)
+            ->test(SpecialDateModal::class, ['groupId' => $group->id])
+            ->call('openModal', $date)
+            ->assertSet('state.note', 'Előző különleges nap')
+            ->assertSet('date', $date)
+            ->call('openModal')
+            ->assertSet('date', null)
+            ->assertSet('state.note', '')
+            ->assertSet('state.date', null)
+            ->assertSet('state.id', null)
+            ->assertSet('state.date_status', 2);
+    }
+
     // =========================================================================
     // 3. Validáció
     // =========================================================================
