@@ -69,7 +69,11 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
-        ]
+        ],
+        "test": "php81 artisan optimize:clear --quiet && php81 vendor/phpunit/phpunit/phpunit"
+    },
+    "scripts-descriptions": {
+        "test": "Clears the build caches, then runs the PHPUnit suite against the kozter_testing database. Use this, never `artisan test` - that one boots the framework first, so .env wins over phpunit.xml and RefreshDatabase would wipe the application database."
     },
     "extra": {
         "laravel": {

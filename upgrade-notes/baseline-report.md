@@ -109,7 +109,8 @@ Re-capture both once the relevant hop lands, for a richer after-picture.
 ## How to compare after a hop
 
 ```powershell
-php81 vendor/phpunit/phpunit/phpunit --colors=never    # or `php` once on Laravel 10+
+composer test -- --colors=never                        # preferred: clears build caches first
+php81 vendor/phpunit/phpunit/phpunit --colors=never    # what the script runs underneath
 php81 artisan route:list --json | Out-File -Encoding utf8 upgrade-notes/after-<phase>-routes.json
 php81 artisan schedule:list      | Out-File -Encoding utf8 upgrade-notes/after-<phase>-schedule.txt
 ```

@@ -117,7 +117,10 @@ Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the 93
   - Artifacts in `upgrade-notes/`: `baseline-phpunit.txt`, `baseline-routes.json` (91 routes), `baseline-routes.txt`, `baseline-schedule.txt`, `baseline-composer-tree.txt`, `baseline-composer-direct.txt`, `baseline-versions.txt`.
   - Findings folded into later TODOs: the `verification.verify` winner is now known empirically (TODO 26), the route-contract fixture's true coverage is quantified (TODO 14), and `schedule:list` visually confirms the 8 opaque closures (TODO 06).
   - Not available on this baseline: `artisan about` (Laravel 9+) and `artisan config:show` (Laravel 11+). Re-capture both after the relevant hop for a richer after-picture.
-  - Practical note for every later phase: `vendor/bin/phpunit` is a POSIX shell wrapper - invoking it through `php81` merely prints the script. Use `php81 vendor/phpunit/phpunit/phpunit`. `php81` itself resolves via `C:\scripts\php81.bat` and is reachable **only from PowerShell**, not from a POSIX shell.
+  - Practical note for every later phase: **run the suite with `composer test`.** It clears the build caches, then calls PHPUnit directly. Extra arguments pass through: `composer test -- --filter SomeTest`.
+    - `vendor/bin/phpunit` is a POSIX shell wrapper - invoking it through `php81` merely prints the script. The script therefore uses `php81 vendor/phpunit/phpunit/phpunit`. `php81` resolves via `C:\scripts\php81.bat` and is reachable **only from PowerShell**, not from a POSIX shell. It is hardcoded because Composer itself runs on PHP 8.3 here, and the suite does not survive 8.3 (Carbon's `setLastErrors()` throws a `TypeError` immediately) - so Composer's `@php` cannot be used.
+    - **`optimize:clear` first, and that is not cosmetic.** A leftover `bootstrap/cache/config.php` makes the tests read the APPLICATION configuration - the `kozter_live` database included - and a leftover `routes-v7.php` freezes the `setup/*` group's `Storage::exists('installed.txt')` condition. The latter once produced 110 false failures in a single run.
+    - `tests/CreatesApplication.php` carries two guards for whoever bypasses the script: it refuses to build the application when a build cache is present, and when the configured database matches the one in the `.env` file. The first one fired on its very first run.
 
 ---
 
