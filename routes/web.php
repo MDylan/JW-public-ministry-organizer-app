@@ -215,14 +215,13 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware(['can:is-admin'])->group(function () {
                 Route::get('/admin/statistics', AdminStatistics::class)->name('admin.statistics');
 
-                // A megszemélyesítés indítása POST + CSRF lett, ezért NEM
-                // maradhat a fenti `password.confirm` csoportban: a
-                // RequirePassword middleware `redirect()->intended()`-del tér
-                // vissza a megerősítés után, az pedig GET-tel hívná újra ezt a
-                // POST-only útvonalat - 405 lenne belőle. A jelszó-megerősítést
-                // továbbra is a `/admin/users` lista kapuja adja, ahonnan a gomb
-                // egyáltalán elérhető.
-                Route::post('/admin/users/login/{user}', [LoginToUserController::class, 'login'])->name('admin.users.login');
+                // A külön middleware közvetlenül ezt a POST végpontot is védi.
+                // Lejárt megerősítésnél az intended URL az adminlista, nem ez a
+                // POST-only route, így a megerősítés után nincs hibás GET-es
+                // újrajátszás és 405.
+                Route::post('/admin/users/login/{user}', [LoginToUserController::class, 'login'])
+                    ->middleware('password.confirm.impersonation')
+                    ->name('admin.users.login');
             });
 
             Route::middleware(['groupMember'])->group(function () {                

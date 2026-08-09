@@ -2,7 +2,10 @@
 
 namespace App\Actions\Fortify;
 
+use Illuminate\Contracts\Cache\Repository;
 use Laravel\Fortify\TwoFactorAuthenticationProvider as FortifyTwoFactorAuthenticationProvider;
+use PragmaRX\Google2FA\Google2FA;
+use Throwable;
 
 /**
  * A TOTP-visszajátszás tényleges megakadályozása (CVE-2022-25838).
@@ -17,10 +20,9 @@ use Laravel\Fortify\TwoFactorAuthenticationProvider as FortifyTwoFactorAuthentic
  * `max($timestamp - $window, true + 1)` kifejezés `2`-t számol - vagyis a
  * kezdőidőbélyeg semmivel nem tolódik el, és ugyanaz a kód másodszor is átmegy.
  *
- * A Fortify 1.x későbbi kiadásai pontosan ezt az egy elágazást szúrták be. Itt
- * nem verziót lépünk (a következő minor, az 1.12.0, egy `two_factor_confirmed_at`
- * oszlopot vezetne be, ami ütközik a projekt saját `two_factor_confirmed`
- * mezőjével és folyamatával), hanem ugyanazt a normalizálást vesszük át.
+ * A provider nemcsak számlálóvá normalizálja az eredményt: a credential és a
+ * számláló hashével elkülöníti a felhasználókat, majd atomikus cache-adddal
+ * biztosítja, hogy párhuzamos kérések közül is csak egy válthassa be a kódot.
  *
  * A kötés az App\Providers\FortifyServiceProvider::boot()-ban él, ugyanúgy,
  * ahogy a DisableTwoFactorAuthentication felüldefiniálása. Mindkét ellenőrzési
@@ -31,6 +33,14 @@ use Laravel\Fortify\TwoFactorAuthenticationProvider as FortifyTwoFactorAuthentic
 class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProvider
 {
     /**
+     * Create a replay-safe two factor authentication provider.
+     */
+    public function __construct(Google2FA $engine, Repository $cache)
+    {
+        parent::__construct($engine, $cache);
+    }
+
+    /**
      * Verify the given code.
      *
      * @param  string  $secret
@@ -39,24 +49,31 @@ class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProv
      */
     public function verify($secret, $code)
     {
-        $key = 'fortify.2fa_codes.'.md5($code);
-
+        // A nem null kezdőérték miatt a Google2FA mindig a ténylegesen
+        // illeszkedő időszámlálót adja vissza, nem a `true` értéket.
         $timestamp = $this->engine->verifyKeyNewer(
-            $secret, $code, optional($this->cache)->get($key)
+            $secret, $code, 0
         );
 
         if ($timestamp === false) {
             return false;
         }
 
-        // EZ AZ EGY SOR a különbség: számláló nélkül a következő hívás nem tud
-        // mihez képest "újabb" kódot követelni.
-        if ($timestamp === true) {
-            $timestamp = $this->engine->getTimestamp();
+        $key = 'fortify.2fa_codes.'.hash('sha256', $secret.'|'.$timestamp);
+        $regeneration = max(1, (int) $this->engine->getKeyRegeneration());
+        $window = max(0, (int) $this->engine->getWindow());
+        $ttl = max($regeneration, (2 * $window + 1) * $regeneration);
+
+        try {
+            // Repository::add() atomikus: pontosan egy párhuzamos kérés tudja
+            // lefoglalni ugyanazt a credential + időszámláló párost.
+            return $this->cache->add($key, true, $ttl);
+        } catch (Throwable $exception) {
+            // Cache nélkül nem tudjuk bizonyítani az egyszeri felhasználást.
+            // A kivételjelentés nem tartalmazza sem a secretet, sem a TOTP-kódot.
+            report($exception);
+
+            return false;
         }
-
-        optional($this->cache)->put($key, $timestamp, ($this->engine->getWindow() ?: 1) * 60);
-
-        return true;
     }
 }

@@ -30,11 +30,6 @@ class LoginToUserController extends Controller
      */
     public const SESSION_KEY = 'impersonator_id';
 
-    /**
-     * A "remember me" állapot, hogy a visszalépés ugyanúgy viselkedjen.
-     */
-    public const REMEMBER_KEY = 'impersonator_remember';
-
     public function login(User $user)
     {
         $admin = auth()->user();
@@ -49,16 +44,13 @@ class LoginToUserController extends Controller
         }
 
         $adminId = $admin->id;
-        $remember = $admin->getRememberToken() !== null;
-
         Auth::logout();
-        Auth::loginUsingId($user->id);
+        Auth::loginUsingId($user->id, false);
 
         // Az Auth::login() belül session->migrate(true)-t hív, tehát a session
         // azonosító regenerálódik; a kulcsokat SZÁNDÉKOSAN utána írjuk, hogy
         // biztosan a friss munkamenetbe kerüljenek.
         Session::put(self::SESSION_KEY, $adminId);
-        Session::put(self::REMEMBER_KEY, $remember);
         $this->forgetPasswordConfirmation();
 
         Session::flash('message', __('user.logged_to', ['name' => $user->name]));
@@ -69,11 +61,10 @@ class LoginToUserController extends Controller
     public function loginBack(Request $request)
     {
         $adminId = Session::get(self::SESSION_KEY);
-        $remember = (bool) Session::get(self::REMEMBER_KEY, false);
 
-        // A kulcsokat a beléptetés ELŐTT dobjuk el: a visszaút egyszer
+        // A kulcsot a beléptetés ELŐTT dobjuk el: a visszaút egyszer
         // használható, és egy félbeszakadt kérés sem hagy használható maradékot.
-        Session::forget([self::SESSION_KEY, self::REMEMBER_KEY]);
+        Session::forget(self::SESSION_KEY);
 
         if ($adminId === null) {
             return redirect(route('home.home'));
@@ -88,7 +79,7 @@ class LoginToUserController extends Controller
         }
 
         Auth::logout();
-        Auth::loginUsingId($admin->id, $remember);
+        Auth::loginUsingId($admin->id, false);
         $this->forgetPasswordConfirmation();
 
         Session::flash('message', __('user.logged_back'));

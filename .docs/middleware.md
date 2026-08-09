@@ -55,6 +55,7 @@ Executed on every HTTP request:
 | `checkRecaptcha` | `CheckRecaptcha` | Validate Google reCAPTCHA token on selected auth endpoints. |
 | `strictEmail` | `EnsureWellFormedEmail` | Re-validate the request's email field with `email:filter` before Fortify's own vendor controllers see it. |
 | `installer` | `EnsureInstallerToken` | Gate the `setup/*` group on a token written to `storage/app/installer-token.txt`. |
+| `password.confirm.impersonation` | `RequirePasswordForImpersonation` | Require recent password confirmation on the impersonation POST while returning to the admin user list instead of replaying the POST URL as GET. |
 
 Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed`, `throttle`, `verified`) use default Laravel middleware classes.
 
@@ -75,6 +76,7 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 | `GroupAdmin` | Custom | Authorizes by membership in `userGroupsEditable`. |
 | `GroupMember` | Custom | Authorizes by membership in `groupsAccepted`. |
 | `ProfileFull` | Custom | Redirects to profile page if user name is missing. |
+| `RequirePasswordForImpersonation` | Custom | Applies `auth.password_timeout` to `POST /admin/users/login/{user}`. Expired HTML requests store `admin.users` as the intended GET destination and redirect to `password.confirm`; JSON requests receive 423. The identity switch is never resumed automatically. |
 | `SetGuestLanguage` | Custom | Sets locale from invited user language using route `id` parameter. |
 | `SetLocale` | Custom | Resolves locale from query/session/user defaults, handles maintenance logout for non-admin users, and shares static-page side menu via cache. |
 | `HttpsProtocol` | Custom | Redirects to HTTPS in production when `config('security.use_https')` is true. Two fixes landed here: the comparison used to be against the literal string `"true"`, so `USE_HTTPS=1` did nothing (v1-patch B14), and the flag was read from `env()` at runtime, so `config:cache` would have silently switched enforcement off on exactly the installations careful enough to cache their configuration (TODO 28). The `.env` variable is unchanged — `config/security.php` reads it with `filter_var()`, accepting `1`, `true`, `on` and `yes`. |

@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Actions\Fortify\TwoFactorAuthenticationProvider as ReplaySafeTwoFactorAuthenticationProvider;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use PragmaRX\Google2FA\Google2FA;
+use RuntimeException;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -15,17 +18,13 @@ use Tests\Feature\FeatureTestCase;
  * egy phishing oldalról továbbjátszva, egy naplóból kibányászva) az ablak
  * végéig újra és újra beváltható volt. Ettől a "one-time" jelző elveszett.
  *
- * A v1.11.2 - az az első verzió, amit az advisory javítottnak jelöl -
- * gyorsítótárba teszi a felhasznált kód időbélyegét, és `verifyKeyNewer()`-rel
- * csak szigorúan újabb kódot fogadna el. MÉRVE: ez a javítás önmagában nem ér
- * célba, mert a google2fa a legelső hívásnál `true`-t ad számláló helyett, és
- * abból a következő hívás nem tud "újabbat" követelni. A tényleges védelmet az
- * App\Actions\Fortify\TwoFactorAuthenticationProvider adja, amit a
- * FortifyServiceProvider köt be; a részletek ott vannak leírva.
+ * A tényleges védelem az App\Actions\Fortify\TwoFactorAuthenticationProvider:
+ * valódi időszámlálót kér, credentialenként elkülönített cache-kulcsot képez,
+ * és atomikus Cache::add() művelettel csak egy beváltást enged.
  *
- * A `CACHE_DRIVER` az éles rendszeren `file`, tehát a védelem valóban működik;
- * a tesztkörnyezet `array` store-ja a teszt-metóduson belül perzisztens, ezért
- * a visszajátszás itt bizonyítható.
+ * A `CACHE_DRIVER` az éles rendszeren `file`; a Laravel FileStore add() művelete
+ * fájlzárral atomikus. A tesztkörnyezet közös `array` store-ja a szerződés
+ * funkcionális oldalát bizonyítja, külön mock pedig rögzíti az atomi API-t.
  */
 class TwoFactorReplayTest extends FeatureTestCase
 {
@@ -64,6 +63,77 @@ class TwoFactorReplayTest extends FeatureTestCase
             $cache->getValue($provider),
             'Cache nélkül a verify() minden kódot korlátlanul elfogadna.'
         );
+    }
+
+    public function test_the_cache_repository_is_a_required_constructor_dependency(): void
+    {
+        $constructor = (new \ReflectionClass(ReplaySafeTwoFactorAuthenticationProvider::class))
+            ->getConstructor();
+        $cache = $constructor->getParameters()[1];
+
+        $this->assertSame(CacheRepository::class, $cache->getType()->getName());
+        $this->assertFalse($cache->allowsNull());
+        $this->assertFalse($cache->isOptional());
+    }
+
+    public function test_equal_numeric_codes_from_different_secrets_do_not_collide(): void
+    {
+        $engine = \Mockery::mock(Google2FA::class);
+        $engine->shouldReceive('verifyKeyNewer')->twice()->andReturn(123456);
+        $engine->shouldReceive('getKeyRegeneration')->twice()->andReturn(30);
+        $engine->shouldReceive('getWindow')->twice()->andReturn(1);
+
+        $provider = new ReplaySafeTwoFactorAuthenticationProvider(
+            $engine,
+            app(CacheRepository::class)
+        );
+
+        $this->assertTrue($provider->verify('first-secret', '123456'));
+        $this->assertTrue($provider->verify('second-secret', '123456'));
+    }
+
+    public function test_redemption_uses_atomic_add_with_a_full_window_ttl(): void
+    {
+        $engine = \Mockery::mock(Google2FA::class);
+        $engine->shouldReceive('verifyKeyNewer')
+            ->once()
+            ->with('credential-secret', '654321', 0)
+            ->andReturn(123456);
+        $engine->shouldReceive('getKeyRegeneration')->once()->andReturn(30);
+        $engine->shouldReceive('getWindow')->once()->andReturn(2);
+
+        $cache = \Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')
+            ->once()
+            ->withArgs(function ($key, $value, $ttl): bool {
+                $this->assertStringStartsWith('fortify.2fa_codes.', $key);
+                $this->assertStringNotContainsString('credential-secret', $key);
+                $this->assertStringNotContainsString('654321', $key);
+                $this->assertTrue($value);
+                $this->assertSame(150, $ttl);
+
+                return true;
+            })
+            ->andReturn(true);
+
+        $provider = new ReplaySafeTwoFactorAuthenticationProvider($engine, $cache);
+
+        $this->assertTrue($provider->verify('credential-secret', '654321'));
+    }
+
+    public function test_cache_failure_rejects_the_code(): void
+    {
+        $engine = \Mockery::mock(Google2FA::class);
+        $engine->shouldReceive('verifyKeyNewer')->once()->andReturn(123456);
+        $engine->shouldReceive('getKeyRegeneration')->once()->andReturn(30);
+        $engine->shouldReceive('getWindow')->once()->andReturn(1);
+
+        $cache = \Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')->once()->andThrow(new RuntimeException('Cache unavailable.'));
+
+        $provider = new ReplaySafeTwoFactorAuthenticationProvider($engine, $cache);
+
+        $this->assertFalse($provider->verify('credential-secret', '123456'));
     }
 
     public function test_the_user_model_confirmation_path_also_rejects_a_replayed_code(): void

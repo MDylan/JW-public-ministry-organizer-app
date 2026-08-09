@@ -181,7 +181,7 @@ Inside nested `verified` -> `profileFull` middleware:
 | User profile/security | `user/profile`, `user/twofactorsettings`, `user/2fa-confirm`, delete-personal-data routes, logout-other-devices |
 | Event/group basics | `lastevents`, `calendar/{year?}/{month?}`, `jtc/{group}/{year}/{month}`, `groups`, `newsletters` |
 | Admin (strict) | `/admin/users`, `/admin/settings`, `/admin/staticpages*`, `/admin/newsletter_edit/{id?}` with `can:is-admin` + `password.confirm` |
-| Admin stats | `/admin/statistics` and `POST /admin/users/login/{user}` with `can:is-admin` |
+| Admin stats / impersonation | `/admin/statistics` with `can:is-admin`; `POST /admin/users/login/{user}` additionally uses `password.confirm.impersonation` |
 | Group member routes | `/groups/{group}/users`, `/groups/{group}/news`, `/news_file/{group}/{file}`, `/groups/{group}/logout` |
 | Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit/delete, `/groups/{group}/statistics`, `/groups/{group}/history` |
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
@@ -209,12 +209,20 @@ plus a second model.
 `POST /loginback` (`admin.loginback`) ends it. Both were `GET` before, and the
 return path was a 12-hour signed URL carrying the admin id.
 
-`admin.users.login` deliberately sits in the `can:is-admin`-only group rather
-than the `password.confirm` one it used to share with `/admin/users`. A POST
-route cannot live behind `RequirePassword`: that middleware redirects to the
-confirmation form and returns through `redirect()->intended()`, which re-issues
-the request as a **GET** - a 405 on a POST-only route. Password confirmation
-still gates `/admin/users`, which is the only place the button is rendered.
+`admin.users.login` remains outside the generic `password.confirm` group because
+Laravel's `RequirePassword` stores the POST URL as the intended destination and
+would later revisit it as **GET**, producing a 405. The endpoint instead uses
+`password.confirm.impersonation`: it applies the same `auth.password_timeout`
+and `auth.password_confirmed_at` rules, but deliberately stores the
+`admin.users` GET route as the intended destination. After confirmation the
+administrator returns to the list and must explicitly start impersonation
+again. JSON requests receive 423.
+
+Both identity switches regenerate the session and clear password confirmation.
+They always use non-persistent authentication: the presence of a user's stored
+`remember_token` is not treated as evidence that the current session was
+remembered, no remember state is stored in the impersonation session, and no
+new recaller cookie is created on return.
 
 ## Package-Registered Translation Routes
 

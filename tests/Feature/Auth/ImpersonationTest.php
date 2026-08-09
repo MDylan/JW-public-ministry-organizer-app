@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Http\Controllers\Admin\LoginToUserController;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -45,6 +46,7 @@ class ImpersonationTest extends FeatureTestCase
         $target = $this->target();
 
         $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
             ->post(route('admin.users.login', ['user' => $target->id]))
             ->assertRedirect(route('home.home'));
 
@@ -56,6 +58,70 @@ class ImpersonationTest extends FeatureTestCase
 
         $this->assertSame($admin->id, auth()->id());
         $this->assertFalse(session()->has(LoginToUserController::SESSION_KEY));
+    }
+
+    public function test_impersonation_requires_a_recent_password_confirmation(): void
+    {
+        $admin = $this->mainAdmin();
+        $target = $this->target();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.login', ['user' => $target->id]))
+            ->assertRedirect(route('password.confirm'))
+            ->assertSessionHas('url.intended', route('admin.users'));
+
+        $this->assertSame($admin->id, auth()->id());
+        $this->assertFalse(session()->has(LoginToUserController::SESSION_KEY));
+    }
+
+    public function test_expired_password_confirmation_cannot_start_impersonation(): void
+    {
+        $admin = $this->mainAdmin();
+        $target = $this->target();
+        $expiredAt = time() - config('auth.password_timeout') - 1;
+
+        $this->actingAs($admin)
+            ->withSession(['auth.password_confirmed_at' => $expiredAt])
+            ->post(route('admin.users.login', ['user' => $target->id]))
+            ->assertRedirect(route('password.confirm'))
+            ->assertSessionHas('url.intended', route('admin.users'));
+
+        $this->assertSame($admin->id, auth()->id());
+        $this->assertFalse(session()->has(LoginToUserController::SESSION_KEY));
+    }
+
+    public function test_json_impersonation_request_without_confirmation_returns_423(): void
+    {
+        $admin = $this->mainAdmin();
+        $target = $this->target();
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.users.login', ['user' => $target->id]))
+            ->assertStatus(423)
+            ->assertExactJson(['message' => 'Password confirmation required.']);
+
+        $this->assertSame($admin->id, auth()->id());
+        $this->assertFalse(session()->has(LoginToUserController::SESSION_KEY));
+    }
+
+    public function test_password_confirmation_returns_to_the_list_before_an_explicit_retry(): void
+    {
+        $admin = $this->mainAdmin();
+        $target = $this->target();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.login', ['user' => $target->id]))
+            ->assertRedirect(route('password.confirm'));
+
+        $this->post(route('password.confirm.store'), ['password' => 'password'])
+            ->assertRedirect(route('admin.users'));
+
+        $this->assertSame($admin->id, auth()->id());
+
+        $this->post(route('admin.users.login', ['user' => $target->id]))
+            ->assertRedirect(route('home.home'));
+
+        $this->assertSame($target->id, auth()->id());
     }
 
     public function test_the_identity_switch_is_not_reachable_with_a_get_request(): void
@@ -94,7 +160,9 @@ class ImpersonationTest extends FeatureTestCase
         $admin = $this->mainAdmin();
         $target = $this->target();
 
-        $this->actingAs($admin)->post(route('admin.users.login', ['user' => $target->id]));
+        $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $target->id]));
         $this->post(route('admin.loginback'));
         $this->assertSame($admin->id, auth()->id());
 
@@ -118,6 +186,7 @@ class ImpersonationTest extends FeatureTestCase
         // szerepellenőrzés a második réteg: ha a gate valaha tágul, a
         // megszemélyesítés attól még nem nyílik meg.
         $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
             ->post(route('admin.users.login', ['user' => $target->id]))
             ->assertForbidden();
 
@@ -137,10 +206,13 @@ class ImpersonationTest extends FeatureTestCase
         $secondAdmin = $this->mainAdmin('second-admin@example.test');
         $target = $this->target();
 
-        $this->actingAs($admin)->post(route('admin.users.login', ['user' => $secondAdmin->id]));
+        $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $secondAdmin->id]));
         $this->assertSame($secondAdmin->id, auth()->id());
 
-        $this->post(route('admin.users.login', ['user' => $target->id]))
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $target->id]))
             ->assertRedirect(route('home.home'));
 
         $this->assertSame($secondAdmin->id, auth()->id());
@@ -152,7 +224,9 @@ class ImpersonationTest extends FeatureTestCase
         $admin = $this->mainAdmin();
         $target = $this->target();
 
-        $this->actingAs($admin)->post(route('admin.users.login', ['user' => $target->id]));
+        $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $target->id]));
 
         // A megszemélyesítés óta az eredeti fiók elveszítette a főadmin jogot.
         $admin->role = 'activated';
@@ -177,6 +251,27 @@ class ImpersonationTest extends FeatureTestCase
         $this->assertFalse(session()->has('auth.password_confirmed_at'));
     }
 
+    public function test_impersonation_never_creates_or_restores_a_remember_cookie(): void
+    {
+        $admin = $this->mainAdmin();
+        $target = $this->target();
+        $recallerName = Auth::guard()->getRecallerName();
+
+        $this->assertNotNull($admin->getRememberToken(), 'A tartós token megléte nem jelent aktív remember sessiont.');
+
+        $this->actingAs($admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $target->id]))
+            ->assertCookieMissing($recallerName)
+            ->assertSessionMissing('impersonator_remember');
+
+        $this->post(route('admin.loginback'))
+            ->assertCookieMissing($recallerName)
+            ->assertSessionMissing('impersonator_remember');
+
+        $this->assertSame($admin->id, auth()->id());
+    }
+
     public function test_the_session_id_is_regenerated_on_both_switches(): void
     {
         $admin = $this->mainAdmin();
@@ -185,7 +280,8 @@ class ImpersonationTest extends FeatureTestCase
         $this->actingAs($admin)->get(route('home.home'));
         $beforeImpersonation = session()->getId();
 
-        $this->post(route('admin.users.login', ['user' => $target->id]));
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('admin.users.login', ['user' => $target->id]));
         $afterImpersonation = session()->getId();
         $this->assertNotSame($beforeImpersonation, $afterImpersonation);
 

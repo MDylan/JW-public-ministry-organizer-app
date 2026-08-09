@@ -184,7 +184,7 @@ left `/register` and `/forgot-password` with no bot protection at all.
   hand-maintained copy and deliberately does **not** carry it - the name is
   already taken by `routes/web.php:175`.
 
-### The 1.11.2 fix does not actually work - measured
+### Credential-scoped, atomic replay protection
 
 `Laravel\Fortify\TwoFactorAuthenticationProvider::verify()` caches the timestamp
 of a used code and then demands a strictly newer one via `verifyKeyNewer()`. On
@@ -195,9 +195,22 @@ case. Fortify stores that `true`; the next call passes it back as `$oldTimestamp
 timestamp, and the same code verifies again. Later Fortify 1.x releases added the
 one missing branch that normalizes `true` to `getTimestamp()`.
 
-`App\Actions\Fortify\TwoFactorAuthenticationProvider` carries that
-normalization, and `FortifyServiceProvider::boot()` rebinds the contract to it
-(Fortify binds its own in `register()`, so `boot()` wins). Both verification
-paths - Fortify's `TwoFactorLoginRequest::hasValidCode()` and the app's own
+`App\Actions\Fortify\TwoFactorAuthenticationProvider` always supplies a
+non-null old timestamp (`0`), so Google2FA returns the actual matched counter.
+The replay key is a SHA-256 hash of the credential secret plus that counter;
+the raw secret and submitted code are never stored, and two credentials that
+happen to produce the same six-digit value cannot block each other.
+
+Redemption uses the cache repository's atomic `add()` operation rather than a
+`get()` / `put()` sequence. Exactly one concurrent request can claim a given
+credential-counter pair. The key remains present for
+`(2 * window + 1) * keyRegeneration` seconds, covering the full acceptance
+window. Cache injection is mandatory, and a cache failure is reported without
+secret or code data and rejects the authentication attempt (fail closed).
+
+`FortifyServiceProvider::boot()` rebinds the contract to this provider (Fortify
+binds its own in `register()`, so `boot()` wins). Both verification paths -
+Fortify's `TwoFactorLoginRequest::hasValidCode()` and the app's own
 `User::confirmTwoFactorAuth()` - resolve the contract, so both are covered.
-`tests/Feature/Auth/TwoFactorReplayTest.php` pins the behaviour.
+`tests/Feature/Auth/TwoFactorReplayTest.php` pins the replay, isolation, atomic
+cache, TTL, mandatory dependency, and fail-closed behaviour.

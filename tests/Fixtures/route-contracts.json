@@ -126,6 +126,7 @@
         "middleware": [
             "auth",
             "can:is-admin",
+            "password.confirm.impersonation",
             "profileFull",
             "verified",
             "web"
