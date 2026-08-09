@@ -177,7 +177,6 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\BladeComponentServiceProvider::class,
-        Barryvdh\Debugbar\ServiceProvider::class,
         MDylan\LaraUpdater\LaraUpdaterServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         'Eusonlito\LaravelPacker\PackerServiceProvider',

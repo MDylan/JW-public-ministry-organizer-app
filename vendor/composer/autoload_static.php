@@ -7044,6 +7044,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Commands\\RetentionCommandsTest' => __DIR__ . '/../..' . '/tests/Feature/Commands/RetentionCommandsTest.php',
         'Tests\\Feature\\ConfigCacheSafetyTest' => __DIR__ . '/../..' . '/tests/Feature/ConfigCacheSafetyTest.php',
         'Tests\\Feature\\CriticalUserFlowsTest' => __DIR__ . '/../..' . '/tests/Feature/CriticalUserFlowsTest.php',
+        'Tests\\Feature\\DevDependencyIsolationTest' => __DIR__ . '/../..' . '/tests/Feature/DevDependencyIsolationTest.php',
         'Tests\\Feature\\Events\\EventCapacityTest' => __DIR__ . '/../..' . '/tests/Feature/Events/EventCapacityTest.php',
         'Tests\\Feature\\Events\\EventModalSlotTableTest' => __DIR__ . '/../..' . '/tests/Feature/Events/EventModalSlotTableTest.php',
         'Tests\\Feature\\Events\\EventOverlapTest' => __DIR__ . '/../..' . '/tests/Feature/Events/EventOverlapTest.php',

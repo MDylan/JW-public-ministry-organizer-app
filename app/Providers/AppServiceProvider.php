@@ -81,9 +81,14 @@ class AppServiceProvider extends ServiceProvider
                 Config::set(['homepage_message' => $defaults['homepage_message']]);
             }
 
-            if(isset($defaults['debugbar'])) {
-                if($defaults['debugbar'] == 1)
-                    \Debugbar::enable();
+            // TODO 25: a Debugbar providere már nincs kézzel regisztrálva a
+            // config/app.php-ben, tehát egy `composer install --no-dev` gépen a
+            // csomag egyszerűen nincs jelen. A konténert kérdezzük, nem az
+            // aliast: hiányzó osztálynál a PHP `Error`-t dob, nem `Exception`-t,
+            // úgyhogy az alábbi catch nem fogná el - a beállítás bekapcsolva
+            // minden kérést megölne production alatt.
+            if(isset($defaults['debugbar']) && $defaults['debugbar'] == 1 && $this->app->bound('debugbar')) {
+                $this->app['debugbar']->enable();
             }
 
             foreach($defaults as $key => $value) {

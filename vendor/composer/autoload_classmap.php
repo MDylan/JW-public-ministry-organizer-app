@@ -6407,6 +6407,7 @@ return array(
     'Tests\\Feature\\Commands\\RetentionCommandsTest' => $baseDir . '/tests/Feature/Commands/RetentionCommandsTest.php',
     'Tests\\Feature\\ConfigCacheSafetyTest' => $baseDir . '/tests/Feature/ConfigCacheSafetyTest.php',
     'Tests\\Feature\\CriticalUserFlowsTest' => $baseDir . '/tests/Feature/CriticalUserFlowsTest.php',
+    'Tests\\Feature\\DevDependencyIsolationTest' => $baseDir . '/tests/Feature/DevDependencyIsolationTest.php',
     'Tests\\Feature\\Events\\EventCapacityTest' => $baseDir . '/tests/Feature/Events/EventCapacityTest.php',
     'Tests\\Feature\\Events\\EventModalSlotTableTest' => $baseDir . '/tests/Feature/Events/EventModalSlotTableTest.php',
     'Tests\\Feature\\Events\\EventOverlapTest' => $baseDir . '/tests/Feature/Events/EventOverlapTest.php',
