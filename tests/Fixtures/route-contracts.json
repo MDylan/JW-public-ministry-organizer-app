@@ -551,6 +551,7 @@
         "middleware": [
             "checkRecaptcha:password_reset",
             "guest:web",
+            "strictEmail",
             "throttle:5,1",
             "web"
         ]
@@ -581,6 +582,7 @@
         ],
         "middleware": [
             "guest:web",
+            "strictEmail",
             "web"
         ]
     },

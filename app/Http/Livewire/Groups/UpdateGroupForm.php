@@ -251,7 +251,10 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
-            'replyTo' => 'nullable|email',
+            // `email:filter`, nem sima `email`: ez az érték a csoport leveleinek
+            // Reply-To FEJLÉCÉBE megy, az alapértelmezett szabály pedig
+            // elfogadja a CR/LF-et a címben (GHSA-5vg9-5847-vvmq).
+            'replyTo' => 'nullable|email:filter',
             'showPhone' => 'required|numeric|in:0,1',
             'messages_on' => 'required|numeric|in:0,1',
             'messages_write' => 'sometimes|numeric|in:0,1',

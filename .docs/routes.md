@@ -186,6 +186,23 @@ Inside nested `verified` -> `profileFull` middleware:
 | Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit/delete, `/groups/{group}/statistics`, `/groups/{group}/history` |
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
+### Group-scoped bindings (`v1-patch H2`)
+
+`groupMember` and `groupAdmin` only read the route's **`{group}`** parameter -
+they prove the caller belongs to *that* group and nothing more. Any second model
+parameter on the same route is bound by bare id and has to be scoped in the
+controller.
+
+`GET /news_file/{group}/{file}` (`groups.news.filedownload`) did not do that, so
+any accepted member of any group could download **any other group's** private
+news attachment by passing their own group id next to a foreign file id. The
+files sit on the private `news_files` disk outside the docroot, so this
+controller was the only route to them. `GroupNewsFileDownloadController` now
+verifies `$file->new->group_id` against `{group}` and answers **404** - not 403,
+which would confirm the file exists. `tests/Feature/Groups/NewsFileDownloadScopeTest.php`
+pins it. Treat this as the pattern to check on every route that carries a group
+plus a second model.
+
 ### Impersonation (`v1-patch H`)
 
 `POST /admin/users/login/{user}` (`admin.users.login`) starts impersonation and

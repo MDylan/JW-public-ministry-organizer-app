@@ -75,5 +75,6 @@ class Kernel extends HttpKernel
         'profileFull' => \App\Http\Middleware\ProfileFull::class,
         'setGuestLanguage' => \App\Http\Middleware\SetGuestLanguage::class,
         'checkRecaptcha' => \App\Http\Middleware\CheckRecaptcha::class,
+        'strictEmail' => \App\Http\Middleware\EnsureWellFormedEmail::class,
     ];
 }

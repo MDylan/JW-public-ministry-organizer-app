@@ -59,12 +59,18 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         // fail-open (lásd App\Http\Middleware\CheckRecaptcha). Egy Google-
         // kimaradás alatt tehát mindkét végpont korlátlanul automatizálható
         // volt. A /login ugyanezt a config('fortify.limiters.login')-ból kapja.
+        // A `strictEmail` a Laravel 8 alapértelmezett `email` szabályát pótolja,
+        // ami elfogadja a CR/LF-et a címben (GHSA-5vg9-5847-vvmq). Mindkét
+        // controller a vendorban él és `required|email`-t validál, tehát a
+        // szabály ott nem szerkeszthető maradandóan. Az ellenőrzés a
+        // reCAPTCHA ELŐTT fut: egy nyilvánvalóan rossz cím ne kerüljön a
+        // Google felé indított körbe.
         Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'checkRecaptcha:password_reset'])
+            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'strictEmail', 'checkRecaptcha:password_reset'])
             ->name('password.email');
 
         Route::post('/reset-password', [NewPasswordController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+            ->middleware(['guest:'.config('fortify.guard'), 'strictEmail'])
             ->name('password.update');
     }
 

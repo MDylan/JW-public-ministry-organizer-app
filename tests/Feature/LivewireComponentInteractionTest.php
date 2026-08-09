@@ -212,6 +212,50 @@ class LivewireComponentInteractionTest extends FeatureTestCase
         }
     }
 
+    public function test_groups_edit_component_rejects_a_crlf_reply_to_address(): void
+    {
+        // A `replyTo` a csoport leveleinek Reply-To FEJLÉCÉBE megy. A Laravel 8
+        // alapértelmezett `email` szabálya elfogadja a CR/LF-et a címben
+        // (GHSA-5vg9-5847-vvmq), amiből a sortörés új fejlécet nyit; a szabály
+        // ezért `email:filter` a v1-patch H2 óta.
+        $group = $this->createGroup();
+        $editor = $this->createUser(['email' => 'lw-group-replyto@example.test']);
+        $this->attachUserToGroup($editor, $group, 'roler', true);
+
+        $payload = "csoport@example.test\r\nBcc: aldozat@example.test";
+
+        // Ugyanaz a teljes, érvényes űrlapállapot, mint a sikeres mentésnél -
+        // egyedül a replyTo tér el, tehát a hiba csakis onnan jöhet.
+        Livewire::actingAs($editor)
+            ->test(GroupEditComponent::class, ['group' => $group])
+            ->set('state.name', 'CRLF Group')
+            ->set('state.replyTo', $payload)
+            ->set('state.max_extend_days', 30)
+            ->set('state.need_approval', 1)
+            ->set('state.min_publishers', 2)
+            ->set('state.max_publishers', 4)
+            ->set('state.min_time', 60)
+            ->set('state.max_time', 180)
+            ->set('state.color_default', '#112233')
+            ->set('state.color_empty', '#223344')
+            ->set('state.color_someone', '#334455')
+            ->set('state.color_minimum', '#445566')
+            ->set('state.color_maximum', '#556677')
+            ->set('state.showPhone', 1)
+            ->set('state.messages_on', 1)
+            ->set('state.messages_write', 1)
+            ->set('state.messages_priority', 1)
+            ->set('state.weather_enabled', 0)
+            ->set('days.1.day_number', '1')
+            ->set('days.1.start_time', '08:00')
+            ->set('days.1.end_time', '10:00')
+            ->set('change_date', now()->toDateString())
+            ->call('updateGroup')
+            ->assertHasErrors('replyTo');
+
+        $this->assertNotSame($payload, $group->fresh()->replyTo);
+    }
+
     public function test_groups_edit_component_submits_all_core_form_fields_successfully(): void
     {
         $group = $this->createGroup();

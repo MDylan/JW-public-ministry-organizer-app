@@ -81,6 +81,15 @@ the hardcoded `register` action and the server never looked at the field.
 | `POST /register` | `checkRecaptcha:register` | `throttle:5,1` (new) |
 | `POST /forgot-password` | `checkRecaptcha:password_reset` | `throttle:5,1` (new) |
 
+`POST /forgot-password` and `POST /reset-password` additionally carry
+**`strictEmail`** (`App\Http\Middleware\EnsureWellFormedEmail`). Both controllers
+are vendor code validating `required|email`, and Laravel 8's default `email` rule
+accepts CR/LF inside the address (GHSA-5vg9-5847-vvmq, high) - from there it
+reaches a mail header, where a line break opens a new one. Fixed only in 12.60.0,
+no Laravel 8 backport, and the vendor rule cannot be edited durably. The
+middleware re-validates with the same `email:filter` the rest of the application
+uses, and runs before `checkRecaptcha`.
+
 The two new throttles matter because `CheckRecaptcha` **fails open** on a
 connection error by design (v1-patch D3). Without a route limit, a Google outage
 left `/register` and `/forgot-password` with no bot protection at all.
@@ -100,9 +109,9 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/forgot-password` | `password.request` | View route. |
-| POST | `/forgot-password` | `password.email` | Includes `throttle:5,1` + `checkRecaptcha:password_reset`. |
+| POST | `/forgot-password` | `password.email` | Includes `throttle:5,1` + `strictEmail` + `checkRecaptcha:password_reset`. |
 | GET | `/reset-password/{token}` | `password.reset` | View route. |
-| POST | `/reset-password` | `password.update` | Password reset submit. |
+| POST | `/reset-password` | `password.update` | Password reset submit. Includes `strictEmail`. |
 
 ## Registration
 

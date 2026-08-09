@@ -30,7 +30,10 @@ class SetupMailRequest extends FormRequest
             'MAIL_ENCRYPTION' => 'required_if:MAIL_MAILER,smtp',
             'MAIL_USERNAME' => 'required_if:MAIL_MAILER,smtp',
             'MAIL_PASSWORD' => 'required_if:MAIL_MAILER,smtp',
-            'MAIL_FROM_ADDRESS' => 'required|email', 
+            // `email:filter`: ez az érték a From fejlécbe kerül, az
+            // alapértelmezett `email` szabály pedig elfogadja a CR/LF-et
+            // (GHSA-5vg9-5847-vvmq).
+            'MAIL_FROM_ADDRESS' => 'required|email:filter',
         ];
     }
 

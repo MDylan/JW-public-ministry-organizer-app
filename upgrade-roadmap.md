@@ -896,7 +896,7 @@ and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays a
 it is.
 
 Suite: **1065 -> 1199 tests, 3578 assertions, green on PHP 8.1.30 / Laravel 8.83.1**
-at the time; **1225 tests / 3647 assertions on Laravel 8.83.29** after the
+at the time; **1240 tests / 3675 assertions on Laravel 8.83.29** after the
 security audit work in section H. The route table was byte-identical to the
 TODO 03 baseline apart from the three `laraupdater.*` names TODO 33.4 added -
 section H then moved five entries deliberately, listed there.
@@ -1209,6 +1209,93 @@ Five entries in `tests/Fixtures/route-contracts.json` moved, all intentionally:
 `checkRecaptcha` -> `checkRecaptcha:password_reset`). The Livewire 2.12.8 bump
 added `livewire.message-localized` to `vendor-route-contracts.json` - caught by
 the snapshot, which is exactly what it is for.
+
+#### Follow-up on the two remaining exposures (v1-patch H2)
+
+Section H closed the audit's nine findings and left three `laravel/framework`
+advisories with no fixed 8.x release. Two of them were then measured **against
+this codebase** rather than against the version range, and one of the two is
+reachable here. That one is closed below, together with an unrelated
+authorization hole found while measuring it.
+
+Suite: **1225 -> 1240 tests, 3675 assertions, green.**
+
+##### The email CRLF advisory is reachable - on two vendor endpoints
+
+GHSA-5vg9-5847-vvmq (**high**, fixed in 12.60.0): Laravel's default `email` rule
+uses RFCValidation, which **accepts CR/LF inside the address**. From there the
+address reaches a mail header, where a line break opens a new one - the attacker
+can influence the message, redirect it, or make the mailer send messages of their
+own.
+
+**The application's own validations were already safe.** Every user-supplied
+address goes through `email:filter` - `CreateNewUser`, `UpdateUserProfileInformation`,
+`Admin\Users\ListUsers`, `Groups\ListUsers` - and that variant is
+`filter_var(FILTER_VALIDATE_EMAIL)`, which rejects CR/LF outright. That was not
+foresight about this advisory; it happens to be the right rule.
+
+Four places were not:
+
+| Site | Why it matters | Fix |
+|---|---|---|
+| `POST /forgot-password` (vendor) | **Anonymous**, and mails the address it is given | `strictEmail` middleware |
+| `POST /reset-password` (vendor) | Resolves the reset token by address | `strictEmail` middleware |
+| `UpdateGroupForm::$replyTo` | Goes straight into the **Reply-To header** of the group's mail | `email:filter` |
+| `SetupMailRequest::MAIL_FROM_ADDRESS` | Goes into the **From header** | `email:filter` |
+
+The two Fortify endpoints validate `required|email` inside
+`vendor/laravel/fortify`, where an edit would not survive the next
+`composer update`. `App\Http\Middleware\EnsureWellFormedEmail` (alias
+`strictEmail`) re-validates the field with the same `email:filter` rule the rest
+of the application uses, so the error message and the return to the form are
+unchanged. It sits **before** `checkRecaptcha`, so a malformed address does not
+cost a round trip to Google.
+
+Note the mitigating half, recorded so nobody re-derives it: Laravel 8 still uses
+**SwiftMailer**, not the Symfony Mailer/Mime pair the advisory names, so the
+second half of the chain differs here. The validation side was lax either way,
+and the fix is cheap - but the exposure was not the advisory's worst case.
+
+##### The other two advisories, measured
+
+- **CVE-2025-27515, file validation bypass** (medium, fixed in 10.48.29): affects
+  the `files.*` wildcard form of file/image validation, and this project has
+  exactly one - `Groups\NewsEdit::updatedFiles()`, `'files.*' => 'mimes:...'`.
+  Left as is, with the reasoning written down: it needs `groupAdmin`, the
+  `news_files` disk is private and rooted outside the docroot, and downloads go
+  through `Storage::download()`, which sets `Content-Disposition: attachment`.
+  The realistic outcome is a stored file of a disallowed type, not execution.
+- **Temporary signed URL path confusion** (medium, fixed in 12.61.1): the
+  advisory describes the **local filesystem driver's** temporary URLs
+  (`Storage::temporaryUrl()` with the `serve` option, and `temporaryUploadUrl()`).
+  Verified against the installed source: `temporaryUploadUrl` does not exist
+  anywhere in Laravel 8, the local driver has no `serve` option, and
+  `FilesystemAdapter::temporaryUrl()` throws unless the adapter implements
+  `getTemporaryUrl` (S3 and friends). This project uses only
+  `URL::temporarySignedRoute()` - route signing, a different mechanism - plus one
+  Livewire `TemporaryUploadedFile::temporaryUrl()`. **The vulnerable code appears
+  not to be in this branch at all**; the `<12.61.1` range is the blanket form
+  Laravel advisories use when they do not enumerate per-branch fixes. Recorded as
+  a source-level reading, not as an upstream statement.
+
+##### Found while measuring: any group member could read any group's attachments
+
+`GET /news_file/{group}/{file}` is gated by `groupMember`, which reads **only**
+the `{group}` route parameter - it proves the caller belongs to *that* group. The
+`{file}` was bound by bare id, and `GroupNewsFileDownloadController` never checked
+that the file belonged to the group. Passing one's own group id next to a foreign
+file id therefore downloaded **another group's private attachment**. The files sit
+on the private `news_files` disk outside the docroot, so this controller was the
+only route to them, and it was open.
+
+The controller now verifies `$file->new->group_id` against `{group}` and answers
+**404** rather than 403, which would confirm the file exists.
+`tests/Feature/Groups/NewsFileDownloadScopeTest.php`, 4 tests.
+
+**This is a pattern, not a one-off.** `groupMember` and `groupAdmin` scope exactly
+one parameter; every route carrying a group *plus* a second model binding needs
+the same check in its controller. Worth a sweep - it was not in the audit's scope
+and is not covered by a general test.
 
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:

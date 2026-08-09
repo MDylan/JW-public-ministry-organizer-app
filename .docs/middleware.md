@@ -53,6 +53,7 @@ Executed on every HTTP request:
 | `profileFull` | `ProfileFull` | Require non-empty profile name before protected area access. |
 | `setGuestLanguage` | `SetGuestLanguage` | Set locale for signed guest flows (finish registration). |
 | `checkRecaptcha` | `CheckRecaptcha` | Validate Google reCAPTCHA token on selected auth endpoints. |
+| `strictEmail` | `EnsureWellFormedEmail` | Re-validate the request's email field with `email:filter` before Fortify's own vendor controllers see it. |
 | `installer` | `EnsureInstallerToken` | Gate the `setup/*` group on a token written to `storage/app/installer-token.txt`. |
 
 Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed`, `throttle`, `verified`) use default Laravel middleware classes.
@@ -83,5 +84,6 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 ## Practical Notes
 
 - Locale and menu sharing are coupled inside `SetLocale`, so menu cache behavior is middleware-dependent.
-- `checkRecaptcha` is used by custom Fortify routes (`POST /login`, `POST /register`, `POST /forgot-password`).
+- `checkRecaptcha` is used by custom Fortify routes (`POST /login`, `POST /register`, `POST /forgot-password`), each with the expected reCAPTCHA action as a parameter.
+- `strictEmail` is used by `POST /forgot-password` and `POST /reset-password`. Both controllers live in `vendor/laravel/fortify` and validate `required|email`, and Laravel 8's default `email` rule (RFCValidation) **accepts CR/LF inside the address** (GHSA-5vg9-5847-vvmq, high). From there the address reaches a mail header, where a line break opens a new one. The fix exists only in 12.60.0 with no Laravel 8 backport, and the rule cannot be edited in `vendor/` without the next `composer update` reverting it - hence a middleware. It runs **before** `checkRecaptcha` so an obviously malformed address does not cost a round trip to Google. The application's own validations all use `email:filter` already and need no such layer.
 - Naming is now consistent: the former lower-case `setUserLastActivity` class was renamed to `SetUserLastActivity` (v1-patch, TODO 33). The old name was valid under PSR-4 on a case-insensitive filesystem but would not autoload on a case-sensitive deploy target.
