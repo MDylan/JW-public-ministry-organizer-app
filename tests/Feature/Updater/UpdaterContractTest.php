@@ -58,6 +58,43 @@ class UpdaterContractTest extends FeatureTestCase
         return new \MDylan\LaraUpdater\LaraUpdaterController();
     }
 
+    /**
+     * Az updater egy példánya megadott TELEPÍTETT verzióval.
+     *
+     * A version.txt a kiadási folyamat része: minden kiadás átírja. Az alábbi
+     * forgatókönyvek viszont a telepített és a hirdetett verzió VISZONYÁRÓL
+     * szólnak, nem egy konkrét számról - ha a valódi fájlra támaszkodnak, egy
+     * verzióemelés csendben elmozdítja a premisszájukat. Pontosan ez történt:
+     * az 1.1.5 -> 1.2.0 emelés négy tesztet buktatott meg úgy, hogy a vizsgált
+     * viselkedésben semmi nem változott.
+     *
+     * A getCurrentVersion() publikus, és a check(), a getDescription() és a
+     * getLastVersion() is $this->getCurrentVersion()-t hív, tehát a
+     * felüldefiniálás mellékhatás nélkül vezérli a telepített verziót - nem kell
+     * a repóban lévő version.txt-t írogatni hozzá.
+     *
+     * Amit ez NEM bizonyít - hogy az érték a version.txt-ből, trimmelve jön -,
+     * azt az 1. szakasz két tesztje fedi, azok a valódi fájlt olvassák.
+     */
+    private function updaterInstalledAt(string $version)
+    {
+        return new class($version) extends \MDylan\LaraUpdater\LaraUpdaterController
+        {
+            /** @var string */
+            private $installed;
+
+            public function __construct(string $installed)
+            {
+                $this->installed = $installed;
+            }
+
+            public function getCurrentVersion()
+            {
+                return $this->installed;
+            }
+        };
+    }
+
     /** Kiírja a csatorna egy manifesztjét. */
     private function publishManifest(array $payload, string $file = 'laraupdater.json'): void
     {
@@ -137,16 +174,21 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_check_compares_versions_numerically_not_as_strings(): void
     {
-        // A telepített verzió 1.1.5. Stringként "1.1.10" <= "1.1.5" IGAZ (a
-        // negyedik karakternél '1' < '5'), tehát a naiv összehasonlítás
-        // elrejtené a frissítést. Ez a pontos oka annak, hogy a vendor az
-        // update() korai kilépési ágába is version_compare()-t tett - a fork
-        // mastere ott még sima `<=`-t használ.
+        // Telepítve 1.1.5. Stringként "1.1.10" <= "1.1.5" IGAZ (a negyedik
+        // karakternél '1' < '5'), tehát a naiv összehasonlítás elrejtené a
+        // frissítést. Ez a pontos oka annak, hogy a vendor az update() korai
+        // kilépési ágába is version_compare()-t tett - a fork mastere ott még
+        // sima `<=`-t használ.
+        //
+        // A verziópár rögzített, mert a csapda csak bizonyos számoknál áll elő:
+        // a telepített javítószám első jegyénél nagyobbnak kell lennie, mint a
+        // hirdetetté. A telepített verziót ezért itt megadjuk, nem a
+        // version.txt-ből vesszük.
         $this->assertTrue('1.1.10' <= '1.1.5', 'A stringes összehasonlítás tévedésének demonstrációja.');
 
         $this->publishManifest(['version' => '1.1.10', 'archive' => 'RELEASE-1.1.10.zip', 'description' => 'uj']);
 
-        $this->assertSame('1.1.10', $this->updater()->check());
+        $this->assertSame('1.1.10', $this->updaterInstalledAt('1.1.5')->check());
     }
 
     public function test_check_survives_an_unreachable_update_channel(): void
@@ -217,7 +259,7 @@ class UpdaterContractTest extends FeatureTestCase
             'description' => 'kozbenso',
         ], 'laraupdater-1.1.6.json');
 
-        $this->assertSame('1.1.6', $this->updater()->check());
+        $this->assertSame('1.1.6', $this->updaterInstalledAt('1.1.5')->check());
     }
 
     public function test_the_previous_version_chain_walks_back_more_than_one_step(): void
@@ -244,8 +286,8 @@ class UpdaterContractTest extends FeatureTestCase
             'description' => 'elso',
         ], 'laraupdater-1.1.6.json');
 
-        $this->assertSame('1.1.6', $this->updater()->check());
-        $this->assertSame('elso', $this->updater()->getDescription());
+        $this->assertSame('1.1.6', $this->updaterInstalledAt('1.1.5')->check());
+        $this->assertSame('elso', $this->updaterInstalledAt('1.1.5')->getDescription());
     }
 
     public function test_the_chain_stops_at_the_first_step_that_is_already_installed(): void
@@ -266,7 +308,7 @@ class UpdaterContractTest extends FeatureTestCase
             'previous_version' => '1.1.5',
         ], 'laraupdater-1.1.7.json');
 
-        $this->assertSame('1.1.7', $this->updater()->check());
+        $this->assertSame('1.1.7', $this->updaterInstalledAt('1.1.5')->check());
     }
 
     public function test_an_already_installed_previous_version_does_not_divert_the_chain(): void
