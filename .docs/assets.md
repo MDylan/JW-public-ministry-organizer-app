@@ -38,6 +38,38 @@ The token is `filemtime` of the source file. Two consequences worth knowing:
 - A `git clone` or a release extraction rewrites modification times, so a deploy invalidates every asset URL even when the bytes are unchanged. That is wasteful but safe; the previous scheme had the same property.
 - Query-string busting relies on the cache keying on the full URL. Browsers do; a badly configured CDN may not. There is no CDN in front of this application today.
 
+### Caching policy: `public/.htaccess`
+
+The versioning is what makes a long cache safe, so the two belong together. `public/.htaccess` sets, for **versioned URLs only**:
+
+```
+Cache-Control: public, max-age=31536000, immutable
+```
+
+The mechanism is two directives: a `RewriteRule` that sets `PWBS_VERSIONED_ASSET` when the request is for an existing `.css`/`.js` file **and** the query string carries a numeric `v=`, and a `Header always set ... env=PWBS_VERSIONED_ASSET` guarded by `<IfModule mod_headers.c>`.
+
+**The query-string condition is load-bearing, not decoration.** `public.blade.php` serves the same `adminlte.min.css` and `jquery.min.js` to the guest area *without* a version. A blanket rule - `ExpiresByType text/css "access plus 1 year"` or an unconditional `Header set` - would freeze those copies in every visitor's browser for a year, with no way to invalidate them after a release. `AssetPipelineTest` fails on any cache directive that lacks the `env=` guard, and a second test pins the premise: if `public.blade.php` ever moves to `pwbs_asset()`, that test fails and the condition can be reconsidered - deliberately, and together with the layout.
+
+`immutable` suppresses revalidation even on an explicit reload, which is only safe because the URL carries the file's modification time. `always` rather than the default table, so a `304` carries the policy too.
+
+Measured against the running server (Apache 2.4, `mod_headers` loaded, `mod_expires` not):
+
+| Request | `Cache-Control` |
+|---|---|
+| `/dist/css/adminlte.min.css?v=1786306980` | `public, max-age=31536000, immutable` |
+| the same file, `304 Not Modified` | same |
+| `/js/custom.js?v=1773838233` | same |
+| `/dist/css/adminlte.min.css` (no version) | none |
+| `/js/custom.js?v=abc` (non-numeric token) | none |
+| `/pmo-favicon.png?v=123` (not css/js) | none |
+| `/login` (HTML) | `no-cache, private`, from Laravel |
+
+Before this rule the server sent no `Cache-Control` and no `Expires` at all - only `ETag` and `Last-Modified` - so the browser held the bytes but revalidated all 12 of the app layout's assets on every page load.
+
+**Not covered, deliberately:** the webfonts under `public/plugins/fontawesome-free/webfonts/`. They are referenced by relative `url()` from inside the stylesheet, so they carry no version and cannot get a long cache safely. They still revalidate.
+
+`Header` requires `AllowOverride FileInfo`, which every working install already grants - the `RewriteRule` directives in the same file need exactly the same override.
+
 ### Call sites
 
 | File | Tags | Notes |

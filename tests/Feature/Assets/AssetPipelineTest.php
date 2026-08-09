@@ -226,6 +226,68 @@ class AssetPipelineTest extends FeatureTestCase
     }
 
     // =========================================================================
+    // A gyorsítótárazási politika
+    // =========================================================================
+
+    /**
+     * A `public/.htaccess` szabályát Apache futtatja, tehát PHPUnitból nem lehet
+     * kimérni - a fejléceket curl-lel ellenőriztük a valódi szerveren. Amit ez a
+     * két teszt őriz, az a szabály INDOKA, mert az veszhet el legkönnyebben.
+     */
+    public function test_the_long_cache_applies_only_to_versioned_urls(): void
+    {
+        $htaccess = file_get_contents(public_path('.htaccess'));
+
+        $this->assertMatchesRegularExpression(
+            '#Header always set Cache-Control "[^"]*max-age=\d+[^"]*" env=PWBS_VERSIONED_ASSET#',
+            $htaccess,
+            'A hosszú cache csak a PWBS_VERSIONED_ASSET környezeti változóhoz kötve adható ki.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '#RewriteCond %\{QUERY_STRING\} \(\^\|&\)v=\[0-9\]\+#',
+            $htaccess,
+            'A változót a `?v={filemtime}` query léte állítja be, semmi más.'
+        );
+
+        // A veszélyes alak: bármilyen feltétel nélküli cache-direktíva. Egy
+        // `ExpiresByType text/css "access plus 1 year"` sor ugyanezt adná - és
+        // a verziózatlan URL-ekre is ráhúzná, amiket utána egy éven át nem
+        // lehetne érvényteleníteni a látogatók böngészőjében.
+        foreach (explode("\n", $htaccess) as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            if (preg_match('#^(Header\s|ExpiresByType\s|ExpiresDefault\s)#i', $line)) {
+                $this->assertStringContainsString(
+                    'env=PWBS_VERSIONED_ASSET',
+                    $line,
+                    'Feltétel nélküli cache-direktíva: '.$line
+                );
+            }
+        }
+    }
+
+    public function test_the_guest_layout_still_serves_unversioned_assets(): void
+    {
+        // Ez a query-stringes feltétel PREMISSZÁJA. A public.blade.php ugyanazt
+        // az adminlte.min.css-t szolgálja ki a kijelentkezett felületnek,
+        // verzió nélkül - ezért nem kaphat egyéves cache-t.
+        $guest = file_get_contents(base_path('resources/views/public.blade.php'));
+
+        $this->assertStringContainsString("asset('dist/css/adminlte.min.css')", $guest);
+        $this->assertStringNotContainsString('pwbs_asset(', $guest);
+
+        // HA EZ A TESZT MEGBUKIK, mert valaki átírta a layoutot pwbs_asset()-re:
+        // az jó hír. Akkor már minden asset verziózott, és a .htaccess
+        // query-stringes feltétele elhagyható - de a kettőt együtt kell
+        // átnézni, nem külön.
+    }
+
+    // =========================================================================
     // Segédek
     // =========================================================================
 

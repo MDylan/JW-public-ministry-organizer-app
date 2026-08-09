@@ -5,6 +5,20 @@
 
     RewriteEngine On
 
+    # Mark versioned asset requests for the Cache-Control block below.
+    #
+    # `pwbs_asset()` appends `?v={filemtime}`, so the URL changes whenever the
+    # file does - which is what makes a one-year cache safe. The condition on
+    # the query string is NOT cosmetic: resources/views/public.blade.php serves
+    # the SAME css and js files to the guest area WITHOUT a version, so a
+    # blanket rule would freeze those copies in every visitor's browser for a
+    # year, with no way to invalidate them after a release.
+    #
+    # No [L]: this only sets an environment variable, the later rules still run.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{QUERY_STRING} (^|&)v=[0-9]+($|&)
+    RewriteRule \.(css|js)$ - [E=PWBS_VERSIONED_ASSET:1]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -19,4 +33,25 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 
+</IfModule>
+
+# Cache the versioned assets hard, and nothing else.
+#
+# Without this the server sends no Cache-Control and no Expires at all, only
+# ETag and Last-Modified - so the browser holds the bytes but revalidates every
+# one of them on every page load. The app layout emits 12 assets, which means 12
+# conditional round trips per page for content that cannot have changed.
+#
+# `immutable` stops the revalidation even on an explicit reload. That is only
+# safe because the URL carries the file's modification time: change the file and
+# the URL changes with it.
+#
+# `always` rather than the default onsuccess table, so the header is also sent
+# on a 304 - a client that already has the file still learns the new policy.
+#
+# mod_headers is guarded, so a server without it simply keeps today's behaviour.
+# `Header` needs AllowOverride FileInfo, which every working install already has:
+# the RewriteRule directives above require exactly the same override.
+<IfModule mod_headers.c>
+    Header always set Cache-Control "public, max-age=31536000, immutable" env=PWBS_VERSIONED_ASSET
 </IfModule>
