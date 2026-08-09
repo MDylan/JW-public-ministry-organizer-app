@@ -898,8 +898,28 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   assertions)` in 2m28s** on PHP 8.1.30 / Laravel 8.83.29, via `composer test`.
   **TODO 24 then moved the assertion figure to 3311 without removing a single
   check** - the Mockery upgrade stopped counting the Livewire test harness's own
-  unconstrained expectation. Compare against **1249 tests / 3311 assertions** from
-  here on; the reasoning and the measurement are in that entry.
+  unconstrained expectation. Compare against that figure, not the 3726, for
+  anything measured before TODO 24; the reasoning is in that entry.
+
+### Where Phase 3 stands
+
+The cheap preparation group is done on `v2-dev`: **TODO 23, 24, 25, 27 and 29**,
+one commit each, suite **`OK (1270 tests, 3343 assertions)`**. The route table is
+unchanged by all five - 91 entries, identical to the fast-forward point; the 8
+differences against the TODO 03 baseline all come from the v1-patch line (the
+`laraupdater.*` names, `password.confirm.store`, and the impersonation routes
+moved GET -> POST by the security audit). `artisan optimize` completes, `composer
+audit` still reports exactly the 3 known Laravel 8 advisories.
+
+Still open in this phase, in rough order of size: **TODO 31** (boot-time database
+access and the two silent catches), **TODO 33.2** (GDPR in-house), **TODO 33.3**
+(translation editor in-house), **TODO 33.5** (pending-email in-house), **TODO 33.8**
+(packer removal) and **TODO 32** (migration squash). Each is multi-day work that
+deserves its own plan - unlike the five above, none of them is a one-sitting edit.
+
+One loose end noticed on the way and not worth its own TODO: `composer validate`
+warns that `dialect/laravel-gdpr-compliance` is pinned to the exact version
+`1.4.7`. TODO 33.2 removes the package, so the pin disappears with it.
 
 ### The `v1-patch` branch - a last Laravel 8 release, cut before the framework moves
 
