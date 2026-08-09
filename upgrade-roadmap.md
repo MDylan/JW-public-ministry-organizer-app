@@ -1316,7 +1316,10 @@ one parameter; every route carrying a group *plus* a second model binding needs
 the same check in its controller. Worth a sweep - it was not in the audit's scope
 and is not covered by a general test.
 
-- [ ] **TODO 23: Remove `laravelcollective/html`**
+- [x] **TODO 23: Remove `laravelcollective/html`** - DONE on `v2-dev`
+  - Delivered: the requirement is gone from `composer.json`, the commented-out `Collective\Html\HtmlServiceProvider` line is gone from `config/app.php`, and the lock reports exactly what a dead dependency should: **`0 installs, 0 updates, 1 removal`**. No other package moved. Suite unchanged at **1249 tests, 3726 assertions**.
+  - Re-verified before removing, not taken from the note below: no `Form::`, `Html::`, `FormFacade` or `HtmlFacade` reference in `app/`, `resources/`, `routes/`, `database/`, `config/` or `tests/` (the three grep hits are the `UpdateGroupForm` Livewire component), and no `Form`/`Html` entry in the `aliases` array.
+  - **The trap in this repository, and it will recur in every composer-touching TODO: `--no-scripts` leaves a stale package manifest behind.** `composer update` has to run with `--no-scripts` here, because `post-autoload-dump` calls `@php artisan`, and Composer's `@php` is PHP 8.3, which this Laravel 8 baseline cannot boot. But skipping the scripts also skips `package:discover`, so `bootstrap/cache/packages.php` and `services.php` keep listing the removed provider - and the next boot dies in `registerDeferredProvider("Collective\Html\HtmlServiceProvider")`. `optimize:clear` cannot rescue it either: clearing the cache needs a boot, and the boot is what fails. **The fix, and the step to repeat after every `--no-scripts` run:** delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php` by hand, then `php81 artisan package:discover`.
   - Needed:
     - Verified: zero `Form::` or `Html::` usages anywhere, and the provider is already commented out at `config/app.php:167`. Remove the requirement outright, and take the commented-out provider line with it.
     - **`vendor/` is committed in this repository**, so this and every other composer-touching item produces a diff of thousands of files. That is the lock's consequence, not hand editing - say so in the commit message, or the next reviewer will read it as noise hiding a real change.

@@ -23,7 +23,6 @@
         "laravel/fortify": "~1.11.2",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
-        "laravelcollective/html": "^6.2",
         "laravolt/avatar": "^4.1",
         "livewire/livewire": "^2.10.4",
         "mdylan/laraupdater": "^2.0",

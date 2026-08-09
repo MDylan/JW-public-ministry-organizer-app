@@ -34,7 +34,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         '4a1f389d6ce373bda9e57857d3b61c84' => __DIR__ . '/..' . '/barryvdh/laravel-debugbar/src/helpers.php',
         'ed962a97bd972bc82007176b647d4e36' => __DIR__ . '/..' . '/facade/ignition/src/helpers.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
-        'f18cc91337d49233e5754e93f3ed9ec3' => __DIR__ . '/..' . '/laravelcollective/html/src/helpers.php',
         '40275907c8566c390185147049ef6e5d' => __DIR__ . '/..' . '/livewire/livewire/src/helpers.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '72b1e3f4a2af9b30b3f137b3ec2057fc' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/helpers.php',
@@ -191,7 +190,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'C' =>
         array (
             'Cron\\' => 5,
-            'Collective\\Html\\' => 16,
             'Carbon\\Doctrine\\' => 16,
             'Carbon\\' => 7,
         ),
@@ -608,10 +606,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         array (
             0 => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron',
         ),
-        'Collective\\Html\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/laravelcollective/html/src',
-        ),
         'Carbon\\Doctrine\\' =>
         array (
             0 => __DIR__ . '/..' . '/carbonphp/carbon-doctrine-types/src/Carbon/Doctrine',
@@ -658,6 +652,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Actions\\Fortify\\PasswordValidationRules' => __DIR__ . '/../..' . '/app/Actions/Fortify/PasswordValidationRules.php',
         'App\\Actions\\Fortify\\RedirectIfTwoFactorConfirmed' => __DIR__ . '/../..' . '/app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php',
         'App\\Actions\\Fortify\\ResetUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/ResetUserPassword.php',
+        'App\\Actions\\Fortify\\TwoFactorAuthenticationProvider' => __DIR__ . '/../..' . '/app/Actions/Fortify/TwoFactorAuthenticationProvider.php',
         'App\\Actions\\Fortify\\UpdateUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/UpdateUserPassword.php',
         'App\\Actions\\Fortify\\UpdateUserProfileInformation' => __DIR__ . '/../..' . '/app/Actions/Fortify/UpdateUserProfileInformation.php',
         'App\\Classes\\CalculateDatesEvents' => __DIR__ . '/../..' . '/app/Classes/CalculateDatesEvents.php',
@@ -741,6 +736,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
         'App\\Http\\Middleware\\EnsureInstallerToken' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureInstallerToken.php',
         'App\\Http\\Middleware\\EnsureUpdateWithinBranch' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureUpdateWithinBranch.php',
+        'App\\Http\\Middleware\\EnsureWellFormedEmail' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureWellFormedEmail.php',
         'App\\Http\\Middleware\\GroupAdmin' => __DIR__ . '/../..' . '/app/Http/Middleware/GroupAdmin.php',
         'App\\Http\\Middleware\\GroupMember' => __DIR__ . '/../..' . '/app/Http/Middleware/GroupMember.php',
         'App\\Http\\Middleware\\HttpsProtocol' => __DIR__ . '/../..' . '/app/Http/Middleware/HttpsProtocol.php',
@@ -748,6 +744,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Middleware\\ProfileFull' => __DIR__ . '/../..' . '/app/Http/Middleware/ProfileFull.php',
         'App\\Http\\Middleware\\RedirectIfAuthenticated' => __DIR__ . '/../..' . '/app/Http/Middleware/RedirectIfAuthenticated.php',
         'App\\Http\\Middleware\\RedirectIfUnansweredTerms' => __DIR__ . '/../..' . '/app/Http/Middleware/RedirectIfUnansweredTerms.php',
+        'App\\Http\\Middleware\\RequirePasswordForImpersonation' => __DIR__ . '/../..' . '/app/Http/Middleware/RequirePasswordForImpersonation.php',
         'App\\Http\\Middleware\\SetGuestLanguage' => __DIR__ . '/../..' . '/app/Http/Middleware/SetGuestLanguage.php',
         'App\\Http\\Middleware\\SetLocale' => __DIR__ . '/../..' . '/app/Http/Middleware/SetLocale.php',
         'App\\Http\\Middleware\\SetUserLastActivity' => __DIR__ . '/../..' . '/app/Http/Middleware/SetUserLastActivity.php',
@@ -1064,13 +1061,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Carbon\\Translator' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/Translator.php',
         'Carbon\\TranslatorImmutable' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/TranslatorImmutable.php',
         'Carbon\\TranslatorStrongTypeInterface' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/TranslatorStrongTypeInterface.php',
-        'Collective\\Html\\Componentable' => __DIR__ . '/..' . '/laravelcollective/html/src/Componentable.php',
-        'Collective\\Html\\Eloquent\\FormAccessible' => __DIR__ . '/..' . '/laravelcollective/html/src/Eloquent/FormAccessible.php',
-        'Collective\\Html\\FormBuilder' => __DIR__ . '/..' . '/laravelcollective/html/src/FormBuilder.php',
-        'Collective\\Html\\FormFacade' => __DIR__ . '/..' . '/laravelcollective/html/src/FormFacade.php',
-        'Collective\\Html\\HtmlBuilder' => __DIR__ . '/..' . '/laravelcollective/html/src/HtmlBuilder.php',
-        'Collective\\Html\\HtmlFacade' => __DIR__ . '/..' . '/laravelcollective/html/src/HtmlFacade.php',
-        'Collective\\Html\\HtmlServiceProvider' => __DIR__ . '/..' . '/laravelcollective/html/src/HtmlServiceProvider.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Cron\\AbstractField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/AbstractField.php',
         'Cron\\CronExpression' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/CronExpression.php',
@@ -6947,7 +6937,10 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\CreatesApplication' => __DIR__ . '/../..' . '/tests/CreatesApplication.php',
         'Tests\\Feature\\Assets\\AssetPipelineKnownGapsTest' => __DIR__ . '/../..' . '/tests/Feature/Assets/AssetPipelineKnownGapsTest.php',
         'Tests\\Feature\\Assets\\AssetPipelineTest' => __DIR__ . '/../..' . '/tests/Feature/Assets/AssetPipelineTest.php',
+        'Tests\\Feature\\Auth\\AuthEndpointHardeningTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthEndpointHardeningTest.php',
         'Tests\\Feature\\Auth\\AuthorizationGateTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthorizationGateTest.php',
+        'Tests\\Feature\\Auth\\ImpersonationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/ImpersonationTest.php',
+        'Tests\\Feature\\Auth\\TwoFactorReplayTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/TwoFactorReplayTest.php',
         'Tests\\Feature\\Avatar\\AvatarGenerationTest' => __DIR__ . '/../..' . '/tests/Feature/Avatar/AvatarGenerationTest.php',
         'Tests\\Feature\\BladePageInteractionTest' => __DIR__ . '/../..' . '/tests/Feature/BladePageInteractionTest.php',
         'Tests\\Feature\\CalendarEventEditTest' => __DIR__ . '/../..' . '/tests/Feature/CalendarEventEditTest.php',
@@ -6979,6 +6972,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Groups\\GroupHierarchyLinkTest' => __DIR__ . '/../..' . '/tests/Feature/Groups/GroupHierarchyLinkTest.php',
         'Tests\\Feature\\Groups\\GroupRoleAssignmentTest' => __DIR__ . '/../..' . '/tests/Feature/Groups/GroupRoleAssignmentTest.php',
         'Tests\\Feature\\Groups\\GroupUserInviteTest' => __DIR__ . '/../..' . '/tests/Feature/Groups/GroupUserInviteTest.php',
+        'Tests\\Feature\\Groups\\NewsFileDownloadScopeTest' => __DIR__ . '/../..' . '/tests/Feature/Groups/NewsFileDownloadScopeTest.php',
         'Tests\\Feature\\HomeLivewireTest' => __DIR__ . '/../..' . '/tests/Feature/HomeLivewireTest.php',
         'Tests\\Feature\\Jobs\\CalculateDateProcessTest' => __DIR__ . '/../..' . '/tests/Feature/Jobs/CalculateDateProcessTest.php',
         'Tests\\Feature\\Jobs\\CalulcateUserNameIndexProcessTest' => __DIR__ . '/../..' . '/tests/Feature/Jobs/CalulcateUserNameIndexProcessTest.php',
