@@ -1416,7 +1416,11 @@ and is not covered by a general test.
     - Note a second defect in `HttpsProtocol:19` while you are there: the comparison is `env('USE_HTTPS', "false") == "true"`, i.e. against the literal string. `USE_HTTPS=1` therefore does **not** enable the redirect. Pinned by `test_a_truthy_but_non_string_true_value_does_not_enable_the_redirect`.
   - Expected changes: new/extended config keys, `env()` confined to `config/*.php`, `config:cache` becomes safe.
 
-- [ ] **TODO 29: Replace `$dates` with `$casts`**
+- [x] **TODO 29: Replace `$dates` with `$casts`** - DONE on `v2-dev`
+  - Delivered: the property is gone from both models, `GroupUser` carries explicit `datetime` casts for `created_at`/`updated_at`, and `tests/Unit/Models/DateCastingTest.php` (5 tests) pins the behaviour. `.docs/models.md` updated. Suite: **1265 -> 1270 tests, 3343 assertions**.
+  - Written pin-first again, and here the pin was the whole point: the edit is two lines, but nothing in the suite asserted that these columns come back as dates. The four behavioural cases were green **before** the change and stayed green after - that, not the diff, is the evidence the swap was neutral.
+  - `Group` needed no `$casts` array: `SoftDeletes::initializeSoftDeletes()` already writes `deleted_at` into the casts when it is absent, so the `$dates` line there was redundant before it was removed. `GroupUser` merged into its existing array next to `signs` and the `encrypted` `note` - a test asserts those two still work, because a mangled array would silently store the note in clear text.
+  - **The guard test's first version passed the wrong thing.** `assertStringNotContainsString('protected $dates', ...)` over the source file also matched the explanatory comment written next to the removal, so it failed *after* the fix. It now asks reflection whether the model itself declares the property - `$dates` still exists on the `Model` base class in Laravel 8, so only the declaring class is meaningful. Verified to fail when the property is put back.
   - Needed:
     - `app/Models/Group.php:16` (`['deleted_at']` - already handled by `SoftDeletes`, likely just removable) and `app/Models/GroupUser.php:29` (a `Pivot` model, `['created_at','updated_at','deleted_at']`).
     - **The two cases are not symmetric.** `Group` has no `$casts` array at all, so nothing has to be created there. `GroupUser` already has one (`'signs' => 'array'`, `'note' => 'encrypted'`, `:31-34`) - this is a merge into an existing array, and it sits next to an `encrypted` cast, which TODO 13's round-trip tests guard.

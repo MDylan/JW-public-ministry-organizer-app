@@ -13,7 +13,10 @@ class Group extends Model
 {
     use HasFactory, SoftDeletes, Anonymizable;
 
-    protected $dates = ['deleted_at'];
+    // TODO 29: a `protected $dates = ['deleted_at']` sor innen eltűnt. A
+    // Laravel 10 a propertyt megszüntette, és a `deleted_at` castolását
+    // amúgy is a `SoftDeletes` trait végzi (`initializeSoftDeletes()` beírja
+    // a `$casts`-ba, ha nincs ott), tehát a sor eleve redundáns volt.
 
     protected $fillable = [
         'name',
