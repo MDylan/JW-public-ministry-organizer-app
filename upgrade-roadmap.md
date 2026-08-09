@@ -39,8 +39,8 @@ Each item is intentionally small enough to complete and mark independently.
 
 ### Framework and dependencies
 
-- Laravel `8.83.1` on branch `v2-dev`; `composer.json` requires `laravel/framework: ^8.12`. **On `v1-patch` the lock is at `8.83.29`** (v1-patch H), the last 8.x tag.
-- PHP constraint is `^8.0` with `config.platform.php = 8.0.9`, which artificially holds back every dependency resolution.
+- Laravel **`8.83.29`** on branch `v2-dev`, the last 8.x tag; `composer.json` requires `laravel/framework: ^8.12`. (This line read `8.83.1` until the 2026-08-09 fast-forward brought the v1-patch H security refresh onto `v2-dev` - the two lines are now the same lock.)
+- PHP constraint is `^8.0` with `config.platform.php = 8.0.9`, which artificially holds back every dependency resolution - and is three patch lines below the runtime that actually executes the code (`php81` = 8.1.30). See the correction in TODO 24: the fix is to raise the pin, not to drop it, because Composer here runs on 8.3.
 - `minimum-stability: dev` with `prefer-stable: true` - risks pulling unstable packages during the upgrade. **Fixed on `v1-patch H`** after it demonstrably pulled `laravel/framework: 8.x-dev`; see TODO 24.
 - `composer.lock` was resolved in early 2022 and is roughly four years stale. **Partly refreshed on `v1-patch H`** - every package with a security advisory was bumped inside its existing constraint (50 advisories -> 3). The remaining staleness is upgrade-preparation work, not a security question.
 - `config/app.php` hard-registers the dev-only `Barryvdh\Debugbar\ServiceProvider`, which breaks `composer install --no-dev`. It also registers `Eusonlito\LaravelPacker\PackerServiceProvider` as a plain string instead of `::class`, with a matching `Packer` alias. TODO 21 decided to remove that package; TODO 33.8 deletes both lines.
@@ -879,6 +879,25 @@ For each package, "assess" means: list every API the project actually consumes, 
 
 Everything in this phase is Laravel 8 compatible and shortens every later phase. Nothing here changes the framework version.
 
+### Branch discipline (read this before looking for a branch that does not exist)
+
+- **The `v1-patch` branch is called `dev` in git.** Every section below refers to
+  the last Laravel 8 release line as `v1-patch`, which is the name of the *work*,
+  not of a ref. There is no `v1-patch` branch: sections A through H2 were committed
+  on `dev`, which is 108 commits ahead of `v1` and is the freshest state of the
+  repository. `v2-dev` was fast-forwarded onto it on 2026-08-09 - it had no commits
+  of its own at that point, so nothing was merged away.
+- **`dev` stays alive for v1 hotfixes.** The upgrade work continues on `v2-dev`.
+  While `v2-dev` has not diverged, `git merge dev` stays a fast-forward; once the
+  first v2-only commit lands, take `dev` -> `v2-dev` as a **merge commit**, not a
+  cherry-pick. `vendor/` is committed in this repository, so every duplicated
+  commit is a thousand-file diff, and a cherry-picked history makes the next merge
+  resolve those files twice. Cherry-pick is the exception - for a hotfix that is
+  already moot on v2 - and it should say so in the commit message.
+- Baseline on `v2-dev` right after the fast-forward, and the reference point for
+  everything in this phase: **`OK (1249 tests, 3726 assertions)` in 2m28s** on
+  PHP 8.1.30 / Laravel 8.83.29, via `composer test`.
+
 ### The `v1-patch` branch - a last Laravel 8 release, cut before the framework moves
 
 Branched from `v2-dev` (which already contains all of `dev`, so the Phase 0-2 test
@@ -1299,22 +1318,26 @@ and is not covered by a general test.
 
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:
-    - Verified: zero `Form::` or `Html::` usages anywhere, and the provider is already commented out at `config/app.php:167`. Remove the requirement outright.
-  - Expected changes: `composer.json` / `composer.lock`. This eliminates one of the most common hard blockers for Laravel upgrades at zero cost.
+    - Verified: zero `Form::` or `Html::` usages anywhere, and the provider is already commented out at `config/app.php:167`. Remove the requirement outright, and take the commented-out provider line with it.
+    - **`vendor/` is committed in this repository**, so this and every other composer-touching item produces a diff of thousands of files. That is the lock's consequence, not hand editing - say so in the commit message, or the next reviewer will read it as noise hiding a real change.
+  - Expected changes: `composer.json` / `composer.lock` / `vendor/`. This eliminates one of the most common hard blockers for Laravel upgrades at zero cost.
 
 - [ ] **TODO 24: Clean composer configuration** - PARTIALLY DONE on `v1-patch`
   - Needed:
-    - Remove `config.platform.php = 8.0.9`.
+    - ~~Remove `config.platform.php = 8.0.9`.~~ **Corrected: raise it to `8.1.30`, do not remove it.** Removing the key would be right on a machine where Composer runs on the target runtime. Here it does not: Composer runs on **PHP 8.3** while the application runs on **PHP 8.1.30** (`php81`), so with no platform key Composer resolves against its own 8.3 and can lock package versions the real runtime cannot execute. The pin is the tool that keeps the resolution honest - `8.0.9` was simply the wrong value, three patch lines below what is installed. **Delete the key only once the two coincide**, i.e. from Phase 5 onward, when both Composer and the application run on `php` 8.3; note it in the *Runtime and Version Matrix* row for that phase.
     - ~~Change `minimum-stability` from `dev` to `stable`.~~ **DONE on `v1-patch H`**, and not as housekeeping: the first security-update run resolved `laravel/framework` to `8.x-dev` - an untagged branch snapshot - on the branch that ships to production installs. The hazard this bullet described is measured, not hypothetical.
-    - Add a `config.allow-plugins` block for the plugins actually in use (Composer 2.10 requires it).
-  - Also added on `v1-patch H`, and belonging to this TODO's subject: a `config.policy.advisories.ignore-id` block for the **three Laravel 8 advisories that have no fixed 8.x release**. Composer 2.10 blocks advisory-affected versions during resolution by default, so without it `composer update` cannot resolve any Laravel 8 at all. Each entry carries a reason and `on-audit: false`, so `composer audit` still reports them.
+    - Add a `config.allow-plugins` block for the plugins actually in use (Composer 2.10 requires it). Take the list from what `composer install` itself reports as awaiting approval, not from memory.
+  - ~~Also added on~~ **Already on `v1-patch H`**, and belonging to this TODO's subject: a `config.policy.advisories.ignore-id` block for the **three Laravel 8 advisories that have no fixed 8.x release**. Composer 2.10 blocks advisory-affected versions during resolution by default, so without it `composer update` cannot resolve any Laravel 8 at all. Each entry carries a reason and `on-audit: false`, so `composer audit` still reports them.
+    - **The block is temporary and must be re-evaluated after TODO 34.** All three advisories are fixed on later Laravel lines (12.61.1, 12.60.0 and 10.48.29 respectively), so each entry becomes obsolete at a different hop. Leaving them in place past the hop that fixes them would silence a real advisory.
+  - **Risk note for whoever executes this:** raising the platform pin re-resolves the whole dependency graph, which makes this the riskiest item in the "cheap preparation" group. Run it on its own, read the `composer.lock` diff before committing, and stop if more packages move than the change explains.
   - Expected changes: honest dependency resolution and no hidden legacy locks.
 
 - [ ] **TODO 25: Fix provider registration hygiene**
   - Needed:
     - Remove the hard-registered `Barryvdh\Debugbar\ServiceProvider` from `config/app.php` and rely on auto-discovery (or gate it behind an environment check); it is a `require-dev` package and currently breaks `composer install --no-dev`.
-    - Replace the `'Eusonlito\LaravelPacker\PackerServiceProvider'` string literal with `::class`. **Ordering:** TODO 33.8 deletes this line and the matching `Packer` alias outright, so if that item ships first this bullet is moot. Do not do both.
-    - Review the `\Debugbar::enable()` call in `app/Providers/AppServiceProvider.php`.
+    - ~~Replace the `'Eusonlito\LaravelPacker\PackerServiceProvider'` string literal with `::class`.~~ **Ordering resolved: this bullet is dropped, not executed.** TODO 33.8 deletes that line (`config/app.php:185`) and the matching `Packer` alias (`:238`) outright. Since 33.8 is still open and large, this TODO closes the Debugbar half only and leaves both packer lines untouched - so nobody edits the same two lines twice, and a `::class` change does not have to be reviewed on its way to being deleted.
+    - Review the `\Debugbar::enable()` call in `app/Providers/AppServiceProvider.php:86`. **This is the real risk in this item, not the removal.** Once the provider is no longer hard-registered, the facade is absent wherever the dev package is - a `composer install --no-dev` host is exactly the case this TODO exists to unbreak - so the call needs a guard (`class_exists`, or the environment check it should have had) or it turns one breakage into another.
+  - Verification: `composer install --no-dev --dry-run`, plus a boot under `APP_ENV=production`.
   - Expected changes: `config/app.php`, `app/Providers/AppServiceProvider.php`.
 
 - [x] **TODO 26: Resolve duplicate route names** - DONE on `v1-patch`
@@ -1334,9 +1357,12 @@ and is not covered by a general test.
 - [ ] **TODO 27: Replace the removed Fortify password rule**
   - Needed:
     - `app/Actions/Fortify/PasswordValidationRules.php:5` and `app/Http/Controllers/FinishRegistration.php:14` import `Laravel\Fortify\Rules\Password`, which no longer exists in modern Fortify.
-    - Move to `Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()`, preserving the current `requireUppercase()->requireNumeric()` semantics.
-    - Consumers to update: `CreateNewUser`, `ResetUserPassword`, `UpdateUserPassword`, `FinishRegistration`.
-  - Expected changes: small, isolated, high-value. Existing auth tests cover the flows.
+    - **Correction, measured: only one of the two imports is live.** `FinishRegistration.php:14` imports `Password` and never names it - the rules come from the trait, and the controller only calls `$this->passwordRules()` (`:41`). That import is a plain deletion. The single real call site is `PasswordValidationRules.php:16`.
+    - Move to `Illuminate\Validation\Rules\Password`. ~~preserving the current `requireUppercase()->requireNumeric()` semantics~~ - **`min(8)->mixedCase()->numbers()` does not preserve them, it tightens them.** Fortify's `requireUppercase()` demands an uppercase letter; `mixedCase()` demands uppercase **and** lowercase. Existing accounts are unaffected until they change a password, but registration and password reset get stricter. Decide explicitly: take the tightening (the Laravel convention), or reproduce the old rule exactly.
+    - **`Illuminate\Validation\Rules\Password` exists in Laravel 8.83** (added in 8.39), so this is executable today - it is not gated on the Phase 4 hop.
+    - **Nothing in the suite pins the password semantics.** A grep for `requireUppercase` / `mixedCase` / `passwordRules` over `tests/` returns no assertion on rule content, so this is the one behaviour-changing item in the cheap-preparation group with no safety net. Write a characterization test **first** - the same pin-then-change discipline as TODO 04 through 07.1 - and let it be the diff that states the new intent.
+    - Consumers to update: `CreateNewUser`, `ResetUserPassword`, `UpdateUserPassword`, `FinishRegistration` - all four go through the trait, so the rule itself changes in one place.
+  - Expected changes: small, isolated, high-value. Existing auth tests cover the flows but not the rules.
 
 - [x] **TODO 28: Move `env()` calls out of runtime code into config** - DONE on `v1-patch`
   - **Why it was pulled into this release.** `artisan optimize` had never completed on this codebase (see TODO 26): `route:cache` threw on the duplicate `password.confirm` name before `config:cache` could do any harm. The moment A7 fixed that, `config:cache` became something an operator would realistically run - and every item below turned from theoretical into live. Fixing the two together was not scope creep; shipping A7 without this would have handed operators a command that quietly disables HTTPS enforcement and bot protection.
@@ -1358,7 +1384,9 @@ and is not covered by a general test.
 - [ ] **TODO 29: Replace `$dates` with `$casts`**
   - Needed:
     - `app/Models/Group.php:16` (`['deleted_at']` - already handled by `SoftDeletes`, likely just removable) and `app/Models/GroupUser.php:29` (a `Pivot` model, `['created_at','updated_at','deleted_at']`).
-  - Expected changes: two model edits; removes a Laravel 10 blocker early.
+    - **The two cases are not symmetric.** `Group` has no `$casts` array at all, so nothing has to be created there. `GroupUser` already has one (`'signs' => 'array'`, `'note' => 'encrypted'`, `:31-34`) - this is a merge into an existing array, and it sits next to an `encrypted` cast, which TODO 13's round-trip tests guard.
+    - `GroupUser` is a custom `Pivot` with `SoftDeletes` and `$incrementing = true`. Its timestamp handling comes from `AsPivot`, not from a plain model, so moving `created_at`/`updated_at` into `$casts` there is not a self-evident no-op - assert it, do not assume it. `deleted_at` is covered by `SoftDeletes` on both models.
+  - Expected changes: two model edits and `.docs/models.md`; removes a Laravel 10 blocker early.
 
 - [x] **TODO 30: Fix filesystem disk configuration** - DONE on `v1-patch`
   - Delivered: the `web` disk root is `public_path()`, every disk declares `'throw' => false`, and the avatar URL prefix in `livewire/groups/messages.blade.php` moved with it - the pair is only correct together, which is what `AvatarGenerationTest` now pins. **Release note:** deployed hosts carry their generated avatars under `public/public/avatars/`; they are regenerated on first render, so no data migration is needed, but the old directory can be removed by the release hook.
