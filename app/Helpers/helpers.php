@@ -103,3 +103,37 @@ if(!function_exists('pwbs_weather_api_call')) {
         return app(\App\Support\Weather\WeatherCache::class)->forCity($city, $country);
     }
 }
+
+if(!function_exists('pwbs_asset')) {
+    /**
+     * Egy public/ alatti statikus fájl URL-je, cache-busting tokennel.
+     *
+     * Ez váltja az `eusonlito/laravel-packer`-t (TODO 21 döntése, TODO 33.8
+     * végrehajtása). A csomag egyetlen valóban hasznos szolgáltatása a cache
+     * busting volt, ami egy `filemtime()` hívás - minden más, amit csinált,
+     * kárt okozott:
+     *
+     *  - Minden `url(`-t abszolúttá írt át, és ezzel 181 beágyazott `data:`
+     *    URI-t tett tönkre (177 az adminlte.min.css-ben, 4 a toastr-ben).
+     *  - Az abszolút URL-be a GENERÁLÓ kérés sémája sült bele, a fájl pedig
+     *    korlátlanul újrahasznosult - egy http alatt készült CSS https-en
+     *    mixed contentet okozott, és soha nem gyógyult meg magától.
+     *  - Kérés közben írt a webgyökérbe, `local` kivételével minden
+     *    környezetben - a tesztfutás is, ami a böngészőnek kiszolgált
+     *    fájlokat írta felül.
+     *
+     * Ez a függvény egyiket sem tudja megtenni: nem ír lemezre, nem nyúl a
+     * fájl tartalmához, és az URL-t kérésenként az `asset()`-ből számolja,
+     * tehát a séma mindig az aktuális kérésé.
+     *
+     * Hiányzó fájlnál nem dob hibát, csak token nélküli URL-t ad - egy
+     * elgépelt útvonal ne öljön meg egy oldalt.
+     */
+    function pwbs_asset(string $path): string {
+        $file = public_path(ltrim($path, '/'));
+
+        return is_file($file)
+            ? asset($path).'?v='.filemtime($file)
+            : asset($path);
+    }
+}

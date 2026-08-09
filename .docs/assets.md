@@ -2,65 +2,66 @@
 
 ## Overview
 
-There are **two** asset pipelines in this repository. Only one of them runs.
+There is **one** asset pipeline in this repository, and it is not a build step.
 
 | Pipeline | State | What it serves |
 |---|---|---|
-| `eusonlito/laravel-packer` | **live** | Every stylesheet and script on every page, via 16 blade call sites |
+| `pwbs_asset()` (`app/Helpers/helpers.php`) | **live** | Every stylesheet and script on every page, via 21 blade tags |
 | Laravel Mix (`webpack.mix.js`) | **dead** | Nothing - see below |
 
-Nothing is compiled at deploy time. The application's CSS and JS are **hand-placed files committed under `public/`** (`public/dist/` for AdminLTE, `public/plugins/` for jQuery, bootstrap, toastr, sweetalert2, summernote and fullcalendar, `public/css/` and `public/js/` for the project's own four files), and Packer concatenates and copies them **during the request**.
+Nothing is compiled at deploy time and nothing is generated at request time. The application's CSS and JS are **hand-placed files committed under `public/`** (`public/dist/` for AdminLTE, `public/plugins/` for jQuery, bootstrap, toastr, sweetalert2, summernote and fullcalendar, `public/css/` and `public/js/` for the project's own four files). The browser receives those files **byte for byte**, with a cache-busting query appended to the URL.
 
-Roadmap TODO 21 decided to remove Packer; TODO 33.8 executes it. The whole pipeline is pinned by `tests/Feature/Assets/`.
+Until TODO 33.8 the pipeline was `eusonlito/laravel-packer`, which concatenated and rewrote these files during the request. The whole pipeline is pinned by `tests/Feature/Assets/`.
 
-## The live pipeline: `eusonlito/laravel-packer`
+> **Mid-change state.** TODO 33.8 ships in two commits. The first replaced the call sites and removed the provider and the facade alias from `config/app.php` - that is the state described here, and it is what the browser gets. The package itself is still in `composer.json` and `vendor/`, unreferenced, until the second commit removes it along with `config/packer.php`, the nine `.gitignore` lines and the `release/upgrade.php` cleanup lines.
 
-Registered as a **string literal** provider at `config/app.php:185` with a `Packer` facade alias at `:238`, configured by `config/packer.php`.
+## The helper
+
+```php
+pwbs_asset('/dist/css/adminlte.min.css')
+// => https://host/dist/css/adminlte.min.css?v=1786306980
+```
+
+`asset($path)` with `?v={filemtime}` appended when the file exists, and plain `asset($path)` when it does not. Roughly ten lines, no state, no configuration.
+
+Three properties matter, and each one replaces a defect measured in TODO 21:
+
+- **It never writes to disk.** Nothing is generated, so nothing can be stale, and a page render cannot create a file under `public/`.
+- **It never touches file contents.** `data:` URIs, relative `url(../webfonts/...)` paths and everything else reach the browser exactly as committed.
+- **It resolves the URL per request.** The scheme and host come from the current request through `asset()`, so a page served over HTTPS cannot emit an `http://` asset URL.
+
+The one thing it deliberately keeps from the old pipeline is **cache busting**, which was the only value that pipeline genuinely delivered.
+
+### Cache busting is on the query string
+
+The token is `filemtime` of the source file. Two consequences worth knowing:
+
+- A `git clone` or a release extraction rewrites modification times, so a deploy invalidates every asset URL even when the bytes are unchanged. That is wasteful but safe; the previous scheme had the same property.
+- Query-string busting relies on the cache keying on the full URL. Browsers do; a badly configured CDN may not. There is no CDN in front of this application today.
 
 ### Call sites
 
-Only two methods are ever used, `Packer::css()` and `Packer::js()`. Both take `(source|sources, output path)` and return an object the layouts string-cast with `{!! !!}`.
-
-| File | Calls | Notes |
+| File | Tags | Notes |
 |---|---|---|
-| `resources/views/layouts/app.blade.php` | 9 (3 css, 6 js) | The Livewire default layout (`config/livewire.php:42`), so every route-level component renders through it |
-| `resources/views/layouts/setup.blade.php` | 6 (3 css, 3 js) | The installer wizard. Targets `/storage/cache/...` where the app layout targets `/cache/...` |
-| `resources/views/livewire/groups/poster-edit-modal.blade.php:87` | 1 (js) | Summernote, pushed into the `footer_scripts` section - the only asset call inside a Livewire view |
+| `resources/views/layouts/app.blade.php` | 12 (5 css, 7 js) | The Livewire default layout (`config/livewire.php:42`), so every route-level component renders through it |
+| `resources/views/layouts/setup.blade.php` | 8 (5 css, 3 js) | The installer wizard |
+| `resources/views/livewire/groups/poster-edit-modal.blade.php` | 1 (js) | Summernote, pushed into the `footer_scripts` section - the only asset call inside a Livewire view |
 
-`Packer::img()`, `jsDir()` and `cssDir()` are **never called**. `img()` is the only reason the `imagecow/imagecow` dependency exists.
+21 tags from the 16 calls the packer had: the three multi-file calls expanded to one tag per source, in the same order. **Concatenation was dropped on purpose** - it affected 3 of 16 call sites, bought nothing measurable over HTTP/2, and the machinery behind it was what wrote into the web root.
 
-### What it actually does
+## Why the previous pipeline went
 
-- **13 of the 16 calls pass a single, already-minified file.** For those, Packer copies the file to a `{filemtime}-` prefixed name and nothing else. Only 3 calls concatenate more than one source: the two layouts' `all_style.css` (3 stylesheets) and the app layout's `all.js` (`public/js/custom.js` + `public/js/modal.js`).
-- **It never minifies.** `config/packer.php` sets both `css_minify` and `js_minify` to `false`. The one thing it genuinely delivers is **cache busting**, via the `filemtime` prefix.
-- **The JS packer prepends a `;` to every file**, so packed output is never byte-identical to its source.
-- **The CSS packer rewrites every `url(`** to the asset base plus the source file's directory.
-- **`local` is a passthrough.** `config/packer.php` `ignore_environments` lists only `local`; there, Packer emits the individual source tags and writes nothing. `production` **and `testing`** both pack.
+All four defects were production-only: `config/packer.php` listed `local` in `ignore_environments`, so development never saw any of them. The first one to surface in the browser did so on 2026-08-09, when a workstation was switched to `APP_ENV=production`.
 
-### It writes into the web root during a request
+1. **It corrupted 181 embedded `data:` URIs.** The `url(` rewrite was unconditional, so `url(data:image/svg+xml,...)` came out as `url(http://host/dist/css/data:image/svg+xml,...)` and never loaded. 177 in `adminlte.min.css` (Bootstrap's checkboxes, select arrows, close buttons, accordion chevrons) and 4 in `toastr.min.css`. Measured across every packed stylesheet: **199 `url()` in total, 181 of them `data:`, 18 relative** - and the 18 relative ones did not need rewriting either, because the packed output landed in the same directory as its source.
 
-`Packer::process()` runs `mkdir` + `tempnam` + `fopen` + `rename` + `chmod 0644` under `public/` while a page is rendering. Twelve artifacts across six directories result, contained by **nine `.gitignore` lines** that exist for no other purpose - seven `*-cache_*` globs next to the vendor assets, `/public/cache`, and a misspelled `/public/storages/cache/*` naming a directory that has never existed.
+2. **It baked the request scheme into a cached file.** The rewrite produced absolute URLs, and the generated file was reused indefinitely, since its name derived from the *source* file's `filemtime` rather than from its own contents. A stylesheet generated during one HTTP request kept serving `http://` font URLs to every later HTTPS request - blocked as mixed content, with no self-healing and no cache invalidation.
 
-The test suite writes them too: `SetupFlowTest` renders the setup layout under `APP_ENV=testing`, which is not in `ignore_environments`.
+3. **It wrote into the web root during a request** - in every environment except `local`, including `testing`. Running the test suite regenerated the very files the browser was being served, which is how defect 2 was triggered in practice.
 
-## Traps
+4. **It occupied the `storage:link` path.** `setup.blade.php` targeted `/storage/cache/...`, so rendering the installer created `public/storage` as a real directory. `php artisan storage:link` then reported *"The [public/storage] link already exists"* and skipped the link (`--force` does not help, it only removes an `is_link()`).
 
-All four are pinned by `tests/Feature/Assets/AssetPipelineKnownGapsTest.php`; the TODO that owns each is named there.
-
-> **Carried knowingly into the `v1-patch` release.** TODO 33.8 was deliberately
-> left out of that scope. Traps 1 and 2 below are LIVE on every deployed host and
-> stay live - but neither is a regression: both already ship on `v1` today, since
-> the packer pipeline predates the branch. They are the strongest remaining
-> argument for doing TODO 33.8 in the next release, and the release notes should
-> say so rather than let them look like new breakage.
-
-1. **`data:` URIs in packed CSS are corrupted.** The `url(` rewrite is unconditional, so `toastr.min.css`'s four `data:image/png;base64,...` icons come out as `url(http://host/plugins/toastr/data:image/png;base64,...)`. **All four toastr icons are broken in every non-`local` environment** - and fine locally, because `local` skips packing. The project gains nothing from the rewrite: both of its own stylesheets contain zero `url(`. Roadmap TODO 33.8.
-
-2. **`public/storage` is a real directory, not a symlink.** `setup.blade.php` sends its packed output to `/storage/cache/...`, and Packer creates the missing directory. `php artisan storage:link` then reports *"The [public/storage] link already exists"* and **skips the link** - `--force` does not help, since it only removes an `is_link()` - so every public-disk URL 404s. On a fresh deploy the installer wizard renders before anyone runs `storage:link`, which reproduces it. The repair is per-install, not per-release. Roadmap TODO 33.8.
-
-3. **The provider's deferral has been inert since Laravel 5.8.** `PackerServiceProvider` uses the removed `protected $defer = true;` with a `provides()` method, but does not implement `DeferrableProvider`, so it registers eagerly on every request.
-
-4. **`imagecow/imagecow` is installed for dead code.** Nothing else in the dependency tree requires it, and the API it serves (`Packer::img()`) has zero call sites.
+Defects 1 to 3 are gone by construction: there is no rewrite, no generated file and no write. Defect 4 is gone from the repository, but the stray `public/storage` directory is **per-install state** on hosts that ran the old code, so removing it belongs to the release hook rather than to the repository.
 
 ## The dead pipeline: Laravel Mix
 
@@ -71,14 +72,16 @@ All four are pinned by `tests/Feature/Assets/AssetPipelineKnownGapsTest.php`; th
 - The outputs `public/js/app.js` and `public/css/app.css` **do not exist**, and nothing references them.
 - No `node_modules/`, no `package-lock.json`.
 
-It does not run, it never ran here, and nothing consumes its output. Roadmap Phase 7 has been re-scoped accordingly: a Vite migration is a choice about whether to bring the hand-placed vendor assets under a build graph, not a repair of something broken.
+It does not run, it never ran here, and nothing consumes its output. Roadmap Phase 7 has been re-scoped accordingly: a Vite migration is a choice about whether to bring the hand-placed vendor assets under a build graph, not a repair of something broken. TODO 52 would replace the `pwbs_asset()` tags with `@vite` in the same three files.
 
 ## Covered by
 
 | Area | Test |
 |---|---|
-| The emitted tags, packed and passthrough | `tests/Feature/Assets/AssetPipelineTest.php` |
-| Concatenation order, single-file copy, `filemtime` prefix, directory creation | `tests/Feature/Assets/AssetPipelineTest.php` |
-| The four traps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
+| The helper: token, missing file, path normalisation, request scheme | `tests/Feature/Assets/AssetPipelineTest.php` |
+| The emitted tags, and that they are identical in every environment | `tests/Feature/Assets/AssetPipelineTest.php` |
+| That rendering writes nothing into the web root | `tests/Feature/Assets/AssetPipelineTest.php` |
+| That no served stylesheet carries an absolute URL or a mangled `data:` URI | `tests/Feature/Assets/AssetPipelineTest.php` |
+| The closed gaps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
 
-The two layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. Everything else runs against a temporary `public_path` with a directly instantiated `Packer` and cleans up after itself.
+The layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. The two stylesheet guards start from the **rendered HTML** rather than a hand-written list, so if a generating pipeline ever returns, they inspect its output rather than the untouched source.

@@ -84,8 +84,7 @@
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
 @endsection
 @section('footer_scripts')
-    {!! Packer::js('/plugins/summernote/summernote-bs4.min.js', '/plugins/summernote/cache_summernote-bs4.min.js') !!} 
-    {{-- <script src="{{ asset('plugins/summernote/summernote-bs4.min.js') }}"></script> --}}
+    <script src="{{ pwbs_asset('/plugins/summernote/summernote-bs4.min.js') }}"></script>
     @if (trans('news.editor_lang') !== null)
         <script src="{{ asset('plugins/summernote/lang/summernote-' . __('news.editor_lang') . '.min.js') }}"></script>            
     @endif

@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" type="image/jpg" href="{{ asset('pmo-favicon.png') }}"/>
   <title>{{ __('app.title') }}</title>
-  {!! Packer::css('/plugins/fontawesome-free/css/all.min.css', '/plugins/fontawesome-free/css/cache_fontawesome.css') !!}
-  {!! Packer::css('/dist/css/adminlte.min.css', '/dist/css/cache_adminlte.min.css') !!}
-  {!! Packer::css([
-    'css/style.css',
-    'plugins/toastr/toastr.min.css',
-    'css/public_style.css'
-  ], 
-  '/storage/cache/css/all_style.css') !!}
+  <link rel="stylesheet" href="{{ pwbs_asset('/plugins/fontawesome-free/css/all.min.css') }}">
+  <link rel="stylesheet" href="{{ pwbs_asset('/dist/css/adminlte.min.css') }}">
+  <link rel="stylesheet" href="{{ pwbs_asset('/css/style.css') }}">
+  <link rel="stylesheet" href="{{ pwbs_asset('/plugins/toastr/toastr.min.css') }}">
+  <link rel="stylesheet" href="{{ pwbs_asset('/css/public_style.css') }}">
   @yield('header_style')
   @livewireStyles
 </head>
@@ -41,9 +38,9 @@
 </div>
 <!-- ./wrapper -->
 <!-- REQUIRED SCRIPTS -->
-{!! Packer::js('/plugins/jquery/jquery.min.js', '/storage/cache/js/jquery.js') !!}  
-{!! Packer::js('/plugins/bootstrap/js/bootstrap.bundle.min.js', '/plugins/bootstrap/js/cache_bootstrap.js') !!}
-{!! Packer::js('/dist/js/adminlte.min.js', '/dist/js/cache_adminlte.js') !!}
+<script src="{{ pwbs_asset('/plugins/jquery/jquery.min.js') }}"></script>
+<script src="{{ pwbs_asset('/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ pwbs_asset('/dist/js/adminlte.min.js') }}"></script>
 
 @yield('footer_scripts')
 @livewireScripts  
