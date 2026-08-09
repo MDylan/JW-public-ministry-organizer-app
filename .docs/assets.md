@@ -13,8 +13,6 @@ Nothing is compiled at deploy time and nothing is generated at request time. The
 
 Until TODO 33.8 the pipeline was `eusonlito/laravel-packer`, which concatenated and rewrote these files during the request. The whole pipeline is pinned by `tests/Feature/Assets/`.
 
-> **Mid-change state.** TODO 33.8 ships in two commits. The first replaced the call sites and removed the provider and the facade alias from `config/app.php` - that is the state described here, and it is what the browser gets. The package itself is still in `composer.json` and `vendor/`, unreferenced, until the second commit removes it along with `config/packer.php`, the nine `.gitignore` lines and the `release/upgrade.php` cleanup lines.
-
 ## The helper
 
 ```php
@@ -61,7 +59,9 @@ All four defects were production-only: `config/packer.php` listed `local` in `ig
 
 4. **It occupied the `storage:link` path.** `setup.blade.php` targeted `/storage/cache/...`, so rendering the installer created `public/storage` as a real directory. `php artisan storage:link` then reported *"The [public/storage] link already exists"* and skipped the link (`--force` does not help, it only removes an `is_link()`).
 
-Defects 1 to 3 are gone by construction: there is no rewrite, no generated file and no write. Defect 4 is gone from the repository, but the stray `public/storage` directory is **per-install state** on hosts that ran the old code, so removing it belongs to the release hook rather than to the repository.
+Defects 1 to 3 are gone by construction: there is no rewrite, no generated file and no write. Defect 4 is gone from the repository, but the stray `public/storage` directory is **per-install state** on hosts that ran the old code, so `release/upgrade.php` repairs it: the directory is removed **only** when it is not a link and holds nothing except the packer's `cache/` subtree, then `storage:link` runs. Anything else is left alone and reported - a missing symlink is worth far less than someone's data.
+
+The same hook removes `vendor/eusonlito`, `vendor/imagecow`, `config/packer.php` and the generated `*-cache_*` artifacts, because the updater's `install()` only ever adds and overwrites. `release/build-update.php` cross-checks every tracked deletion against the hook and warns about any it does not cover.
 
 ## The dead pipeline: Laravel Mix
 
@@ -82,6 +82,6 @@ It does not run, it never ran here, and nothing consumes its output. Roadmap Pha
 | The emitted tags, and that they are identical in every environment | `tests/Feature/Assets/AssetPipelineTest.php` |
 | That rendering writes nothing into the web root | `tests/Feature/Assets/AssetPipelineTest.php` |
 | That no served stylesheet carries an absolute URL or a mangled `data:` URI | `tests/Feature/Assets/AssetPipelineTest.php` |
-| The closed gaps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
+| The nine closed gaps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
 
 The layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. The two stylesheet guards start from the **rendered HTML** rather than a hand-written list, so if a generating pipeline ever returns, they inspect its output rather than the untouched source.

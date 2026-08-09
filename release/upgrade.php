@@ -28,10 +28,14 @@
 | WHEN TO REMOVE IT
 |
 | The laraupdater rename half is a one-off for the release that carries it, and
-| so is the vendor/rakibdevs removal added with the v1-patch C group. The hook is
-| idempotent and safe to run twice, but once the release has reached every
-| install, empty the body of main() or drop this file so later archives stop
-| carrying it.
+| so is the vendor/rakibdevs removal added with the v1-patch C group and the
+| packer removal added with TODO 33.8. The hook is idempotent and safe to run
+| twice, but once the release has reached every install, empty the body of main()
+| or drop this file so later archives stop carrying it.
+|
+| The public/storage repair is the exception: it is per-INSTALL state, not
+| per-release, so it stays useful for as long as any host might still carry the
+| directory the packer created.
 |
 | NOTE for whoever ships the OpenWeather change: deployed .env files still carry
 | the misspelled OPENWAETHER_API_KEY. config/openweather.php reads the new
@@ -73,6 +77,33 @@ if (! function_exists('main')) {
         //    line every deployed host would keep it forever.
         $ok = laraupdater_upgrade_remove(base_path('vendor/rakibdevs')) && $ok;
 
+        // 5) The asset packer removed by TODO 33.8, and imagecow, which nothing
+        //    else in the tree requires. The application no longer references
+        //    either, so the vendor trees and the config file are dead weight.
+        $ok = laraupdater_upgrade_remove(base_path('vendor/eusonlito')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('vendor/imagecow')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('config/packer.php')) && $ok;
+
+        // 6) Everything the packer generated inside the web root while rendering
+        //    pages. None of it is tracked by git, so the release diff cannot
+        //    carry the deletions - only this hook can. The files are inert once
+        //    the layouts stop referencing them, but they are stale copies of
+        //    application assets sitting in a public directory, so they go.
+        $ok = laraupdater_upgrade_remove(base_path('public/cache')) && $ok;
+
+        foreach ([
+            'public/dist/css/*-cache_*',
+            'public/dist/js/*-cache_*',
+            'public/plugins/*/*-cache_*',
+            'public/plugins/*/*/*-cache_*',
+        ] as $pattern) {
+            $ok = laraupdater_upgrade_remove_glob(base_path($pattern)) && $ok;
+        }
+
+        // 7) The stray public/storage directory the packer created, and the
+        //    symlink that could never be made while it was there.
+        $ok = laraupdater_upgrade_repair_public_storage() && $ok;
+
         return $ok;
     }
 }
@@ -106,6 +137,95 @@ if (! function_exists('laraupdater_upgrade_remove')) {
             echo '<li>UPGRADE => '.$path.' [ '.($removed ? 'removed' : 'FAILED').' ]</li>';
 
             return $removed;
+        } catch (\Throwable $e) {
+            echo '<li>UPGRADE => '.$path.' [ FAILED: '.$e->getMessage().' ]</li>';
+
+            return false;
+        }
+    }
+}
+
+if (! function_exists('laraupdater_upgrade_remove_glob')) {
+
+    /**
+     * Delete every path matching a glob pattern.
+     *
+     * The packer named its output `{filemtime}-cache_*.ext`, so the exact names
+     * differ per install and cannot be listed here.
+     *
+     * @return bool true when every match is gone (or there were none)
+     */
+    function laraupdater_upgrade_remove_glob($pattern)
+    {
+        $matches = glob($pattern);
+
+        if ($matches === false || $matches === []) {
+            echo '<li>UPGRADE => '.$pattern.' [ nothing to remove ]</li>';
+
+            return true;
+        }
+
+        $ok = true;
+
+        foreach ($matches as $match) {
+            $ok = laraupdater_upgrade_remove($match) && $ok;
+        }
+
+        return $ok;
+    }
+}
+
+if (! function_exists('laraupdater_upgrade_repair_public_storage')) {
+
+    /**
+     * Turn the stray public/storage directory back into the symlink it should be.
+     *
+     * The packer wrote the setup layout's output to `/storage/cache/...`, so
+     * rendering the installer wizard created `public/storage` as a REAL
+     * directory. From then on `php artisan storage:link` reported "The
+     * [public/storage] link already exists" and skipped the link - `--force`
+     * does not help, it only removes an `is_link()` - so every public-disk URL
+     * 404'd on that host.
+     *
+     * Deleting a directory under the web root is the most dangerous thing this
+     * hook does, so the guard is deliberately narrow: the directory is removed
+     * ONLY when it is not a link and contains nothing except the `cache` subtree
+     * the packer created. Anything else - a real symlink, someone's uploads, a
+     * manually placed file - is left alone and reported, because a missing
+     * symlink is worth far less than someone's data.
+     *
+     * @return bool
+     */
+    function laraupdater_upgrade_repair_public_storage()
+    {
+        $path = base_path('public/storage');
+
+        try {
+            if (is_link($path)) {
+                echo '<li>UPGRADE => '.$path.' [ already a link ]</li>';
+
+                return true;
+            }
+
+            if (is_dir($path)) {
+                $entries = array_values(array_diff(scandir($path) ?: [], ['.', '..']));
+
+                if ($entries !== [] && $entries !== ['cache']) {
+                    echo '<li>UPGRADE => '.$path.' [ SKIPPED: holds more than the packer cache ]</li>';
+
+                    return true;
+                }
+
+                if (! laraupdater_upgrade_remove($path)) {
+                    return false;
+                }
+            }
+
+            \Illuminate\Support\Facades\Artisan::call('storage:link');
+
+            echo '<li>UPGRADE => '.$path.' [ linked ]</li>';
+
+            return true;
         } catch (\Throwable $e) {
             echo '<li>UPGRADE => '.$path.' [ FAILED: '.$e->getMessage().' ]</li>';
 

@@ -2,110 +2,86 @@
 
 namespace Tests\Feature\Assets;
 
-use Eusonlito\LaravelPacker\Packer;
-use Eusonlito\LaravelPacker\PackerServiceProvider;
-use Illuminate\Contracts\Support\DeferrableProvider;
-use ReflectionClass;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * A TODO 21.1 által mért kilenc hiányosság - a TODO 33.8 lezárása közben.
+ * A TODO 21.1 által mért kilenc hiányosság - MIND LEZÁRVA a TODO 33.8-cal.
  *
  * A fájl eredetileg a hibás viselkedést rögzítette, hogy a javítás pillanatában
  * bukjon, és az a bukás legyen a reviewálható diff - ugyanaz a fegyelem, mint a
  * TODO 14 duplikált-route tripwire-jeinél és a TODO 20.1 WeatherKnownGapsTest
- * fájljánál. A név szándékosan változatlan: a git történetben így követhető,
- * melyik állítás melyik hiányosság helyére lépett.
+ * fájljánál. Ez a bukás bekövetkezett: mind a kilenc eset megfordult, és a fájl
+ * most azt őrzi, hogy a rés ne nyíljon ki újra.
  *
- * A TODO 33.8 KÉT COMMITBAN SZÁLLÍT, ÉS EZ ITT LÁTSZIK
+ * A név szándékosan változatlan: a git történetben így követhető, melyik állítás
+ * melyik hiányosság helyére lépett.
  *
- * Az első commit az alkalmazásszintű csere: a 16 `Packer::` hívási hely helyére
- * `pwbs_asset()` lép, és a provider meg az alias kikerül a config/app.php-ból.
- * Az ehhez tartozó négy hiányosság (3., 4., 7., 9.) itt már meg van fordítva.
- *
- * A második commit a csomagot magát viszi el. Az ahhoz kötött öt eset (1., 2.,
- * 5., 6., 8.) SZÁNDÉKOSAN érintetlen: mindegyik a telepített csomagot méri
- * (homokozóban példányosított Packer, composer.lock, .gitignore, reflection),
- * és mind igaz marad addig, amíg a `vendor/eusonlito` a helyén van. Egyiket sem
- * fordítja meg az első commit - ezt megmérni becsületesebb, mint feltételezni.
+ * A kilenc eset két commitban fordult meg, mert a TODO 33.8 két commitban
+ * szállított: az első az alkalmazásszintű cserét vitte (hívási helyek, provider,
+ * alias), a második magát a csomagot. Az első commit után az itteni öt csomag-
+ * szintű eset szándékosan MÉG IGAZ VOLT - a telepített csomagot mérték, és a
+ * `vendor/eusonlito` a helyén volt. Megmérni becsületesebb volt, mint feltenni.
  */
 class AssetPipelineKnownGapsTest extends FeatureTestCase
 {
-    private ?string $sandbox = null;
-
-    protected function tearDown(): void
-    {
-        if ($this->sandbox !== null && is_dir($this->sandbox)) {
-            $this->removeTree($this->sandbox);
-        }
-
-        parent::tearDown();
-    }
-
     // =========================================================================
-    // TODO 33.8 - a CSS-átírás élő produkciós kárt okoz
+    // 1. A CSS-átírás élő produkciós kárt okozott
     // =========================================================================
 
-    public function test_gap_the_css_packer_corrupts_data_uris(): void
+    public function test_the_embedded_icons_reach_the_browser_untouched(): void
     {
-        $packer = $this->sandboxPacker();
-        $this->writeAsset('plugins/toastr/toastr.min.css', '.toast{background-image:url(data:image/png;base64,AAAA)}');
+        // A Providers/CSS.php:25 MINDEN `url(` elé beszúrta az asset-bázist és a
+        // forrásfájl könyvtárát, feltétel nélkül. Relatív útnál ez helyes volt;
+        // egy data: URI-nál értelmetlen abszolút előtagot adott, és a kép soha
+        // nem töltött be. A TODO 21 négy ilyet rögzített (a toastr ikonjait);
+        // a valódi szám 181, mert az adminlte.min.css-t senki nem nézte meg.
+        $counts = [
+            'dist/css/adminlte.min.css' => 177,
+            'plugins/toastr/toastr.min.css' => 4,
+        ];
 
-        $packer->css('/plugins/toastr/toastr.min.css', '/cache/css/all_style.css');
+        foreach ($counts as $file => $expected) {
+            $contents = file_get_contents(public_path($file));
 
-        // Providers/CSS.php:25 MINDEN `url(` elé beszúrja az asset-bázist és a
-        // forrásfájl könyvtárát. Relatív útnál ez helyes. Egy data: URI-nál viszont
-        // értelmetlen abszolút előtagot kap, és a kép soha nem tölt be.
-        $this->assertStringContainsString(
-            'url(http://packer.test/plugins/toastr/data:image/png;base64,AAAA)',
-            file_get_contents($packer->getFilePath()),
-            'Ez nem elméleti: a ma kiszolgált public/cache/css/*-all_style.css mind a NÉGY '
-            .'toastr-ikont pontosan így törte el, mert a toastr.min.css négy data: URI-t '
-            .'tartalmaz. Vagyis a toastr értesítései minden nem-local környezetben ikon '
-            .'nélkül jelennek meg - local alatt viszont jól, mert ott a Packer nem csomagol. '
-            .'A TODO 33.8 összefűzés nélküli helpere ezt megszünteti.'
-        );
+            $this->assertSame(
+                $expected,
+                preg_match_all('#url\(\s*["\']?data:#i', $contents),
+                $file.' data: URI-jainak száma elmozdult - a teszt már nem azt méri, amiért íródott.'
+            );
 
-        // És a projekt semmit nem nyer az átírásból: a két saját CSS-ében nulla `url(` van.
-        foreach (['public/css/style.css', 'public/css/public_style.css'] as $own) {
-            $this->assertStringNotContainsString(
-                'url(',
-                file_get_contents(base_path($own)),
-                $own.' - az átírás egyetlen relatív utat sem javít ki, csak az idegen fájlt rontja el.'
+            $this->assertSame(
+                0,
+                preg_match_all('#url\(\s*["\']?https?://#i', $contents),
+                $file.' abszolút hivatkozást tartalmaz. Semmi nem írhatja át a kiszolgált CSS-t.'
             );
         }
+
+        // És a projekt semmit nem nyert az átírásból: a két saját CSS-ében
+        // nulla `url(` van, tehát nem volt mit kijavítani rajtuk.
+        foreach (['css/style.css', 'css/public_style.css'] as $own) {
+            $this->assertStringNotContainsString('url(', file_get_contents(public_path($own)));
+        }
     }
 
     // =========================================================================
-    // TODO 33.8 - a csomag nem azt csinálja, aminek a neve mondja
+    // 2. A csomag nem azt csinálta, aminek a neve mondta
     // =========================================================================
 
-    public function test_gap_nothing_is_ever_minified(): void
+    public function test_nothing_is_generated_so_there_is_nothing_to_minify(): void
     {
-        $this->assertFalse(config('packer.css_minify'), 'config/packer.php:88');
-        $this->assertFalse(config('packer.js_minify'), 'config/packer.php:99');
+        // A `css_minify` és a `js_minify` egyaránt `false` volt, tehát a
+        // "packer/minify" csomag ebben a projektben egy összefűző és egy
+        // időbélyeges átnevező volt, semmi más. A konfigurációja már nincs meg.
+        $this->assertNull(config('packer'), 'A config/packer.php elment.');
+        $this->assertFileDoesNotExist(base_path('config/packer.php'));
 
-        $packer = $this->sandboxPacker();
-        $this->writeAsset('js/a.js', "var  a   =   1;\n\n\n");
-        $this->writeAsset('js/b.js', "var  b   =   2;\n\n\n");
-
-        $packer->js(['/js/a.js', '/js/b.js'], '/cache/js/all.js');
-
-        $sources = strlen(file_get_contents($this->sandbox.'/js/a.js'))
-            + strlen(file_get_contents($this->sandbox.'/js/b.js'));
-
-        // A kimenet a bemenetek összege plusz fájlonként egy pontosvessző. Se
-        // whitespace-eltávolítás, se semmi: a "packer/minify" csomag ebben a
-        // projektben egy összefűző és egy időbélyeges átnevező, semmi más.
-        $this->assertSame(
-            $sources + 2,
-            strlen(file_get_contents($packer->getFilePath())),
-            'Ha valaha bekapcsoljuk a minifikálást, ez a teszt megbukik - és az jó hír.'
-        );
+        // Az egyetlen dolog, amit ténylegesen szállított, a cache busting volt.
+        // Azt most egy filemtime() hívás adja, generált fájl nélkül.
+        $this->assertStringContainsString('?v=', pwbs_asset('/css/style.css'));
     }
 
     // =========================================================================
-    // TODO 33.8 - a webgyökérbe írás és a storage:link ütközése
+    // 3-4. A webgyökérbe írás és a storage:link ütközése
     // =========================================================================
 
     public function test_the_two_layouts_now_reference_the_same_file_by_the_same_url(): void
@@ -149,10 +125,12 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
         );
     }
 
-    public function test_gap_nine_gitignore_lines_exist_only_to_contain_packer_output(): void
+    // =========================================================================
+    // 5. A kilenc .gitignore sor, ami csak a kimenetet fékezte
+    // =========================================================================
+
+    public function test_the_nine_gitignore_lines_are_gone(): void
     {
-        // Soronként, trimmelve: a fájl CRLF-fel van mentve, és a sorvégek nem
-        // tárgya ennek a tesztnek.
         $gitignore = array_map('trim', file(base_path('.gitignore')));
 
         $lines = [
@@ -164,51 +142,53 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
             'public/plugins/toastr/*-cache_toastr.js',
             'public/plugins/summernote/*-cache_summernote-bs4.min.js',
             '/public/cache',
+            // A kilencedik elgépelt volt: ilyen könyvtár nincs és sosem volt.
+            '/public/storages/cache/*',
         ];
 
         foreach ($lines as $line) {
-            $this->assertContains(
+            $this->assertNotContains(
                 $line,
                 $gitignore,
-                'Ez a sor kizárólag azért van, mert a Packer kérés közben ír a webgyökérbe.'
+                'Ez a sor kizárólag azért létezett, mert a Packer kérés közben írt a webgyökérbe.'
             );
         }
 
-        // A kilencedik sor elgépelt: ilyen könyvtár nincs és sosem volt. A valódi
-        // cél a public/storage/cache/, amit a /public/storage sor takar véletlenül.
-        $this->assertContains('/public/storages/cache/*', $gitignore);
-        $this->assertDirectoryDoesNotExist(base_path('public/storages'));
+        // A tizedik marad: az a szimlinké, nem a csomagé.
+        $this->assertContains('/public/storage', $gitignore);
     }
 
     // =========================================================================
-    // TODO 33.8 - halott függőség és halott kód
+    // 6-7. A halott függőség és a halott provider
     // =========================================================================
 
-    public function test_gap_imagecow_is_installed_for_an_api_the_project_never_calls(): void
+    public function test_neither_the_packer_nor_imagecow_is_installed_any_more(): void
     {
         $lock = json_decode(file_get_contents(base_path('composer.lock')), true);
+        $json = json_decode(file_get_contents(base_path('composer.json')), true);
 
-        $imagecow = collect($lock['packages'])->firstWhere('name', 'imagecow/imagecow');
-        $this->assertNotNull($imagecow, 'Telepítve van.');
-
-        // Egyetlen csomag húzza be, és az is csak a Packer::img() miatt.
-        $requirers = collect($lock['packages'])
-            ->filter(fn ($package) => isset($package['require']['imagecow/imagecow']))
-            ->pluck('name')
-            ->values()
-            ->all();
-
-        $this->assertSame(['eusonlito/laravel-packer'], $requirers);
-
-        // A projekt viszont sosem hívja - se img(), se jsDir(), se cssDir().
-        foreach (['img', 'jsDir', 'cssDir'] as $method) {
-            $this->assertSame(
-                [],
-                $this->grepProjectSources('Packer::'.$method.'('),
-                'A Packer::'.$method.'() a fogyasztott felületen kívül van. A projekt a 16 '
-                .'hívási helyén KIZÁRÓLAG a css() és a js() metódust használja.'
+        foreach (['eusonlito/laravel-packer', 'imagecow/imagecow'] as $package) {
+            $this->assertNull(
+                collect($lock['packages'])->firstWhere('name', $package),
+                $package.' még benne van a lockban.'
             );
+
+            $this->assertArrayNotHasKey($package, $json['require']);
         }
+
+        // Az imagecow-t EGYETLEN csomag húzta be, és az is csak a soha nem hívott
+        // Packer::img() miatt - vagyis egy függőség egy holt API kedvéért.
+        $this->assertSame(
+            [],
+            collect($lock['packages'])
+                ->filter(fn ($package) => isset($package['require']['imagecow/imagecow']))
+                ->pluck('name')
+                ->values()
+                ->all()
+        );
+
+        $this->assertDirectoryDoesNotExist(base_path('vendor/eusonlito'));
+        $this->assertDirectoryDoesNotExist(base_path('vendor/imagecow'));
     }
 
     public function test_the_provider_and_the_facade_alias_are_gone(): void
@@ -223,31 +203,17 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
 
         $this->assertNotContains('Eusonlito\LaravelPacker\PackerServiceProvider', config('app.providers'));
         $this->assertArrayNotHasKey('Packer', config('app.aliases'));
-    }
 
-    public function test_gap_the_providers_defer_flag_has_been_dead_since_laravel_5_8(): void
-    {
-        $provider = new ReflectionClass(PackerServiceProvider::class);
-
-        $defer = $provider->getDefaultProperties()['defer'] ?? null;
-        $this->assertTrue($defer, 'A csomag még a régi `protected $defer = true;` alakot használja.');
-
-        $this->assertTrue(
-            $provider->hasMethod('provides'),
-            'És a hozzá tartozó provides() metódust is szállítja.'
-        );
-
-        // A Laravel 5.8 óta a halasztás a DeferrableProvider interfészen múlik. A
-        // provider ezt nem implementálja, tehát a $defer és a provides() együtt
-        // hatástalan: a Packer MINDEN kérésnél eagerly regisztrálódik.
-        $this->assertFalse(
-            $provider->implementsInterface(DeferrableProvider::class),
-            'Ha ez valaha igazra fordul, a csomag frissült - és a TODO 21 mérését újra kell olvasni.'
-        );
+        // A provider a Laravel 5.8 óta halott `protected $defer = true;` alakot
+        // használta `provides()`-szal, DeferrableProvider nélkül - tehát a
+        // halasztása hat major verzión át hatástalan volt, és a csomag minden
+        // kérésnél eagerly regisztrálódott. Az osztály már nincs meg.
+        $this->assertFalse(class_exists('Eusonlito\LaravelPacker\PackerServiceProvider'));
+        $this->assertFalse(class_exists('Eusonlito\LaravelPacker\Packer'));
     }
 
     // =========================================================================
-    // TODO 52 / 53 - a Phase 7 premisszájának korrekciója
+    // 8-9. TODO 52 / 53 - a Phase 7 premisszájának korrekciója
     // =========================================================================
 
     public function test_gap_the_mix_pipeline_is_dead_and_the_packer_is_the_only_asset_pipeline(): void
@@ -328,50 +294,5 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
         sort($hits);
 
         return $hits;
-    }
-
-    private function sandboxPacker(): Packer
-    {
-        $this->sandbox = sys_get_temp_dir().'/kozter-packer-gaps-'.uniqid();
-        mkdir($this->sandbox, 0777, true);
-
-        return new Packer([
-            'environment' => 'production',
-            'ignore_environments' => ['local'],
-            'public_path' => $this->sandbox,
-            'asset' => 'http://packer.test',
-            'cache_folder' => '/cache/',
-            'check_timestamps' => true,
-            'css_minify' => false,
-            'js_minify' => false,
-            'images_fake' => false,
-            'quality' => 85,
-        ]);
-    }
-
-    private function writeAsset(string $relative, string $contents): void
-    {
-        $path = $this->sandbox.'/'.$relative;
-
-        if (! is_dir(dirname($path))) {
-            mkdir(dirname($path), 0777, true);
-        }
-
-        file_put_contents($path, $contents);
-    }
-
-    private function removeTree(string $dir): void
-    {
-        foreach (scandir($dir) ?: [] as $entry) {
-            if ($entry === '.' || $entry === '..') {
-                continue;
-            }
-
-            $path = $dir.'/'.$entry;
-
-            is_dir($path) ? $this->removeTree($path) : @unlink($path);
-        }
-
-        @rmdir($dir);
     }
 }

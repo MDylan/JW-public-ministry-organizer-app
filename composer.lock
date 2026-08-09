@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf4631c7907578d0413417932638ad99",
+    "content-hash": "7f1e482b2a45dc24f72f0610dbc7cb43",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1072,69 +1072,6 @@
             "time": "2020-12-29T14:50:06+00:00"
         },
         {
-            "name": "eusonlito/laravel-packer",
-            "version": "v2.2.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/eusonlito/laravel-Packer.git",
-                "reference": "1bb6516683cd9d66713b774f79aad19e190400a8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/eusonlito/laravel-Packer/zipball/1bb6516683cd9d66713b774f79aad19e190400a8",
-                "reference": "1bb6516683cd9d66713b774f79aad19e190400a8",
-                "shasum": ""
-            },
-            "require": {
-                "imagecow/imagecow": "^2.4",
-                "php": ">=5.5"
-            },
-            "require-dev": {
-                "mikey179/vfsstream": "^1.6",
-                "phpunit/phpunit": "^6.5"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "Packer": "Eusonlito\\LaravelPacker\\Facade"
-                    },
-                    "providers": [
-                        "Eusonlito\\LaravelPacker\\PackerServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Eusonlito\\LaravelPacker\\": "src/Eusonlito/LaravelPacker/"
-                },
-                "classmap": [
-                    "src/Eusonlito/LaravelPacker/Processors/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Lito",
-                    "email": "lito@eordes.com"
-                }
-            ],
-            "description": "A package for pack css and javascript files",
-            "keywords": [
-                "laravel",
-                "minify",
-                "packer"
-            ],
-            "support": {
-                "issues": "https://github.com/eusonlito/laravel-Packer/issues",
-                "source": "https://github.com/eusonlito/laravel-Packer/tree/v2.2.6"
-            },
-            "time": "2022-04-22T18:56:53+00:00"
-        },
-        {
             "name": "fideloper/proxy",
             "version": "4.4.2",
             "source": {
@@ -1664,56 +1601,6 @@
                 }
             ],
             "time": "2026-07-16T22:23:49+00:00"
-        },
-        {
-            "name": "imagecow/imagecow",
-            "version": "v2.4.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/oscarotero/imagecow.git",
-                "reference": "bcf60d475683a36a40cb2343a102aa79114b4525"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/oscarotero/imagecow/zipball/bcf60d475683a36a40cb2343a102aa79114b4525",
-                "reference": "bcf60d475683a36a40cb2343a102aa79114b4525",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.5"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^4.8|^6.2"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Imagecow\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Oscar Otero",
-                    "email": "oom@oscarotero.com",
-                    "homepage": "http://oscarotero.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "PHP library to manipulate and generate responsive images",
-            "homepage": "https://github.com/oscarotero/imagecow/",
-            "keywords": [
-                "image"
-            ],
-            "support": {
-                "email": "oom@oscarotero.com",
-                "issues": "https://github.com/oscarotero/imagecow/issues",
-                "source": "https://github.com/oscarotero/imagecow/tree/master"
-            },
-            "time": "2019-01-12T11:54:02+00:00"
         },
         {
             "name": "intervention/image",

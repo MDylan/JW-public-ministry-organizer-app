@@ -146,7 +146,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'I' =>
         array (
             'Intervention\\Image\\' => 19,
-            'Imagecow\\' => 9,
             'Illuminate\\Support\\' => 19,
             'Illuminate\\' => 11,
         ),
@@ -168,7 +167,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         ),
         'E' =>
         array (
-            'Eusonlito\\LaravelPacker\\' => 24,
             'Egulias\\EmailValidator\\' => 23,
         ),
         'D' =>
@@ -487,10 +485,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         array (
             0 => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image',
         ),
-        'Imagecow\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/imagecow/imagecow/src',
-        ),
         'Illuminate\\Support\\' =>
         array (
             0 => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Macroable',
@@ -539,10 +533,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Facade\\FlareClient\\' =>
         array (
             0 => __DIR__ . '/..' . '/facade/flare-client-php/src',
-        ),
-        'Eusonlito\\LaravelPacker\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker',
         ),
         'Egulias\\EmailValidator\\' =>
         array (
@@ -974,7 +964,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Brick\\Math\\Internal\\Calculator\\GmpCalculator' => __DIR__ . '/..' . '/brick/math/src/Internal/Calculator/GmpCalculator.php',
         'Brick\\Math\\Internal\\Calculator\\NativeCalculator' => __DIR__ . '/..' . '/brick/math/src/Internal/Calculator/NativeCalculator.php',
         'Brick\\Math\\RoundingMode' => __DIR__ . '/..' . '/brick/math/src/RoundingMode.php',
-        'CSSmin' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Processors/CSSmin.php',
         'Carbon\\AbstractTranslator' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/AbstractTranslator.php',
         'Carbon\\Carbon' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/Carbon.php',
         'Carbon\\CarbonConverterInterface' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/CarbonConverterInterface.php',
@@ -1728,19 +1717,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Egulias\\EmailValidator\\Warning\\QuotedString' => __DIR__ . '/..' . '/egulias/email-validator/src/Warning/QuotedString.php',
         'Egulias\\EmailValidator\\Warning\\TLD' => __DIR__ . '/..' . '/egulias/email-validator/src/Warning/TLD.php',
         'Egulias\\EmailValidator\\Warning\\Warning' => __DIR__ . '/..' . '/egulias/email-validator/src/Warning/Warning.php',
-        'Eusonlito\\LaravelPacker\\Exceptions\\DirNotExistException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Exceptions/DirNotExistException.php',
-        'Eusonlito\\LaravelPacker\\Exceptions\\DirNotWritableException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Exceptions/DirNotWritableException.php',
-        'Eusonlito\\LaravelPacker\\Exceptions\\FileNotExistException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Exceptions/FileNotExistException.php',
-        'Eusonlito\\LaravelPacker\\Exceptions\\FileNotWritableException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Exceptions/FileNotWritableException.php',
-        'Eusonlito\\LaravelPacker\\Exceptions\\InvalidArgumentException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Exceptions/InvalidArgumentException.php',
-        'Eusonlito\\LaravelPacker\\Facade' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Facade.php',
-        'Eusonlito\\LaravelPacker\\Packer' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Packer.php',
-        'Eusonlito\\LaravelPacker\\PackerServiceProvider' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/PackerServiceProvider.php',
-        'Eusonlito\\LaravelPacker\\Providers\\CSS' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Providers/CSS.php',
-        'Eusonlito\\LaravelPacker\\Providers\\IMG' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Providers/IMG.php',
-        'Eusonlito\\LaravelPacker\\Providers\\JS' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Providers/JS.php',
-        'Eusonlito\\LaravelPacker\\Providers\\ProviderBase' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Providers/ProviderBase.php',
-        'Eusonlito\\LaravelPacker\\Providers\\ProviderInterface' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Providers/ProviderInterface.php',
         'Facade\\FlareClient\\Api' => __DIR__ . '/..' . '/facade/flare-client-php/src/Api.php',
         'Facade\\FlareClient\\Concerns\\HasContext' => __DIR__ . '/..' . '/facade/flare-client-php/src/Concerns/HasContext.php',
         'Facade\\FlareClient\\Concerns\\UsesTime' => __DIR__ . '/..' . '/facade/flare-client-php/src/Concerns/UsesTime.php',
@@ -3604,20 +3580,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Illuminate\\View\\ViewFinderInterface' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/ViewFinderInterface.php',
         'Illuminate\\View\\ViewName' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/ViewName.php',
         'Illuminate\\View\\ViewServiceProvider' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/ViewServiceProvider.php',
-        'Imagecow\\Crops\\Balanced' => __DIR__ . '/..' . '/imagecow/imagecow/src/Crops/Balanced.php',
-        'Imagecow\\Crops\\CropInterface' => __DIR__ . '/..' . '/imagecow/imagecow/src/Crops/CropInterface.php',
-        'Imagecow\\Crops\\Entropy' => __DIR__ . '/..' . '/imagecow/imagecow/src/Crops/Entropy.php',
-        'Imagecow\\Crops\\Face' => __DIR__ . '/..' . '/imagecow/imagecow/src/Crops/Face.php',
-        'Imagecow\\Image' => __DIR__ . '/..' . '/imagecow/imagecow/src/Image.php',
-        'Imagecow\\ImageException' => __DIR__ . '/..' . '/imagecow/imagecow/src/ImageException.php',
-        'Imagecow\\Libs\\AbstractLib' => __DIR__ . '/..' . '/imagecow/imagecow/src/Libs/AbstractLib.php',
-        'Imagecow\\Libs\\Gd' => __DIR__ . '/..' . '/imagecow/imagecow/src/Libs/Gd.php',
-        'Imagecow\\Libs\\Imagick' => __DIR__ . '/..' . '/imagecow/imagecow/src/Libs/Imagick.php',
-        'Imagecow\\Libs\\LibInterface' => __DIR__ . '/..' . '/imagecow/imagecow/src/Libs/LibInterface.php',
-        'Imagecow\\Utils\\Color' => __DIR__ . '/..' . '/imagecow/imagecow/src/Utils/Color.php',
-        'Imagecow\\Utils\\Dimmensions' => __DIR__ . '/..' . '/imagecow/imagecow/src/Utils/Dimmensions.php',
-        'Imagecow\\Utils\\IconExtractor' => __DIR__ . '/..' . '/imagecow/imagecow/src/Utils/IconExtractor.php',
-        'Imagecow\\Utils\\SvgExtractor' => __DIR__ . '/..' . '/imagecow/imagecow/src/Utils/SvgExtractor.php',
         'Intervention\\Image\\AbstractColor' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/AbstractColor.php',
         'Intervention\\Image\\AbstractDecoder' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/AbstractDecoder.php',
         'Intervention\\Image\\AbstractDriver' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/AbstractDriver.php',
@@ -3744,10 +3706,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Intervention\\Image\\Point' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Point.php',
         'Intervention\\Image\\Response' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Response.php',
         'Intervention\\Image\\Size' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Size.php',
-        'JSMin' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Processors/JSMin.php',
-        'JSMin_UnterminatedCommentException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Processors/JSMin.php',
-        'JSMin_UnterminatedRegExpException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Processors/JSMin.php',
-        'JSMin_UnterminatedStringException' => __DIR__ . '/..' . '/eusonlito/laravel-packer/src/Eusonlito/LaravelPacker/Processors/JSMin.php',
         'JoeDixon\\Translation\\Console\\Commands\\AddLanguageCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/AddLanguageCommand.php',
         'JoeDixon\\Translation\\Console\\Commands\\AddTranslationKeyCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/AddTranslationKeyCommand.php',
         'JoeDixon\\Translation\\Console\\Commands\\BaseCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/BaseCommand.php',
@@ -7031,6 +6989,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Auth\\AuthEndpointHardeningTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthEndpointHardeningTest.php',
         'Tests\\Feature\\Auth\\AuthorizationGateTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthorizationGateTest.php',
         'Tests\\Feature\\Auth\\ImpersonationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/ImpersonationTest.php',
+        'Tests\\Feature\\Auth\\PasswordRuleTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/PasswordRuleTest.php',
         'Tests\\Feature\\Auth\\TwoFactorReplayTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/TwoFactorReplayTest.php',
         'Tests\\Feature\\Avatar\\AvatarGenerationTest' => __DIR__ . '/../..' . '/tests/Feature/Avatar/AvatarGenerationTest.php',
         'Tests\\Feature\\BladePageInteractionTest' => __DIR__ . '/../..' . '/tests/Feature/BladePageInteractionTest.php',
@@ -7126,6 +7085,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Unit\\ApplicationNamingConventionTest' => __DIR__ . '/../..' . '/tests/Unit/ApplicationNamingConventionTest.php',
         'Tests\\Unit\\Domain\\DomainServiceRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Domain/DomainServiceRegressionTest.php',
         'Tests\\Unit\\Events\\GenerateSlotsTest' => __DIR__ . '/../..' . '/tests/Unit/Events/GenerateSlotsTest.php',
+        'Tests\\Unit\\Models\\DateCastingTest' => __DIR__ . '/../..' . '/tests/Unit/Models/DateCastingTest.php',
         'Tests\\Unit\\Notifications\\NotificationEnvFallbackTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationEnvFallbackTest.php',
         'Tests\\Unit\\Notifications\\NotificationRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationRegressionTest.php',
         'Tests\\Unit\\Scheduler\\SchedulerRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Scheduler/SchedulerRegressionTest.php',
