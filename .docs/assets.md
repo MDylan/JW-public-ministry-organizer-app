@@ -6,7 +6,8 @@ There is **one** asset pipeline in this repository, and it is not a build step.
 
 | Pipeline | State | What it serves |
 |---|---|---|
-| `pwbs_asset()` (`app/Helpers/helpers.php`) | **live** | Every stylesheet and script on every page, via 21 blade tags |
+| `pwbs_asset()` (`app/Helpers/helpers.php`) | **live** | The authenticated application and the installer wizard, via 21 blade tags |
+| Raw `asset()` in `resources/views/public.blade.php` | **live** | The whole guest area - see below |
 | Laravel Mix (`webpack.mix.js`) | **dead** | Nothing - see below |
 
 Nothing is compiled at deploy time and nothing is generated at request time. The application's CSS and JS are **hand-placed files committed under `public/`** (`public/dist/` for AdminLTE, `public/plugins/` for jQuery, bootstrap, toastr, sweetalert2, summernote and fullcalendar, `public/css/` and `public/js/` for the project's own four files). The browser receives those files **byte for byte**, with a cache-busting query appended to the URL.
@@ -46,6 +47,15 @@ The token is `filemtime` of the source file. Two consequences worth knowing:
 | `resources/views/livewire/groups/poster-edit-modal.blade.php` | 1 (js) | Summernote, pushed into the `footer_scripts` section - the only asset call inside a Livewire view |
 
 21 tags from the 16 calls the packer had: the three multi-file calls expanded to one tag per source, in the same order. **Concatenation was dropped on purpose** - it affected 3 of 16 call sites, bought nothing measurable over HTTP/2, and the machinery behind it was what wrote into the web root.
+
+### The guest area does not use the helper
+
+`resources/views/public.blade.php` is a **fourth** asset-emitting layout, and it never went through the packer. It serves login, register, password reset, the two-factor challenge, `main.blade.php` and the 404 page - the entire logged-out surface. It links the same vendor files with a raw `asset()`, unversioned, except for one hand-rolled `?ver={{ filemtime(public_path('js/custom.js')) }}` on `custom.js`.
+
+Two consequences worth knowing:
+
+- **The guest pages were never affected by any of the four defects below.** They linked the committed sources directly all along, which is why the mixed-content failure only ever appeared behind a login.
+- That inline `filemtime()` is `pwbs_asset()` written by hand for one file. Converting this layout is the obvious follow-up, but it is deliberately **not** part of TODO 33.8: the roadmap scoped that item to the 16 packer call sites, and this layout has no test covering its emission.
 
 ## Why the previous pipeline went
 
