@@ -34,7 +34,8 @@ class Settings extends AppComponent
         'gdpr' => false,
         'use_https' => false,
         'use_recaptcha' => false,
-        'show_homepage_alert' => false
+        'show_homepage_alert' => false,
+        'weather' => false,
         /*
         !!! Important! 
         If you add new element here, you must set into /app/Providers/AppServiceProvider.php file too, 
@@ -52,7 +53,13 @@ class Settings extends AppComponent
         'MAIL_ENCRYPTION',
         'MAIL_USERNAME',
         'MAIL_PASSWORD',
-        'MAIL_FROM_ADDRESS',        
+        'MAIL_FROM_ADDRESS',
+        // A kulcs neve KORÁBBAN OPENWAETHER_API_KEY volt - elírás, ami
+        // következetesen szerepelt öt helyen, ezért működött. A
+        // config/openweather.php egy kiadás erejéig a régi nevet is olvassa
+        // fallbackként, mert a telepített hostok .env fájlja még azt hordozza;
+        // ez a lista viszont már az új nevet írja ki mentéskor (v1-patch C).
+        'OPENWEATHER_API_KEY'
     ];
 
     public $mailtest = null;
@@ -72,12 +79,26 @@ class Settings extends AppComponent
             }
         }
 
-        $this->state['recaptcha']['site_key'] = env('RECAPTCHA_SITE_KEY', '');
-        $this->state['recaptcha']['secret_key'] = env('RECAPTCHA_SECRET_KEY', '');
+        // Ez az űrlap magát a .env FÁJLT szerkeszti, tehát a fájlból kell
+        // olvasnia. Korábban env()-ből olvasott, ami gyorsítótárazott
+        // konfiguráció mellett null - a szerkesztő ilyenkor csupa ÜRES mezőt
+        // mutatott, és a saveOthers() minden from_env kulcsot feltétel nélkül
+        // visszaír, tehát egyetlen mentés kitörölte volna az APP_NAME, APP_URL
+        // és az összes MAIL_* beállítást a .env-ből. Lásd
+        // App\Classes\setEnvironment::value().
+        $this->state['recaptcha']['site_key'] = setEnvironment::value('RECAPTCHA_SITE_KEY', '');
+        $this->state['recaptcha']['secret_key'] = setEnvironment::value('RECAPTCHA_SECRET_KEY', '');
         $this->state['homepage_message'] = $this->settings['homepage_message'] ?? '';
         foreach($this->from_env as $key) {
-            $this->state['env'][$key] = env($key, '');
-        }        
+            $this->state['env'][$key] = setEnvironment::value($key, '');
+        }
+
+        // A csoportadatok megőrzési ideje szándékosan KÍVÜL van a $others
+        // tömbön és a state['others'] ágon is. A $others elemeit a nézet
+        // kapcsoló-ciklusa rendereli (bootstrap-switch), ez viszont
+        // háromértékű választó; a state['others'] pedig a saveOthers()
+        // hatókörébe esne - lásd a saveGroupDataRetention() magyarázatát.
+        $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
     }
 
     private function getLanguages() {
@@ -170,6 +191,41 @@ class Settings extends AppComponent
         } 
     }
 
+    /**
+     * A csoportadatok (day_stats, group_dates) megőrzési ideje.
+     *
+     * Saját mentője van, nem a saveOthers()-é, három okból:
+     *
+     *  - a saveOthers() a settings sorok után az EGÉSZ .env fájlt újraírja
+     *    (USE_HTTPS, GDPR_ENABLED, minden MAIL_*, APP_URL) és config:clear-t
+     *    hív; egy megőrzési beállításnak nincs szüksége ekkora hatósugárra,
+     *  - a setEnvironmentValue() abort(403)-mal elszállhat AZUTÁN, hogy a
+     *    settings sorok már elmentek - részleges sikert hagyva maga után,
+     *  - a saveOthers() a komponens egyetlen szándékosan teszteletlen
+     *    metódusa (a .env.testing fájlt írná felül, lásd az AdminSettingsTest
+     *    osztálydokját). Egy VÉGLEGES TÖRLÉST vezérlő beállítás nem
+     *    maradhat lefedettség nélkül.
+     *
+     * A whitelist itt is kötelező, nem csak a RetentionWindow-ban: a settings
+     * táblába érvénytelen érték se kerüljön be.
+     */
+    public function saveGroupDataRetention() {
+        $value = (string) ($this->state['retention']['group_data'] ?? '0');
+
+        if(!in_array($value, config('retention.group_data_options'), true)) {
+            $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
+            $this->dispatchBrowserEvent('error', ['message' => __('settings.retention.invalid')]);
+            return;
+        }
+
+        ModelsSettings::updateOrCreate(
+            ['name' => 'group_data_retention'],
+            ['value' => $value]
+        );
+
+        $this->dispatchBrowserEvent('success', ['message' => __('settings.retention.saved')]);
+    }
+
     public function saveOthers() {
         // dd($this->state);
         if(isset($this->state['others'])) {
@@ -215,7 +271,10 @@ class Settings extends AppComponent
             }
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
 
-            if($setEnv['USE_HTTPS'] != getenv('USE_HTTPS')) {
+            // A getenv() ugyanabba a csapdába esett, mint az env(): gyorsítótárazott
+            // konfiguráció mellett a .env be sem töltődik, tehát hamisat ad, és a
+            // CSS-gyorsítótár minden mentésnél fölöslegesen kiürült.
+            if($setEnv['USE_HTTPS'] != setEnvironment::value('USE_HTTPS')) {
                 //clear css cache
                 foreach (glob(public_path()."/plugins/fontawesome-free/css/*-cache_fontawesome.css") as $filename) {
                     unlink($filename);

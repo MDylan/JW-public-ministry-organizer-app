@@ -53,7 +53,9 @@ return [
         'alert' => 'Figyelem, ezt követően a jelenlegi profilod törölve lesz, minden személyes adatod elvész, és a rendszer azonnal kiléptet.',
         'verify_needed' => 'Adataid törlését meg kell erősítened. Egy emailt küldtünk, és ott rá kell kattintanod a hivatkozásra.',
         'button' => 'Kérem az adataim törlését',
-        'success' => 'Az adataidat töröltük. Köszönjük, hogy eddig használtad az oldalunkat!'
+        'success' => 'Az adataidat töröltük. Köszönjük, hogy eddig használtad az oldalunkat!',
+        'no_successor_admin' => 'Az adataid most nem törölhetők, mert te vagy az oldal egyetlen főadminisztrátora. Kérjük, előbb nevezz ki egy másik főadminisztrátort, utána megismételheted a kérést.',
+        'no_successor_group' => 'Az adataid most nem törölhetők, mert a következő csoport(ok)ban te vagy az egyetlen felelős: :groups. Kérjük, előbb nevezz ki egy másik felelőst, utána megismételheted a kérést.'
     ],
     'calendars' => 'Naptárak',
     'calendars_info' => 'Ha bekapcsolod valamelyiket, akkor a jobb oldali esemény sávról gyorsan hozzá tudod adni a naptáradhoz a szolgálatodat.',

@@ -1,4 +1,7 @@
 <div>
+@section('title')
+{{ __('group.editGroup') }}
+@endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -10,7 +13,7 @@
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{route('home.home')}}">{{ __('app.menu-home') }}</a></li>
                 <li class="breadcrumb-item"><a href="{{route('groups')}}">{{ __('app.menu-groups') }}</a></li>
-                <li class="breadcrumb-item active">{{ __('group.addNew') }}</li>
+                <li class="breadcrumb-item active">{{ __('group.editGroup') }}</li>
             </ol>
             </div><!-- /.col -->
         </div><!-- /.row -->
@@ -82,7 +85,7 @@
                                                     <label for="inputName">{{__('group.replyToAddress')}}</label>
                                                     <input type="email" class="form-control @error('replyTo') is-invalid @enderror" id="replyTo" wire:model.defer="state.replyTo" value="" placeholder=""  aria-describedby="replyToHelper" />
                                                     <small id="replyToHelper" class="form-text text-muted">
-                                                        @lang('group.replyToHelper', ['defaultMail' => env('MAIL_FROM_ADDRESS')])
+                                                        @lang('group.replyToHelper', ['defaultMail' => config('mail.from.address')])
                                                     </small>
                                                     @error('replyTo')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
@@ -102,12 +105,84 @@
                                                     <small id="approval_help" class="form-text text-muted">
                                                         @lang('group.need_approval_help')
                                                     </small>
-                                                    <select class="form-control @error('need_approval') is-invalid @enderror" id="need_approval" wire:model.defer="state.need_approval" aria-describedby="approval_help">
+                                                    <select class="form-control @error('need_approval') is-invalid @enderror" id="need_approval" wire:model="state.need_approval" aria-describedby="approval_help">
                                                         <option value="0">@lang('No')</option>
                                                         <option value="1">@lang('Yes')</option>
                                                     </select>
                                                     @error('need_approval')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
+                                            </div>
+                                        </div>
+                                        @if ($state['need_approval'] == 2) 
+                                        {{-- Disabled for a future function --}}
+                                            <div class="row alert alert-light">
+                                                <div class="col-12">
+                                                    <div class="form-group">
+                                                        <label for="auto_approval">{{__('group.auto_approval')}}</label>
+                                                        <small id="auto_approval_help" class="form-text text-muted">
+                                                            @lang('group.auto_approval_help')
+                                                        </small>
+                                                        <select class="form-control @error('auto_approval') is-invalid @enderror" id="auto_approval" wire:model.defer="state.auto_approval" aria-describedby="auto_approval_help">
+                                                            <option value="0">@lang('No')</option>
+                                                            <option value="1">@lang('Yes')</option>
+                                                        </select>
+                                                        @error('auto_approval')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-group">
+                                                        <label for="auto_back">{{__('group.auto_back')}}</label>
+                                                        <small id="auto_back_help" class="form-text text-muted">
+                                                            @lang('group.auto_back_help')
+                                                        </small>
+                                                        <select class="form-control @error('auto_back') is-invalid @enderror" id="auto_back" wire:model.defer="state.auto_back" aria-describedby="auto_back_help">
+                                                            <option value="0">@lang('No')</option>
+                                                            <option value="1">@lang('Yes')</option>
+                                                        </select>
+                                                        @error('auto_back')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="min_publishers">{{__('group.min_publishers')}}</label>
+                                                    <input type="number" class="form-control @error('min_publishers') is-invalid @enderror" id="min_publishers" wire:model.defer="state.min_publishers" value="" placeholder="{{__('group.min_publishers_placeholder')}}" />
+                                                    @error('min_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="max_publishers">{{__('group.max_publishers')}}</label>
+                                                    <input type="number" class="form-control @error('max_publishers') is-invalid @enderror" id="max_publishers" wire:model.defer="state.max_publishers" value="" placeholder="{{__('group.max_publishers_placeholder')}}" />
+                                                    @error('max_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>  
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="min_time">{{__('group.min_time')}}</label>
+                                                    <select wire:model="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
+                                                        @foreach ($min_time_options as $field => $translate) 
+                                                            <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="max_time">{{__('group.max_time')}}</label>
+                                                    <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model.defer="state.max_time">
+                                                        @foreach ($max_time_options as $field => $translate) 
+                                                            <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                </div>  
                                             </div>
                                         </div>
                                         <div class="row">
@@ -185,46 +260,6 @@
                                                     </select>
                                                     @error('showPhone')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="form-group">
-                                                    <label for="min_publishers">{{__('group.min_publishers')}}</label>
-                                                    <input type="number" class="form-control @error('min_publishers') is-invalid @enderror" id="min_publishers" wire:model.defer="state.min_publishers" value="" placeholder="{{__('group.min_publishers_placeholder')}}" />
-                                                    @error('min_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="form-group">
-                                                    <label for="max_publishers">{{__('group.max_publishers')}}</label>
-                                                    <input type="number" class="form-control @error('max_publishers') is-invalid @enderror" id="max_publishers" wire:model.defer="state.max_publishers" value="" placeholder="{{__('group.max_publishers_placeholder')}}" />
-                                                    @error('max_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div>  
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="form-group">
-                                                    <label for="min_time">{{__('group.min_time')}}</label>
-                                                    <select wire:model="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
-                                                        @foreach ($min_time_options as $field => $translate) 
-                                                            <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="form-group">
-                                                    <label for="max_time">{{__('group.max_time')}}</label>
-                                                    <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model.defer="state.max_time">
-                                                        @foreach ($max_time_options as $field => $translate) 
-                                                            <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
-                                                </div>  
                                             </div>
                                         </div>
                                         @if (count(Config('available_languages')) > 1)
@@ -361,6 +396,68 @@
                                 </div>
                             </div>
                         </div> <!-- end of literatures section -->
+                        <!-- Weather section -->
+                        @if (config('weather') == 1)
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <div class="card-title">@lang('group.weather.title')</div>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            @lang('group.weather.info')
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="weather_enabled" class="col-md-6 col-form-label">@lang('group.weather.enable')</label>
+                                        <div class="col-md-6">
+                                            <select wire:model="state.weather_enabled" id="weather_enabled" class="form-control">
+                                                <option value="0">@lang('No')</option>
+                                                <option value="1">@lang('Yes')</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    @if ($state['weather_enabled'] == 1)
+                                        <div class="form-group row">
+                                            <label for="weather_city" class="col-md-6 col-form-label">@lang('group.weather.city')</label>
+                                            <div class="col-md-6">
+                                                <input type="text" wire:model.defer="weather.city" id="weather_city" class="form-control @error('city') is-invalid @enderror @error('city_id') is-invalid @enderror" />
+                                                @error('city')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                @error('city_id')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label for="weather_country" class="col-md-6 col-form-label">@lang('group.weather.country')</label>
+                                            <div class="col-md-6">
+                                                <select wire:model.defer="weather.country" id="weather_country" class="form-control @error('country') is-invalid @enderror">
+                                                    @foreach($countries as $code => $country)
+                                                        <option value="{{ $code }}" @if ($code == $default_country) selected @endif>{{ $country }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-md-12 text-right">
+                                                <button type="button" class="btn btn-info" wire:click="checkWeatherSettings">
+                                                    <i class="fas fa-cloud-sun mr-1"></i> @lang('group.weather.check_settings')
+                                                </button>
+                                            </div>
+                                            <div class="col-md-12 text-center mt-4">
+                                                @if(isset($weather_messages['main']))
+                                                @lang('group.weather.currently'): {{ $weather_messages['main']['temp_min'] }}&#8451; / {{ $weather_messages['main']['temp_max'] }}&#8451;, @lang('group.weather.humidity'): {{ $weather_messages['main']['humidity'] }}% <img src="/images/wt_icons/{{ $weather_messages['weather'][0]['icon'] }}@2x.png" width="30" height="30" /> ({{ $weather_messages['weather'][0]['description'] }})
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                        <!-- End of weather section -->
                     </div> <!-- end of left section -->
                     <div class="col-lg-6">
                         <div class="card card-primary card-outline">

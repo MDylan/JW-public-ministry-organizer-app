@@ -2,6 +2,14 @@
 
 namespace App\Observers;
 
+// Az EventAutoCheck job a v1-patch B9-ben törölve lett. Futásképtelen volt
+// (üres foreach, érvénytelen '=<' SQL operátor, és a törzse tömbelemen olvasott
+// objektum-property-t), a két dispatch helye pedig kezdettől ki volt
+// kommentelve - lásd lentebb -, tehát bizonyíthatóan soha nem futott.
+//
+// Az automatikus jóváhagyás mint FUNKCIÓ nem szűnt meg: az auto_approval és az
+// auto_back csoportmezők megmaradnak, csak nincs mögöttük megvalósítás. Ha
+// egyszer megírják, új jobbal kell, nem ennek a felélesztésével.
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\LogHistory;
@@ -11,10 +19,12 @@ use App\Notifications\EventDeletedAdminsNotification;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventStatusChangedNotification;
 use App\Notifications\EventUpdatedNotification;
+use App\Support\Concerns\ResolvesCauser;
 use Illuminate\Support\Facades\Notification;
 
 class EventObserver
 {
+    use ResolvesCauser;
 
     /**
      * Handle the Event "created" event.
@@ -24,19 +34,24 @@ class EventObserver
      */
     public function created(Event $event)
     {
+        $causerId = $this->causerId();
+
         $saved_data = [
             'event' => 'created',
             'group_id' => $event->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $causerId,
             'changes' => '',
         ];
 
         $history = new LogHistory($saved_data);
         $event->histories()->save($history);
 
-        if($event->user_id != auth()->user()->id) {
+        // A rendszer (causerId 0) sosem egyezik meg az esemény gazdájával,
+        // tehát az értesítés ilyenkor mindig kimegy - ahogy az updated() és a
+        // deleted() is teszi.
+        if($event->user_id != $causerId) {
             $data = [
-                'userName' => auth()->user()->name, 
+                'userName' => $this->causerName(),
                 'groupName' => $event->groups->name,
                 'replyTo' => $event->groups->replyTo,
                 'date' => $event->day,
@@ -52,6 +67,8 @@ class EventObserver
                 new EventCreatedNotification($data)
             );
         }
+
+        // Itt állt az EventAutoCheck kikommentelt dispatch-e (v1-patch B9).
     }
 
     /**
@@ -67,7 +84,12 @@ class EventObserver
         if(count($changes)) {
             $fillable = $event->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $event->getOriginal($field);
                     $new = $event->$field;
                     if($old !== $new) {
@@ -81,12 +103,12 @@ class EventObserver
                 }
             }
         }
-        $auth = (auth()->user() !== null) ? true : false;
+        $causerId = $this->causerId();
         if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $event->group_id,
-                'causer_id' => $auth ? auth()->user()->id : 0,
+                'causer_id' => $causerId,
                 'changes' => json_encode($store)
             ];
 
@@ -95,7 +117,7 @@ class EventObserver
 
             if(isset($store['new']['start']) || isset($store['new']['end'])) {
                 $data = [
-                    'userName' => $auth ? auth()->user()->name : "SYSTEM", 
+                    'userName' => $this->causerName(),
                     'groupName' => $event->groups->name,
                     'replyTo' => $event->groups->replyTo,
                     'date' => $event->day,
@@ -109,7 +131,7 @@ class EventObserver
                     ],
                     'reason' => session()->has('reason') ? session('reason') : false 
                 ];
-                if($event->user_id != ($auth ? auth()->user()->id : false)) {
+                if($event->user_id != $causerId) {
                     //notify user if not he modified this event
                     $us = User::find($event->user_id);
                     $us->notify(
@@ -134,6 +156,9 @@ class EventObserver
                 $us->notify(
                     new EventStatusChangedNotification($data)
                 );
+
+                // Itt állt az EventAutoCheck másik kikommentelt dispatch-e (v1-patch B9).
+
                 if($event->status == 1) {
                     //accept this event, delete in other groups
                     Event::where('status', '=', 0)
@@ -155,11 +180,11 @@ class EventObserver
      */
     public function deleted(Event $event)
     {
-        $auth = (auth()->user() !== null) ? true : false;
+        $causerId = $this->causerId();
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $event->group_id,
-            'causer_id' => $auth ? auth()->user()->id : false,
+            'causer_id' => $causerId,
             'changes' => ''
         ];
 
@@ -167,7 +192,9 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            'userName' => $auth ? auth()->user()->name : false, 
+            // Korábban false volt rendszer-törléskor, ami üresen jelent meg a
+            // levélben; most "SYSTEM", ahogy az updated() már régóta írja.
+            'userName' => $this->causerName(),
             'groupName' => $event->groups->name,
             'replyTo' => $event->groups->replyTo,
             'date' => $event->day,
@@ -183,7 +210,7 @@ class EventObserver
         } else {
             $data['event_user'] = 'anonym';
         }
-        if($event->user_id != ($auth ? auth()->user()->id : false) && !$us->isAnonymized) {
+        if($event->user_id != $causerId && !$us->isAnonymized) {
             //notify user if not he deleted this event            
             $us->notify(
                 new EventDeletedNotification($data)

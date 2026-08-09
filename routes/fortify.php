@@ -36,7 +36,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         ->middleware(array_filter([
             'guest:'.config('fortify.guard'),
             $limiter ? 'throttle:'.$limiter : null,
-            'checkRecaptcha'
+            'checkRecaptcha:login'
         ]));
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -54,12 +54,23 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
                 ->name('password.reset');
         }
 
+        // A `throttle` KORÁBBAN hiányzott innen és a /register-ről is: a
+        // botvédelmet egyedül a reCAPTCHA adta, ami kapcsolathibán szándékosan
+        // fail-open (lásd App\Http\Middleware\CheckRecaptcha). Egy Google-
+        // kimaradás alatt tehát mindkét végpont korlátlanul automatizálható
+        // volt. A /login ugyanezt a config('fortify.limiters.login')-ból kapja.
+        // A `strictEmail` a Laravel 8 alapértelmezett `email` szabályát pótolja,
+        // ami elfogadja a CR/LF-et a címben (GHSA-5vg9-5847-vvmq). Mindkét
+        // controller a vendorban él és `required|email`-t validál, tehát a
+        // szabály ott nem szerkeszthető maradandóan. Az ellenőrzés a
+        // reCAPTCHA ELŐTT fut: egy nyilvánvalóan rossz cím ne kerüljön a
+        // Google felé indított körbe.
         Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard'), 'checkRecaptcha'])
+            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'strictEmail', 'checkRecaptcha:password_reset'])
             ->name('password.email');
 
         Route::post('/reset-password', [NewPasswordController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+            ->middleware(['guest:'.config('fortify.guard'), 'strictEmail'])
             ->name('password.update');
     }
 
@@ -72,7 +83,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         }
 
         Route::post('/register', [RegisteredUserController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard'), 'checkRecaptcha' ]);
+            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'checkRecaptcha:register' ]);
     }
 
     // Email Verification...
@@ -118,8 +129,19 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
         ->name('password.confirmation');
 
-    Route::post('/user/confirm-password', [ConfirmablePasswordController::class, 'store'])
-        ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')]);
+    // TÖRÖLVE. Ez a végpont csak `auth:web`-et viselt, sebességkorlátot nem,
+    // vagyis egy ellopott munkamenettel korlátlanul lehetett rajta a felhasználó
+    // jelszavát próbálgatni. Az alkalmazás a SAJÁT, `throttle:6,1`-gyel védett
+    // ágát használja (`password.confirm.store`, routes/web.php), ide semmi nem
+    // postolt - a fenti GET pár pedig már korábban ki volt kommentelve.
+    //
+    // A Fortify 1.11.2 vendor route-fájljában ez a definíció ráadásul megkapta a
+    // `password.confirm` NEVET (a GET-ről költözött át); átvéve duplikált nevet
+    // csinálna a routes/web.php GET ágával, és a `route:cache` ugyanazzal a
+    // LogicExceptionnel bukna el, amit a TODO 26 zárt le.
+    //
+    // Route::post('/user/confirm-password', [ConfirmablePasswordController::class, 'store'])
+    //     ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')]);
 
     // Two Factor Authentication...
     if (Features::enabled(Features::twoFactorAuthentication())) {

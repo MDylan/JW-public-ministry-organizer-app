@@ -48,9 +48,16 @@ class TinkerCommand extends Command
         $config = Configuration::fromInput($this->input);
         $config->setUpdateCheck(Checker::NEVER);
 
+        $appConfig = $this->getLaravel()->make('config');
+        $config->setTrustProject($appConfig->get('tinker.trust_project'));
+
         $config->getPresenter()->addCasters(
             $this->getCasters()
         );
+
+        if ($this->option('execute')) {
+            $config->setRawOutput(true);
+        }
 
         $shell = new Shell($config);
         $shell->addCommands($this->getCommands());
@@ -60,10 +67,8 @@ class TinkerCommand extends Command
 
         $path .= '/composer/autoload_classmap.php';
 
-        $config = $this->getLaravel()->make('config');
-
         $loader = ClassAliasAutoloader::register(
-            $shell, $path, $config->get('tinker.alias', []), $config->get('tinker.dont_alias', [])
+            $shell, $path, $appConfig->get('tinker.alias', []), $appConfig->get('tinker.dont_alias', [])
         );
 
         if ($code = $this->option('execute')) {
@@ -102,7 +107,9 @@ class TinkerCommand extends Command
         $config = $this->getLaravel()->make('config');
 
         foreach ($config->get('tinker.commands', []) as $command) {
-            $commands[] = $this->getApplication()->resolve($command);
+            $commands[] = $this->getApplication()->add(
+                $this->getLaravel()->make($command)
+            );
         }
 
         return $commands;
@@ -123,6 +130,10 @@ class TinkerCommand extends Command
 
         if (class_exists('Illuminate\Database\Eloquent\Model')) {
             $casters['Illuminate\Database\Eloquent\Model'] = 'Laravel\Tinker\TinkerCaster::castModel';
+        }
+
+        if (class_exists('Illuminate\Process\ProcessResult')) {
+            $casters['Illuminate\Process\ProcessResult'] = 'Laravel\Tinker\TinkerCaster::castProcessResult';
         }
 
         if (class_exists('Illuminate\Foundation\Application')) {

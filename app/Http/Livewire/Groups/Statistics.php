@@ -6,6 +6,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
+use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 
@@ -14,10 +15,6 @@ class Statistics extends AppComponent
 
     protected $group;
     public $groupId = 0;
-    // public $months = [];
-    public $year = 0;
-    public $month = 0;
-    public $current_month = 0;
     public $filter_sub_group = false;
     public $filter_all_event = false;
     public $period = null;
@@ -26,13 +23,7 @@ class Statistics extends AppComponent
 
     public function mount($group) {
         $this->groupId = $group;
-        
-        if(!isset($this->state['month'])) {
-            $this->state['month'] = date("Y-m-")."01";
-        }
-        $this->year = date("Y");
-        $this->month = date("m");
-        
+
         if(!$this->startDate) {
             $this->startDate = date("Y-m-")."01";
         }
@@ -41,24 +32,78 @@ class Statistics extends AppComponent
         }
     }
 
-    public function getMonthListFromDate(Carbon $start)
-    {
-        $period = $start->monthsUntil(Carbon::today());
-        foreach ($period as $month) {
-            $this->months[$month->format('Y-m-01')] = $month->format('Y')." ".__($month->format('F'));
-        }        
+    /**
+     * A szűrőűrlap elküldése.
+     *
+     * Ez a metódus korábban setMonth() volt, és egy hónapválasztóhoz tartozott.
+     * A választót date-range páros váltotta fel - a select a nézetben ki van
+     * kommentelve -, a metódus törzse viszont ottmaradt: egy `$this->months`
+     * tömbre hivatkozott, aminek a DEKLARÁCIÓJA is ki volt kommentelve. Így
+     * dinamikus property lett belőle, amit a Livewire nem perzisztál, tehát az
+     * isset() mindig hamis volt, és a metódus semmit nem csinált. A gomb csak
+     * azért működött, mert BÁRMELY Livewire-akció újraküldi a `wire:model.defer`
+     * mezőket - a hatás a metódustól teljesen független volt.
+     *
+     * A törzs ezért törölve. A metódus megmarad, mert a szerepe valódi: ez az
+     * akció küldi be a halasztott dátummezőket. A render() a $startDate és az
+     * $endDate alapján dolgozik, más bemenete nincs.
+     *
+     * (A dinamikus property PHP 8.2-től deprecated - ezzel az a csapda is
+     * eltűnik a Phase 8 elől.)
+     */
+    public function applyDateRange() {
+        // A render() mindent a frissített $startDate / $endDate alapján számol.
     }
 
-    public function setMonth() {
-        if(isset($this->months[$this->state['month']])) {
-            $month = strtoTime($this->state['month']);
-            $this->year = date("Y", $month);
-            $this->month = date("m", $month);
+    /**
+     * A választott időszakot felhúzza a retenciós padlóra.
+     *
+     * A padló alatt a day_stats és a group_dates sorok már törölve vannak, az
+     * események is elfogyhattak - a nézet viszont nem üres táblát rajzolna,
+     * hanem a group_dates hiányában is végigmenne a napokon, és minden régi
+     * napra azt állítaná, hogy a csoport 0 órát szolgált. A hamis adat
+     * rosszabb, mint a hiányzó, ezért a korlát SZERVEROLDALI: a nézetbeli
+     * `min` attribútum csak tanácsadó, a wire:model.defer bármit felküldhet.
+     *
+     * A displayFloor() azért a helyes padló, mert ez a nézet eseményt ÉS
+     * day_stats-ot is olvas - csak addig hiteles, ameddig mindkettő él.
+     */
+    private function clampToRetentionFloor(): void
+    {
+        $floor = RetentionWindow::displayFloor();
+
+        if ($floor === null) {
+            return;
         }
+
+        if (Carbon::parse($this->startDate)->lt($floor)) {
+            $this->startDate = $floor->toDateString();
+        }
+
+        if (Carbon::parse($this->endDate)->lt($floor)) {
+            $this->endDate = $floor->toDateString();
+        }
+    }
+
+    /**
+     * A dátumválasztó legkorábbi napja: a csoport létrehozása és a retenciós
+     * padló közül a KÉSŐBBI.
+     */
+    private function earliestSelectableDate(): string
+    {
+        $floor = RetentionWindow::displayFloor();
+        $created = Carbon::parse($this->group->created_at)->startOfDay();
+
+        if ($floor !== null && $floor->greaterThan($created)) {
+            return $floor->toDateString();
+        }
+
+        return $created->toDateString();
     }
 
     public function render()
     {
+        $this->clampToRetentionFloor();
 
         $startDate = Carbon::parse($this->startDate);
         $endDate = Carbon::parse($this->endDate);
@@ -74,10 +119,6 @@ class Statistics extends AppComponent
         $this->first_day = $this->startDate;
         $this->last_day = $this->endDate;
 
-        // $firstDayOfMonth = mktime(0,0,0,$this->month,1, $this->year);
-        // $this->current_month = date('F', $firstDayOfMonth);
-        // $this->first_day = date("Y-m-d", $firstDayOfMonth);
-        // $this->last_day = date("Y-m-t", $firstDayOfMonth);
 
         $this->group = Group::with([
                 'dates' => function($q) {
@@ -85,8 +126,6 @@ class Statistics extends AppComponent
                 },
                 'literatures'
                 ])->firstWhere('id', '=', $this->groupId);
-        $start = strtotime($this->group->created_at);
-        // $this->getMonthListFromDate(Carbon::parse(date("Y-m-01", $start)));
 
         $stats = DayStat::where('group_id', $this->group->id)
                             ->whereBetween('day', [$this->first_day, $this->last_day])
@@ -347,7 +386,7 @@ class Statistics extends AppComponent
             'date_info' => $date_info,
             'literatures' => count($this->group->literatures),
             'picker' => [
-                'minDate' => $this->group->created_at->format("Y-m-d")
+                'minDate' => $this->earliestSelectableDate()
             ]
         ]);
     }

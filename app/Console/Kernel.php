@@ -2,25 +2,8 @@
 
 namespace App\Console;
 
-use App\Classes\updateGroupFutureChanges;
-use App\Models\AdminNewsletter;
-use App\Models\Event;
-use App\Models\GroupFutureChange;
-use App\Models\GroupMessage;
-use App\Models\LogHistory;
-use App\Models\Settings;
-use App\Models\Statistics;
-use App\Models\User;
-use App\Notifications\Newsletter;
-use App\Notifications\UserWillBeAnonymizeNotification;
-use App\Notifications\UserWillBeAnyonimizeAdminNotification;
-use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 
 class Kernel extends ConsoleKernel
 {
@@ -30,7 +13,12 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \Dialect\Gdpr\Commands\AnonymizeInactiveUsers::class,
+        // A Dialect csomag gdpr:anonymizeInactiveUsers parancsának helyére a
+        // projekt leszármazottja kerül. Innen regisztrálva felülírja a csomag
+        // providerből jövő változatát - az indoklás a parancs osztálydokjában
+        // van (TODO 12.2). A csomag a saját ütemezését a providerből adja hozzá,
+        // ami a Kernel::schedule() után fut, ezért onnan nem szűrhető ki.
+        \App\Console\Commands\PackageAnonymizeInactiveUsers::class,
     ];
 
     /**
@@ -41,199 +29,67 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // A korábbi névtelen closure-ök helyett nevesített parancsok futnak.
+        // Az ütemezés és a sorrend változatlan; a parancsok törzse az
+        // app/Console/Commands könyvtárban él és egyenként tesztelhető.
         $schedule->command('queue:work --name=kozteruletek-job-1 --queue=default --max-time=25 --max-jobs=100 --sleep=3 --tries=3 --backoff=20')
                     ->everyMinute()
                     ->withoutOverlapping(1);
-        
-        $schedule->call(function () {
-            //delete users who not verify their emails more then one week
-            User::whereNull('email_verified_at')
-                        ->where('created_at', '<', date("Y-m-d H:i:s", strtotime("-1 week")))->delete();
-            
-        })->hourlyAt(50);
 
-        $schedule->call(function () {
-            //set event's statuses to deleted if not accepted in time
-            Event::where('status', '=', '0')
-                    ->where('start', '<=', date("Y-m-d H:i:s"))
-                    ->update(['status' => 2]);
-            
-        })->everyFiveMinutes();
+        $schedule->command('users:purge-unverified')->hourlyAt(50);
 
-        //anonymize inactive users
-        $schedule->call(function () {
-            if (!config('gdpr.enabled')) {   
-                return;                
-            }
+        $schedule->command('events:expire-pending')->everyFiveMinutes();
 
-            $users = User::where('last_activity', '<=', carbon::now()
-                    ->submonths(config('gdpr.settings.ttl')))
-                    ->where('isAnonymized', 0)
-                    ->get();
-            foreach ($users as $user) {
-                \App\Models\GroupUser::where('user_id', $user->id)->delete();
-                $user->anonymize();
-            }
-        })->dailyAt('7:00');
+        $schedule->command('gdpr:anonymize-inactive')->dailyAt('7:00');
 
-        $schedule->call(function () {
-            //notify inactive users
-            if (!config('gdpr.enabled')) {   
-                return;                
-            }
-            $date = Carbon::now()->subMonths(config('gdpr.settings.ttl'));
-            $date->addDays(15);
-            $model = config('gdpr.settings.user_model_fqn', 'App\Models\User');
-            $user = new $model();
-            $anonymizableUsers = $user::where('last_activity', '!=', null)
-                                ->where('isAnonymized', 0)
-                                ->where('last_activity', '<=', $date)
-                                ->get();
-    
-            foreach ($anonymizableUsers as $user) {
-                $date = Carbon::parse($user->last_activity)->addMonths(config('gdpr.settings.ttl'));
-                $data['lastDate'] = $date->format("Y-m-d");
-                $user->notify(
-                    new UserWillBeAnonymizeNotification($data)
-                );
-            }
+        $schedule->command('gdpr:notify-anonymization')->dailyAt('7:10');
 
-            //notify users admins from future anonymization
-            $editors_list = [];
-            $submonths = config('gdpr.settings.ttl');
-            $minDate = Carbon::now()->subMonths($submonths);
-            $minDate->addDays(7);
+        // A retenciós takarítás hajnali 3 után fut, nem a 00:00-s torlódásban
+        // (purge-log-history, daily-cleanup, record-daily-users mind ott van).
+        // Az események előbb, a belőlük származtatott csoportadatok utána.
 
-            $maxDate = Carbon::now()->subMonths($submonths);
-            $maxDate->addDays(6);
-            $anonymizableUsers = DB::table('users AS U')
-                            ->join('group_user AS GU', function($join) {
-                                $join->on('U.id', '=', 'GU.user_id')
-                                    ->whereNotNull('GU.accepted_at')
-                                    ->whereNull('GU.deleted_at');
-                            })
-                            ->join('groups AS G', function($join) {
-                                $join->on('GU.group_id', '=', 'G.id')
-                                    ->whereNull('G.parent_group_id');
-                            })
-                            ->join('group_user as ADMIN', function($join) {
-                                $join->on('ADMIN.group_id', '=', 'GU.group_id')
-                                    ->whereNotNull('ADMIN.accepted_at')
-                                    ->whereNull('ADMIN.deleted_at')
-                                    ->whereIn('ADMIN.group_role',['roler', 'admin']);
-                            })
-                            ->select('U.id', 'U.email', 'U.name', 'U.last_activity', 'G.id as group_id', 'G.name as group_name', 'ADMIN.user_id as admin_id')
-                                ->where('U.last_activity', '!=', null)
-                                ->where('U.isAnonymized', 0)
-                                ->whereBetween('U.last_activity', [$maxDate->format("Y-m-d"), $minDate->format("Y-m-d")])
-                                // ->where('U.last_activity', '<=', $minDate->format("Y-m-d"))
-                            ->get();
-            foreach ($anonymizableUsers as $user) {
-                $date = Carbon::parse($user->last_activity)->addMonths($submonths);
-                $data['lastDate'] = $date->format("Y-m-d");
+        // A Spatie parancsa eddig SOHA nem futott, pedig a
+        // config/activitylog.php 90 napos retenciót deklarál - a beállítás
+        // ezért négy éve nem lépett életbe (élesben a 7739 sorból 7581 már
+        // túl van a 90 napon).
+        //
+        // A --force nem elhagyható: a CleanActivitylogCommand a
+        // ConfirmableTrait::confirmToProceed()-del indul, ami production
+        // környezetben megerősítést kér. Ütemezőből futva nincs TTY, a
+        // confirm() a false alapértéket adja, a parancs kiírja, hogy
+        // "Command Cancelled!", 1-gyel kilép és SEMMIT nem töröl - némán,
+        // mert a scheduler kilépőkódját semmi nem jelzi ki.
+        //
+        // Az őr itt when()-ben van, nem a parancs törzsében: a vendor
+        // parancsba nem tudunk beleírni. Kézzel indítva ezért megkerülhető -
+        // az viszont explicit üzemeltetői művelet.
+        $schedule->command('activitylog:clean --force')
+                    ->dailyAt('3:20')
+                    ->when(fn () => (bool) config('gdpr.enabled'));
 
-                $editors_list[$user->group_id]['admins'][$user->admin_id] = $user->admin_id;
-                $editors_list[$user->group_id]['users'][$user->id] = [
-                    'lastDate' => $data['lastDate'],
-                    'last_activity' => $user->last_activity,
-                    'name' => Crypt::decryptString($user->name)
-                ];
-                $editors_list[$user->group_id]['name'] = Crypt::decryptString($user->group_name);
-            }
+        $schedule->command('gdpr:purge-old-events')->dailyAt('3:30');
 
-            if(count($editors_list)) {
-                foreach($editors_list as $list) {
-                    $admins = User::whereIn('id', $list['admins'])
-                        ->get();
+        $schedule->command('maintenance:purge-old-group-data')->dailyAt('3:40');
 
-                    Notification::send($admins, new UserWillBeAnyonimizeAdminNotification($list));
-                }
-            }
-        })->dailyAt('7:10');
-        
-        //delete old LogHistory data
-        $schedule->call(function () {
-            $date = Carbon::now()->subMonths(3);
-            LogHistory::where('created_at', '<=', $date)->delete();
-        })->daily();
+        $schedule->command('maintenance:purge-log-history')->daily();
 
-        //delete old trashed events
-        $schedule->call(function () {
-            $date = Carbon::now()->subMonths(3);
-            Event::onlyTrashed()
-                ->where(
-                    'day', '<=', $date
-                )->forceDelete();
+        $schedule->command('maintenance:daily-cleanup')->daily();
 
-            //delete old group messages
-            GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
+        $schedule->command('statistics:record-daily-users')->daily();
 
-            //create dialy statistics
-            $dialy_users = User::where('last_activity', '>=', now()->subDay())->count();
-            Statistics::insert([
-                'type' => 'dialy_users',
-                'date' => now()->subDay()->format("Y-m-d"),
-                'number' => $dialy_users ?? 0
-            ]);
-        })->daily();
+        $schedule->command('groups:apply-future-changes')->everyMinute();
 
-        $schedule->call(function () {
-            //check group's future changes
-            $changes = GroupFutureChange::where('change_date', '=', date("Y-m-d"))->get();
-            foreach($changes as $change) {
-                $init = new updateGroupFutureChanges();
-                $init->initChanges($change->group_id);
-            }
+        $schedule->command('newsletters:send-due')->everyMinute();
 
-            $newsletters = AdminNewsletter::where('date', today())
-                ->where('send_newsletter', 1)
-                ->where('status', 1)
-                ->whereNull('sent_time')
-                ->get();
-            foreach($newsletters as $newsletter) {
-                if($newsletter->send_to == 'groupCreators') {
-                    $users = User::whereIn('role', ['groupCreator', 'mainAdmin'])->get();
-                } elseif($newsletter->send_to == 'groupAdmins') {
-                    $users = User::whereHas('userGroupsDeletable')->get();
-                } elseif($newsletter->send_to == 'groupServants') {
-                    $users = User::whereHas('userGroupsEditable')->get();
-                } else {
-                    return;
-                }
-                foreach($users as $user) {
-                    $data = [
-                    'newsletter_id' => $newsletter->id."_".$user->id,
-                    'subject' => $newsletter->getTranslation($user->preferredLocale())->subject,
-                    'content' => $newsletter->getTranslation($user->preferredLocale())->content,
-                    'recipients' => $newsletter->send_to,
-                    ];
-                    $user->notify(
-                        new Newsletter($data)
-                    );
-                }
-                $newsletter->sent_time = date("Y-m-d H:i:s");
-                $newsletter->save();
-            }
-        })->everyMinute();
+        $schedule->command('statistics:record-active-users')->hourly();
 
-        $schedule->call(function () {
-            $time = now()->subHour();
-            $active_users = User::where('last_activity', '>=', $time)->count();
-            Statistics::insert([
-                'type' => 'active_users',
-                'date' => $time->format("Y-m-d H:i:00"),
-                'number' => $active_users ?? 0
-            ]);
-        })->hourly();
+        $schedule->command('scheduler:heartbeat')->everyMinute();
 
-        //store last schedule run
-        $schedule->call(function () {
-            Settings::updateOrInsert(
-                [ 'name' => 'last_schedule_run' ],
-                [ 'value' => now() ]
-            );
-        })->everyMinute();
-        
+        // Háromóránként. Az ingyenes OpenWeather szint 1000 hívás/nap, egy
+        // település frissítése 2 hívás - ez így nagyjából 60 települést bír el
+        // a kereten belül. Az előrejelzés maga is 3 óránkénti felbontású, tehát
+        // sűrűbb futás nem adna több információt.
+        $schedule->command('weather:refresh')->cron('0 */3 * * *');
     }
 
     /**

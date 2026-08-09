@@ -8,10 +8,13 @@ use App\Models\GroupDayDisabledSlots;
 use App\Models\User;
 use App\Notifications\EventDeletedNotification;
 use App\Notifications\EventUpdatedNotification;
+use App\Support\Concerns\ResolvesCauser;
 use DateTime;
 use Illuminate\Support\Facades\DB;
 
 class CalculateDatesEvents {
+    use ResolvesCauser;
+
     /**
      * Calculate events based on group_dates
      */
@@ -212,11 +215,13 @@ class CalculateDatesEvents {
         }
         // dd($disabled_slots, $days_disabled_slots, $debug, $modifies, 'Upd', $updates, 'Del:', $deletes, $events, $original_data);
 
-        if($user_id) {
-            $causer_user = User::find($user_id);
-        } else {
-            $causer_user = auth()->user();
-        }
+        // A causer neve NEM olvasható közvetlenül modellről: ez a metódus a
+        // CalculateDateProcess és a GroupDayUpdatedProcess sorkezelőjéből is
+        // fut, ahol az auth() sosem ad felhasználót, a rendszer-okozó
+        // azonosítója pedig 0 - amire a User::find() null-t ad. Az
+        // eredményt a hívó közvetlenül értesítés szövegébe teszi, tehát a
+        // null itt ErrorException-t okozna.
+        $causerName = self::causerNameFor($user_id ?: auth()->user()?->id);
         $group = Group::find($group_id);
 
         Event::withoutEvents(function () use ($deletes) {
@@ -227,7 +232,7 @@ class CalculateDatesEvents {
         foreach($deletes as $event_id => $v) {
             $event = $original_data[$event_id];
             $notifies[$event['user_id']]['deletes'][] = [
-                'userName' => $causer_user->name, 
+                'userName' => $causerName, 
                 'groupName' => $group->name,
                 'replyTo' => $group->replyTo,
                 'date' => $event['day'],
@@ -252,7 +257,7 @@ class CalculateDatesEvents {
             if(!isset($deletes[$id])) {
                 $event = $original_data[$id];
                 $notifies[$event['user_id']]['updates'][] = [
-                    'userName' => $causer_user->name, 
+                    'userName' => $causerName, 
                     'groupName' => $group->name,
                     'replyTo' => $group->replyTo,
                     'date' => $event['day'],

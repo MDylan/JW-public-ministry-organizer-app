@@ -44,10 +44,42 @@
                         <li>@lang('setup.intro.step5')</li>
                     </ol>
 
-                    <a href="{{ route('setup.requirements') }}" class="btn btn-primary">
-                        @lang('setup.check_requirements')
-                        <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
+                    @if ($unlocked)
+                        <a href="{{ route('setup.requirements') }}" class="btn btn-primary">
+                            @lang('setup.check_requirements')
+                            <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    @else
+                        {{-- A telepítő feloldása. A kód a szerveren, a
+                             storage/app/installer-token.txt fájlban áll, tehát
+                             megadni csak az tudja, aki a fájlrendszerhez
+                             hozzáfér. Ez az egyetlen ellenőrzés, ami ebben a
+                             szakaszban értelmezhető: felhasználó még nincs. --}}
+                        <hr>
+                        <h6>@lang('setup.token.title')</h6>
+                        <p class="text-muted">{!! __('setup.token.help') !!}</p>
+
+                        @if (session('status'))
+                            <div class="alert alert-warning">{{ session('status') }}</div>
+                        @endif
+
+                        <form action="{{ route('setup.unlock') }}" method="POST">
+                            @csrf
+                            <div class="form-group">
+                                <label for="installerToken">@lang('setup.token.label')</label>
+                                <input type="text" name="token" id="installerToken"
+                                       class="form-control @error('token') is-invalid @enderror"
+                                       value="{{ old('token') }}" autocomplete="off" required>
+                                @error('token')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                @lang('setup.token.unlock')
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
 

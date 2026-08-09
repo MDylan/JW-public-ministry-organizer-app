@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\StaticPage;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class StaticPagesSetupSeeder extends Seeder
@@ -10,11 +11,25 @@ class StaticPagesSetupSeeder extends Seeder
     /**
      * Run the database seeds.
      *
+     * A telepítő a Setup\AccountController-ből callWith()-szel adja át a
+     * tulajdonos azonosítóját. A paraméter opcionális, hogy a seeder
+     * `artisan db:seed --class=StaticPagesSetupSeeder` alakban is
+     * futtatható legyen; ilyenkor az első mainAdmin lesz a tulajdonos.
+     *
+     * @param  int|null  $user_id
      * @return void
      */
-    public function run($user_id)
+    public function run($user_id = null)
     {
-        $lang = env('APP_LANG', 'en');
+        $user_id = $user_id ?? User::where('role', 'mainAdmin')->value('id');
+
+        if ($user_id === null) {
+            $this->command?->warn('StaticPagesSetupSeeder skipped: no mainAdmin user exists to own the pages.');
+
+            return;
+        }
+
+        $lang = config('app.locale', 'en');
         $home = [
             'status' => 2,
             'slug' => 'home',

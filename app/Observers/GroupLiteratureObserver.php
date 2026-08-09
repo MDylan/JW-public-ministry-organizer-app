@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupLiterature;
 use App\Models\LogHistory;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupLiteratureObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupLiterature "created" event.
      *
@@ -25,7 +28,7 @@ class GroupLiteratureObserver
         $saved_data = [
             'event' => 'created',
             'group_id' => $groupLiterature->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 
@@ -46,7 +49,12 @@ class GroupLiteratureObserver
         if(count($changes)) {
             $fillable = $groupLiterature->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $groupLiterature->getOriginal($field);
                     $new = $groupLiterature->$field;
                     if($old !== $new) {
@@ -60,7 +68,7 @@ class GroupLiteratureObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupLiterature->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
             $history = new LogHistory($saved_data);
@@ -86,7 +94,7 @@ class GroupLiteratureObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupLiterature->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => json_encode($store)
         ];
 

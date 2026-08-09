@@ -60,6 +60,10 @@ return [
     'max_extend_days_placeholder' => 'Például 60',
     'need_approval' => 'Jóváhagyás szükséges',
     'need_approval_help' => 'Igen esetén minden jelentkezést külön el kell fogadni.',
+    'auto_approval' => 'Automatikus jóváhagyás',
+    'auto_approval_help' => 'Ha a jelentkezők létszáma eléri a minimum létszámot, akkor automatikusan fogadja el a jelentkezéseket. (Csak abban az esetben, ha a jelentkező szolgálati ideje megegyezik egy másik jelentkező szolgálati idejével).',
+    'auto_back' => 'Automatikus státusz-visszaállítás',
+    'auto_back_help' => 'Ha a jelentkezés már el lett fogadva, de a létszám visszaesik a minimum szám alá (pl. törli valaki a jelentkezését), akkor a már elfogadott jelentkezéseket is állítsa vissza "elfogadásra vár" státuszra.',
     'days_head' => 'Szolgálati napok',
     'calendar_colors' => 'Naptár színek beállítása',
     'color_default' => 'Nincs szolgálat',
@@ -160,6 +164,7 @@ return [
             'info' => 'A hozzáadás gombra kattintva a rendszer azonnal hozzáadja csoporttag jogosultsággal a hírnököt. Emailben értesítve lesz, hogy meghívtad a csoportba, és ha nincs fiókja, akkor a rendszer automatikusan készít neki egyet.',
             'email_language' => 'Az email értesítő ezen a nyelven menjen (ha nincs még fiókja):',
             'email_language_error' => 'A kiválasztott nyelv nem érhető el.',
+            'error_this_is_child' => 'Új hírnököt csak a főcsoportban lehet hozzáadni, itt nem. A főcsoportba felvett hírnökök automatikusan bekerülnek ide is.',
             'success' => 'Hozzáadva :number új hírnök!'
         ],
         
@@ -333,5 +338,22 @@ return [
             'catch_urgent' => 'Továbbítsd neki sürgős üzeneteket',
             
         ]
+    ],
+    'weather' => [
+        'check_settings' => 'Beállítások ellenőrzése',
+        'title' => 'Időjárás előrejelzés',
+        'info' => 'Az időjárás előrejelzés a csoport szolgálati napjainak időjárását mutatja meg. A hírnökök a naptárban láthatják majd a következő 5 nap előrejelzését.',
+        'enable' => 'Időjárás előrejelzés bekapcsolása',
+        'city' => 'Város',
+        'country' => 'Ország',
+        'error' => 'Hiba az időjárás előrejelzés beállításakor.',
+        'error_message' => 'Kérlek add meg a várost és az országot is.',
+        'error_weather_message' => 'Hiba történt az időjárás előrejelzés lekérésekor, ellenőrizd az adatokat és próbáld újra.',
+        'humidity' => 'Páratartalom',
+        'wind' => 'Szél',
+        'no_data' => 'Nincs elérhető adat',
+        'too_many_requests' => 'Túl sok próbálkozás, kérlek várj 15 percet.',
+        'currently' => 'Jelenleg',
+        'km_h' => 'km/ó',
     ]
 ];

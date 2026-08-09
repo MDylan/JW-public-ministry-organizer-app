@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupNews;
 use App\Models\LogHistory;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupNewsObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupNews "created" event.
      *
@@ -31,7 +34,12 @@ class GroupNewsObserver
         if(count($changes)) {
             $fillable = $groupNews->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $groupNews->getOriginal($field);
                     $new = $groupNews->$field;
                     if($old !== $new) {
@@ -45,7 +53,7 @@ class GroupNewsObserver
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupNews->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -65,7 +73,7 @@ class GroupNewsObserver
         $saved_data = [
             'event' => 'deleted',
             'group_id' => $groupNews->group_id,
-            'causer_id' => auth()->user()->id,
+            'causer_id' => $this->causerId(),
             'changes' => ''
         ];
 

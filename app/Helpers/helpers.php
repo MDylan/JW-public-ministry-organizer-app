@@ -18,10 +18,12 @@ if(!function_exists('pwbs_poster_set_read')) {
     }
 }
 
-if(!function_exists('pwbs_check_group_admins')) {
+if(!function_exists('pwbs_check_group_other_admins')) {
     function pwbs_check_group_other_admins(int $groupId, int $userId) {
         $group = Group::findOrFail($groupId);
-        $users = $group->groupAdmins()->get()->toArray();
+        // Utódnak csak nem anonimizált, elfogadott admin számít - lásd a
+        // Group::activeAdmins() indoklását (TODO 12.2).
+        $users = $group->activeAdmins()->get()->toArray();
         $total_group = 1;
         $admins = 0;
         $main_admins = [];
@@ -35,11 +37,11 @@ if(!function_exists('pwbs_check_group_admins')) {
             }
         }
         //check child groups too!
-        $child_groups = $group->childGroups()->with('groupAdmins')->get()->toArray();
+        $child_groups = $group->childGroups()->with('activeAdmins')->get()->toArray();
         if(count($child_groups) > 0) {
             $total_group += count($child_groups);
             foreach($child_groups as $child_group) {
-                foreach($child_group['group_admins'] as $user) {
+                foreach($child_group['active_admins'] as $user) {
                     if($user['id'] != $userId) {
                         $admins++;
                         if(!isset($main_admins[$user['id']])) 
@@ -63,7 +65,13 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
     function pwbs_get_newsletter_roles() {
         $in = [];
 
-        if(auth()->user()->can('is-groupCreator') || auth()->user()->can('is-admin')) {
+        // A gate neve 'is-groupcreator', csupa kisbetűvel (AuthServiceProvider.php:37).
+        // Itt korábban 'is-groupCreator' állt, és mivel a Laravel a gate-eket
+        // kulcs szerinti tömbben tartja, a nevek kis-nagybetű érzékenyek: a
+        // feltétel MINDIG hamis volt, tehát egy sima groupCreator soha nem kapta
+        // meg a neki címzett hírleveleket - csak a mainAdmin jutott át az
+        // is-admin ágon.
+        if(auth()->user()->can('is-groupcreator') || auth()->user()->can('is-admin')) {
             //create group
             $in[] = 'groupCreators';
         } 
@@ -74,5 +82,24 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
             $in[] = 'groupAdmins';            
         }
         return $in;
+    }
+}
+
+if(!function_exists('pwbs_weather_api_call')) {
+    /**
+     * Egy település időjárása, gyorsítótárral.
+     *
+     * A törzs a v1-patch C csomagjában az App\Support\Weather\WeatherCache
+     * osztályba költözött (TODO 33.6). Ez a függvény szándékosan megmaradt
+     * átjárónak, hogy a két Livewire hívási hely - Groups\UpdateGroupForm
+     * :215 és :524 - ne mozduljon ugyanabban a változtatásban.
+     *
+     * A visszatérési szerződés változatlan: 'city_id' plusz vagy
+     * 'current_weather' + 'forecast_weather', vagy 'error'.
+     */
+    function pwbs_weather_api_call(string $city, string $country) {
+        if(config('weather') != 1) return;
+
+        return app(\App\Support\Weather\WeatherCache::class)->forCity($city, $country);
     }
 }

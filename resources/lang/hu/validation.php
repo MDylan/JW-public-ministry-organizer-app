@@ -160,13 +160,21 @@ return [
         'comment' => 'megjegyzés',
         'firstDay' => 'nap',
         'change_date' => 'változás napja',
-        'message' => 'üzenet'
+        'message' => 'üzenet',
+        'city' => 'város',
+        'country' => 'ország',
+        'weather_enabled' => 'időjárás előrejelzés',
+        'city_id' => 'város',
     ],
     'values' => [
         'date_status' => [
             0 => 'nem',
             2 => 'igen'
         ],
-        'date' => ['today' => 'a mai nap']
+        'date' => ['today' => 'a mai nap'],
+        'weather_enabled' => [
+            0 => 'nem',
+            1 => 'igen'
+        ],
     ]
 ];

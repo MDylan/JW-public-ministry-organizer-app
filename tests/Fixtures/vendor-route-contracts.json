@@ -1,0 +1,72 @@
+{
+ "laraupdater.check": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "laraupdater.currentVersion": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "laraupdater.update": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
+   "auth",
+   "can:is-admin",
+   "web"
+  ]
+ },
+ "livewire.message": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
+ "livewire.message-localized": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
+ "livewire.preview-file": {
+  "methods": [
+   "GET",
+   "HEAD"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
+ "livewire.upload-file": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "throttle:60,1",
+   "web"
+  ]
+ }
+}

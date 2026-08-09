@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class ListUsers extends AppComponent
@@ -90,7 +91,12 @@ class ListUsers extends AppComponent
         }
 
         //we cannot add new user, if this is a child group
+        // A csupasz return korábban NÉMA volt: sem hibaüzenet, sem modal
+        // visszajelzés nem keletkezett, tehát az adminisztrátor abban a hitben
+        // maradt, hogy a meghívó elment. A tiltás maga helyes - alcsoportba a
+        // főcsoporton keresztül kerülnek be a hírnökök -, csak a hallgatás nem.
         if($this->group->parent_group_id) {
+            $this->addError('new_users', __('group.user.add.error_this_is_child'));
             return;
         }
 
@@ -254,62 +260,98 @@ class ListUsers extends AppComponent
         });
         
         $validatedData = $v->validate();
-        $user_sync[$this->selected_user['id']] = $validatedData;
 
-        $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
-
-        if($selected_user->name !== $this->state['user']['name'] 
+        // A profilmezők validációja KORÁBBAN a pivot mentése UTÁN futott, külön
+        // Validator::make()-kel és tranzakció nélkül. Egy hibás név ezért
+        // részlegesen mentett rekordot hagyott maga után: a jegyzet és a szerep
+        // már az adatbázisban volt, a profil viszont nem, a felhasználó pedig
+        // csak egy hibaüzenetet látott. Minden validáció ezért ide, az első írás
+        // ELÉ került, és ami utána marad, az egyetlen tranzakcióban fut le.
+        $profileChanged = $selected_user->name !== $this->state['user']['name']
             || $selected_user->phone_number !== $this->state['user']['phone_number']
-            || $selected_user->congregation !== $this->state['user']['congregation']) 
-        {
+            || $selected_user->congregation !== $this->state['user']['congregation'];
+
+        $userValidatedData = null;
+        if($profileChanged) {
             $userValidatedData = Validator::make($this->state['user'], [
                 'name' => 'required|string|max:50|min:2',
                 'phone_number' => 'nullable|numeric',
                 'congregation' => 'nullable|string|max:50|min:2',
             ])->validate();
-    
-            
-            $user = User::find($this->selected_user['id']);
-            $user->update($userValidatedData);
-
-            $data = [
-                'old' => [
-                    'name' => $selected_user->name,
-                    'phone_number' => $selected_user->phone_number,
-                    'congregation' => $selected_user->congregation
-                ],
-                'new' => [
-                    'name' => $userValidatedData['name'],
-                    'phone_number' => $userValidatedData['phone_number'],
-                    'congregation' => $userValidatedData['congregation']
-                ],
-                'userName' => auth()->user()->name
-            ];
-
-            $user->notify(
-                new UserProfileChangedNotification($data)
-            );
         }
-        if($validatedData['finish_guest_registration'] == 1 
-                && $selected_user->role === 'registered') {
-            $password = Str::random(10);
-            $selected_user->fill([
-                'password' => Hash::make($password),
-                'role' => 'activated',
-                'email_verified_at' => now()
-            ])->save();
-            $accept = new GroupUserMoves($this->groupId, $selected_user->id);
-            $accept->acceptInvitation();
 
-            $data = [
-                'groupAdmin' => auth()->user()->name,
-                'userMail' => $selected_user->email,
-                'userPassword' => $password
-            ];
+        // A finish_guest_registration NEM oszlopa a group_user táblának: az
+        // editUser() az űrlap állapotába teszi, a validáció átengedi, és eddig a
+        // teljes $validatedData ment a syncWithoutDetaching()-nek. Ez kizárólag
+        // azért nem hasalt el, mert a GroupUser egyedi Pivot osztály $fillable
+        // listával, így a Laravel az updateExistingPivotUsingCustomClass() ágon
+        // fill()-lel csendben eldobta az ismeretlen kulcsot - egy
+        // keretrendszer-verziótól függő útvonal, ami egy nyers update/insert
+        // fallbacken ismeretlen oszlop hibával járna. A kulcsot ezért itt
+        // vesszük ki, a vezérlő értéket pedig külön tartjuk meg.
+        $finishGuestRegistration = (int) ($validatedData['finish_guest_registration'] ?? 0);
+        unset($validatedData['finish_guest_registration']);
 
-            $selected_user->notify(
-                new LoginData($data)
-            );
+        $user_sync[$this->selected_user['id']] = $validatedData;
+
+        $notifications = [];
+
+        DB::transaction(function () use (
+            $user_sync,
+            $profileChanged,
+            $userValidatedData,
+            $finishGuestRegistration,
+            $selected_user,
+            &$notifications
+        ) {
+            $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
+
+            if($profileChanged) {
+                $user = User::find($this->selected_user['id']);
+                $user->update($userValidatedData);
+
+                $data = [
+                    'old' => [
+                        'name' => $selected_user->name,
+                        'phone_number' => $selected_user->phone_number,
+                        'congregation' => $selected_user->congregation
+                    ],
+                    'new' => [
+                        'name' => $userValidatedData['name'],
+                        'phone_number' => $userValidatedData['phone_number'],
+                        'congregation' => $userValidatedData['congregation']
+                    ],
+                    'userName' => auth()->user()->name
+                ];
+
+                $notifications[] = [$user, new UserProfileChangedNotification($data)];
+            }
+
+            if($finishGuestRegistration === 1 && $selected_user->role === 'registered') {
+                $password = Str::random(10);
+                $selected_user->fill([
+                    'password' => Hash::make($password),
+                    'role' => 'activated',
+                    'email_verified_at' => now()
+                ])->save();
+                $accept = new GroupUserMoves($this->groupId, $selected_user->id);
+                $accept->acceptInvitation();
+
+                $data = [
+                    'groupAdmin' => auth()->user()->name,
+                    'userMail' => $selected_user->email,
+                    'userPassword' => $password
+                ];
+
+                $notifications[] = [$selected_user, new LoginData($data)];
+            }
+        });
+
+        // Az értesítések a COMMIT UTÁN mennek ki. Tranzakción belül egy queue-ra
+        // tett job elindulhatna, mielőtt a hozzá tartozó sorok láthatóvá válnak,
+        // egy rollback pedig olyan jelszót küldene ki, ami sehol nincs elmentve.
+        foreach($notifications as [$notifiable, $notification]) {
+            $notifiable->notify($notification);
         }
 
         $this->dispatchBrowserEvent('hide-modal', [
@@ -416,6 +458,11 @@ class ListUsers extends AppComponent
             $this->filter['myself'] = false;
         }
         $this->filter['inactive'] = false;
+        // A többi szűrő (updatedSearchTerm, filterMyself, filterIcon,
+        // filterOff) mind nullázza a lapozó kurzort; ez a kettő nem tette. A
+        // 3. oldalon állva az online szűrő ezért üres listát adott, holott volt
+        // találat - a paginátor a leszűkített halmaz 3. oldalát kérte.
+        $this->resetPage();
     }
 
     public function filterInactive() {
@@ -424,6 +471,7 @@ class ListUsers extends AppComponent
             $this->filter['myself'] = false;
         }
         $this->filter['online'] = false;
+        $this->resetPage();
     }
 
     public function clearSearch() {
@@ -499,6 +547,25 @@ class ListUsers extends AppComponent
         return $user_admin_groups;
     }
 
+    /**
+     * A user_admin_groups() párja: csoportfelvigyázó-e a felhasználó a megadott
+     * csoportban ÚGY, hogy az maga is alcsoport.
+     *
+     * Ez választja szét a linkToGroup() két hibaokát: "nem vagy benne
+     * csoportfelvigyázó" kontra "a csoport már máshoz van kötve". A
+     * user_admin_groups() önmagában nem tudja megkülönböztetni a kettőt, mert
+     * az alcsoportokat már a lekérdezésben kiszűri.
+     */
+    private function isAdminOfChildGroup($groupId) {
+        if(!$groupId) return false;
+
+        return User::find(Auth::id())
+            ->userGroupsDeletable()
+            ->whereNotNull('groups.parent_group_id')
+            ->where('groups.id', $groupId)
+            ->exists();
+    }
+
     public function linkToGroup() {
         $group = Group::findorFail($this->groupId);
         if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
@@ -518,13 +585,23 @@ class ListUsers extends AppComponent
             $this->addError('parent_group_id', __('group.link.error_same_group'));
         }
 
+        // Itt korábban KÉT ellenőrzés állt egymás után, és mindkettő ugyanazt
+        // mérte: a user_admin_groups() eleve whereNull('parent_group_id')-vel
+        // kérdez, tehát a visszaadott gyűjteményben alcsoport nem is lehet. A
+        // második feltétel (->whereNull('parent_group_id') ugyanazon a
+        // gyűjteményen) ezért mindig együtt teljesült az elsővel, és a
+        // felhasználó két hibaüzenetet kapott egyszerre - köztük a
+        // félrevezető "nem vagy csoportfelvigyázó benne"-t, holott lehet, hogy
+        // éppen ő az, csak a csoport már egy másik alá van kötve.
+        //
+        // Most egyetlen ok jelenik meg, és az a valódi.
         $groups = $this->user_admin_groups();
-        //check if he is admin or not in that group
         if($groups->where('id', $this->new_parent_group_id)->count() == 0) {
-            $this->addError('parent_group_id', __('group.link.error_not_in_group'));
-        } 
-        if($groups->where('id', $this->new_parent_group_id)->whereNull('parent_group_id')->count() == 0) {
-            $this->addError('parent_group_id', __('group.link.error_this_is_child'));
+            if($this->isAdminOfChildGroup($this->new_parent_group_id)) {
+                $this->addError('parent_group_id', __('group.link.error_this_is_child'));
+            } else {
+                $this->addError('parent_group_id', __('group.link.error_not_in_group'));
+            }
         } 
 
         if($group->childGroups()->count() > 0) {
@@ -645,14 +722,41 @@ class ListUsers extends AppComponent
             abort(403);
         }
 
+        // A ->first() null is lehet (ismeretlen vagy már lecsatolt detachId).
+        // A korábbi `!$selected_group->id` ilyenkor NULL-on hívott property-t,
+        // tehát fatal jött 403 helyett - ugyanaz a hibaosztály, amit a
+        // detachParentGroup()-nál a TODO 11.1 javított.
         $selected_group = $group->childGroups()->where('id', $this->detachId)->first();
-        if(!$selected_group->id) abort(403);
+        if($selected_group === null) abort(403);
 
-        $group->childGroups()->where('id', $this->detachId)->update([
-            'parent_group_id' => null, 
+        // Az értesítés adatai az update() ELŐTT állnak össze, mert utána a
+        // kapcsolat már nem áll fenn.
+        $data = [
+            'groupName' => $group->name,
+            'childGroupName' => $selected_group->name,
+            'userName' => auth()->user()->name
+        ];
+
+        // Modellen keresztül mentünk, nem tömeges update()-tel. A korábbi
+        // ->childGroups()->where(...)->update() megkerülte az Eloquent
+        // eseményeket, így a GroupObserver audit bejegyzése elmaradt - a szülő
+        // oldalról bontott UGYANEZ a kapcsolat viszont naplózódott.
+        $selected_group->update([
+            'parent_group_id' => null,
             'copy_from_parent' => null
         ]);
+
         $this->detachId = null;
+
+        // A detachParentGroup() ugyanezt a kapcsolatot a másik oldalról bontva
+        // értesíti az alcsoport adminisztrátorait. Innen eddig SEMMI nem ment
+        // ki, tehát az érintettek attól függően kaptak tájékoztatást, hogy
+        // melyik képernyőről nyúlt hozzá valaki.
+        Notification::send(
+            $selected_group->groupAdmins,
+            new GroupParentGroupDetachedNotification($data)
+        );
+
         $this->dispatchBrowserEvent('hide-modal', [
             'id' => 'ChildGroupsModal',
             'message' => __('group.link.parent.detach.success'),
@@ -679,13 +783,6 @@ class ListUsers extends AppComponent
 
     public function detachParentGroup() {
         $group = Group::findorFail($this->groupId);
-        $parent_group = $group->parentGroup;
-        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
-        $data = [
-            'groupName' => $parent_group_name,
-            'childGroupName' => $group->name,
-            'userName' => auth()->user()->name
-        ];
 
         if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
             abort(403);
@@ -693,6 +790,21 @@ class ListUsers extends AppComponent
 
         if($group->parent_group_id != $this->detachId)
             abort(403);
+
+        // Az értesítés adatai a jogosultsági őrök UTÁN épülnek: az
+        // auth()->user()->name korábban itt fentebb állt, tehát bejelentkezett
+        // felhasználó nélkül fatal jött 403 helyett.
+        //
+        // De még az update() ELŐTT kell összeállnia: a parent_group_id
+        // nullázása után a parentGroup reláció már nem adná vissza az
+        // elhagyott szülőcsoport nevét.
+        $parent_group = $group->parentGroup;
+        $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
+        $data = [
+            'groupName' => $parent_group_name,
+            'childGroupName' => $group->name,
+            'userName' => auth()->user()->name
+        ];
 
         $res = $group->update([
             'parent_group_id' => null,
@@ -801,8 +913,21 @@ class ListUsers extends AppComponent
         $info = GroupUser::where('user_id', '=', Auth::id())
             ->where('group_id', '=', $this->groupId)
             ->select('group_role')
-            ->first()->toArray();
-        $this->role = $info['group_role'];
+            ->first();
+
+        // Tagsági sor nélkül korábban a ->toArray() szállt el null-on, vagyis
+        // egy 500-as hiba tartotta zárva a komponenst. A route-on ott van a
+        // groupMember middleware, de a getGroupInfo()-t hívó Livewire
+        // metódusok saját jogon is elérhetők, ezért itt is zárni kell.
+        //
+        // Nem elég a role-t null-ra hagyni: a render() nem ellenőriz
+        // jogosultságot, csak $editor-t számol, tehát a kívülálló
+        // lerenderelné a taglistát nem-szerkesztőként.
+        if($info === null) {
+            abort(403);
+        }
+
+        $this->role = $info->group_role;
     }
 
     private function maxRoles() {

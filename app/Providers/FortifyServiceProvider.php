@@ -11,6 +11,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Actions\AttemptToAuthenticate;
@@ -45,8 +46,27 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
+        // A kulcs KORÁBBAN a nyers `email . ip` összefűzés volt. Két baja volt:
+        //
+        // 1. Normalizálatlan e-mail. A MySQL alapértelmezett collationje
+        //    kis-/nagybetűre érzéketlen, tehát a `User@x.hu` és a `user@x.hu`
+        //    UGYANAZT a fiókot találja meg - a limiter viszont két külön
+        //    vödörnek látta őket, így az 5/perc korlát a betűváltozatokkal
+        //    tetszőlegesen sokszorozható volt.
+        // 2. Nincs elválasztó. A `bob@x.hu` + `1.2.3.41` és a `bob@x.hu1` +
+        //    `.2.3.41` ugyanazt a kulcsot adja - önmagában ártalmatlan, de a
+        //    kulcsütközés soha nem szándékos.
+        //
+        // A második, IP-alapú korlát az e-mail-forgatásos próbálkozást fogja
+        // meg: egy IP-ről percenként 20 bejelentkezési kísérlet mehet, akárhány
+        // különböző címmel.
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by($request->email.$request->ip());
+            $email = Str::lower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by($email.'|'.$request->ip()),
+                Limit::perMinute(20)->by($request->ip()),
+            ];
         });
 
         RateLimiter::for('two-factor', function (Request $request) {
@@ -84,6 +104,22 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(
             \Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class,
             \App\Actions\Fortify\DisableTwoFactorAuthentication::class
+        );
+
+        // A TOTP-visszajátszás elleni védelem. A Fortify 1.11.2 saját javítása
+        // nem ér célba a google2fa `findValidOTP()` `true` visszatérése miatt -
+        // a részletes indoklás a felüldefiniált osztály fejlécében áll.
+        //
+        // A Fortify a SAJÁT kötését register()-ben teszi le, ez a boot() pedig
+        // minden register() után fut, tehát ez nyer.
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider::class,
+            function ($app) {
+                return new \App\Actions\Fortify\TwoFactorAuthenticationProvider(
+                    $app->make(\PragmaRX\Google2FA\Google2FA::class),
+                    $app->make(\Illuminate\Contracts\Cache\Repository::class)
+                );
+            }
         );
         
         $this->configureRoutes();

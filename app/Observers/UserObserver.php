@@ -7,12 +7,14 @@ use App\Models\User;
 use App\Notifications\NewAdminNotification;
 use App\Notifications\UserRegisteredNotification;
 use App\Notifications\UserRoleIsGroupCreatorNotification;
+use App\Support\Concerns\ResolvesCauser;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
 
 
 class UserObserver
 {
+    use ResolvesCauser;
     /**
      * Handle the User "created" event.
      *
@@ -95,8 +97,8 @@ class UserObserver
         $cc = [];
         if(count($otherAdmins) > 0) {
             $data = [
-                'newAdmin'=> $user->name, 
-                'adminBy' => auth()->user()->name, 
+                'newAdmin'=> $user->name,
+                'adminBy' => $this->causerName(),
             ];
             foreach($otherAdmins as $admin) {
                 $admin->notify(new NewAdminNotification($data));

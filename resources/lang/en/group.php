@@ -409,6 +409,7 @@ Except these actions, everything else can be performed by the group servant as w
     array (
       'email_language' => 'The notification email should be written in the following language (if he/she does not have an account yet):',
       'email_language_error' => 'The selected language is not available.',
+      'error_this_is_child' => 'A new publisher can be added only in the main group, not here. Publishers added to the main group are copied here automatically.',
       'info' => 'By clicking on the "Add" button, the publisher will be added to the group immediately, granted with group member access permission. The publisher will be informed about your invitation via email. If he/she does not have an account, a new one will be automatically created for him/her in the system.',
       'success' => 'Added :number new publisher(s)!',
       'title' => 'Add new publisher',
@@ -427,4 +428,22 @@ Except these actions, everything else can be performed by the group servant as w
   'users' => 'Publishers',
   'users_helper' => 'It is enough to use the email address. If he/she does not have a registration, an account will be created automatically for him/her, and they will be notified via email. They will need to fill in their name and telephone number after that.',
   'waiting_approval' => 'Invitation has not been accepted yet.',
+  'weather' =>
+  array (
+    'check_settings' => 'Check settings',
+    'city' => 'City',
+    'country' => 'Country',
+    'currently' => 'Currently',
+    'enable' => 'Enable weather forecast',
+    'error' => 'Error while setting up the weather forecast.',
+    'error_message' => 'Please provide both the city and the country.',
+    'error_weather_message' => 'Something went wrong while fetching the weather forecast. Check the data and try again.',
+    'humidity' => 'Humidity',
+    'info' => 'The weather forecast shows the weather for the service days of the group. Publishers will see the forecast for the next 5 days in the calendar.',
+    'km_h' => 'km/h',
+    'no_data' => 'No data available',
+    'title' => 'Weather forecast',
+    'too_many_requests' => 'Too many attempts, please wait 15 minutes.',
+    'wind' => 'Wind',
+  ),
 );

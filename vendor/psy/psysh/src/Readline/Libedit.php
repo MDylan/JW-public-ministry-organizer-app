@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,6 +11,7 @@
 
 namespace Psy\Readline;
 
+use Psy\ConfigPaths;
 use Psy\Util\Str;
 
 /**
@@ -25,12 +26,10 @@ use Psy\Util\Str;
  */
 class Libedit extends GNUReadline
 {
-    private $hasWarnedOwnership = false;
+    private bool $hasWarnedOwnership = false;
 
     /**
      * Let's emulate GNU Readline by manually reading and parsing the history file!
-     *
-     * @return bool
      */
     public static function isSupported(): bool
     {
@@ -50,6 +49,10 @@ class Libedit extends GNUReadline
      */
     public function listHistory(): array
     {
+        if ($this->historyFile === false) {
+            return [];
+        }
+
         $history = \file_get_contents($this->historyFile);
         if (!$history) {
             return [];
@@ -65,6 +68,7 @@ class Libedit extends GNUReadline
 
         // decode the line
         $history = \array_map([$this, 'parseHistoryLine'], $history);
+
         // filter empty lines & comments
         return \array_values(\array_filter($history));
     }
@@ -83,7 +87,7 @@ class Libedit extends GNUReadline
         if ($res === false && !$this->hasWarnedOwnership) {
             if (\is_file($this->historyFile) && \is_writable($this->historyFile)) {
                 $this->hasWarnedOwnership = true;
-                $msg = \sprintf('Error writing history file, check file ownership: %s', $this->historyFile);
+                $msg = \sprintf('Error writing history file, check file ownership: %s', ConfigPaths::prettyPath($this->historyFile));
                 \trigger_error($msg, \E_USER_NOTICE);
             }
         }
@@ -105,7 +109,7 @@ class Libedit extends GNUReadline
     {
         // empty line, comment or timestamp
         if (!$line || $line[0] === "\0") {
-            return;
+            return null;
         }
         // if "\0" is found in an entry, then
         // everything from it until the end of line is a comment.

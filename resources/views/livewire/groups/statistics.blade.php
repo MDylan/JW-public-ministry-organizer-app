@@ -33,28 +33,25 @@
                 </div>
                 <div class="col-md-8 d-flex justify-content-end">
                     <div class="form-inline float-right">
-                        {{-- <label class="sr-only" for="inlineFormInputGroupUsername2">@lang('statistics.month')</label>
-                        <div class="input-group mb-2 mr-sm-2">
-                            <div class="input-group-prepend">
-                            <div class="input-group-text">@lang('statistics.month')</div>
-                            </div>
-                            <select wire:model.defer="state.month" class="form-control" id="inlineFormInputGroupUsername2">
-                                @foreach ($months as $month => $translate)
-                                    <option value="{{$month}}">{{ $translate }}</option>
-                                @endforeach
-                            </select>
-                        </div>                         --}}
+                        {{-- A hónapválasztót a lenti dátumtartomány váltotta fel; a
+                             hozzá tartozó komponens-oldali maradékok a v1-patch
+                             B3-ban törölve lettek. --}}
                         <div class="input-group mb-2 mr-sm-2">
                             <div class="input-group-prepend">
                                 <div class="input-group-text">@lang('statistics.period')</div>
                             </div>
-                            <input wire:model.defer="startDate" type="date" class="form-control" placeholder="@lang('statistics.date_from')" />
+                        {{-- A picker.minDate-et a render() régóta átadta, de egyetlen
+                             nézet sem használta. A v1-patch E óta van értelme: a
+                             retenciós padló alatt már nincs mit mutatni. A `min` csak
+                             tanácsadó, a valódi korlát a komponens
+                             clampToRetentionFloor() metódusa. --}}
+                            <input wire:model.defer="startDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_from')" />
                             <div class="input-group-prepend">
                                 <div class="input-group-text">-</div>
                             </div>
-                            <input wire:model.defer="endDate" type="date" class="form-control" placeholder="@lang('statistics.date_to')" />
+                            <input wire:model.defer="endDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_to')" />
                         </div>
-                        <button wire:loading.attr="disabled" wire:click="setMonth" type="submit" class="btn btn-primary mb-2">
+                        <button wire:loading.attr="disabled" wire:click="applyDateRange" type="submit" class="btn btn-primary mb-2">
                             <i class="fa fa-check-square mr-1"></i>
                             @lang('statistics.modify')
                         </button>

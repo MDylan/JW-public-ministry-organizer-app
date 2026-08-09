@@ -70,9 +70,19 @@ return array (
 Wenn du es aktivierst, kannst du den Schutz der Webseite vor Robotern erheblich verstärken. Google reCaptcha wird bei der Anmeldung und Registrierung auf der Website verwendet.',
   ),
   'others_saved' => 'Die Einstellungen wurden erfolgreich gespeichert.',
-  'recaptcha' => 
+  'recaptcha' =>
   array (
     'info' => 'Wenn du diese Funktion aktivierst, kannst du den Schutz deiner Website vor Robotern erheblich verbessern. Google recaptchat wird bei der Anmeldung und Registrierung auf der Website verwendet.',
+  ),
+  'retention' =>
+  array (
+    'group_data' => 'Gruppendaten aufbewahren (Tagesstatistik und Zeitfenster)',
+    'help' => 'Ältere Tagesstatistiken und Zeitfenster-Einstellungen werden nachts endgültig gelöscht. Diese Daten enthalten keine personenbezogenen Angaben; ihre Löschung verkleinert die Datenbank. Der gelöschte Zeitraum lässt sich in der Statistik und im Kalender nicht mehr öffnen.',
+    'invalid' => 'Ungültige Aufbewahrungsdauer, die Einstellung wurde nicht geändert.',
+    'months_12' => '1 Jahr aufbewahren',
+    'months_24' => '2 Jahre aufbewahren',
+    'off' => 'Deaktiviert (alles aufbewahren)',
+    'saved' => 'Aufbewahrungsdauer gespeichert.',
   ),
   'run' => 
   array (

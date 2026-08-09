@@ -20,5 +20,7 @@ return [
         'ics'
     ],
     'github_url' => 'https://github.com/MDylan/JW-public-ministry-organizer-app',
-    'use_recaptcha' => env('USE_RECAPTCHA', false),
+    // A 'use_recaptcha' kulcs innen a config/security.php-ba költözött (TODO 28):
+    // ebben a fájlban soha semmi nem olvasta, a naptár konfigurációja között
+    // állt, a kód pedig közvetlenül env()-ből dolgozott helyette.
 ];

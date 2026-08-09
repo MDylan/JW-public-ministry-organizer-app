@@ -13,8 +13,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // $this->call([
-            
-        // ]);
+        // Csak az alap beállítássorokat töltjük be. A statikus oldalakat a
+        // telepítő hívja külön (StaticPagesSetupSeeder), mert azoknak
+        // tulajdonos felhasználóra van szükségük.
+        $this->call([
+            CoreSettingsSeeder::class,
+        ]);
     }
 }

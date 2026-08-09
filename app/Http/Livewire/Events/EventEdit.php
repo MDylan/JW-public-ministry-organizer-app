@@ -110,14 +110,40 @@ class EventEdit extends AppComponent
         if($this->eventId !== null) {
             $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
 
-            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
+            if(!in_array($this->role, ['admin', 'roler', 'helper'])
                 && $editEvent['user_id'] !== Auth::id()) {
                     $this->error = __('event.error.no_permission');
                     $this->cancelEdit();
                 return false;
-            }            
+            }
             return $editEvent;
         }
+        return false;
+    }
+
+    /**
+     * A következő szabad cellaindex, ha a sáv előre foglalt cellái elfogytak.
+     *
+     * A `cells` tömb kulcsai 1-től indulnak, és az elhasznált cellák
+     * kikerülnek belőle - a "meddig jutottunk" tehát nem olvasható ki
+     * közvetlenül. Az egész napra vett legnagyobb valaha kiosztott index után
+     * adunk egyet, így az érték a sávon belül biztosan egyedi, és a
+     * túlcsordult esemény saját oszlopot kap.
+     *
+     * Lásd a hívási hely magyarázatát (v1-patch B11).
+     */
+    private function overflowCellFor(array $day_table, string $key): int
+    {
+        $allocated = 0;
+
+        foreach($day_table as $slot) {
+            $cells = array_keys($slot['cells'] ?? []);
+            if(count($cells) > 0) {
+                $allocated = max($allocated, max($cells));
+            }
+        }
+
+        return $allocated + 1;
     }
 
     public function getInfo($saveProcess = false) {
@@ -226,7 +252,7 @@ class EventEdit extends AppComponent
         $day_selects = [];
         $row = 1;
         // dd($date->format("Y-m-d"), date("Y-m-d H:i", $start), date("Y-m-d H:i", $max), $step);
-        $slots_array = GenerateSlots::generate($date->format("Y-m-d"), $start, $max, $step);
+        $slots_array = GenerateSlots::generate($this->day_data['date'], $start, $max, $step);
         foreach($slots_array as $current) {
             $key = "'".date('Hi', $current)."'";
             $day_table[$key] = [
@@ -276,7 +302,27 @@ class EventEdit extends AppComponent
             $key = "'".date('Hi', $event['start'])."'";
             $cell = 1;
             if(isset($slots[$key])) {
-                $cell = min(array_keys($day_table[$key]['cells']));
+                // A getInfo() sávonként (max_publishers + events.max_columns)
+                // cellát foglal (:241-243), és eseményenként egyet elhasznál.
+                // Ha egy sávon több esemény van, mint ahány cella, a cellalista
+                // kiürül, és a korábbi feltétel nélküli min() PHP 8 alatt
+                // ValueError-t dobott ("must contain at least one element") -
+                // amitől a nap MEGNYITHATATLANNÁ vált, nem csak hibásan
+                // rajzolttá.
+                //
+                // Ez elérhető állapot, nem elméleti: az események a régi,
+                // magasabb maximum mellett jönnek létre, majd egy admin
+                // lejjebb viszi a date_max_publishers-t - vagy egy jövőbeli
+                // csoportmódosítás írja felül. A meglévő eseményeket ilyenkor
+                // senki nem törli.
+                //
+                // A táblázat szélessége innentől a foglalt cellák számához
+                // igazodik: a túlcsordult esemény új oszlopot kap a sorban
+                // ahelyett, hogy az egész napot ledöntené.
+                $freeCells = array_keys($day_table[$key]['cells']);
+                $cell = count($freeCells) > 0
+                    ? min($freeCells)
+                    : $this->overflowCellFor($day_table, $key);
             }
             
             $cell_start = $event['start'];
@@ -303,14 +349,18 @@ class EventEdit extends AppComponent
                             : ($this->date_data['max_publishers'] + config('events.max_columns')))
                         : $this->date_data['max_publishers']) 
                     || isset($disabled_slots[$key])) {
-                $day_table[$key]['status'] = 'full';
-                $k = $day_table[$key]['ts'];
-                unset($day_selects['start'][$k]);
-                if(!isset($day_selects['end'][$k + $step]) && ($k + $step) > $max) {
-                    //if somehow last time slot not the same exactly to the end
-                    unset($day_selects['end'][$max]);
+                if(isset($day_table[$key])) {
+                    $day_table[$key]['status'] = 'full';
+                    $k = $day_table[$key]['ts'];
+                    unset($day_selects['start'][$k]);
+
+                    if (!isset($day_selects['end'][$k + $step]) && ($k + $step) > $max) {
+                        //if somehow last time slot not the same exactly to the end
+                        unset($day_selects['end'][$max]);
+                    }
+                    unset($day_selects['end'][$k + $step]);
                 }
-                unset($day_selects['end'][$k + $step]);
+                
             } elseif($day_table[$key]['accepted'] >= $this->date_data['min_publishers']) {
                 $day_table[$key]['status'] = 'ready';
             } 
@@ -466,7 +516,7 @@ class EventEdit extends AppComponent
                 'end' => 'required|numeric|gte:start',
             ])->validate();
             // dd($this->day_data['table']);
-            $step = $this->date_data['min_time'] * 60;            
+            $step = $this->date_data['min_time'] * 60;
             for ($i=$this->state['start']; $i < $this->state['end'] ; $i+=$step) {
                 $slot_key = "'".date("Hi", $i)."'";
                 if($this->day_data['table'][$slot_key]['publishers'] >= (

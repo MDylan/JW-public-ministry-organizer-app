@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,6 +15,7 @@ use Psy\Formatter\SignatureFormatter;
 use Psy\Input\FilterOptions;
 use Psy\Util\Mirror;
 use Psy\VarDumper\Presenter;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -30,9 +31,10 @@ abstract class Enumerator
     const IS_CONSTANT = 'const';
     const IS_CLASS = 'class';
     const IS_FUNCTION = 'function';
+    const IS_VIRTUAL = 'virtual';
 
-    private $filter;
-    private $presenter;
+    private FilterOptions $filter;
+    private Presenter $presenter;
 
     /**
      * Enumerator constructor.
@@ -54,7 +56,7 @@ abstract class Enumerator
      *
      * @return array
      */
-    public function enumerate(InputInterface $input, \Reflector $reflector = null, $target = null): array
+    public function enumerate(InputInterface $input, ?\Reflector $reflector = null, $target = null): array
     {
         $this->filter->bind($input);
 
@@ -82,7 +84,7 @@ abstract class Enumerator
      *
      * @return array
      */
-    abstract protected function listItems(InputInterface $input, \Reflector $reflector = null, $target = null): array;
+    abstract protected function listItems(InputInterface $input, ?\Reflector $reflector = null, $target = null): array;
 
     protected function showItem($name)
     {
@@ -91,6 +93,12 @@ abstract class Enumerator
 
     protected function presentRef($value)
     {
+        // Symfony VarDumper 5.4 trips over NAN/INF on PHP 8.5 in PHAR builds,
+        // so format non-finite floats directly instead of cloning them.
+        if (\is_float($value) && !\is_finite($value)) {
+            return OutputFormatter::escape(\sprintf('<float>%s</float>', \var_export($value, true)));
+        }
+
         return $this->presenter->presentRef($value);
     }
 

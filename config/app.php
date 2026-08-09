@@ -180,7 +180,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\BladeComponentServiceProvider::class,
         Barryvdh\Debugbar\ServiceProvider::class,
-        pcinaglia\laraupdater\LaraUpdaterServiceProvider::class,
+        MDylan\LaraUpdater\LaraUpdaterServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         'Eusonlito\LaravelPacker\PackerServiceProvider',
     ],
@@ -236,6 +236,7 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Packer'    => 'Eusonlito\LaravelPacker\Facade',
+        'Countries' => PeterColes\Countries\CountriesFacade::class,
     ],
 
 ];

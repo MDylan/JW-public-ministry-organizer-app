@@ -82,6 +82,9 @@ return [
     'update_description' => 'A frissítés leírása:',
     'urgent' => 'FONTOS!',
     'update_info' => 'Frissítés előtt kérlek győződj meg róla, hogy készült biztonsági másolat a fájlokról és az adatbázisról. A frissítés a gombra kattintva azonnal elindul, és az oldal karbantartás üzemmódba kapcsol. A frissítés után ismét elérhető lesz.',
+    'update_manual_title' => 'Új főverzió érhető el - kézi frissítés szükséges',
+    'update_manual_info' => 'Ezt a kiadást a rendszer szándékosan nem telepíti automatikusan, mert új főverzió: a korábbitól eltérő PHP- és keretrendszer-környezetet igényel, amit egy automatikus frissítés nem tud biztosítani. A frissítést kézzel kell elvégezni, a fenti leírásban szereplő lépések szerint. Addig a jelenlegi verzió változatlanul működik, és a saját ágán belül továbbra is automatikusan frissül.',
+    'update_manual_blocked' => 'A :version verzió új főverzió, ezért automatikusan nem telepíthető. Kézi frissítés szükséges.',
     'user_will_be_notified' => 'A felhasználó értesítve lesz róla, ha megváltoztatod.',
     'total' => 'Összesen',
     'newsletter' => [

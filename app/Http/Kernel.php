@@ -5,7 +5,7 @@ namespace App\Http;
 use App\Http\Middleware\HttpsProtocol;
 use App\Http\Middleware\SetGuestLanguage;
 use App\Http\Middleware\SetLocale;
-use App\Http\Middleware\setUserLastActivity;
+use App\Http\Middleware\SetUserLastActivity;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -42,7 +42,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             SetLocale::class,
-            setUserLastActivity::class,
+            SetUserLastActivity::class,
             HttpsProtocol::class
         ],
 
@@ -66,6 +66,8 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
+        'password.confirm.impersonation' => \App\Http\Middleware\RequirePasswordForImpersonation::class,
+        'installer' => \App\Http\Middleware\EnsureInstallerToken::class,
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
@@ -74,5 +76,6 @@ class Kernel extends HttpKernel
         'profileFull' => \App\Http\Middleware\ProfileFull::class,
         'setGuestLanguage' => \App\Http\Middleware\SetGuestLanguage::class,
         'checkRecaptcha' => \App\Http\Middleware\CheckRecaptcha::class,
+        'strictEmail' => \App\Http\Middleware\EnsureWellFormedEmail::class,
     ];
 }

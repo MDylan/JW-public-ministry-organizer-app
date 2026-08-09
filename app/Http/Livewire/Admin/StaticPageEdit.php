@@ -88,8 +88,8 @@ class StaticPageEdit extends AppComponent
      * Clear sidemenu cache
      */
     private function clearCache() {
-        cache()->forget('sidemenu_auth');
-        cache()->forget('sidemenu_guest');
+        // A gyorsítótár ürítését a StaticPageObserver végzi, minden íráson -
+        // nem csak azokon, amelyek ezen a szerkesztőn mennek át (v1-patch B4).
     }
 
     public function render()

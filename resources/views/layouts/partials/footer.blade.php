@@ -29,7 +29,7 @@
                     <label class="form-check-label text-center">
                         @can('is-admin')
                             <a href="{{ config('events.github_url') }}" target="_blank" class="btn btn-sm btn-success m-2 p-1">
-                                v. {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }}
+                                v. {{ (new \MDylan\LaraUpdater\LaraUpdaterController)->getCurrentVersion() }}
                             </a>
                         @endcan
                     </label>

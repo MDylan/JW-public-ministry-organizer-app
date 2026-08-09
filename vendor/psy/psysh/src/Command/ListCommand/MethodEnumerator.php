@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,6 +11,8 @@
 
 namespace Psy\Command\ListCommand;
 
+use Psy\Reflection\ReflectionMagicMethod;
+use Psy\Util\Docblock;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -21,7 +23,7 @@ class MethodEnumerator extends Enumerator
     /**
      * {@inheritdoc}
      */
-    protected function listItems(InputInterface $input, \Reflector $reflector = null, $target = null): array
+    protected function listItems(InputInterface $input, ?\Reflector $reflector = null, $target = null): array
     {
         // only list methods when a Reflector is present.
         if ($reflector === null) {
@@ -55,13 +57,13 @@ class MethodEnumerator extends Enumerator
     /**
      * Get defined methods for the given class or object Reflector.
      *
-     * @param bool       $showAll   Include private and protected methods
-     * @param \Reflector $reflector
-     * @param bool       $noInherit Exclude inherited methods
+     * @param bool             $showAll   Include private and protected methods
+     * @param \ReflectionClass $reflector
+     * @param bool             $noInherit Exclude inherited methods
      *
-     * @return array
+     * @return \ReflectionMethod[]
      */
-    protected function getMethods(bool $showAll, \Reflector $reflector, bool $noInherit = false): array
+    protected function getMethods(bool $showAll, \ReflectionClass $reflector, bool $noInherit = false): array
     {
         $className = $reflector->getName();
 
@@ -78,6 +80,18 @@ class MethodEnumerator extends Enumerator
             }
         }
 
+        // Add magic methods from docblock @method tags
+        foreach (Docblock::getMagicMethods($reflector) as $method) {
+            if ($noInherit && $method->getDeclaringClass()->getName() !== $className) {
+                continue;
+            }
+
+            // Skip if a real method with this name already exists
+            if (!isset($methods[$method->getName()])) {
+                $methods[$method->getName()] = $method;
+            }
+        }
+
         \ksort($methods, \SORT_NATURAL | \SORT_FLAG_CASE);
 
         return $methods;
@@ -86,7 +100,7 @@ class MethodEnumerator extends Enumerator
     /**
      * Prepare formatted method array.
      *
-     * @param array $methods
+     * @param \ReflectionMethod[] $methods
      *
      * @return array
      */
@@ -112,8 +126,6 @@ class MethodEnumerator extends Enumerator
      * Get a label for the particular kind of "class" represented.
      *
      * @param \ReflectionClass $reflector
-     *
-     * @return string
      */
     protected function getKindLabel(\ReflectionClass $reflector): string
     {
@@ -129,12 +141,14 @@ class MethodEnumerator extends Enumerator
     /**
      * Get output style for the given method's visibility.
      *
-     * @param \ReflectionMethod $method
-     *
-     * @return string
+     * @param \ReflectionMethod|ReflectionMagicMethod $method
      */
-    private function getVisibilityStyle(\ReflectionMethod $method): string
+    private function getVisibilityStyle(\Reflector $method): string
     {
+        if ($method instanceof ReflectionMagicMethod) {
+            return self::IS_VIRTUAL;
+        }
+
         if ($method->isPublic()) {
             return self::IS_PUBLIC;
         } elseif ($method->isProtected()) {

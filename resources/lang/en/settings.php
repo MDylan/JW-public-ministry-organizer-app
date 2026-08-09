@@ -68,9 +68,19 @@ return array (
     'use_recaptcha' => 'Enable reCaptcha (anti-spam). By enabling it, you can considerably increase the protection of the page against robots. If enabled, the page will use Google recaptcha at login attempts and at registration attempts.',
   ),
   'others_saved' => 'New settings successfully saved.',
-  'recaptcha' => 
+  'recaptcha' =>
   array (
     'info' => 'By enabling it, you can considerably increase the protection of the page against robots. If enabled, the page will use Google recaptcha at login attempts and at registration attempts.',
+  ),
+  'retention' =>
+  array (
+    'group_data' => 'Keep group data (daily statistics and time slots)',
+    'help' => 'Daily statistics and time slot settings older than this are permanently deleted overnight. These records hold no personal data; deleting them reduces the size of the database. The deleted period can no longer be opened in the statistics or in the calendar.',
+    'invalid' => 'Invalid retention period, the setting was left unchanged.',
+    'months_12' => 'Keep 1 year',
+    'months_24' => 'Keep 2 years',
+    'off' => 'Disabled (keep everything)',
+    'saved' => 'Retention period saved.',
   ),
   'run' => 
   array (

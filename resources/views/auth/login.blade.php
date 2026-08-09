@@ -19,7 +19,7 @@
             @endif
             <form action="{{route('login')}}" method="POST" id="loginForm">
                 @csrf
-                @if (env('USE_RECAPTCHA', false))
+                @if (config('security.use_recaptcha'))
                     <input type="hidden" class="g-recaptcha" name="recaptcha_token" id="recaptcha_token">
                 @endif
             <div class="input-group mb-3">
@@ -88,6 +88,6 @@
     <!-- /.login-box -->
 </div>
 @endsection
-@if (env('USE_RECAPTCHA', false))
-    @include('auth.recaptcha-script', ['formId' => 'loginForm'])
+@if (config('security.use_recaptcha'))
+    @include('auth.recaptcha-script', ['formId' => 'loginForm', 'action' => 'login'])
 @endif

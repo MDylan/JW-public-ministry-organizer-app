@@ -6,6 +6,15 @@ return [
     'try_again' => 'Próbáld újra',
 
     'welcome' => 'Üdvözöl a telepítő',
+
+    'token.title' => 'A telepítő feloldása',
+    'token.help' => 'Biztonsági okból a telepítő csak azzal a kóddal folytatható, amit a szerveren a <code>storage/app/installer-token.txt</code> fájlba írtunk. Nyisd meg a fájlt, és másold ide a tartalmát.',
+    'token.label' => 'Telepítési kód',
+    'token.unlock' => 'Feloldás',
+    'token.invalid' => 'A megadott telepítési kód nem megfelelő.',
+    'token.required' => 'Előbb add meg a telepítési kódot.',
+    'token.account_required' => 'A telepítés csak az adminisztrátori fiók létrehozása után zárható le.',
+
     'intro_info' => 'A következő lépésekben beállíthatod a programot, hogy megfelelően működjön.',
     'intro.step1' => 'Követelmények ellenőrzése.',
     'intro.step2' => 'Alapbeállítások elvégzése',

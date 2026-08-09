@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -20,8 +20,6 @@ interface Listener
 {
     /**
      * Determines whether this listener should be active.
-     *
-     * @return bool
      */
     public static function isSupported(): bool;
 
@@ -78,6 +76,7 @@ interface Listener
      * Called once after the REPL session ends.
      *
      * @param Shell $shell
+     * @param int   $exitCode Exit code from the execution loop
      */
-    public function afterRun(Shell $shell);
+    public function afterRun(Shell $shell, int $exitCode = 0);
 }

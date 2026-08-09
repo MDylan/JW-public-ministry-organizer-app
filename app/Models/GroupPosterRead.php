@@ -9,6 +9,9 @@ class GroupPosterRead extends Model
 {
     use HasFactory;
 
+    // A group_poster_reads táblában nincs created_at/updated_at oszlop.
+    public $timestamps = false;
+
     protected $fillable = [
         'poster_id',
         'user_id',

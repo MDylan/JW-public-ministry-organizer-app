@@ -36,10 +36,23 @@
                         <div class="card-body p-1">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
-                                <li class="list-group-item">@lang('settings.status.software_version'): 
-                                    {{ (new \pcinaglia\laraupdater\LaraUpdaterController)->getCurrentVersion() }} 
-                                    @if((new \pcinaglia\laraupdater\LaraUpdaterController)->check() == '')
+                                @php
+                                    // Egy példány, egy lekérdezés: korábban két
+                                    // külön new hívás ment ide. A harmadik állapot
+                                    // (magasabb major => kézi frissítés) ugyanabból
+                                    // az UpdateBranch döntésből jön, amit a
+                                    // frissítési kártya és az /updater.update kapuja
+                                    // is használ.
+                                    $updater = new \MDylan\LaraUpdater\LaraUpdaterController;
+                                    $available = $updater->check();
+                                @endphp
+                                <li class="list-group-item">@lang('settings.status.software_version'):
+                                    {{ $updater->getCurrentVersion() }}
+                                    @if($available == '')
                                         <i class="far fa-check-circle mx-1 text-success"></i>
+                                    @elseif(! \App\Support\Updates\UpdateBranch::allows($available))
+                                        <i class="fas fa-exclamation-triangle mx-1 text-danger"></i>
+                                        @lang('app.update_manual_title') ({{ $available }})
                                     @else
                                         <i class="fas fa-exclamation mx-1 text-danger"></i>
                                         @lang('laraupdater.UPDATE_FOUND')
@@ -350,6 +363,33 @@
                                                 <div class="form-group" wire:ignore>
                                                     <label for="homepage_message">@lang('settings.homepage_message')</label><br/>
                                                     <textarea wire:model="state.homepage_message" name="homepage_message" id="" cols="30" rows="10" class="form-control summernote"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-1 @if(!$state['others']['weather']) d-none @endif">
+                                                <div class="col-md-12">
+                                                    <div class="form-group" wire:ignore>
+                                                        <label for="weather_api_key">@lang('settings.weather_api_key')</label><br/>
+                                                        <input wire:model.lazy="state.env.OPENWEATHER_API_KEY" type="text" class="form-control" id="weather_api_key">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{--
+                                                A megőrzési idő NEM a fenti kapcsoló-ciklus része (háromértékű),
+                                                és nem is a lap alján lévő "Módosítások mentése" gombhoz tartozik:
+                                                saját mentője van, mert a saveOthers() az egész .env fájlt
+                                                újraírná. Ezért nem eshet a wire:ignore blokkba sem.
+                                            --}}
+                                            <div class="row mb-1 mt-3">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label for="group_data_retention">@lang('settings.retention.group_data'):</label>
+                                                        <select wire:model.defer="state.retention.group_data" wire:change="saveGroupDataRetention" class="form-control" id="group_data_retention">
+                                                            <option value="0">@lang('settings.retention.off')</option>
+                                                            <option value="12">@lang('settings.retention.months_12')</option>
+                                                            <option value="24">@lang('settings.retention.months_24')</option>
+                                                        </select>
+                                                        <small class="form-text text-muted">@lang('settings.retention.help')</small>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

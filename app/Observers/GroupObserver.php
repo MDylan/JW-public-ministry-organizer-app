@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\Group;
 use App\Models\LogHistory;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the Group "updated" event.
      *
@@ -20,7 +23,12 @@ class GroupObserver
         if(count($changes)) {
             $fillable = $group->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $group->getOriginal($field);
                     $new = $group->$field;
                     if($old !== $new) {
@@ -30,11 +38,11 @@ class GroupObserver
                 }
             }
         }
-        if(count($store) && (auth()->user() !== null)) {
+        if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $group->id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
 
@@ -52,9 +60,12 @@ class GroupObserver
     public function deleted(Group $group)
     {
         $saved_data = [
+            // A group_id korábban $group->group_id volt - olyan mező, ami a
+            // Group modellen nem létezik (a kulcs neve id), így mindig null
+            // került a NOT NULL oszlopba, és minden Eloquent-törlés elszállt.
             'event' => 'deleted',
-            'group_id' => $group->group_id,
-            'causer_id' => auth()->user()->id,
+            'group_id' => $group->id,
+            'causer_id' => $this->causerId(),
             'changes' => ''
         ];
 

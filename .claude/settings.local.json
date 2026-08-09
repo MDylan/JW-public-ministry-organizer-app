@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/laragon/bin/php/php-8.1.30-nts-Win32-vs16-x64/php.exe\" artisan:*)",
+      "Bash(php81 artisan:*)"
+    ]
+  }
+}

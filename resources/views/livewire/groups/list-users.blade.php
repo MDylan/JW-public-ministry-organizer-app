@@ -302,7 +302,7 @@
                         </div>
                     </div>
                     <div class="d-flex flex-md-row flex-column justify-content-between align-items-center">
-                        <div class="mb-md-0 mb-2 ml-2">
+                        <div class="my-2 ml-2">
                         <a wire:ignore href="{{ URL::previous() }}" class="btn btn-primary">
                             <i class="fas fa-arrow-alt-circle-left mr-1"></i>
                             @lang('app.back')

@@ -27,7 +27,15 @@ class DatabaseController extends Controller
      */
     public function index(): View
     {
-        return view('setup.database');
+        // A nézet KORÁBBAN env()-ből olvasta az előre kitöltött értékeket. Ez
+        // az űrlap a .env fájlt írja, tehát a fájlból kell olvasnia; ráadásul
+        // gyorsítótárazott konfiguráció mellett az env() null-t adott volna.
+        return view('setup.database', [
+            'dbHost' => setEnvironment::value('DB_HOST', 'localhost'),
+            'dbPort' => setEnvironment::value('DB_PORT', '3306'),
+            'dbName' => setEnvironment::value('DB_DATABASE', ''),
+            'dbUser' => setEnvironment::value('DB_USERNAME', ''),
+        ]);
     }
 
     /**

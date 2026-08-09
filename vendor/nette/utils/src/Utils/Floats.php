@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Nette\Utils;
 
 use Nette;
+use function abs, is_finite, is_nan, max, round;
 
 
 /**
@@ -19,18 +20,18 @@ class Floats
 {
 	use Nette\StaticClass;
 
-	private const EPSILON = 1e-10;
+	private const Epsilon = 1e-10;
 
 
 	public static function isZero(float $value): bool
 	{
-		return abs($value) < self::EPSILON;
+		return abs($value) < self::Epsilon;
 	}
 
 
 	public static function isInteger(float $value): bool
 	{
-		return abs(round($value) - $value) < self::EPSILON;
+		return abs(round($value) - $value) < self::Epsilon;
 	}
 
 
@@ -48,7 +49,7 @@ class Floats
 		}
 
 		$diff = abs($a - $b);
-		if (($diff < self::EPSILON || ($diff / max(abs($a), abs($b)) < self::EPSILON))) {
+		if (($diff < self::Epsilon || ($diff / max(abs($a), abs($b)) < self::Epsilon))) {
 			return 0;
 		}
 

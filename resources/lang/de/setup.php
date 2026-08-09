@@ -69,4 +69,14 @@ return array (
   'setup' => 'Installieren',
   'try_again' => 'Nochmal versuchen',
   'welcome' => 'Willkommen beim Installationsprogramm',
+  'token' =>
+  array (
+    'account_required' => 'Die Installation kann erst abgeschlossen werden, nachdem das Administratorkonto erstellt wurde.',
+    'help' => 'Aus Sicherheitsgründen kann die Installation nur mit dem Code fortgesetzt werden, der auf dem Server in <code>storage/app/installer-token.txt</code> steht. Öffne die Datei und kopiere ihren Inhalt hierher.',
+    'invalid' => 'Der eingegebene Installationscode ist nicht korrekt.',
+    'label' => 'Installationscode',
+    'required' => 'Bitte gib zuerst den Installationscode ein.',
+    'title' => 'Installation entsperren',
+    'unlock' => 'Entsperren',
+  ),
 );

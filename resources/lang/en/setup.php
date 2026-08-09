@@ -69,4 +69,14 @@ return array (
   'setup' => 'Setup',
   'try_again' => 'Please try again',
   'welcome' => 'Welcome to the installer',
+  'token' =>
+  array (
+    'account_required' => 'The setup can only be finished after the administrator account has been created.',
+    'help' => 'For security reasons the setup can only continue with the code written into <code>storage/app/installer-token.txt</code> on the server. Open that file and copy its contents here.',
+    'invalid' => 'The installation code you entered is not correct.',
+    'label' => 'Installation code',
+    'required' => 'Please enter the installation code first.',
+    'title' => 'Unlock the setup',
+    'unlock' => 'Unlock',
+  ),
 );

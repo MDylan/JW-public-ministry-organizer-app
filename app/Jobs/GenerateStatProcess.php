@@ -15,6 +15,7 @@ use App\Models\Group;
 use App\Models\GroupDate;
 // use App\Models\GroupDayDisabledSlots;
 // use Carbon\Carbon;
+use App\Support\Retention\RetentionWindow;
 use DateTime;
 
 class GenerateStatProcess implements ShouldQueue
@@ -140,14 +141,37 @@ class GenerateStatProcess implements ShouldQueue
      */
     public function handle()
     {
+        // A retenciós padló alatt nem gyártunk újra statisztikát.
+        //
+        // A GroupDateHelper::generateDate() múltvédelme hibás (a $date_info
+        // ágon kiértékeli a toArray()-t, eldobja, majd átesik az
+        // updateOrCreate-re), így egy csoportsablon-szerkesztés a régi
+        // napokra is dispatch-eli ezt a jobot. A forrásesemények viszont már
+        // törölve vannak, tehát a getInfo() csupa nulla slotot adna vissza:
+        // egy éppen most kitakarított napra egy vadonatúj day_stats sor
+        // kerülne azzal az állítással, hogy ott senki nem szolgált.
+        $floor = RetentionWindow::groupDataFloor();
+        if($floor !== null && $this->date < $floor->toDateString()) {
+            return;
+        }
+
         // $this->groupId = $groupId;
         // $this->date = $date;
         if($this->forceReset) {
             //we reset timeslot for this day
-            GroupDate::where('group_id', '=', $this->groupId)
+            // A ->first() null is lehet: a jobot a queue akkor is lefuttatja,
+            // ha a GroupDate sor a dispatch óta eltűnt (párhuzamos törlés,
+            // csoport-törlés, kézi adatjavítás). A korábbi feltétel nélküli
+            // ->delete() ilyenkor null-on hívott metódust, tehát a job fatal
+            // hibával halt meg ahelyett, hogy egyszerűen továbbment volna -
+            // a reset célja pedig épp az, hogy a sor NE legyen ott.
+            $groupDate = GroupDate::where('group_id', '=', $this->groupId)
                         ->where('date', '=', $this->date)
-                        ->first()
-                        ->delete();
+                        ->first();
+
+            if($groupDate !== null) {
+                $groupDate->delete();
+            }
         } 
 
         $res = $this->getInfo();

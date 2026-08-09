@@ -1,0 +1,813 @@
+{
+    "admin.loginback": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "admin.newsletter_edit": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.settings": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.staticpages": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.staticpages_create": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.staticpages_edit": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.statistics": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.translate": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.users": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "admin.users.login": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-admin",
+            "password.confirm.impersonation",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "calendar": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "finish_registration": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "setGuestLanguage",
+            "signed",
+            "web"
+        ]
+    },
+    "finish_registration_cancel": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "signed",
+            "web"
+        ]
+    },
+    "finish_registration_register": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "signed",
+            "web"
+        ]
+    },
+    "gdpr-download": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "gdpr-terms": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "gdpr-terms-accepted": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "gdpr-terms-denied": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "groups": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.delete": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.edit": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.history": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.logout": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupMember",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.news": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupMember",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.news.filedownload": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupMember",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.news_create": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.news_delete": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.news_edit": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.statistics": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupAdmin",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "groups.users": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "groupMember",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "home.home": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "jumpToCalendar": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "languages.create": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.index": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.translations.create": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.translations.index": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.translations.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "languages.translations.update": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-translator",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "lastevents": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "login": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "web"
+        ]
+    },
+    "logout": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "web"
+        ]
+    },
+    "newsletters": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "can:is-groupservant",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "password.confirm": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "password.confirm.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "throttle:6,1",
+            "web"
+        ]
+    },
+    "password.confirmation": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "web"
+        ]
+    },
+    "password.email": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "checkRecaptcha:password_reset",
+            "guest:web",
+            "strictEmail",
+            "throttle:5,1",
+            "web"
+        ]
+    },
+    "password.request": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "web"
+        ]
+    },
+    "password.reset": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "web"
+        ]
+    },
+    "password.update": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "guest:web",
+            "strictEmail",
+            "web"
+        ]
+    },
+    "pendingEmail.verify": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "signed",
+            "throttle:6,1",
+            "web"
+        ]
+    },
+    "register": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "web"
+        ]
+    },
+    "static_page": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "web"
+        ]
+    },
+    "two-factor.confirm": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "two-factor.disable": {
+        "methods": [
+            "DELETE"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "two-factor.enable": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "two-factor.login": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "web"
+        ]
+    },
+    "two-factor.qr-code": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "two-factor.recovery-codes": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "user-password.update": {
+        "methods": [
+            "PUT"
+        ],
+        "middleware": [
+            "auth:web",
+            "web"
+        ]
+    },
+    "user-profile-information.update": {
+        "methods": [
+            "PUT"
+        ],
+        "middleware": [
+            "auth:web",
+            "web"
+        ]
+    },
+    "user.askToDelete": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "user.deletepersonaldata": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "signed",
+            "verified",
+            "web"
+        ]
+    },
+    "user.logout_other_devices": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "user.new-email-verified": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "web"
+        ]
+    },
+    "user.profile": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "verified",
+            "web"
+        ]
+    },
+    "user.resendNewEmailVerification": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "user.twofactorsettings": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
+    "verification.notice": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "web"
+        ]
+    },
+    "verification.send": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth:web",
+            "throttle:6,1",
+            "web"
+        ]
+    },
+    "verification.verify": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "signed",
+            "throttle:6,1",
+            "web"
+        ]
+    }
+}

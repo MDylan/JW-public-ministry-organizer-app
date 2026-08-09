@@ -7,11 +7,16 @@
       <li class="nav-item d-none d-sm-inline-block">
         <a href="{{route('home.home')}}" class="nav-link">{{__('app.menu-home')}}</a>
       </li>
-      @if (session('loginback_url'))
+      {{-- A visszaút KORÁBBAN egy 12 órás aláírt URL volt a sessionben; most
+           csak egy jelző van ott, és a váltás POST + CSRF. --}}
+      @if (session(App\Http\Controllers\Admin\LoginToUserController::SESSION_KEY))
       <li class="nav-item">
-        <a href="{{ session('loginback_url') }}" class="nav-link btn btn-sm btn-warning">
-          <i class="fas fa-backspace mr-1"></i>
-          {{__('user.login_back')}}</a>
+        <form method="POST" action="{{ route('admin.loginback') }}">
+          @csrf
+          <button type="submit" class="nav-link btn btn-sm btn-warning">
+            <i class="fas fa-backspace mr-1"></i>
+            {{__('user.login_back')}}</button>
+        </form>
       </li>
       @endif
     </ul>

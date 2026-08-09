@@ -4,9 +4,10 @@ namespace Livewire\Commands;
 
 use Illuminate\Support\Facades\File;
 
+#[\AllowDynamicProperties]
 class MoveCommand extends FileManipulationCommand
 {
-    protected $signature = 'livewire:move {name} {new-name} {--force} {--inline} {--test}';
+    protected $signature = 'livewire:move {name} {new-name} {--force} {--inline}';
 
     protected $description = 'Move a Livewire component';
 
@@ -30,13 +31,10 @@ class MoveCommand extends FileManipulationCommand
         $class = $this->renameClass();
         if (! $inline) $view = $this->renameView();
 
-        $test = $this->option('test');
-        if ($test) {
-            $test = $this->renameTest();
-        }
+        $test = $this->renameTest();
         $this->refreshComponentAutodiscovery();
 
-        $this->line("<options=bold,reverse;fg=green> COMPONENT MOVED </> 🤙\n");
+        if ($class) $this->line("<options=bold,reverse;fg=green> COMPONENT MOVED </> 🤙\n");
         $class && $this->line("<options=bold;fg=green>CLASS:</> {$this->parser->relativeClassPath()} <options=bold;fg=green>=></> {$this->newParser->relativeClassPath()}");
         if (! $inline) $view && $this->line("<options=bold;fg=green>VIEW:</>  {$this->parser->relativeViewPath()} <options=bold;fg=green>=></> {$this->newParser->relativeViewPath()}");
         if ($test) $test && $this->line("<options=bold;fg=green>Test:</>  {$this->parser->relativeTestPath()} <options=bold;fg=green>=></> {$this->newParser->relativeTestPath()}");
@@ -77,14 +75,15 @@ class MoveCommand extends FileManipulationCommand
 
     protected function renameTest()
     {
+        $oldTestPath = $this->parser->testPath();
         $newTestPath = $this->newParser->testPath();
-        if (File::exists($newTestPath)) {
-            $this->line("<fg=red;options=bold>Test already exists:</> {$this->newParser->relativeViewPath()}");
 
+        if (!File::exists($oldTestPath) || File::exists($newTestPath)) {
             return false;
         }
+
         $this->ensureDirectoryExists($newTestPath);
-        File::move($this->parser->testPath(), $newTestPath);
+        File::move($oldTestPath, $newTestPath);
         return $newTestPath;
     }
 }

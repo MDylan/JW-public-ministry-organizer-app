@@ -33,7 +33,7 @@ class DayOfWeekField extends AbstractField
     protected $rangeEnd = 7;
 
     /**
-     * @var array Weekday range
+     * @var array<int, int> Weekday range
      */
     protected $nthRange;
 
@@ -68,8 +68,8 @@ class DayOfWeekField extends AbstractField
         $lastDayOfMonth = (int) $date->format('t');
 
         // Find out if this is the last specific weekday of the month
-        if (strpos($value, 'L')) {
-            $weekday = $this->convertLiterals(substr($value, 0, strpos($value, 'L')));
+        if ($lPosition = strpos($value, 'L')) {
+            $weekday = (int) $this->convertLiterals(substr($value, 0, $lPosition));
             $weekday %= 7;
 
             $daysInMonth = (int) $date->format('t');

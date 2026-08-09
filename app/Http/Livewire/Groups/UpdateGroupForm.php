@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
+use Countries;
 
 class UpdateGroupForm extends AppComponent
 {
@@ -49,6 +50,8 @@ class UpdateGroupForm extends AppComponent
     public $disabled_selects = [];
     public $change_date = null;
     public $future_changes = null;
+    public $weather_messages = [];
+    public $weather = [];
 
     public $listeners = [
         'literatureDeleteConfirmed', 
@@ -76,6 +79,11 @@ class UpdateGroupForm extends AppComponent
     public $groupSigns = [];
 
     public function mount(Group $group) {
+
+        $this->weather = [
+            'city' => $group->weather->city ?? null,
+            'country' => $group->weather->country ?? null
+        ];
 
         $this->state = $group->toArray();
         $this->default_colors = config('events.default_colors');
@@ -198,6 +206,29 @@ class UpdateGroupForm extends AppComponent
             'change_date' => 'required|date_format:Y-m-d|after_or_equal:'.date("Y-m-d")
         ])->validate();
 
+        if($this->state['weather_enabled']) {
+            Validator::make($this->weather, [
+                'city' => 'required|string|max:50',
+                'country' => 'required|string|max:2'
+            ])->validate();
+            
+            // A hibaág KORÁBBAN nullázta a city_id-t, miközben a lenti
+            // validáció megköveteli (required_if:weather_enabled,1). Aki tehát
+            // bekapcsolta az időjárást, és az API épp nem válaszolt, EGYÁLTALÁN
+            // nem tudta menteni a csoportot - egy külső szolgáltatás
+            // elérhetetlensége blokkolta a teljes űrlapot, olyan mezőkkel
+            // együtt, amiknek semmi közük az időjáráshoz.
+            //
+            // A WeatherCache hibaágon is visszaadja a város azonosítóját (a
+            // sort a sikertelen kísérlet is létrehozza), tehát a mentés
+            // mehet; a hiba magát a felhasználó a weather_messages panelen
+            // látja.
+            $weather = pwbs_weather_api_call($this->weather['city'], $this->weather['country']);
+            if(isset($weather['city_id'])) {
+                $this->state['city_id'] = $weather['city_id'];
+            }
+        }
+
         $pattern = "/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/";
 
         $v = Validator::make($this->state, [
@@ -208,6 +239,8 @@ class UpdateGroupForm extends AppComponent
             'min_time' => 'required|numeric|in:30,60,90,120|lte:max_time',
             'max_time' => 'required|numeric|in:60,90,120,180,240,320,360,420,480|gte:min_time',            
             'need_approval' => 'required|numeric|in:0,1',
+            // 'auto_approval' => 'required_if:need_approval,1|numeric|in:0,1',
+            // 'auto_back' => 'required_if:need_approval,1|numeric|in:0,1',
             'color_default' => ['sometimes', 'regex:'.$pattern],
             'color_empty' => ['sometimes', 'regex:'.$pattern],
             'color_someone' => ['sometimes', 'regex:'.$pattern],
@@ -218,11 +251,16 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
-            'replyTo' => 'nullable|email',
+            // `email:filter`, nem sima `email`: ez az érték a csoport leveleinek
+            // Reply-To FEJLÉCÉBE megy, az alapértelmezett szabály pedig
+            // elfogadja a CR/LF-et a címben (GHSA-5vg9-5847-vvmq).
+            'replyTo' => 'nullable|email:filter',
             'showPhone' => 'required|numeric|in:0,1',
             'messages_on' => 'required|numeric|in:0,1',
             'messages_write' => 'sometimes|numeric|in:0,1',
             'messages_priority' => 'sometimes|numeric|in:0,1',
+            'weather_enabled' => 'required|numeric|in:0,1',
+            'city_id' => 'required_if:weather_enabled,1',
         ]);
 
         $validatedData = $v->validate();
@@ -483,6 +521,40 @@ class UpdateGroupForm extends AppComponent
         }
     }
 
+    public function checkWeatherSettings() {
+        $this->weather_messages = [];
+        if($this->state['weather_enabled'] == 1) {
+            if(empty($this->weather['city']) || empty($this->weather['country'])) {
+                $this->dispatchBrowserEvent('sweet-error', [
+                    'title' => __('group.weather.error'),
+                    'message' => __('group.weather.error_message'),
+                ]);
+            } else {
+                // $wt = new Weather();
+                // $weather = $wt->get3HourlyByCity($this->state['city'], $this->state['country']);
+
+                $weather = pwbs_weather_api_call($this->weather['city'], $this->weather['country']);
+                //dd($weather);
+                if(empty($weather['current_weather'])) {
+                    $this->dispatchBrowserEvent('sweet-error', [
+                        'title' => __('group.weather.error'),
+                        'message' => __('group.weather.error_weather_message'),
+                    ]);
+                    return;
+                }
+                //dd($weather['forecast_weather']);
+                if(isset($weather['current_weather'])) {
+                    $this->weather_messages = $weather['current_weather'];
+                    // foreach($weather_array['list'] as $weather) {
+                        
+                    // }
+                }
+                //dd($this->weather_messages);
+                //$this->weather_message = $weather;
+            }
+        }
+    }
+
     public function render()
     {
         $group_times = $this->generateTimeArray();
@@ -513,9 +585,12 @@ class UpdateGroupForm extends AppComponent
                 }
             }
         }
-        
-        // if(count($this->dates))
-        //     ksort($this->dates);
+
+        // $countries = new \PeterColes\Countries\Maker();
+        // $countries->lookup(auth()->user()->language);
+
+        $countries = Countries::lookup(auth()->user()->language);
+        // dd($countries);
 
         return view('livewire.groups.update-group-form', [
             'min_time_options' => [30, 60, 90, 120],
@@ -527,7 +602,10 @@ class UpdateGroupForm extends AppComponent
                 'helper',
                 'roler',
                 'admin',
-            ]
+            ],
+            'countries' => $countries,
+            'default_country' => $this->weather['country'] ?? auth()->user()->langauge,
+
         ]);
     }
 }

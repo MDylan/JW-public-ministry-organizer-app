@@ -59,7 +59,7 @@ class UserWillBeAnonymizeNotification extends Notification implements ShouldQueu
         return (new MailMessage)
                     ->subject(Lang::get('email.anonymize.subject'))
                     ->line(Lang::get('email.anonymize.line_1', [
-                        'appName' => env('APP_NAME')
+                        'appName' => config('app.name')
                     ]))
                     ->line(Lang::get('email.anonymize.line_2', ['lastDate' => $this->data['lastDate']]))
                     ->action(Lang::get('Log in'), url('/login'))

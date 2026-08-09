@@ -42,6 +42,12 @@ class AppServiceProvider extends ServiceProvider
             'default_language' => $default_language,
             'show_homepage_alert' => false,
             'homepage_message' => '',
+            'weather' => false,
+            // v1-patch E: a csoportadatok megőrzési ideje hónapban, '0' a
+            // kikapcsolt állapot. Alapérték nélkül a config kulcs friss
+            // telepítésen fel sem oldódna - a RetentionWindow ezt is
+            // kikapcsoltként kezeli, de itt legyen kimondva.
+            'group_data_retention' => '0',
         ];
         try {
             $settings = ModelsSettings::all();
@@ -68,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
                 'translatable.fallback_locale' => $defaults['default_language'],
                 'translatable.locales' => $locales,
                 'show_homepage_alert' => $defaults['show_homepage_alert'],
+                'weather' => $defaults['weather'],
                 // 'app.fallback_locale' => $defaults['default_language'],
             ]);
             if($defaults['show_homepage_alert'] == 1) {

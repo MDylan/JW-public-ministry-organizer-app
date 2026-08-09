@@ -14,7 +14,10 @@ use App\Observers\EventObserver;
 use App\Observers\GroupLiteratureObserver;
 use App\Observers\GroupNewsObserver;
 use App\Observers\GroupNewsTranslationObserver;
+use App\Models\StaticPage;
+use App\Models\StaticPageTranslation;
 use App\Observers\GroupObserver;
+use App\Observers\StaticPageObserver;
 use App\Observers\GroupUserObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Observers\UserObserver;
@@ -50,5 +53,12 @@ class EventServiceProvider extends ServiceProvider
         GroupLiterature::observe(GroupLiteratureObserver::class);
         GroupNews::observe(GroupNewsObserver::class);
         GroupNewsTranslation::observe(GroupNewsTranslationObserver::class);
+
+        // Az oldalmenü gyorsítótára lejárat nélküli (SetLocale
+        // Cache::rememberForever). A fordításra is figyelünk, mert a menü a
+        // címeket mutatja, azok pedig külön táblában élnek - lásd az observer
+        // osztály magyarázatát.
+        StaticPage::observe(StaticPageObserver::class);
+        StaticPageTranslation::observe(StaticPageObserver::class);
     }
 }

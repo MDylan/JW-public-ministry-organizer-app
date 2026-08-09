@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
+use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
@@ -61,8 +62,19 @@ class Events extends AppComponent
             $this->month = date('m');
         }
 
-
-    }    
+        // A /calendar/{year}/{month} útvonal bármelyik hónapot elérné
+        // közvetlenül, a "vissza" link elrejtése önmagában csak kozmetika.
+        // A retenciós padló alatti hónapok forrása (események, day_stats,
+        // group_dates) már törölve van, ezért a padló hónapjára emeljük.
+        $floor = RetentionWindow::displayFloor();
+        if($floor !== null) {
+            $requested = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
+            if($requested->lt($floor->startOfMonth())) {
+                $this->year = (int) $floor->format('Y');
+                $this->month = (int) $floor->format('m');
+            }
+        }
+    }
 
     function build_pagination($created_at) {
  
@@ -75,7 +87,15 @@ class Events extends AppComponent
         } else {
             $prevYear = $this->year;
         }
+        // A visszalépés alsó határa a csoport létrehozása ÉS a retenciós
+        // padló közül a későbbi. A naptár eseményt és day_stats-ot is
+        // rajzol, ezért itt a displayFloor() a helyes padló - a padló alatt
+        // a színsávok forrása már nincs meg.
         $created = strtotime(date("Y-m-01", strtotime($created_at)));
+        $floor = RetentionWindow::displayFloor();
+        if($floor !== null) {
+            $created = max($created, strtotime($floor->format("Y-m-01")));
+        }
         $prev = strtotime($prevYear."-".$prevMonth."-01");
         if($prev < $created) {
             $prevYear = false;
@@ -283,12 +303,75 @@ class Events extends AppComponent
             'disabled_slots',
             'dates' => function($q) {
                 $q->whereBetween('date', [$this->first_day, $this->last_day]);
-            }
+            },
+            'weather'
         ])->first()->toArray();
         // dd($this->cal_group_data);
         $dates = [];
         foreach($this->cal_group_data['dates'] as $date) {
             $dates[$date['date']] = $date;
+        }
+        // dd($dates);
+        // Az őrök: weather_enabled = 1 ÖNMAGÁBAN nem jelenti, hogy van város.
+        // A city_id lehet null - korábban pontosan ezt az állapotot állította
+        // elő a hibaág, ami nullázta -, és a `weather` reláció ilyenkor null,
+        // amin a dereferálás fatalt dobott a naptár renderelése közben.
+        if($this->cal_group_data['weather_enabled']
+            && config('weather') == 1
+            && !empty($this->cal_group_data['weather'])) {
+            if($this->cal_group_data['weather']['current_weather'] !== null) {
+                // Nincs json_decode: a WeatherCity modell `json` castja már
+                // tömbként adja vissza mindkét mezőt. Korábban a mentés KÉTSZER
+                // kódolt (kézi json_encode + cast), ezért kellett itt kézzel
+                // dekódolni - a tárolt alak most valódi JSON objektum.
+                $current_weather = $this->cal_group_data['weather']['current_weather'];
+                $forecast_weather = $this->cal_group_data['weather']['forecast_weather'];
+
+                $forecast_list = array();
+                // A blob 'list' kulcsa hiányozhat: hibás vagy csonka válasz
+                // esetén a korábbi count($forecast_weather['list']) fatalt dobott.
+                if(!empty($forecast_weather['list'])) {
+                    foreach($forecast_weather['list'] as $key => $forecast) {
+                        $weather_time = Carbon::parse($forecast['dt_txt'], "UTC");
+                        $day = $weather_time->format("Y-m-d");
+                        if(!isset($dates[$day])) {
+                            //forecast only for sevice days
+                            continue;
+                        } else {
+                            $start_time = Carbon::parse($dates[$day]['date_start']);
+                            $end_time = Carbon::parse($dates[$day]['date_end']);
+
+                            if($weather_time->lt($start_time) || $weather_time->gt($end_time)) {
+                                //forecast only for sevice days
+                                continue;
+                            }
+
+                            if (!isset($forecast_list[$day]['min_temp'])) {
+                                $forecast_list[$day]['min_temp'] = $forecast['main']['temp'];
+                            }
+                            if (!isset($forecast_list[$day]['max_temp'])) {
+                                $forecast_list[$day]['max_temp'] = $forecast['main']['temp'];
+                            }
+                            if (!isset($forecast_list[$day]['min_wind'])) {
+                                $forecast_list[$day]['min_wind'] = $forecast['wind']['speed'];
+                            }
+                            if (!isset($forecast_list[$day]['max_wind'])) {
+                                $forecast_list[$day]['max_wind'] = $forecast['wind']['speed'];
+                            }
+                            $forecast_list[$day]['min_temp'] = min($forecast['main']['temp'], $forecast_list[$day]['min_temp']);
+                            $forecast_list[$day]['max_temp'] = max($forecast['main']['temp'], $forecast_list[$day]['max_temp']);
+                            $forecast_list[$day]['min_wind'] = min($forecast['wind']['speed'], $forecast_list[$day]['min_wind']);
+                            $forecast_list[$day]['max_wind'] = max($forecast['wind']['speed'], $forecast_list[$day]['max_wind']);
+                            $forecast_list[$day]['description'] = $forecast['weather'][0]['description'];
+                            $forecast_list[$day]['icon'] = $forecast['weather'][0]['icon'];
+                            $forecast_list[$day]['day_num'] = $weather_time->format("w");
+                            $forecast_list[$day]['day'] = $weather_time->format("m.d");
+                        }                        
+                    }
+                }
+                // dd($forecast_list);
+                $this->cal_group_data['weather']['forecasts'] = $forecast_list;
+            }
         }
         // $service_days = [];
         // foreach($this->cal_group_data['days'] as $day) {

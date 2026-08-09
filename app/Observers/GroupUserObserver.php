@@ -4,9 +4,12 @@ namespace App\Observers;
 
 use App\Models\GroupUser;
 use App\Models\LogHistory;
+use App\Support\Concerns\ResolvesCauser;
 
 class GroupUserObserver
 {
+    use ResolvesCauser;
+
     /**
      * Handle the GroupUser "created" event.
      *
@@ -31,7 +34,12 @@ class GroupUserObserver
         if(count($changes)) {
             $fillable = $groupUser->getFillable();
             foreach($fillable as $field) {
-                if(isset($changes[$field])) {
+                // array_key_exists(), NEM isset(): az isset() NULL értékű
+                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
+                // az audit naplóban. A getDirty() csak ténylegesen változott
+                // mezőket ad vissza, és az alatta lévő $old !== $new őr
+                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                if(array_key_exists($field, $changes)) {
                     $old = $groupUser->getOriginal($field);
                     $new = $groupUser->$field;
                     if($old !== $new) {
@@ -41,11 +49,11 @@ class GroupUserObserver
                 }
             }
         }
-        if(count($store) && (auth()->user() !== null)) {
+        if(count($store)) {
             $saved_data = [
                 'event' => 'updated',
                 'group_id' => $groupUser->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => json_encode($store)
             ];
             $history = new LogHistory($saved_data);
@@ -67,7 +75,7 @@ class GroupUserObserver
                 // 'model_id' => $groupUser->id,
                 'event' => 'deleted',
                 'group_id' => $groupUser->group_id,
-                'causer_id' => auth()->user()->id,
+                'causer_id' => $this->causerId(),
                 'changes' => ''
             ];
             $history = new LogHistory($saved_data);

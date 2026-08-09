@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -40,6 +40,8 @@ class FunctionReturnInWriteContextPass extends CodeCleanerPass
      * @throws FatalErrorException if a value is assigned to a function
      *
      * @param Node $node
+     *
+     * @return int|Node|null Replacement node (or special return value)
      */
     public function enterNode(Node $node)
     {
@@ -51,7 +53,7 @@ class FunctionReturnInWriteContextPass extends CodeCleanerPass
                 }
 
                 if ($item && $item->byRef && $this->isCallNode($item->value)) {
-                    throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getLine());
+                    throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getStartLine());
                 }
             }
         } elseif ($node instanceof Isset_ || $node instanceof Unset_) {
@@ -61,11 +63,13 @@ class FunctionReturnInWriteContextPass extends CodeCleanerPass
                 }
 
                 $msg = $node instanceof Isset_ ? self::ISSET_MESSAGE : self::EXCEPTION_MESSAGE;
-                throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
+                throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getStartLine());
             }
         } elseif ($node instanceof Assign && $this->isCallNode($node->var)) {
-            throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getLine());
+            throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getStartLine());
         }
+
+        return null;
     }
 
     private function isCallNode(Node $node): bool

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,9 +11,9 @@
 
 namespace Psy\Output;
 
+use Psy\Formatter\LinkFormatter;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
-use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
@@ -23,8 +23,10 @@ class ShellOutput extends ConsoleOutput
 {
     const NUMBER_LINES = 128;
 
-    private $paging = 0;
-    private $pager;
+    private int $paging = 0;
+    private OutputPager $pager;
+    private Theme $theme;
+    private bool $visibleOutputWritten = false;
 
     /**
      * Construct a ShellOutput instance.
@@ -34,21 +36,14 @@ class ShellOutput extends ConsoleOutput
      * @param OutputFormatterInterface|null $formatter (default: null)
      * @param string|OutputPager|null       $pager     (default: null)
      */
-    public function __construct($verbosity = self::VERBOSITY_NORMAL, $decorated = null, OutputFormatterInterface $formatter = null, $pager = null)
+    public function __construct($verbosity = self::VERBOSITY_NORMAL, $decorated = null, ?OutputFormatterInterface $formatter = null, $pager = null, $theme = null)
     {
         parent::__construct($verbosity, $decorated, $formatter);
 
+        $this->theme = $theme ?? new Theme('modern');
         $this->initFormatters();
 
-        if ($pager === null) {
-            $this->pager = new PassthruPager($this);
-        } elseif (\is_string($pager)) {
-            $this->pager = new ProcOutputPager($this, $pager);
-        } elseif ($pager instanceof OutputPager) {
-            $this->pager = $pager;
-        } else {
-            throw new \InvalidArgumentException('Unexpected pager parameter: '.$pager);
-        }
+        $this->pager = $this->createPager($pager);
     }
 
     /**
@@ -67,7 +62,9 @@ class ShellOutput extends ConsoleOutput
     public function page($messages, int $type = 0)
     {
         if (\is_string($messages)) {
-            $messages = (array) $messages;
+            // Split on newlines to avoid O(n^2) performance in Symfony's OutputFormatter
+            // when processing large strings with many style tags.
+            $messages = \explode("\n", $messages);
         }
 
         if (!\is_array($messages) && !\is_callable($messages)) {
@@ -83,6 +80,15 @@ class ShellOutput extends ConsoleOutput
         }
 
         $this->stopPaging();
+    }
+
+    /**
+     * Set a listener invoked whenever visible output is written.
+     *
+     * @deprecated No longer used. ShellOutput tracks visible writes internally.
+     */
+    public function setWriteListener(?callable $listener): void
+    {
     }
 
     /**
@@ -114,7 +120,7 @@ class ShellOutput extends ConsoleOutput
      * @param bool         $newline  Whether to add a newline or not
      * @param int          $type     The type of output
      */
-    public function write($messages, $newline = false, $type = 0)
+    public function write($messages, $newline = false, $type = 0): void
     {
         if ($this->getVerbosity() === self::VERBOSITY_QUIET) {
             return;
@@ -124,14 +130,33 @@ class ShellOutput extends ConsoleOutput
 
         if ($type & self::NUMBER_LINES) {
             $pad = \strlen((string) \count($messages));
-            $template = $this->isDecorated() ? "<aside>%{$pad}s</aside>: %s" : "%{$pad}s: %s";
+            $template = $this->isDecorated() && $this->getFormatter()->hasStyle('whisper')
+                ? "<whisper>%{$pad}s:</whisper> %s"
+                : "%{$pad}s: %s";
 
             if ($type & self::OUTPUT_RAW) {
                 $messages = \array_map([OutputFormatter::class, 'escape'], $messages);
             }
 
+            $indent = \str_repeat(' ', $pad + 2); // Indent continuation lines to align with text
+
             foreach ($messages as $i => $line) {
-                $messages[$i] = \sprintf($template, $i, $line);
+                // Check if line contains newlines (multi-line entry)
+                if (\strpos($line, "\n") !== false) {
+                    // Split into lines and indent continuation lines
+                    $lines = \explode("\n", $line);
+                    $firstLine = \array_shift($lines);
+                    $indentedLines = \array_map(function ($l) use ($indent) {
+                        return $indent.$l;
+                    }, $lines);
+
+                    $messages[$i] = \sprintf($template, $i, $firstLine);
+                    if (!empty($indentedLines)) {
+                        $messages[$i] .= "\n".\implode("\n", $indentedLines);
+                    }
+                } else {
+                    $messages[$i] = \sprintf($template, $i, $line);
+                }
             }
 
             // clean this up for super.
@@ -149,13 +174,52 @@ class ShellOutput extends ConsoleOutput
      * @param string $message A message to write to the output
      * @param bool   $newline Whether to add a newline or not
      */
-    public function doWrite($message, $newline)
+    public function doWrite($message, $newline): void
     {
+        $this->visibleOutputWritten = true;
+
         if ($this->paging > 0) {
-            $this->pager->doWrite($message, $newline);
+            // @todo Update OutputPager interface to require doWrite
+            if ($this->pager instanceof ProcOutputPager || $this->pager instanceof PassthruPager || $this->pager instanceof BuiltinOutputPager) {
+                $this->pager->doWrite($message, $newline);
+            } else {
+                $this->pager->write($message, $newline, self::OUTPUT_RAW);
+            }
         } else {
             parent::doWrite($message, $newline);
         }
+    }
+
+    /**
+     * Reset visible output tracking and return whether output was written.
+     */
+    public function consumeVisibleOutputWritten(): bool
+    {
+        $written = $this->visibleOutputWritten;
+        $this->visibleOutputWritten = false;
+
+        return $written;
+    }
+
+    /**
+     * Set the output Theme.
+     */
+    public function setTheme(Theme $theme)
+    {
+        $this->theme = $theme;
+        $this->initFormatters();
+    }
+
+    /**
+     * Replace the output pager used for future paging operations.
+     *
+     * @param string|OutputPager|null $pager
+     */
+    public function setPager($pager): void
+    {
+        $this->closePager();
+        $this->paging = 0;
+        $this->pager = $this->createPager($pager);
     }
 
     /**
@@ -169,42 +233,35 @@ class ShellOutput extends ConsoleOutput
     }
 
     /**
+     * @param string|OutputPager|null $pager
+     */
+    private function createPager($pager): OutputPager
+    {
+        if ($pager === null) {
+            return new PassthruPager($this);
+        }
+
+        if (\is_string($pager)) {
+            return new ProcOutputPager($this, $pager);
+        }
+
+        if ($pager instanceof OutputPager) {
+            return $pager;
+        }
+
+        throw new \InvalidArgumentException('Unexpected pager parameter: '.$pager);
+    }
+
+    /**
      * Initialize output formatter styles.
      */
     private function initFormatters()
     {
-        $formatter = $this->getFormatter();
+        $useGrayFallback = !Theme::grayExists($this->getFormatter());
+        $this->theme->applyStyles($this->getFormatter(), $useGrayFallback);
+        $this->theme->applyErrorStyles($this->getErrorOutput()->getFormatter(), $useGrayFallback);
 
-        $formatter->setStyle('warning', new OutputFormatterStyle('black', 'yellow'));
-        $formatter->setStyle('error', new OutputFormatterStyle('white', 'red', ['bold']));
-        $formatter->setStyle('aside', new OutputFormatterStyle('blue'));
-        $formatter->setStyle('strong', new OutputFormatterStyle(null, null, ['bold']));
-        $formatter->setStyle('return', new OutputFormatterStyle('cyan'));
-        $formatter->setStyle('urgent', new OutputFormatterStyle('red'));
-        $formatter->setStyle('hidden', new OutputFormatterStyle('black'));
-
-        // Visibility
-        $formatter->setStyle('public', new OutputFormatterStyle(null, null, ['bold']));
-        $formatter->setStyle('protected', new OutputFormatterStyle('yellow'));
-        $formatter->setStyle('private', new OutputFormatterStyle('red'));
-        $formatter->setStyle('global', new OutputFormatterStyle('cyan', null, ['bold']));
-        $formatter->setStyle('const', new OutputFormatterStyle('cyan'));
-        $formatter->setStyle('class', new OutputFormatterStyle('blue', null, ['underscore']));
-        $formatter->setStyle('function', new OutputFormatterStyle(null));
-        $formatter->setStyle('default', new OutputFormatterStyle(null));
-
-        // Types
-        $formatter->setStyle('number', new OutputFormatterStyle('magenta'));
-        $formatter->setStyle('integer', new OutputFormatterStyle('magenta'));
-        $formatter->setStyle('float', new OutputFormatterStyle('yellow'));
-        $formatter->setStyle('string', new OutputFormatterStyle('green'));
-        $formatter->setStyle('bool', new OutputFormatterStyle('cyan'));
-        $formatter->setStyle('keyword', new OutputFormatterStyle('yellow'));
-        $formatter->setStyle('comment', new OutputFormatterStyle('blue'));
-        $formatter->setStyle('object', new OutputFormatterStyle('blue'));
-        $formatter->setStyle('resource', new OutputFormatterStyle('yellow'));
-
-        // Code-specific formatting
-        $formatter->setStyle('inline_html', new OutputFormatterStyle('cyan'));
+        // Set inline styles for hyperlinks
+        LinkFormatter::setStyles($this->theme->getInlineStyles($useGrayFallback));
     }
 }

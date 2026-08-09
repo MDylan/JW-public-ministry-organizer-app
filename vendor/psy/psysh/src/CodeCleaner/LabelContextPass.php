@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -31,54 +31,66 @@ use Psy\Exception\FatalErrorException;
  */
 class LabelContextPass extends CodeCleanerPass
 {
-    /** @var int */
-    private $functionDepth;
-
-    /** @var array */
-    private $labelDeclarations;
-    /** @var array */
-    private $labelGotos;
+    private int $functionDepth = 0;
+    private array $labelDeclarations = [];
+    private array $labelGotos = [];
 
     /**
      * @param array $nodes
+     *
+     * @return Node[]|null Array of nodes
      */
     public function beforeTraverse(array $nodes)
     {
         $this->functionDepth = 0;
         $this->labelDeclarations = [];
         $this->labelGotos = [];
+
+        return null;
     }
 
+    /**
+     * @return int|Node|null Replacement node (or special return value)
+     */
     public function enterNode(Node $node)
     {
         if ($node instanceof FunctionLike) {
             $this->functionDepth++;
 
-            return;
+            return null;
         }
 
         // node is inside function context
         if ($this->functionDepth !== 0) {
-            return;
+            return null;
         }
 
         if ($node instanceof Goto_) {
-            $this->labelGotos[\strtolower($node->name)] = $node->getLine();
+            $this->labelGotos[\strtolower($node->name)] = $node->getStartLine();
         } elseif ($node instanceof Label) {
-            $this->labelDeclarations[\strtolower($node->name)] = $node->getLine();
+            $this->labelDeclarations[\strtolower($node->name)] = $node->getStartLine();
         }
+
+        return null;
     }
 
     /**
      * @param \PhpParser\Node $node
+     *
+     * @return int|Node|Node[]|null Replacement node (or special return value)
      */
     public function leaveNode(Node $node)
     {
         if ($node instanceof FunctionLike) {
             $this->functionDepth--;
         }
+
+        return null;
     }
 
+    /**
+     * @return Node[]|null Array of nodes
+     */
     public function afterTraverse(array $nodes)
     {
         foreach ($this->labelGotos as $name => $line) {
@@ -87,5 +99,7 @@ class LabelContextPass extends CodeCleanerPass
                 throw new FatalErrorException($msg, 0, \E_ERROR, null, $line);
             }
         }
+
+        return null;
     }
 }

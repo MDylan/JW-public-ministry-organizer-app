@@ -21,6 +21,8 @@ return array (
     'alert' => 'Attention, this action will delete your current profile as well, and all your personal data will perish, and you will be signed out immediately.',
     'button' => 'I request the deletion of my data.',
     'info' => 'After entering your current password, you will be able to delete your personal data.',
+    'no_successor_admin' => 'Your data cannot be deleted right now, because you are the only main administrator of this site. Please appoint another main administrator first, then repeat your request.',
+    'no_successor_group' => 'Your data cannot be deleted right now, because you are the only overseer in the following group(s): :groups. Please appoint another overseer first, then repeat your request.',
     'success' => 'Your data have been deleted. Thank you for using our website.',
     'title' => 'Delete my personal data',
     'verify_needed' => 'You have to confirm your intention to delete your data. We have sent an email to you. Click on the link in the email.',

@@ -31,8 +31,6 @@ class Validator
      * @param \Dotenv\Repository\RepositoryInterface $repository
      * @param string[]                               $variables
      *
-     * @throws \Dotenv\Exception\ValidationException
-     *
      * @return void
      */
     public function __construct(RepositoryInterface $repository, array $variables)
@@ -69,7 +67,7 @@ class Validator
     {
         return $this->assertNullable(
             static function (string $value) {
-                return Str::len(\trim($value)) > 0;
+                return Str::len(\trim($value, " \n\r\t\0\x0B")) > 0;
             },
             'is empty'
         );

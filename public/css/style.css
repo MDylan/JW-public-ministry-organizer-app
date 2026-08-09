@@ -328,6 +328,16 @@
   .dark-mode .grid-row:hover {
     background-color: hsl(55, 21%, 44%);
   }
+
+  .dark-mode .grid-striped .row a {
+    color: #97b9ff;
+  }
+  .dark-mode .grid-striped .row:hover a {
+    color: #b5ceff;
+  }
+  .dark-mode .grid-striped .btn-danger i {
+    color: #7b0000;
+  }
   .eventsTable tr {
     height: 46px;
   }

@@ -36,7 +36,11 @@ class Group extends Model
         'copy_from_parent',
         'messages_on',
         'messages_write',
-        'messages_priority'
+        'messages_priority',
+        'auto_approval',
+        'auto_back',
+        'city_id',
+        'weather_enabled'
     ];
 
     /**
@@ -66,6 +70,7 @@ class Group extends Model
                         ->withPivot('id', 'group_role', 'note', 'accepted_at', 'hidden', 'deleted_at', 'signs', 'message_use', 'message_send_priority')
                         ->withTimestamps()
                         ->whereNull('deleted_at')
+                        ->where('isAnonymized', 0)
                         ->using(GroupUser::class)
                         ->orderByRaw('name_index, email');
     }
@@ -92,6 +97,7 @@ class Group extends Model
     public function users() {
         return $this->belongsToMany(User::class)
                         ->select(['users.id', 'users.name'])
+                        ->where('isAnonymized', 0)
                         ->withPivot('group_role', 'signs')
                         ->wherePivot('deleted_at', null)
                         ->whereNotNull('accepted_at')
@@ -105,6 +111,26 @@ class Group extends Model
                 ->withTimestamps()
                 ->wherePivot('deleted_at', null)
                 ->using(GroupUser::class);
+    }
+
+    /**
+     * Azok az adminok, akik valóban át tudják venni a csoportot.
+     *
+     * A groupAdmins() nem szűri sem az isAnonymized-et, sem az accepted_at-ot,
+     * ezért egy anonimizált felhasználó vagy egy még el nem fogadott meghívott
+     * is adminnak látszik rajta keresztül. Az utódlási vizsgálatnak
+     * (pwbs_check_group_other_admins(), TODO 12.2) ez nem elég: a csomag napi
+     * anonimizálója meghagyja a tagságot, így az anonimizált sor utódnak
+     * számítana, és a csoport összes valódi adminja egymás után kiüríthető lenne.
+     *
+     * A groupAdmins() maga szándékosan változatlan: a további hívási helyei a
+     * SAJÁT jogosultságot ellenőrzik (wherePivot('user_id', Auth::id())), ott a
+     * szűrés felesleges.
+     */
+    public function activeAdmins() {
+        return $this->groupAdmins()
+                ->where('isAnonymized', 0)
+                ->wherePivotNotNull('accepted_at');
     }
 
     /**
@@ -274,5 +300,9 @@ class Group extends Model
 
     public function messages() {
         return $this->hasMany(GroupMessage::class);
+    }
+
+    public function weather() {
+        return $this->belongsTo(WeatherCity::class, 'city_id', 'id');
     }
 }

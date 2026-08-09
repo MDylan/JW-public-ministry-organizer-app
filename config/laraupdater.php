@@ -19,8 +19,20 @@
 		/*
 		* Set a middleware for the route: updater.update
 		* Only 'auth' NOT works (manage security using 'allow_users_id' configuration)
+		*
+		* Az EnsureUpdateWithinBranch a sor VÉGÉN áll, és ez szándékos: a
+		* major-korlát ellenőrzése a csatornát kérdezi meg, ami csak azután
+		* fusson le, hogy az auth és a can:is-admin már átengedte a kérést.
+		* Ez a guard tartja meg a "major verziót automatikusan nem lépünk át"
+		* szabályt akkor is, ha valaki közvetlenül nyitja meg az /updater.update
+		* címet - lásd App\Support\Updates\UpdateBranch.
+		*
+		* FIGYELEM: egy `vendor:publish --force --tag=laraupdater` ezt a fájlt
+		* felülírja, és ezzel némán visszakapcsolja az automatikus major-ugrást
+		* (ahogy az update_baseurl testreszabását is elveszítené). Ha publikálni
+		* kell, kézzel kell összefésülni.
 		*/
-		'middleware' => ['web', 'auth', 'can:is-admin'],
+		'middleware' => ['web', 'auth', 'can:is-admin', \App\Http\Middleware\EnsureUpdateWithinBranch::class],
 
 		/*
 		* Set which users can perform an update; 
