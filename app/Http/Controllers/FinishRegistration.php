@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
-use Laravel\Fortify\Rules\Password;
 
 class FinishRegistration extends Controller
 {
