@@ -194,7 +194,7 @@ class ForeignKeyConstraint extends AbstractAsset implements Constraint
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      *
      * @deprecated Use {@see getLocalColumns()} instead.
      *
@@ -249,6 +249,10 @@ class ForeignKeyConstraint extends AbstractAsset implements Constraint
 
         if ($position !== false) {
             $name = substr($name, $position + 1);
+        }
+
+        if ($this->isIdentifierQuoted($name)) {
+            $name = $this->trimQuotes($name);
         }
 
         return strtolower($name);

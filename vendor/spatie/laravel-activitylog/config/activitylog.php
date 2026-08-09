@@ -21,7 +21,7 @@ return [
 
     /*
      * You can specify an auth driver here that gets user models.
-     * If this is null we'll use the default Laravel auth driver.
+     * If this is null we'll use the current Laravel auth driver.
      */
     'default_auth_driver' => null,
 
@@ -41,7 +41,7 @@ return [
      * This is the name of the table that will be created by the migration and
      * used by the Activity model shipped with this package.
      */
-    'table_name' => 'activity_log',
+    'table_name' => env('ACTIVITY_LOGGER_TABLE_NAME', 'activity_log'),
 
     /*
      * This is the database connection that will be used by the migration and

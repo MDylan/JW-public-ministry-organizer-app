@@ -11,6 +11,10 @@ class FailedJobNotifier
 {
     public function register(): void
     {
+        if (! config('failed-job-monitor.enabled', true)) {
+            return;
+        }
+
         app(QueueManager::class)->failing(function (JobFailed $event) {
             $notifiable = app(config('failed-job-monitor.notifiable'));
 
@@ -26,17 +30,9 @@ class FailedJobNotifier
         });
     }
 
-    public function isValidNotificationClass($notification): bool
+    public function isValidNotificationClass(object $notification): bool
     {
-        if (get_class($notification) === Notification::class) {
-            return true;
-        }
-
-        if (is_subclass_of($notification, IlluminateNotification::class)) {
-            return true;
-        }
-
-        return false;
+        return $notification instanceof IlluminateNotification;
     }
 
     public function shouldSendNotification($notification): bool

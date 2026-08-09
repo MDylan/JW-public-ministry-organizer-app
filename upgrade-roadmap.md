@@ -894,9 +894,12 @@ Everything in this phase is Laravel 8 compatible and shortens every later phase.
   commit is a thousand-file diff, and a cherry-picked history makes the next merge
   resolve those files twice. Cherry-pick is the exception - for a hotfix that is
   already moot on v2 - and it should say so in the commit message.
-- Baseline on `v2-dev` right after the fast-forward, and the reference point for
-  everything in this phase: **`OK (1249 tests, 3726 assertions)` in 2m28s** on
-  PHP 8.1.30 / Laravel 8.83.29, via `composer test`.
+- Baseline on `v2-dev` right after the fast-forward: **`OK (1249 tests, 3726
+  assertions)` in 2m28s** on PHP 8.1.30 / Laravel 8.83.29, via `composer test`.
+  **TODO 24 then moved the assertion figure to 3311 without removing a single
+  check** - the Mockery upgrade stopped counting the Livewire test harness's own
+  unconstrained expectation. Compare against **1249 tests / 3311 assertions** from
+  here on; the reasoning and the measurement are in that entry.
 
 ### The `v1-patch` branch - a last Laravel 8 release, cut before the framework moves
 
@@ -1325,7 +1328,20 @@ and is not covered by a general test.
     - **`vendor/` is committed in this repository**, so this and every other composer-touching item produces a diff of thousands of files. That is the lock's consequence, not hand editing - say so in the commit message, or the next reviewer will read it as noise hiding a real change.
   - Expected changes: `composer.json` / `composer.lock` / `vendor/`. This eliminates one of the most common hard blockers for Laravel upgrades at zero cost.
 
-- [ ] **TODO 24: Clean composer configuration** - PARTIALLY DONE on `v1-patch`
+- [x] **TODO 24: Clean composer configuration** - DONE on `v2-dev` (was PARTIALLY DONE on `v1-patch`)
+  - Delivered: `config.platform.php` raised `8.0.9` -> **`8.1.30`**, an explicit empty `config.allow-plugins` block, and the full re-resolution that the honest platform value makes possible. `laravel/framework` did **not** move - it stays at 8.83.29, the last 8.x tag. Suite green: **1249 tests**, unchanged.
+  - **`allow-plugins` is empty on purpose, and that is a finding, not a shortcut.** This project has **zero** `composer-plugin` packages - `grep composer-plugin composer.lock` returns nothing, and `composer install` never asked for an approval. The bullet below said "for the plugins actually in use", and the answer is: none. `{}` records deny-by-default, so the first plugin that an upgrade hop tries to introduce (a Laravel 11 skeleton dependency, say) has to be approved deliberately instead of arriving unnoticed.
+  - **35 packages moved.** The user was shown the list and approved it as its own commit, on the roadmap's own principle: doing it here, on Laravel 8 with a green suite, means the TODO 34 hop is about the framework alone and a regression there has one candidate cause.
+    - Four major bumps: `ramsey/collection` 1.3 -> 2.1, `doctrine/instantiator` 1.5 -> 2.0, `doctrine/event-manager` 1.1 -> 2.1, `symfony/service-contracts` v2.5 -> v3.7.
+    - `doctrine/dbal` 3.3.2 -> 3.10.6 - the engine behind the 16 `->change()` calls TODO 32 and TODO 57 deal with.
+    - The whole Symfony layer v6.0.19 -> v6.4.4x, plus `spatie/laravel-activitylog` 4.4 -> 4.12.3 (the audit trail) and the dev tools (`mockery`, `faker`, `sail`, `whoops`).
+    - Three packages left, two arrived: `symfony/polyfill-php81` is gone (the platform is 8.1 now, so the polyfill is dead weight), `fruitcake/php-cors` gave way to `asm89/stack-cors`, `doctrine/cache` dropped out, and `symfony/yaml` came in.
+  - **The assertion count fell 3726 -> 3311 with the test count unchanged, and that is correct.** Worth writing down, because assertion counts are used as a progress metric throughout this roadmap and a 415-assertion drop reads like lost coverage. It is not.
+    - Measured, not guessed: both runs were captured with `--log-junit` and diffed per test case. **No test gained an assertion**, and every test's loss equals the number of `Livewire::test()` / `->test()` calls it makes (`LivewireNestedComponentsTest::test_partial_components_smoke`: 3 calls, 4 -> 1; `AvatarGenerationTest::test_the_avatar_is_generated_once_and_never_overwritten`: 2 calls, 4 -> 2).
+    - The cause is `vendor/livewire/livewire/src/Testing/TestableLivewire.php:66-68`: every `Livewire::test()` builds a `Mockery::mock(GenerateSignedUploadUrl::class)` with `shouldReceive('forS3')` so tests never generate real S3 signed URLs. That expectation carries **no call-count constraint** and is never invoked.
+    - Mockery 1.5.0 counted it anyway (`ExpectationDirector::getExpectationCount()` was `count($this->getExpectations())`). Mockery 1.6.12 counts only expectations where `isCallCountConstrained()` holds. So 415 phantom assertions disappeared from the tally - none of them ever asserted anything about this application.
+    - **New baseline for later phases: `OK (1249 tests, 3311 assertions)`.** Comparisons against the 3726 figure recorded before this TODO are apples to oranges.
+  - `composer audit` after the update: the same **3 advisories on `laravel/framework`** as before, all three the known no-8.x-backport entries in the `ignore-id` block. Three abandoned packages are reported and all three are already owned by later TODOs: `swiftmailer/swiftmailer` (TODO 36), `fruitcake/laravel-cors` (TODO 35), `maximebf/debugbar` (a Debugbar dependency).
   - Needed:
     - ~~Remove `config.platform.php = 8.0.9`.~~ **Corrected: raise it to `8.1.30`, do not remove it.** Removing the key would be right on a machine where Composer runs on the target runtime. Here it does not: Composer runs on **PHP 8.3** while the application runs on **PHP 8.1.30** (`php81`), so with no platform key Composer resolves against its own 8.3 and can lock package versions the real runtime cannot execute. The pin is the tool that keeps the resolution honest - `8.0.9` was simply the wrong value, three patch lines below what is installed. **Delete the key only once the two coincide**, i.e. from Phase 5 onward, when both Composer and the application run on `php` 8.3; note it in the *Runtime and Version Matrix* row for that phase.
     - ~~Change `minimum-stability` from `dev` to `stable`.~~ **DONE on `v1-patch H`**, and not as housekeeping: the first security-update run resolved `laravel/framework` to `8.x-dev` - an untagged branch snapshot - on the branch that ships to production installs. The hazard this bullet described is measured, not hypothetical.

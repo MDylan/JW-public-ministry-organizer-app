@@ -3,7 +3,7 @@
 namespace Fruitcake\Cors;
 
 use Closure;
-use Fruitcake\Cors\CorsService;
+use Asm89\Stack\CorsService;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
@@ -79,6 +79,7 @@ class HandleCors
      * Add the headers to the Response, if they don't exist yet.
      *
      * @param RequestHandled $event
+     * @deprecated
      */
     public function onRequestHandled(RequestHandled $event)
     {

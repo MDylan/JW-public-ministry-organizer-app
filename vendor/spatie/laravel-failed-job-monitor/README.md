@@ -1,10 +1,8 @@
 # Get notified when a queued job fails
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/spatie/laravel-failed-job-monitor.svg?style=flat-square)](https://packagist.org/packages/spatie/laravel-failed-job-monitor)
-![Test Status](https://img.shields.io/github/workflow/status/spatie/laravel-failed-job-monitor/run-tests?label=tests&style=flat-square)
+![Test Status](https://img.shields.io/github/actions/workflow/status/spatie/laravel-failed-job-monitor/run-tests.yml?label=tests&style=flat-square)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/spatie/laravel-failed-job-monitor/master.svg?style=flat-square)](https://travis-ci.org/spatie/laravel-failed-job-monitor)
-[![StyleCI](https://styleci.io/repos/52006263/shield)](https://styleci.io/repos/52006263)
 [![Total Downloads](https://img.shields.io/packagist/dt/spatie/laravel-failed-job-monitor.svg?style=flat-square)](https://packagist.org/packages/spatie/laravel-failed-job-monitor)
 
 This package sends notifications if a queued job fails. Out of the box it can send a notification via mail and/or Slack. It leverages Laravel's native notification system.
@@ -42,8 +40,23 @@ php artisan vendor:publish --tag=failed-job-monitor-config
 
 This is the contents of the default configuration file.  Here you can specify the notifiable to which the notifications should be sent. The default notifiable will use the variables specified in this config file.
 
+Add these variables to your `.env` file:
+
+```env
+# Spatie Laravel-failed-job-monitor
+FAILED_JOB_MONITOR_ENABLED=true
+FAILED_JOB_CHANNELS=mail,slack
+FAILED_JOB_EMAILS=email@example.com
+FAILED_JOB_SLACK_WEBHOOK_URL=
+```
+
 ```php
 return [
+
+    /**
+     * Whether the failed job monitor is enabled.
+     */
+    'enabled' => env('FAILED_JOB_MONITOR_ENABLED', true),
 
     /**
      * The notification that will be sent when a job fails.
@@ -67,10 +80,10 @@ return [
     /**
      * The channels to which the notification will be sent.
      */
-    'channels' => ['mail', 'slack'],
+    'channels' => explode(',', env('FAILED_JOB_CHANNELS', 'mail,slack')),
 
     'mail' => [
-        'to' => 'email@example.com',
+        'to' => explode(',', env('FAILED_JOB_EMAILS', 'email@example.com')),
     ],
 
     'slack' => [
@@ -80,6 +93,14 @@ return [
 ``` 
 
 ## Configuration
+
+### Enabling or disabling the monitor
+
+By default, the failed job monitor is enabled. To disable notifications (e.g., in local development), set `FAILED_JOB_MONITOR_ENABLED=false` in your `.env` file:
+
+```env
+FAILED_JOB_MONITOR_ENABLED=false
+```
 
 ### Customizing the notification
  
@@ -141,7 +162,7 @@ use Spatie\FailedJobMonitor\Notification;
 
 class FailedJobNotification
 {
-    public function notificationFilter(Notification $notification): bool
+    public static function notificationFilter(Notification $notification): bool
     {
         return true;
     }
@@ -175,11 +196,11 @@ composer test
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](https://github.com/spatie/.github/blob/main/CONTRIBUTING.md) for details.
 
 ## Security
 
-If you discover any security related issues, please email freek@spatie.be instead of using the issue tracker.
+If you've found a bug regarding security please mail [security@spatie.be](mailto:security@spatie.be) instead of using the issue tracker.
 
 ## Credits
 

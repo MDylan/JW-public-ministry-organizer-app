@@ -2,6 +2,7 @@
 
 namespace Astrotomic\Translatable\Traits;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -65,7 +66,11 @@ trait Relationship
     {
         return $this
             ->hasOne($this->getTranslationModelName(), $this->getTranslationRelationKey())
-            ->where($this->getLocaleKey(), $this->localeOrFallback());
+            ->ofMany([
+                $this->getTranslationRelationKey() => 'max',
+            ], function (Builder $query): void {
+                $query->where($this->getLocaleKey(), $this->localeOrFallback());
+            });
     }
 
     protected function localeOrFallback()

@@ -6,14 +6,15 @@ use Closure;
 use DateTimeInterface;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Macroable;
 use Spatie\Activitylog\Contracts\Activity as ActivityContract;
 
 class ActivityLogger
 {
+    use Conditionable;
     use Macroable;
 
     protected ?string $defaultLogName = null;
@@ -76,8 +77,10 @@ class ActivityLogger
 
     public function causedByAnonymous(): static
     {
-        $this->activity->causer_id = null;
-        $this->activity->causer_type = null;
+        $activity = $this->getActivity();
+
+        $activity->causer_id = null;
+        $activity->causer_type = null;
 
         return $this;
     }
@@ -94,7 +97,7 @@ class ActivityLogger
 
     public function setEvent(string $event): static
     {
-        $this->activity->event = $event;
+        $this->getActivity()->event = $event;
 
         return $this;
     }
@@ -120,19 +123,19 @@ class ActivityLogger
         return $this;
     }
 
-    public function useLog(string $logName): static
+    public function useLog(?string $logName): static
     {
         $this->getActivity()->log_name = $logName;
 
         return $this;
     }
 
-    public function inLog(string $logName): static
+    public function inLog(?string $logName): static
     {
         return $this->useLog($logName);
     }
 
-    public function tap(callable $callback, string $eventName = null): static
+    public function tap(callable $callback, ?string $eventName = null): static
     {
         call_user_func($callback, $this->getActivity(), $eventName);
 
@@ -159,12 +162,16 @@ class ActivityLogger
             return null;
         }
 
-        $activity = $this->activity;
+        $activity = $this->getActivity();
 
         $activity->description = $this->replacePlaceholders(
             $activity->description ?? $description,
             $activity
         );
+
+        if (isset($activity->subject) && method_exists($activity->subject, 'tapActivity')) {
+            $this->tap([$activity->subject, 'tapActivity'], $activity->event ?? '');
+        }
 
         $activity->save();
 
@@ -190,7 +197,7 @@ class ActivityLogger
 
     protected function replacePlaceholders(string $description, ActivityContract $activity): string
     {
-        return preg_replace_callback('/:[a-z0-9._-]+/i', function ($match) use ($activity) {
+        return preg_replace_callback('/:[a-z0-9._-]+(?<![.])/i', function ($match) use ($activity) {
             $match = $match[0];
 
             $attribute = Str::before(Str::after($match, ':'), '.');
@@ -207,9 +214,7 @@ class ActivityLogger
                 return $match;
             }
 
-            $attributeValue = $attributeValue->toArray();
-
-            return Arr::get($attributeValue, $propertyName, $match);
+            return data_get($attributeValue, $propertyName, $match);
         }, $description);
     }
 

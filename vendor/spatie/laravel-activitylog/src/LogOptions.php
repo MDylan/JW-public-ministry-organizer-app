@@ -3,6 +3,7 @@
 namespace Spatie\Activitylog;
 
 use Closure;
+use Laravel\SerializableClosure\SerializableClosure;
 
 class LogOptions
 {
@@ -43,7 +44,7 @@ class LogOptions
     }
 
     /**
-     * log changes to all the $guarded attributes of the model.
+     * Log all attributes that are not listed in $guarded.
      */
     public function logUnguarded(): self
     {
@@ -113,7 +114,7 @@ class LogOptions
     }
 
     /**
-     * Dont store empty logs. Storing empty logs can happen when you only
+     * Don't store empty logs. Storing empty logs can happen when you only
      * want to log a certain attribute but only another changes.
      */
     public function dontSubmitEmptyLogs(): self
@@ -137,7 +138,7 @@ class LogOptions
     /**
      * Customize log name.
      */
-    public function useLogName(string $logName): self
+    public function useLogName(?string $logName): self
     {
         $this->logName = $logName;
 
@@ -162,5 +163,27 @@ class LogOptions
         $this->attributeRawValues = $attributes;
 
         return $this;
+    }
+
+    public function __serialize(): array
+    {
+        $data = get_object_vars($this);
+
+        if ($data['descriptionForEvent'] !== null) {
+            $data['descriptionForEvent'] = new SerializableClosure($data['descriptionForEvent']);
+        }
+
+        return $data;
+    }
+
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $key => $value) {
+            if ($key === 'descriptionForEvent' && $value instanceof SerializableClosure) {
+                $value = $value->getClosure();
+            }
+
+            $this->$key = $value;
+        }
     }
 }

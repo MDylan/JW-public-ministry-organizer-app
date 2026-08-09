@@ -3,6 +3,12 @@
 return [
 
     /*
+     * Whether the failed job monitor is enabled. Set to false in your .env
+     * (FAILED_JOB_MONITOR_ENABLED=false) to disable notifications.
+     */
+    'enabled' => env('FAILED_JOB_MONITOR_ENABLED', true),
+
+    /*
      * The notification that will be sent when a job fails.
      */
     'notification' => \Spatie\FailedJobMonitor\Notification::class,
@@ -24,10 +30,10 @@ return [
     /*
      * The channels to which the notification will be sent.
      */
-    'channels' => ['mail', 'slack'],
+    'channels' =>  explode(',', env('FAILED_JOB_CHANNELS', 'mail,slack')),
 
     'mail' => [
-        'to' => 'email@example.com',
+        'to' => explode(',', env('FAILED_JOB_EMAILS', 'email@example.com')),
     ],
 
     'slack' => [

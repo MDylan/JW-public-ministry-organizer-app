@@ -80,11 +80,12 @@
         }
     },
     "config": {
+        "allow-plugins": {},
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
         "platform": {
-            "php": "8.0.9"
+            "php": "8.1.30"
         },
         "policy": {
             "advisories": {

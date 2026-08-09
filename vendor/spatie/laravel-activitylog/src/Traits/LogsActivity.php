@@ -24,7 +24,7 @@ trait LogsActivity
 
     protected array $oldAttributes = [];
 
-    protected LogOptions $activitylogOptions;
+    protected ?LogOptions $activitylogOptions;
 
     public bool $enableLoggingModelsEvents = true;
 
@@ -62,30 +62,29 @@ trait LogsActivity
                     return;
                 }
 
-                if ($model->isLogEmpty($changes) && ! $model->activitylogOptions->submitEmptyLogs) {
-                    return;
-                }
-
                 // User can define a custom pipelines to mutate, add or remove from changes
                 // each pipe receives the event carrier bag with changes and the model in
                 // question every pipe should manipulate new and old attributes.
                 $event = app(Pipeline::class)
-                ->send(new EventLogBag($eventName, $model, $changes, $model->activitylogOptions))
-                ->through(static::$changesPipes)
-                ->thenReturn();
+                    ->send(new EventLogBag($eventName, $model, $changes, $model->activitylogOptions))
+                    ->through(static::$changesPipes)
+                    ->thenReturn();
+
+                // Check for empty logs after pipeline has run
+                if ($model->isLogEmpty($event->changes) && ! $model->activitylogOptions->submitEmptyLogs) {
+                    return;
+                }
 
                 // Actual logging
-                $logger = app(ActivityLogger::class)
+                app(ActivityLogger::class)
                     ->useLog($logName)
                     ->event($eventName)
                     ->performedOn($model)
-                    ->withProperties($event->changes);
+                    ->withProperties($event->changes)
+                    ->log($description);
 
-                if (method_exists($model, 'tapActivity')) {
-                    $logger->tap([$model, 'tapActivity'], $eventName);
-                }
-
-                $logger->log($description);
+                // Reset log options so the model can be serialized.
+                $model->activitylogOptions = null;
             });
         });
     }
@@ -128,7 +127,7 @@ trait LogsActivity
         return $eventName;
     }
 
-    public function getLogNameToUse(): string
+    public function getLogNameToUse(): ?string
     {
         if (! empty($this->activitylogOptions->logName)) {
             return $this->activitylogOptions->logName;
@@ -142,8 +141,10 @@ trait LogsActivity
      **/
     protected static function eventsToBeRecorded(): Collection
     {
+        $reject = collect(static::$doNotRecordEvents ?? []);
+
         if (isset(static::$recordEvents)) {
-            return collect(static::$recordEvents);
+            return collect(static::$recordEvents)->reject(fn (string $eventName) => $reject->contains($eventName));
         }
 
         $events = collect([
@@ -156,7 +157,7 @@ trait LogsActivity
             $events->push('restored');
         }
 
-        return $events;
+        return $events->reject(fn (string $eventName) => $reject->contains($eventName));
     }
 
     protected function shouldLogEvent(string $eventName): bool
@@ -171,18 +172,25 @@ trait LogsActivity
             return true;
         }
 
-        $deletedAtColumn = method_exists($this, 'getDeletedAtColumn')
-            ? $this->getDeletedAtColumn()
-            : 'deleted_at';
-
-        if (Arr::has($this->getDirty(), $deletedAtColumn)) {
-            if ($this->getDirty()[$deletedAtColumn] === null) {
-                return false;
-            }
+        // Do not log update event if the model is restoring
+        if ($this->isRestoring()) {
+            return false;
         }
 
         // Do not log update event if only ignored attributes are changed.
         return (bool) count(Arr::except($this->getDirty(), $this->activitylogOptions->dontLogIfAttributesChangedOnly));
+    }
+
+    /**
+     * Determines if the model is restoring.
+     **/
+    protected function isRestoring(): bool
+    {
+        $deletedAtColumn = method_exists($this, 'getDeletedAtColumn')
+            ? $this->getDeletedAtColumn()
+            : 'deleted_at';
+
+        return $this->isDirty($deletedAtColumn) && count($this->getDirty()) === 1;
     }
 
     /**
@@ -201,12 +209,15 @@ trait LogsActivity
 
         // Determine if unguarded attributes will be logged.
         if ($this->shouldLogUnguarded()) {
-
-            // Get only attribute names, not intrested in the values here then guarded
-            // attributes. get only keys than not present in guarded array, because
-            // we are logging the unguarded attributes and we cant have both!
-
-            $attributes = array_merge($attributes, array_diff(array_keys($this->getAttributes()), $this->getGuarded()));
+            // If globally unguarded, log all attributes
+            if (static::isUnguarded()) {
+                $attributes = array_merge($attributes, array_keys($this->getAttributes()));
+            } else {
+                // Get only attribute names, not interested in the values here then guarded
+                // attributes. get only keys than not present in guarded array, because
+                // we are logging the unguarded attributes and we can't have both!
+                $attributes = array_merge($attributes, array_diff(array_keys($this->getAttributes()), $this->getGuarded()));
+            }
         }
 
         if (! empty($this->activitylogOptions->logAttributes)) {
@@ -233,6 +244,12 @@ trait LogsActivity
     {
         if (! $this->activitylogOptions->logUnguarded) {
             return false;
+        }
+
+        // If the model is globally unguarded via Model::unguard(),
+        // all attributes should be considered unguarded.
+        if (static::isUnguarded()) {
+            return true;
         }
 
         // This case means all of the attributes are guarded
@@ -292,7 +309,7 @@ trait LogsActivity
                         return $new === $old ? 0 : 1;
                     }
 
-                    // Handels Date intervels comparsons since php cannot use spaceship
+                    // Handles Date interval comparisons since php cannot use spaceship
                     // Operator to compare them and will throw ErrorException.
                     if ($old instanceof DateInterval) {
                         return CarbonInterval::make($old)->equalTo($new) ? 0 : 1;
@@ -355,6 +372,16 @@ trait LogsActivity
 
             if ($model->hasCast($attribute)) {
                 $cast = $model->getCasts()[$attribute];
+
+                if ($model->isEnumCastable($attribute)) {
+                    try {
+                        $changes[$attribute] = $model->getStorableEnumValue($changes[$attribute]);
+                    } catch (\ArgumentCountError $e) {
+                        // In Laravel 11, this method has an extra argument
+                        // https://github.com/laravel/framework/pull/47465
+                        $changes[$attribute] = $model->getStorableEnumValue($cast, $changes[$attribute]);
+                    }
+                }
 
                 if ($model->isCustomDateTimeCast($cast) || $model->isImmutableCustomDateTimeCast($cast)) {
                     $changes[$attribute] = $model->asDateTime($changes[$attribute])->format(explode(':', $cast, 2)[1]);

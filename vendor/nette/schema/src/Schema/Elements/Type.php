@@ -1,43 +1,31 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * This file is part of the Nette Framework (https://nette.org)
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
 
-declare(strict_types=1);
-
 namespace Nette\Schema\Elements;
 
-use Nette;
 use Nette\Schema\Context;
 use Nette\Schema\DynamicParameter;
 use Nette\Schema\Helpers;
 use Nette\Schema\Schema;
+use function array_key_exists, array_pop, implode, is_array, str_replace, strpos;
 
 
 final class Type implements Schema
 {
 	use Base;
-	use Nette\SmartObject;
 
-	/** @var string */
-	private $type;
-
-	/** @var Schema|null for arrays */
-	private $itemsValue;
-
-	/** @var Schema|null for arrays */
-	private $itemsKey;
+	private string $type;
+	private ?Schema $itemsValue = null;
+	private ?Schema $itemsKey = null;
 
 	/** @var array{?float, ?float} */
-	private $range = [null, null];
-
-	/** @var string|null */
-	private $pattern;
-
-	/** @var bool */
-	private $merge = true;
+	private array $range = [null, null];
+	private ?string $pattern = null;
+	private bool $merge = true;
 
 
 	public function __construct(string $type)
@@ -84,11 +72,9 @@ final class Type implements Schema
 
 
 	/**
-	 * @param  string|Schema  $valueType
-	 * @param  string|Schema|null  $keyType
 	 * @internal  use arrayOf() or listOf()
 	 */
-	public function items($valueType = 'mixed', $keyType = null): self
+	public function items(string|Schema $valueType = 'mixed', string|Schema|null $keyType = null): self
 	{
 		$this->itemsValue = $valueType instanceof Schema
 			? $valueType
@@ -110,7 +96,7 @@ final class Type implements Schema
 	/********************* processing ****************d*g**/
 
 
-	public function normalize($value, Context $context)
+	public function normalize(mixed $value, Context $context): mixed
 	{
 		if ($prevent = (is_array($value) && isset($value[Helpers::PreventMerging]))) {
 			unset($value[Helpers::PreventMerging]);
@@ -141,7 +127,7 @@ final class Type implements Schema
 	}
 
 
-	public function merge($value, $base)
+	public function merge(mixed $value, mixed $base): mixed
 	{
 		if (is_array($value) && isset($value[Helpers::PreventMerging])) {
 			unset($value[Helpers::PreventMerging]);
@@ -168,7 +154,7 @@ final class Type implements Schema
 	}
 
 
-	public function complete($value, Context $context)
+	public function complete(mixed $value, Context $context): mixed
 	{
 		$merge = $this->merge;
 		if (is_array($value) && isset($value[Helpers::PreventMerging])) {
@@ -201,6 +187,7 @@ final class Type implements Schema
 	}
 
 
+	/** @param  array<mixed>  $value */
 	private function validateItems(array &$value, Context $context): void
 	{
 		if (!$this->itemsValue) {
@@ -213,7 +200,7 @@ final class Type implements Schema
 			$context->isKey = true;
 			$key = $this->itemsKey ? $this->itemsKey->complete($key, $context) : $key;
 			$context->isKey = false;
-			$res[$key] = $this->itemsValue->complete($val, $context);
+			$res[$key ?? ''] = $this->itemsValue->complete($val, $context);
 			array_pop($context->path);
 		}
 		$value = $res;
