@@ -57,6 +57,14 @@ archive has to carry the full `vendor/` tree, and anything Composer adds needs a
 explicit `git add -f` or it will be missing from the release and every updated
 site will fatal on boot.
 
+**But `git add -f -A vendor` sweeps in more than Composer put there.** The VS Code
+Laravel extension writes `vendor/_laravel_ide/` — 16 generated `discover-*.php`
+files that are not part of any package, churn on every IDE run, and have no
+business in a release archive. `.gitignore` cannot stop it: `-f` is exactly the
+flag that overrides `.gitignore`. Check `git status --porcelain vendor/` for
+directories Composer did not name before committing a dependency bump. This was
+caught after the fact once, on `v1-patch H`.
+
 ## Manifest shape — what the major ceiling depends on
 
 Since the update branch ceiling landed (`App\Support\Updates\UpdateBranch`), an
