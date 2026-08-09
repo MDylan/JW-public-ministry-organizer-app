@@ -34,7 +34,7 @@ From `app/Http/Kernel.php`:
 |---|---|---|---|---|
 | GET | `/` | - | `StaticPageController::render('home')` | Guest-only landing page. |
 | GET | `/page/{slug}` | `static_page` | `StaticPageController::render` | Static page rendering with status-based access logic. |
-| GET | `/email/verify` | `verification.notice` | `Admin\DashboardController@verify` | Verification notice page. |
+| GET | `/email/verify` | `verification.notice` | `Admin\DashboardController@verify` | Verification notice page. Carries `auth` since v1-patch H - it had none, and the view renders `<x-admin-layout>`, which dereferences `auth()->user()`, so every logged-out hit was a 500 plus a stack trace. |
 | GET | `/user/new-email-verified` | `user.new-email-verified` | `User\Profile::redirectAfterNewEmailVerification` | Redirect helper after pending-email verification. Target of `config('verify-new-email.redirect_to')`; sends a `verified` guest to `login`, everyone else to `home.home`. |
 | GET | `/pendingEmail/verify/{token}` | `pendingEmail.verify` | `ProtoneMedia\LaravelVerifyNewEmail\Http\VerifyNewEmailController::verify` | **Vendor route**, registered from the package's own route file — and only because `config('verify-new-email.route')` is `null`. Middleware `web, signed, throttle:6,1`. See the pending-email section below. |
 
@@ -66,7 +66,7 @@ All routes below are wrapped in `middleware(['signed'])`.
 |---|---|---|---|
 | GET | `/finish-registration/{id}` | `finish_registration` | `FinishRegistration::index` (+ `setGuestLanguage`) |
 | POST | `/finish-registration/{id}` | `finish_registration_register` | `FinishRegistration::register` |
-| GET | `/finish-registration/{id}/cancel` | `finish_registration_cancel` | `FinishRegistration::cancel` |
+| POST | `/finish-registration/{id}/cancel` | `finish_registration_cancel` | `FinishRegistration::cancel`. **POST since v1-patch H** - it was a signed GET that deletes the user row. A signature proves the link came from us, not that the user meant to open it: browser prefetch, a mail scanner following links, or a stray navigation would all have fired it. |
 
 #### GDPR routes (`gdpr` prefix, `web` + `auth`)
 
@@ -166,7 +166,7 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
 | Method | URI | Name | Action |
 |---|---|---|---|
 | GET | `/home` | `home.home` | Livewire `Home` |
-| GET | `/loginback/{id}` | `admin.loginback` | `Admin\LoginToUserController::loginback` (`signed`) |
+| POST | `/loginback` | `admin.loginback` | `Admin\LoginToUserController::loginBack`. **Rewritten in v1-patch H.** It used to be `GET /loginback/{id}` behind `signed`, with a 12-hour temporary signed URL minted by `admin.users.login` and kept in the session. The `{id}` was bound to nothing - not the session, not the `mainAdmin` role - so a leaked URL replayed admin access for 12 hours with any user id. The original admin id now lives in the session only (`LoginToUserController::SESSION_KEY`), the URL carries no identity, CSRF replaces the signature, and the return path is single-use. |
 | GET | `/email/verify/{id}/{hash}` | `verification.verify` | **Inactive.** An inline closure using `EmailVerificationRequest` is defined here, but it is shadowed by the identical Fortify route (see Route Observations); the request is served by `Laravel\Fortify\Http\Controllers\VerifyEmailController` |
 | GET | `/profile/resend-new-email-verification` | `user.resendNewEmailVerification` | `User\Profile::resendNewEmailVerification` — re-sends the pending-address mail with a **new** token, or flashes `profile_message` when nothing is pending |
 | GET | `/confirm-password` | `password.confirm` | Inline closure returning the `auth.confirm-password` view |
@@ -180,11 +180,24 @@ Inside nested `verified` -> `profileFull` middleware:
 |---|---|
 | User profile/security | `user/profile`, `user/twofactorsettings`, `user/2fa-confirm`, delete-personal-data routes, logout-other-devices |
 | Event/group basics | `lastevents`, `calendar/{year?}/{month?}`, `jtc/{group}/{year}/{month}`, `groups`, `newsletters` |
-| Admin (strict) | `/admin/users*`, `/admin/settings`, `/admin/staticpages*`, `/admin/newsletter_edit/{id?}` with `can:is-admin` + `password.confirm` |
-| Admin stats | `/admin/statistics` with `can:is-admin` |
+| Admin (strict) | `/admin/users`, `/admin/settings`, `/admin/staticpages*`, `/admin/newsletter_edit/{id?}` with `can:is-admin` + `password.confirm` |
+| Admin stats | `/admin/statistics` and `POST /admin/users/login/{user}` with `can:is-admin` |
 | Group member routes | `/groups/{group}/users`, `/groups/{group}/news`, `/news_file/{group}/{file}`, `/groups/{group}/logout` |
 | Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit/delete, `/groups/{group}/statistics`, `/groups/{group}/history` |
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
+
+### Impersonation (`v1-patch H`)
+
+`POST /admin/users/login/{user}` (`admin.users.login`) starts impersonation and
+`POST /loginback` (`admin.loginback`) ends it. Both were `GET` before, and the
+return path was a 12-hour signed URL carrying the admin id.
+
+`admin.users.login` deliberately sits in the `can:is-admin`-only group rather
+than the `password.confirm` one it used to share with `/admin/users`. A POST
+route cannot live behind `RequirePassword`: that middleware redirects to the
+confirmation form and returns through `redirect()->intended()`, which re-issues
+the request as a **GET** - a 405 on a POST-only route. Password confirmation
+still gates `/admin/users`, which is the only place the button is rendered.
 
 ## Package-Registered Translation Routes
 

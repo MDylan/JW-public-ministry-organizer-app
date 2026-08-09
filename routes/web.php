@@ -65,12 +65,21 @@ Route::middleware(['signed'])->group(function () {
         ->middleware('setGuestLanguage');
     Route::post('/finish-registration/{id}', [FinishRegistration::class, 'register'])
         ->name('finish_registration_register');
-    Route::get('/finish-registration/{id}/cancel', [FinishRegistration::class, 'cancel'])
+    // KORÁBBAN GET volt. Az aláírás azt igazolja, hogy a linket mi adtuk ki -
+    // azt nem, hogy a felhasználó SZÁNDÉKOSAN nyitotta meg. Egy adatot törlő
+    // GET-et a böngésző előtöltése, a levelezőrendszer linkellenőrzője vagy egy
+    // véletlen navigáció is elsütheti. POST + CSRF mellett ez nem fordulhat elő.
+    Route::post('/finish-registration/{id}/cancel', [FinishRegistration::class, 'cancel'])
         ->name('finish_registration_cancel');
 });
 
 
-Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')->name('verification.notice');
+// Az `auth` KORÁBBAN hiányzott. Jogosultságmegkerülés nem látszott belőle - a
+// levélküldő POST külön védett -, de a nézet `<x-admin-layout>`-ot használ, ami
+// vendégnél `auth()->user()`-t dereferál: minden kijelentkezett látogatás 500-at
+// és egy stack trace-t adott a naplóba.
+Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')
+    ->name('verification.notice')->middleware(['auth']);
 Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVerification'])->name('user.new-email-verified');
 
 //installer available only if file not exists
@@ -127,9 +136,16 @@ if (!Storage::exists('installed.txt')) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
 
-    //only for admin login back
-    Route::get('/loginback/{id}', [LoginToUserController::class, 'loginback'])
-            ->name('admin.loginback')->middleware(['signed']);
+    // Visszalépés a megszemélyesítésből.
+    //
+    // KORÁBBAN `GET /loginback/{id}` volt, `signed` middleware-rel: az aláírt
+    // URL 12 óráig érvényes maradt, tetszőleges felhasználói azonosítót
+    // hordozott, és a controller nem kötötte a munkamenethez - vagyis a link
+    // maga volt a jogosultság. Az azonosító innentől szerveroldali sessionben
+    // van (App\Http\Controllers\Admin\LoginToUserController::SESSION_KEY), az
+    // URL üres, a védelmet pedig a `web` csoport CSRF-tokenje adja.
+    Route::post('/loginback', [LoginToUserController::class, 'loginBack'])
+            ->name('admin.loginback');
 
     // A `verification.verify` NEVET a routes/fortify.php:87-89 regisztrálja
     // (Laravel\Fortify\Http\Controllers\VerifyEmailController@__invoke,
@@ -189,7 +205,6 @@ Route::middleware(['auth'])->group(function () {
             //For special roles
             Route::middleware(['can:is-admin', 'password.confirm'])->group(function () {
                 Route::get('/admin/users', ListUsers::class)->name('admin.users');
-                Route::get('/admin/users/login/{user}', [LoginToUserController::class, 'login'])->name('admin.users.login');
                 Route::get('/admin/settings', Settings::class)->name('admin.settings');
                 Route::get('/admin/staticpages', StaticPages::class)->name('admin.staticpages');
                 Route::get('/admin/staticpages/create', StaticPageEdit::class)->name('admin.staticpages_create');
@@ -199,6 +214,15 @@ Route::middleware(['auth'])->group(function () {
 
             Route::middleware(['can:is-admin'])->group(function () {
                 Route::get('/admin/statistics', AdminStatistics::class)->name('admin.statistics');
+
+                // A megszemélyesítés indítása POST + CSRF lett, ezért NEM
+                // maradhat a fenti `password.confirm` csoportban: a
+                // RequirePassword middleware `redirect()->intended()`-del tér
+                // vissza a megerősítés után, az pedig GET-tel hívná újra ezt a
+                // POST-only útvonalat - 405 lenne belőle. A jelszó-megerősítést
+                // továbbra is a `/admin/users` lista kapuja adja, ahonnan a gomb
+                // egyáltalán elérhető.
+                Route::post('/admin/users/login/{user}', [LoginToUserController::class, 'login'])->name('admin.users.login');
             });
 
             Route::middleware(['groupMember'])->group(function () {                

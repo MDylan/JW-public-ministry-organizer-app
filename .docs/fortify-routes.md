@@ -50,21 +50,40 @@ Custom authenticate pipeline (`Fortify::authenticateThrough`) includes:
 - Update password: `App\Actions\Fortify\UpdateUserPassword`
 - Reset password: `App\Actions\Fortify\ResetUserPassword`
 - Disable 2FA override: `App\Actions\Fortify\DisableTwoFactorAuthentication`
+- 2FA provider override: `App\Actions\Fortify\TwoFactorAuthenticationProvider` (v1-patch H, TOTP replay - see the version pin section below)
 
 ### Rate limiters
 
 Defined in provider:
 
-- `login`: 5 attempts / minute by `email+ip`
+- `login`: two limits since v1-patch H - 5 attempts / minute by
+  `strtolower(trim(email)) . "|" . ip`, plus 20 attempts / minute by `ip` alone.
+  The key used to be the raw `email . ip` concatenation: MySQL's default
+  collation is case-insensitive, so `User@x.hu` and `user@x.hu` resolve to the
+  same account while the limiter saw two separate buckets - the 5/minute cap
+  could be multiplied at will by varying the letter case. The missing separator
+  was the second half: `bob@x.hu` + `1.2.3.41` and `bob@x.hu1` + `.2.3.41`
+  produced the same key. The IP-only limit closes email rotation, which
+  otherwise opened a fresh bucket per address.
 - `two-factor`: 5 attempts / minute by session login id
 
 ### Additional middleware hardening
 
-`routes/fortify.php` adds `checkRecaptcha` middleware to:
+`routes/fortify.php` adds `checkRecaptcha` middleware to three endpoints, each
+with the **expected reCAPTCHA action as a parameter** (v1-patch H). Google's v3
+documentation asks for that check server-side; without it a token harvested on
+one form is usable on any of the others. All three Blade forms used to request
+the hardcoded `register` action and the server never looked at the field.
 
-- `POST /login`
-- `POST /register`
-- `POST /forgot-password`
+| Endpoint | Middleware | Route throttle |
+|---|---|---|
+| `POST /login` | `checkRecaptcha:login` | `config('fortify.limiters.login')` |
+| `POST /register` | `checkRecaptcha:register` | `throttle:5,1` (new) |
+| `POST /forgot-password` | `checkRecaptcha:password_reset` | `throttle:5,1` (new) |
+
+The two new throttles matter because `CheckRecaptcha` **fails open** on a
+connection error by design (v1-patch D3). Without a route limit, a Google outage
+left `/register` and `/forgot-password` with no bot protection at all.
 
 ## Fortify Route Endpoints (`routes/fortify.php`)
 
@@ -73,7 +92,7 @@ Defined in provider:
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/login` | `login` | View route (when Fortify views enabled). |
-| POST | `/login` | - | Includes login limiter + `checkRecaptcha`. |
+| POST | `/login` | - | Includes login limiter + `checkRecaptcha:login`. |
 | POST | `/logout` | `logout` | Session logout. |
 
 ## Password Reset
@@ -81,7 +100,7 @@ Defined in provider:
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/forgot-password` | `password.request` | View route. |
-| POST | `/forgot-password` | `password.email` | Includes `checkRecaptcha`. |
+| POST | `/forgot-password` | `password.email` | Includes `throttle:5,1` + `checkRecaptcha:password_reset`. |
 | GET | `/reset-password/{token}` | `password.reset` | View route. |
 | POST | `/reset-password` | `password.update` | Password reset submit. |
 
@@ -90,7 +109,7 @@ Defined in provider:
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/register` | `register` | View route. |
-| POST | `/register` | - | Includes `checkRecaptcha`. |
+| POST | `/register` | - | Includes `throttle:5,1` + `checkRecaptcha:register`. |
 
 ## Email Verification
 
@@ -106,7 +125,6 @@ Defined in provider:
 | PUT | `/user/profile-information` | `user-profile-information.update` |
 | PUT | `/user/password` | `user-password.update` |
 | GET | `/user/confirmed-password-status` | `password.confirmation` |
-| POST | `/user/confirm-password` | - |
 
 ## Two-Factor Authentication
 
@@ -130,3 +148,47 @@ Defined in provider:
   `tests/Feature/RouteContractSnapshotTest.php`, which also guards the provider order the outcome
   depends on.
 - The default Fortify confirm-password GET view route is disabled in `routes/fortify.php`; this app uses a custom `/confirm-password` flow in `routes/web.php`.
+- **`POST /user/confirm-password` was removed in v1-patch H.** It carried `auth:web`
+  and no rate limit at all, so a stolen session allowed unlimited guessing of the
+  user's password, while the application's own branch (`password.confirm.store`)
+  is throttled `6,1`. Nothing posted to it. Fortify 1.11.2 additionally moved the
+  `password.confirm` **name** onto this POST definition, so adopting the vendor
+  file verbatim would now collide with the GET route in `routes/web.php` and break
+  `route:cache` with the same `LogicException` TODO 26 closed.
+
+## Fortify version pin
+
+`composer.json` pins `laravel/fortify` to `~1.11.2` (>=1.11.2 <1.12.0), not `^1`.
+
+- **1.11.2 is the floor** because CVE-2022-25838 (GHSA-6w4v-qr4m-97gg, TOTP
+  replay) is fixed there; v1.10.2 was installed until v1-patch H.
+- **1.12.0 is the ceiling** because it introduces the `two_factor_confirmed_at`
+  column and enables Fortify's own 2FA confirmation flow by default. This app has
+  its own `two_factor_confirmed` boolean
+  (`database/migrations/2022_03_03_121545_add_two_factor_confirmed.php`), its own
+  `App\Actions\Fortify\DisableTwoFactorAuthentication`,
+  `RedirectIfTwoFactorConfirmed`, `User::confirmTwoFactorAuth()` and a
+  `two-factor.confirm` route name that 1.12+ also claims for its own controller.
+  Lifting the ceiling is a schema plus flow migration, not a lock bump.
+- 1.11.2 also adds `POST /user/confirmed-two-factor-authentication` named
+  `two-factor.confirm` to its vendor route file. `routes/fortify.php` is a
+  hand-maintained copy and deliberately does **not** carry it - the name is
+  already taken by `routes/web.php:175`.
+
+### The 1.11.2 fix does not actually work - measured
+
+`Laravel\Fortify\TwoFactorAuthenticationProvider::verify()` caches the timestamp
+of a used code and then demands a strictly newer one via `verifyKeyNewer()`. On
+the **first** call there is no cached value, so `$oldTimestamp` is null - and
+`PragmaRX\Google2FA::findValidOTP()` returns `true` rather than a counter in that
+case. Fortify stores that `true`; the next call passes it back as `$oldTimestamp`,
+`max($timestamp - $window, true + 1)` evaluates to the unchanged starting
+timestamp, and the same code verifies again. Later Fortify 1.x releases added the
+one missing branch that normalizes `true` to `getTimestamp()`.
+
+`App\Actions\Fortify\TwoFactorAuthenticationProvider` carries that
+normalization, and `FortifyServiceProvider::boot()` rebinds the contract to it
+(Fortify binds its own in `register()`, so `boot()` wins). Both verification
+paths - Fortify's `TwoFactorLoginRequest::hasValidCode()` and the app's own
+`User::confirmTwoFactorAuth()` - resolve the contract, so both are covered.
+`tests/Feature/Auth/TwoFactorReplayTest.php` pins the behaviour.

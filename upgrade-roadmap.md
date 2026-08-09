@@ -39,10 +39,10 @@ Each item is intentionally small enough to complete and mark independently.
 
 ### Framework and dependencies
 
-- Laravel `8.83.1` on branch `v2-dev`; `composer.json` requires `laravel/framework: ^8.12`.
+- Laravel `8.83.1` on branch `v2-dev`; `composer.json` requires `laravel/framework: ^8.12`. **On `v1-patch` the lock is at `8.83.29`** (v1-patch H), the last 8.x tag.
 - PHP constraint is `^8.0` with `config.platform.php = 8.0.9`, which artificially holds back every dependency resolution.
-- `minimum-stability: dev` with `prefer-stable: true` - risks pulling unstable packages during the upgrade.
-- `composer.lock` was resolved in early 2022 and is roughly four years stale.
+- `minimum-stability: dev` with `prefer-stable: true` - risks pulling unstable packages during the upgrade. **Fixed on `v1-patch H`** after it demonstrably pulled `laravel/framework: 8.x-dev`; see TODO 24.
+- `composer.lock` was resolved in early 2022 and is roughly four years stale. **Partly refreshed on `v1-patch H`** - every package with a security advisory was bumped inside its existing constraint (50 advisories -> 3). The remaining staleness is upgrade-preparation work, not a security question.
 - `config/app.php` hard-registers the dev-only `Barryvdh\Debugbar\ServiceProvider`, which breaks `composer install --no-dev`. It also registers `Eusonlito\LaravelPacker\PackerServiceProvider` as a plain string instead of `::class`, with a matching `Packer` alias. TODO 21 decided to remove that package; TODO 33.8 deletes both lines.
 
 ### Test suite (this is the main upgrade asset)
@@ -895,9 +895,11 @@ replacing anything), and the pure upgrade-preparation items TODO 23, 24, 27, 29
 and 32. The `helper` role question in TODO 33 did NOT get a go-ahead and stays as
 it is.
 
-Suite: **1065 -> 1199 tests, 3578 assertions, green on PHP 8.1.30 / Laravel 8.83.1.**
-The route table is byte-identical to the TODO 03 baseline apart from the three
-`laraupdater.*` names TODO 33.4 already added.
+Suite: **1065 -> 1199 tests, 3578 assertions, green on PHP 8.1.30 / Laravel 8.83.1**
+at the time; **1225 tests / 3647 assertions on Laravel 8.83.29** after the
+security audit work in section H. The route table was byte-identical to the
+TODO 03 baseline apart from the three `laraupdater.*` names TODO 33.4 added -
+section H then moved five entries deliberately, listed there.
 
 The suite is run with **`composer test`**, never `artisan test` - the script
 clears the build caches first, because a leftover `bootstrap/cache/config.php`
@@ -922,6 +924,7 @@ included) and once produced 110 false failures in a single run.
 | (new, unrecorded) | **Nothing in the application deleted old data by age** (see "Data retention" below). `day_stats` had grown to 471,754 rows, live `events` to 164,371 and `group_dates` to 48,033, all back to June 2022; `config/activitylog.php` had declared a 90-day retention since installation, but the Spatie command that applies it was never scheduled, so 7,581 of 7,739 rows sat past their window. |
 | (new, unrecorded) | **The self-updater carried no compatibility limit of any kind.** One admin click would have installed a 2.x release - PHP 8.3, a different Laravel major - onto a PHP 8.1 production system, migrations included and unrollbackable (see "Update branch ceiling" below). |
 | (new, unrecorded) | **`artisan optimize` has never completed on this codebase - not on `v1` either.** A duplicate route name is not merely untidy: `route:cache` rebuilds the table as a Symfony collection keyed by name and throws `LogicException: Unable to prepare route [confirm-password] for serialization` on the second one. Verified by running `route:cache` against `git show v1:routes/web.php`, which fails identically. Every deployment that ran `optimize` silently fell back to an uncached route table. |
+| (new, unrecorded) | **An external security audit found nine holes in the authentication surface** (see "Security audit" below). The headline: the admin impersonation return path was a 12-hour signed URL carrying an arbitrary user id, bound to neither the session nor the `mainAdmin` role - a leaked link was replayable administrator access. Alongside it, `composer audit` went from **50 advisories on 16 packages to 3 on one**, including a high-severity Livewire RCE that had been in range of the existing constraint all along, and a Fortify TOTP-replay CVE whose *official* fix turned out not to work. |
 | (new, unrecorded) | **The special-date modal never cleared itself on open.** "Cancel" is a plain `data-dismiss="modal"` - nothing runs server-side - and `openModal()` only touched the state when it received a date, so *edit -> Cancel -> Add* reopened the form holding the previous day: delete button visible, the date field `disabled` by the carried-over `id`, and a save silently overwrote **the other day**. Every open now starts clean, the same `reset()`-on-open the other two modals already do. |
 
 Also fixed there, with no owning TODO: the `ListUsers` pagination/transaction/
@@ -1047,16 +1050,177 @@ the manual card while claiming to test the normal one. The `check()` tests keep
 `laraupdater.*` entries in `tests/Fixtures/vendor-route-contracts.json` carry the
 new middleware.
 
+#### Security audit (v1-patch H)
+
+An external security audit of the authentication surface produced nine findings:
+one high-priority privilege-delegation bug in admin impersonation, two known
+CVEs in installed packages, four medium and one low. All nine are closed here.
+`v1-patch` is the **last Laravel 8 release**, so anything left open stays open on
+the `v1` line until the whole upgrade lands.
+
+Suite: **1199 -> 1225 tests, 3647 assertions, green on PHP 8.1.30 /
+Laravel 8.83.29.** `route:cache` and `config:cache` still complete.
+
+##### 1. The impersonation return path was a bearer token
+
+`admin.users.login` minted a **12-hour** `URL::temporarySignedRoute()` carrying
+the admin's own id, parked it in the session, and rendered it as a link in the
+navigation bar. `loginBack()` checked the signature and nothing else - not that
+the `{id}` belonged to *this* session, not that it belonged to a `mainAdmin`.
+Anyone who obtained the URL - browser history, a proxy log, a shared screen, a
+screenshot - could replay administrator access for twelve hours with **any** user
+id in it.
+
+The admin id now lives in the session only
+(`LoginToUserController::SESSION_KEY`), the URL carries no identity at all, both
+directions are `POST` + CSRF, and the return path is single-use: the keys are
+dropped **before** the login, so a half-finished request leaves nothing usable.
+Three further guards the old code had none of: the `mainAdmin` role is
+**re-checked on the way back** (the account may have lost the role meanwhile),
+impersonation cannot be **chained** (a second switch would overwrite the stored
+original and point the return path at the intermediate user - and the gate cannot
+catch this on its own, because two main admins are possible), and
+`auth.password_confirmed_at` is **forgotten on both switches**, so a password
+confirmation cannot be inherited across an identity change.
+
+One deliberate loosening, recorded rather than hidden: `admin.users.login` left
+the `password.confirm` group for the `can:is-admin`-only one. `RequirePassword`
+returns through `redirect()->intended()`, which re-issues the request as a GET -
+405 on a POST-only route. Password confirmation still gates `/admin/users`, the
+only page that renders the button.
+
+`tests/Feature/Auth/ImpersonationTest.php`, 9 tests.
+
+##### 2. CVE-2022-25838, and the fix that does not fix it
+
+`laravel/fortify` was pinned at `^1.7` and locked at **v1.10.2**, whose
+`TwoFactorAuthenticationProvider::verify()` is a bare `verifyKey()`: a TOTP code
+stayed valid for the whole window, **any number of times**. The advisory
+(GHSA-6w4v-qr4m-97gg, CVSS 8.1) marks 1.11.1 as fixed.
+
+**Measured: bumping to 1.11.2 does not close it.** The 1.11.2 `verify()` caches
+the used code's timestamp and then demands a strictly newer one - but on the
+first call there is no cached value, `$oldTimestamp` is null, and
+`PragmaRX\Google2FA::findValidOTP()` returns `true` instead of a counter in that
+branch. Fortify stores that `true`; the next call passes it back as
+`$oldTimestamp`, `max($timestamp - $window, true + 1)` leaves the starting
+timestamp untouched, and the same code verifies again. A failing test proved it
+before the fix and passes after. Later Fortify 1.x releases added exactly one
+missing line - normalize `true` to `getTimestamp()` - and
+`App\Actions\Fortify\TwoFactorAuthenticationProvider` now carries it, bound in
+`FortifyServiceProvider::boot()` the same way `DisableTwoFactorAuthentication`
+already was. Both verification paths - Fortify's `TwoFactorLoginRequest` and the
+app's own `User::confirmTwoFactorAuth()` - resolve the contract, so both are
+covered.
+
+The version is pinned to **`~1.11.2`**, not `^1.11.2`: **1.12.0 introduces the
+`two_factor_confirmed_at` column** and turns on Fortify's own 2FA confirmation
+flow, which collides with this project's `two_factor_confirmed` boolean, its
+overridden actions, `User::confirmTwoFactorAuth()`, and its own
+`two-factor.confirm` route name. Lifting the ceiling is a schema plus flow
+migration, not a lock bump. 1.11.2's vendor route file also moves the
+`password.confirm` name onto `POST /user/confirm-password` and adds
+`POST /user/confirmed-two-factor-authentication` as `two-factor.confirm`;
+`routes/fortify.php` is a hand-maintained copy and deliberately carries neither.
+
+`tests/Feature/Auth/TwoFactorReplayTest.php`, 3 tests.
+
+##### 3. Fifty advisories, sixteen packages - and three with nowhere to go
+
+`composer audit` reported **50 advisories across 16 packages** on a lock resolved
+in early 2022. After this work: **3, on one package.**
+
+| Package | Was | Now | Closed |
+|---|---|---|---|
+| `laravel/framework` | 8.83.1 | **8.83.29** | CVE-2024-52301 (env manipulation via query string; `register_argc_argv` is on in the local PHP 8.1 config) + 3 more |
+| `symfony/http-foundation` | 5.4.3 | **5.4.50** | CVE-2025-64500 (PATH_INFO authorization bypass), CVE-2024-50345 |
+| `symfony/http-kernel`, `mime`, `routing`, `process`, `polyfill-intl-idn` | 5.4.3-5.4.4 | 5.4.51-5.4.53 | 8 advisories, incl. two high-severity mail header / SMTP injections |
+| `guzzlehttp/guzzle` + `psr7` | 7.4.1 / 2.1.0 | 7.15.3 / 2.13.0 | **20** advisories, 6 of them high |
+| `league/commonmark` | 2.2.2 | 2.9.0 | 9 |
+| `livewire/livewire` | 2.10.4 | **2.12.8** | CVE-2024-47823, **remote code execution on file uploads** - high, and in range of the existing `^2.10.4` constraint the whole time |
+| `laravel/tinker` / `psy/psysh` | 2.7.0 / 0.11.1 | 2.11.1 / 0.12.24 | local privilege escalation via a CWD `.psysh.php` |
+| `phpunit/phpunit`, `maximebf/debugbar` | 9.5.14 / 1.18.0 | 9.6.35 / 1.23.6 | 3 (dev-only, but the tree ships - see below) |
+
+Every one of these fit inside the **existing** `composer.json` constraints. The
+lock was simply four years stale, and `composer.json` carried `minimum-stability:
+dev`, which is not a theoretical hazard: the first update run resolved
+`laravel/framework` to **`8.x-dev`**, an untagged branch snapshot, on a release
+branch that ships to production installs. `minimum-stability` is now `stable` -
+the one bullet of **TODO 24** pulled forward; the platform pin and
+`allow-plugins` stay with that TODO.
+
+Two findings worth carrying forward:
+
+- **Laravel 8 has three advisories with no fixed 8.x release**, because the
+  branch is EOL and the fixes were never backported: temporary signed URL path
+  confusion (fixed in 12.61.1), CRLF injection in the default `email` validation
+  rule (12.60.0), and CVE-2025-27515 file validation bypass (10.48.29). Composer
+  2.10 **blocks** advisory-affected versions during resolution by default, so
+  `composer update` cannot resolve *any* Laravel 8 without saying so out loud.
+  They are listed in `config.policy.advisories.ignore-id` with `on-audit: false`,
+  which unblocks resolution while keeping them visible in `composer audit`. Each
+  entry carries its reason. **These three are the honest argument for Phase 4+**:
+  they cannot be fixed on this branch at all.
+- **`require-dev` packages are not dev-only here.** `vendor/` is committed and
+  shipped in the update archive (`release/README.md`), so Debugbar, PsySH and
+  PHPUnit reach every production install. They were bumped rather than triaged
+  away. `config/app.php` also hard-registers the Debugbar provider - **TODO 25**.
+
+##### 4-7. The medium findings
+
+- **A second, unthrottled password-confirmation endpoint.** `routes/fortify.php`
+  still carried Fortify's `POST /user/confirm-password` with `auth:web` and no
+  rate limit, so a stolen session allowed unlimited password guessing - while the
+  application's own `password.confirm.store` is throttled `6,1`. Nothing posted
+  to it. Removed.
+- **The login limiter key was raw `email . ip`.** MySQL's default collation is
+  case-insensitive, so `User@x.hu` and `user@x.hu` resolve to the same account
+  while the limiter saw two buckets: the 5/minute cap was multipliable by varying
+  letter case. The key is now `strtolower(trim(email)) . "|" . ip`, and a second
+  limit caps a single IP at 20/minute against email rotation.
+- **reCAPTCHA had three separate holes.** The client IP went out as `ip`, which
+  the siteverify endpoint silently discards - the address was never actually
+  checked; it is `remoteip` now. All three forms requested the hardcoded
+  `register` action and the server never read the field back, so a token
+  harvested on one form worked on any other; the expected action is now a
+  middleware parameter (`checkRecaptcha:login|register|password_reset`) and is
+  verified server-side, as Google's v3 documentation asks. And `/register` and
+  `/forgot-password` carried **no route throttle at all**, which matters because
+  `CheckRecaptcha` fails open on a connection error by design (v1-patch D3): a
+  Google outage left both endpoints with no bot protection. Both now carry
+  `throttle:5,1`. The fail-open decision itself stands, unchanged.
+- **`finish-registration/{id}/cancel` deleted a user row over GET.** A signature
+  proves the link came from us, not that the user meant to open it - browser
+  prefetch, a mail scanner following links, or a stray navigation all fire a GET.
+  It is `POST` + CSRF now, behind the same signature.
+
+##### 8. The low finding
+
+`GET /email/verify` had no `auth`. No authorization bypass followed from it, but
+the view renders `<x-admin-layout>`, which dereferences `auth()->user()` - so
+every logged-out hit was a 500 and a stack trace in the log. It carries `auth`.
+
+##### Route contract diff
+
+Five entries in `tests/Fixtures/route-contracts.json` moved, all intentionally:
+`admin.loginback` (GET+signed -> POST), `admin.users.login` (GET -> POST, minus
+`password.confirm`), `finish_registration_cancel` (GET -> POST),
+`verification.notice` (+`auth`), `password.email` (+`throttle:5,1`, and
+`checkRecaptcha` -> `checkRecaptcha:password_reset`). The Livewire 2.12.8 bump
+added `livewire.message-localized` to `vendor-route-contracts.json` - caught by
+the snapshot, which is exactly what it is for.
+
 - [ ] **TODO 23: Remove `laravelcollective/html`**
   - Needed:
     - Verified: zero `Form::` or `Html::` usages anywhere, and the provider is already commented out at `config/app.php:167`. Remove the requirement outright.
   - Expected changes: `composer.json` / `composer.lock`. This eliminates one of the most common hard blockers for Laravel upgrades at zero cost.
 
-- [ ] **TODO 24: Clean composer configuration**
+- [ ] **TODO 24: Clean composer configuration** - PARTIALLY DONE on `v1-patch`
   - Needed:
     - Remove `config.platform.php = 8.0.9`.
-    - Change `minimum-stability` from `dev` to `stable`.
+    - ~~Change `minimum-stability` from `dev` to `stable`.~~ **DONE on `v1-patch H`**, and not as housekeeping: the first security-update run resolved `laravel/framework` to `8.x-dev` - an untagged branch snapshot - on the branch that ships to production installs. The hazard this bullet described is measured, not hypothetical.
     - Add a `config.allow-plugins` block for the plugins actually in use (Composer 2.10 requires it).
+  - Also added on `v1-patch H`, and belonging to this TODO's subject: a `config.policy.advisories.ignore-id` block for the **three Laravel 8 advisories that have no fixed 8.x release**. Composer 2.10 blocks advisory-affected versions during resolution by default, so without it `composer update` cannot resolve any Laravel 8 at all. Each entry carries a reason and `on-audit: false`, so `composer audit` still reports them.
   - Expected changes: honest dependency resolution and no hidden legacy locks.
 
 - [ ] **TODO 25: Fix provider registration hygiene**
@@ -1618,14 +1782,16 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - `routes/fortify.php` is a hand-patched copy of Fortify's own route file, loaded via `Fortify::ignoreRoutes()` from `app/Providers/FortifyServiceProvider.php` inside a `Route::group(['namespace' => 'Laravel\Fortify\Http\Controllers'])`. The `namespace` group option is deprecated and should be removed (the file already uses FQCN array syntax).
     - Reconcile against the current Fortify route set: `PasswordController` was added, and the 2FA confirmation flow now uses `two_factor_confirmed_at`.
     - **Know where the version line sits before starting.** Measured in TODO 22: Fortify **1.37.0** adds `laravel/passkeys` as a hard requirement and registers passkey routes, so a hand-patched route file has to absorb them. TODO 66 deliberately pins at **1.36.2** to keep that out of the upgrade. If this item decides to move closer to default registration, taking 1.37+ becomes reasonable - but it is a feature decision made here, not a side effect of a composer bump.
-    - Decide whether to keep fully custom routing or move closer to default registration. The custom `checkRecaptcha` middleware on login/register/forgot-password and the `authenticateThrough()` pipeline with `RedirectIfTwoFactorConfirmed` must be preserved either way.
-    - Verify the `DisableTwoFactorAuthentication` singleton override still binds.
+    - Decide whether to keep fully custom routing or move closer to default registration. The custom `checkRecaptcha` middleware on login/register/forgot-password and the `authenticateThrough()` pipeline with `RedirectIfTwoFactorConfirmed` must be preserved either way. **`v1-patch H` added state to preserve here:** the three `checkRecaptcha` middleware now carry an expected-action parameter (`:login`, `:register`, `:password_reset`), `/register` and `/forgot-password` carry `throttle:5,1`, and `POST /user/confirm-password` is deliberately absent.
+    - Verify the `DisableTwoFactorAuthentication` singleton override still binds - **and the `TwoFactorAuthenticationProvider` one added in `v1-patch H`**. That override exists because Fortify 1.11.2's own CVE-2022-25838 fix does not actually block a replay (measured; see the v1-patch H section). Before deleting it, check whether the Fortify version being taken carries the `true` -> `getTimestamp()` normalization itself - `tests/Feature/Auth/TwoFactorReplayTest.php` answers that empirically either way.
+    - **The `~1.11.2` pin is this phase's to lift.** It exists because 1.12.0 introduces `two_factor_confirmed_at` and Fortify's own 2FA confirmation flow, which collide with this project's `two_factor_confirmed` boolean, its overridden actions, `User::confirmTwoFactorAuth()` and its `two-factor.confirm` route name. That is a schema plus flow migration, and it belongs with the reconciliation above - not with a security bump.
   - Expected changes: `routes/fortify.php`, `app/Providers/FortifyServiceProvider.php`, `.docs/fortify-routes.md`.
 
 - [ ] **TODO 70: Re-verify authorization and middleware behavior end to end**
   - Needed:
     - Regression-test `groupAdmin`, `groupMember`, `profileFull`, `setGuestLanguage`, `checkRecaptcha` after the skeleton migration.
-    - Verify the gate-based `is-admin` / `is-translator` permissions and the `password.confirm` gating on the admin, group, and translator route groups.
+    - Verify the gate-based `is-admin` / `is-translator` permissions and the `password.confirm` gating on the admin, group, and translator route groups. **Note the one deliberate exception from `v1-patch H`:** `admin.users.login` is POST-only and therefore sits outside the `password.confirm` group - `RequirePassword` returns through `redirect()->intended()`, which re-issues the request as a GET. `/admin/users`, the only page rendering the button, still carries the confirmation.
+    - **Impersonation is now session-bound** (`App\Http\Controllers\Admin\LoginToUserController`), not signed-URL-bound. `tests/Feature/Auth/ImpersonationTest.php` is the gate; any change to session regeneration or guard behaviour in a framework hop should be checked against it.
   - Expected changes: fixes in middleware and gate interactions; the TODO 09 middleware tests are the gate.
 
 - [ ] **TODO 71: Decide the API surface**
@@ -1672,6 +1838,8 @@ Two columns carry most of the information. **"Installed fails at"** is the first
 
 **Re-check before each hop** (TODO 22) - upstream moves, and the per-hop ladder below tells you which packages have a floor rising in the hop you are about to do.
 
+**The "Installed" column is the `v2-dev` baseline, not `v1-patch`.** The security work in `v1-patch H` moved nine of these inside their existing constraints - `laravel/framework` 8.83.1 -> 8.83.29, `laravel/fortify` 1.10.2 -> 1.11.2 (pinned `~1.11.2`, see that section), `livewire/livewire` 2.10.4 -> 2.12.8, `guzzlehttp/guzzle` 7.4.1 -> 7.15.3, plus `symfony/*`, `league/commonmark`, `laravel/tinker`, `phpunit/phpunit` and `barryvdh/laravel-debugbar`. **No declared constraint changed except Fortify's**, so every "Installed fails at" and "Verdict" below still holds - but read the installed numbers from `composer.lock` before measuring anything, not from this column.
+
 | Package | Installed | Declared | Installed fails at | L13 target | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | `laravel/framework` | 8.83.1 | `^8.12` | - | v13.24.0 (`php ^8.3`) | Target `^13.0`, one major per phase from Phase 4 |
@@ -1689,7 +1857,7 @@ Two columns carry most of the information. **"Installed fails at"** is the first
 | `livewire/livewire` | 2.10.4 | `^2.10.4` | L10 | v3 and v4 both cover L10-L13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |
 | `laravolt/avatar` | 4.1.7 | `^4.1` | **L10** | 6.5.1 | **NOT a version bump - the only one in the table.** `^4.1` admits no L10-capable release, and every L12/L13 line requires `intervention/image ^3.4`/`^4.0`, where the `stream()` the project calls no longer exists. Migrated in **Phase 5, TODO 39.1**; pinned by TODO 22.1 |
 | `laravel/tinker` | 2.7.0 | `^2.5` | L10 | **3.0.2** | **Constraint edit** `^2.5` -> `^3.0` at Phase 10. No 2.x release supports Laravel 13 - the line stops at 2.10.2 |
-| `laravel/fortify` | 1.10.2 | `^1.7` | L10 | 1.36.2 | Lock bump, but **pin at 1.36.2**: 1.37.0 adds `laravel/passkeys` as a hard requirement and raises its floor to `illuminate ^11` / `php ^8.2`. The vendored route file is the real work (TODO 69) |
+| `laravel/fortify` | 1.10.2 (**1.11.2 on `v1-patch`**) | `^1.7` (**`~1.11.2` on `v1-patch`**) | L10 | 1.36.2 | Lock bump, but **pin at 1.36.2**: 1.37.0 adds `laravel/passkeys` as a hard requirement and raises its floor to `illuminate ^11` / `php ^8.2`. The vendored route file is the real work (TODO 69). **Widening `~1.11.2` is a Phase 11 decision, not a hop step** - 1.12.0 brings the `two_factor_confirmed_at` schema change |
 | `astrotomic/laravel-translatable` | 11.10.0 | `^11.9` | L10 | 11.17.0 | Lock bump. 11.17.0 drops `illuminate ^8`, so it cannot be bumped before Phase 4 |
 | `spatie/laravel-activitylog` | 4.4.0 | `^4.0.0` | L10 | 4.12.3 | Lock bump; **stay on 4.x** - 5.0.0 requires `php ^8.4`, above this roadmap's target. `User` already uses the modern `LogOptions` API |
 | `spatie/laravel-cookie-consent` | 3.2.0 | `^3.1` | L10 | 3.5.0 | Lock bump. 3.5.0 needs `illuminate ^11` / `php ^8.2`, so the intermediate hops need the ladder below |

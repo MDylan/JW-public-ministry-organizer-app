@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -36,7 +36,7 @@ class ValidClassNamePass extends NamespaceAwarePass
     const INTERFACE_TYPE = 'interface';
     const TRAIT_TYPE = 'trait';
 
-    private $conditionalScopes = 0;
+    private int $conditionalScopes = 0;
 
     /**
      * Validate class, interface and trait definitions.
@@ -46,6 +46,8 @@ class ValidClassNamePass extends NamespaceAwarePass
      * trait methods.
      *
      * @param Node $node
+     *
+     * @return int|Node|null Replacement node (or special return value)
      */
     public function enterNode(Node $node)
     {
@@ -54,7 +56,7 @@ class ValidClassNamePass extends NamespaceAwarePass
         if (self::isConditional($node)) {
             $this->conditionalScopes++;
 
-            return;
+            return null;
         }
 
         if ($this->conditionalScopes === 0) {
@@ -66,18 +68,22 @@ class ValidClassNamePass extends NamespaceAwarePass
                 $this->validateTraitStatement($node);
             }
         }
+
+        return null;
     }
 
     /**
      * @param Node $node
+     *
+     * @return int|Node|Node[]|null Replacement node (or special return value)
      */
     public function leaveNode(Node $node)
     {
         if (self::isConditional($node)) {
             $this->conditionalScopes--;
-
-            return;
         }
+
+        return null;
     }
 
     private static function isConditional(Node $node): bool
@@ -135,7 +141,7 @@ class ValidClassNamePass extends NamespaceAwarePass
     protected function ensureCanDefine(Stmt $stmt, string $scopeType = self::CLASS_TYPE)
     {
         // Anonymous classes don't have a name, and uniqueness shouldn't be enforced.
-        if ($stmt->name === null) {
+        if (!\property_exists($stmt, 'name') || $stmt->name === null) {
             return;
         }
 
@@ -258,34 +264,11 @@ class ValidClassNamePass extends NamespaceAwarePass
     }
 
     /**
-     * Get a symbol type key for storing in the scope name cache.
-     *
-     * @deprecated No longer used. Scope type should be passed into ensureCanDefine directly.
-     * @codeCoverageIgnore
-     *
-     * @param Stmt $stmt
-     *
-     * @return string
-     */
-    protected function getScopeType(Stmt $stmt): string
-    {
-        if ($stmt instanceof Class_) {
-            return self::CLASS_TYPE;
-        } elseif ($stmt instanceof Interface_) {
-            return self::INTERFACE_TYPE;
-        } elseif ($stmt instanceof Trait_) {
-            return self::TRAIT_TYPE;
-        }
-    }
-
-    /**
      * Check whether a class exists, or has been defined in the current code snippet.
      *
      * Gives `self`, `static` and `parent` a free pass.
      *
      * @param string $name
-     *
-     * @return bool
      */
     protected function classExists(string $name): bool
     {
@@ -303,8 +286,6 @@ class ValidClassNamePass extends NamespaceAwarePass
      * Check whether an interface exists, or has been defined in the current code snippet.
      *
      * @param string $name
-     *
-     * @return bool
      */
     protected function interfaceExists(string $name): bool
     {
@@ -315,8 +296,6 @@ class ValidClassNamePass extends NamespaceAwarePass
      * Check whether a trait exists, or has been defined in the current code snippet.
      *
      * @param string $name
-     *
-     * @return bool
      */
     protected function traitExists(string $name): bool
     {
@@ -336,6 +315,8 @@ class ValidClassNamePass extends NamespaceAwarePass
         if (isset($this->currentScope[$name])) {
             return $this->currentScope[$name];
         }
+
+        return null;
     }
 
     /**
@@ -343,11 +324,9 @@ class ValidClassNamePass extends NamespaceAwarePass
      *
      * @param string $msg
      * @param Stmt   $stmt
-     *
-     * @return FatalErrorException
      */
     protected function createError(string $msg, Stmt $stmt): FatalErrorException
     {
-        return new FatalErrorException($msg, 0, \E_ERROR, null, $stmt->getLine());
+        return new FatalErrorException($msg, 0, \E_ERROR, null, $stmt->getStartLine());
     }
 }

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -56,12 +56,11 @@ EOS;
      * except for the \s sequence (ASCII space).
      *
      * @param string $input The string to decode
-     *
-     * @return string
      */
     public static function unvis(string $input): string
     {
-        $output = \preg_replace_callback(self::UNVIS_RX, 'self::unvisReplace', $input);
+        $output = \preg_replace_callback(self::UNVIS_RX, [self::class, 'unvisReplace'], $input);
+
         // other escapes & octal are handled by stripcslashes
         return \stripcslashes($output);
     }
@@ -70,8 +69,6 @@ EOS;
      * Callback for Str::unvis.
      *
      * @param array $match The matches passed by preg_replace_callback
-     *
-     * @return string
      */
     protected static function unvisReplace(array $match): string
     {
@@ -110,5 +107,21 @@ EOS;
 
             return \chr($cp);
         }
+    }
+
+    /**
+     * Check whether a given string is a valid PHP class name.
+     *
+     * Validates that the name follows PHP identifier rules, with optional
+     * namespace separators.
+     *
+     * @param string $name The name to check
+     *
+     * @return bool True if the name is syntactically valid
+     */
+    public static function isValidClassName(string $name): bool
+    {
+        // Regex based on https://www.php.net/manual/en/language.oop5.basic.php#language.oop5.basic.class
+        return \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $name) === 1;
     }
 }

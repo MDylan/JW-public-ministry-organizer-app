@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Storage;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 
+#[\AllowDynamicProperties]
 class TemporaryUploadedFile extends UploadedFile
 {
     protected $storage;
@@ -73,6 +74,13 @@ class TemporaryUploadedFile extends UploadedFile
         return $this->extractOriginalNameFromFilePath($this->path);
     }
 
+    public function dimensions()
+    {
+        stream_copy_to_stream($this->storage->readStream($this->path), $tmpFile = tmpfile());
+
+        return @getimagesize(stream_get_meta_data($tmpFile)['uri']);;
+    }
+
     public function temporaryUrl()
     {
         if ((FileUploadConfiguration::isUsingS3() or FileUploadConfiguration::isUsingGCS()) && ! app()->runningUnitTests()) {
@@ -124,7 +132,7 @@ class TemporaryUploadedFile extends UploadedFile
         return $this->storage->delete($this->path);
     }
 
-    public function storeAs($path, $name, $options = [])
+    public function storeAs($path, $name = null, $options = [])
     {
         $options = $this->parseOptions($options);
 
@@ -143,7 +151,7 @@ class TemporaryUploadedFile extends UploadedFile
     {
         $hash = str()->random(30);
         $meta = str('-meta'.base64_encode($file->getClientOriginalName()).'-')->replace('/', '_');
-        $extension = '.'.$file->guessExtension();
+        $extension = '.'.$file->getClientOriginalExtension();
 
         return $hash.$meta.$extension;
     }

@@ -42,19 +42,19 @@ class CheckRecaptchaTest extends FeatureTestCase
         config(['services.recaptcha.min_score' => self::MIN_SCORE]);
     }
 
-    private function runMiddleware(?string $token = 'teszt-token')
+    private function runMiddleware(?string $token = 'teszt-token', ?string $expectedAction = null)
     {
         $request = Request::create('/login', 'POST', ['recaptcha_token' => $token]);
 
-        return (new CheckRecaptcha())->handle($request, fn () => response('atengedve'));
+        return (new CheckRecaptcha())->handle($request, fn () => response('atengedve'), $expectedAction);
     }
 
     /** Bekapcsolt recaptcha mellett futtatja a middleware-t. */
-    private function runEnabled(?string $token = 'teszt-token')
+    private function runEnabled(?string $token = 'teszt-token', ?string $expectedAction = null)
     {
         config(['security.use_recaptcha' => true]);
 
-        return $this->runMiddleware($token);
+        return $this->runMiddleware($token, $expectedAction);
     }
 
     private function fakeGoogle(array $body, int $status = 200): void
@@ -247,6 +247,103 @@ class CheckRecaptchaTest extends FeatureTestCase
         $configSaysYes = $this->withEnvValue('USE_RECAPTCHA', 'false', fn () => $this->runMiddleware());
 
         $this->assertInstanceOf(RedirectResponse::class, $configSaysYes);
+    }
+
+    // =========================================================================
+    // 6. A Google-nak küldött kérés alakja - v1-patch H
+    // =========================================================================
+
+    public function test_the_client_ip_is_sent_under_the_field_name_google_expects(): void
+    {
+        // A mező KORÁBBAN `ip` volt. A siteverify végpont `remoteip`-et vár, az
+        // ismeretlen kulcsot pedig némán eldobja: a hívás sikeres maradt, csak
+        // a címellenőrzés nem történt meg soha - és semmi nem jelezte.
+        $this->fakeGoogle(['success' => true, 'score' => 0.9]);
+
+        $this->runEnabled();
+
+        Http::assertSent(function ($request) {
+            return isset($request['remoteip']) && ! isset($request['ip']);
+        });
+    }
+
+    public function test_a_token_issued_for_another_action_is_rejected(): void
+    {
+        // A Google v3 dokumentációja kifejezetten kéri az action szerveroldali
+        // ellenőrzését. Nélküle egy MÁSIK űrlapon (vagy egy másik oldalon,
+        // ugyanazzal a site key-jel) begyűjtött token bármelyik itt védett
+        // végponton felhasználható. A kliens korábban mindhárom űrlapon
+        // `register` actiont kért, a szerver pedig meg sem nézte a mezőt.
+        $this->fakeGoogle(['success' => true, 'score' => 0.9, 'action' => 'register']);
+
+        $this->assertInstanceOf(RedirectResponse::class, $this->runEnabled('teszt-token', 'login'));
+    }
+
+    public function test_a_token_issued_for_the_expected_action_passes(): void
+    {
+        $this->fakeGoogle(['success' => true, 'score' => 0.9, 'action' => 'login']);
+
+        $this->assertSame('atengedve', $this->runEnabled('teszt-token', 'login')->getContent());
+    }
+
+    public function test_a_missing_action_is_rejected_when_one_is_expected(): void
+    {
+        $this->fakeGoogle(['success' => true, 'score' => 0.9]);
+
+        $this->assertInstanceOf(RedirectResponse::class, $this->runEnabled('teszt-token', 'login'));
+    }
+
+    public function test_the_three_public_endpoints_declare_their_own_action(): void
+    {
+        // A middleware csak akkor tud ellenőrizni, ha a route megmondja, mit
+        // várjon. Ez a teszt azt őrzi, hogy egyik végpontról se essen le a
+        // paraméter egy későbbi szerkesztéskor - paraméter nélkül a
+        // middleware csendben visszaesne az ellenőrzés nélküli állapotba.
+        $expected = [
+            'password.email' => 'checkRecaptcha:password_reset',
+        ];
+
+        foreach ($expected as $name => $middleware) {
+            $route = app('router')->getRoutes()->getByName($name);
+
+            $this->assertNotNull($route, $name.': a route-nak léteznie kell.');
+            $this->assertContains($middleware, $route->gatherMiddleware(), $name);
+        }
+
+        // A /login és a /register névtelen, ezért URI szerint keressük.
+        $byUri = [
+            'login' => 'checkRecaptcha:login',
+            'register' => 'checkRecaptcha:register',
+        ];
+
+        foreach ($byUri as $uri => $middleware) {
+            $matches = [];
+
+            foreach (app('router')->getRoutes() as $route) {
+                if ($route->uri() === $uri && in_array('POST', $route->methods(), true)) {
+                    $matches[] = $route;
+                }
+            }
+
+            $this->assertCount(1, $matches, $uri.': pontosan egy POST definíció.');
+            $this->assertContains($middleware, $matches[0]->gatherMiddleware(), $uri);
+        }
+    }
+
+    public function test_the_two_previously_unthrottled_endpoints_now_carry_a_rate_limit(): void
+    {
+        // A /register és a /forgot-password KORÁBBAN semmilyen route-throttle-t
+        // nem viselt: a botvédelmet egyedül a reCAPTCHA adta, ami
+        // kapcsolathibán szándékosan fail-open. Egy Google-kimaradás alatt
+        // tehát mindkettő korlátlanul automatizálható volt.
+        $passwordEmail = app('router')->getRoutes()->getByName('password.email');
+        $this->assertContains('throttle:5,1', $passwordEmail->gatherMiddleware());
+
+        foreach (app('router')->getRoutes() as $route) {
+            if ($route->uri() === 'register' && in_array('POST', $route->methods(), true)) {
+                $this->assertContains('throttle:5,1', $route->gatherMiddleware());
+            }
+        }
     }
 
     public function test_the_configuration_file_still_reads_the_environment_variable(): void

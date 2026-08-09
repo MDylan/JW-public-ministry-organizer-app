@@ -111,9 +111,14 @@
                                     <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                         <i class="fa fa-edit mr-2"></i>
                                     </a>
-                                    <a href="{{ route('admin.users.login', ['user' => $user]) }}" title="@lang('user.login_to')">
-                                        <i class="fas fa-sign-in-alt mr-2"></i>
-                                    </a>
+                                    {{-- A megszemélyesítés indítása POST + CSRF: egy GET link
+                                         böngésző-előtöltésre vagy idegen oldalról is elsülhetett. --}}
+                                    <form method="POST" action="{{ route('admin.users.login', ['user' => $user]) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-link p-0 border-0 align-baseline" title="@lang('user.login_to')">
+                                            <i class="fas fa-sign-in-alt mr-2"></i>
+                                        </button>
+                                    </form>
                                     <a href="" title="{{ __('app.delete') }}" wire:click.prevent="confirmUserRemoval({{$user->id}})">
                                         <i class="fa fa-trash text-danger"></i>
                                     </a>

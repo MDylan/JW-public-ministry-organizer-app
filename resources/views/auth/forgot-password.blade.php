@@ -50,5 +50,5 @@
 </div>
 @endsection
 @if (config('security.use_recaptcha'))
-    @include('auth.recaptcha-script', ['formId' => 'lostpasswordForm'])
+    @include('auth.recaptcha-script', ['formId' => 'lostpasswordForm', 'action' => 'password_reset'])
 @endif

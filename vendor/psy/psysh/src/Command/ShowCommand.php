@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -26,21 +26,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class ShowCommand extends ReflectingCommand
 {
-    private $lastException;
-    private $lastExceptionIndex;
-
-    /**
-     * @param string|null $colorMode (deprecated and ignored)
-     */
-    public function __construct($colorMode = null)
-    {
-        parent::__construct();
-    }
+    private ?\Throwable $lastException = null;
+    private ?int $lastExceptionIndex = null;
 
     /**
      * {@inheritdoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('show')
@@ -54,7 +46,7 @@ class ShowCommand extends ReflectingCommand
 Show the code for an object, class, constant, method or property, or the context
 of the last exception.
 
-<return>cat --ex</return> defaults to showing the lines surrounding the location of the last
+<return>show --ex</return> defaults to showing the lines surrounding the location of the last
 exception. Invoking it more than once travels up the exception's stack trace,
 and providing a number shows the context of the given index of the trace.
 
@@ -69,8 +61,10 @@ HELP
 
     /**
      * {@inheritdoc}
+     *
+     * @return int 0 if everything went fine, or an exit code
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // n.b. As far as I can tell, InputInterface doesn't want to tell me
         // whether an option with an optional value was actually passed. If you
@@ -108,8 +102,10 @@ HELP
 
     private function writeCodeContext(InputInterface $input, OutputInterface $output)
     {
+        $shellOutput = $this->shellOutput($output);
+
         try {
-            list($target, $reflector) = $this->getTargetAndReflector($input->getArgument('target'));
+            list($target, $reflector) = $this->getTargetAndReflector($input->getArgument('target'), $output);
         } catch (UnexpectedTargetException $e) {
             // If we didn't get a target and Reflector, maybe we got a filename?
             $target = $e->getTarget();
@@ -122,7 +118,7 @@ HELP
                     ]);
                 }
 
-                $output->page(CodeFormatter::formatCode($code));
+                $shellOutput->page(CodeFormatter::formatCode($code));
 
                 return;
             } else {
@@ -134,7 +130,7 @@ HELP
         $this->setCommandScopeVariables($reflector);
 
         try {
-            $output->page(CodeFormatter::format($reflector));
+            $shellOutput->page(CodeFormatter::format($reflector));
         } catch (RuntimeException $e) {
             $output->writeln(SignatureFormatter::format($reflector));
             throw $e;
@@ -173,9 +169,12 @@ HELP
         $this->lastException = $exception;
         $this->lastExceptionIndex = $index;
 
-        $output->writeln($this->getApplication()->formatException($exception));
-        $output->writeln('--');
+        $shell = $this->getShell();
+
+        $shell->writeExceptionHeader($output, $exception);
+        $shell->writeSeparator($output);
         $this->writeTraceLine($output, $trace, $index);
+        $shell->writeSpacer($output);
         $this->writeTraceCodeSnippet($output, $trace, $index);
 
         $this->setCommandScopeVariablesFromContext($trace[$index]);

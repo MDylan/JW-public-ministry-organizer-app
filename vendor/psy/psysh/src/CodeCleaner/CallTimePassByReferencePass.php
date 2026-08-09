@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -35,11 +35,13 @@ class CallTimePassByReferencePass extends CodeCleanerPass
      * @throws FatalErrorException if the user used call-time pass-by-reference
      *
      * @param Node $node
+     *
+     * @return int|Node|null Replacement node (or special return value)
      */
     public function enterNode(Node $node)
     {
         if (!$node instanceof FuncCall && !$node instanceof MethodCall && !$node instanceof StaticCall) {
-            return;
+            return null;
         }
 
         foreach ($node->args as $arg) {
@@ -48,8 +50,10 @@ class CallTimePassByReferencePass extends CodeCleanerPass
             }
 
             if ($arg->byRef) {
-                throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getLine());
+                throw new FatalErrorException(self::EXCEPTION_MESSAGE, 0, \E_ERROR, null, $node->getStartLine());
             }
         }
+
+        return null;
     }
 }

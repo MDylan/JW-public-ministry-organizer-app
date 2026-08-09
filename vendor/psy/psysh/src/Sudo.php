@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,7 +27,7 @@ class Sudo
      */
     public static function fetchProperty($object, string $property)
     {
-        $prop = static::getProperty(new \ReflectionObject($object), $property);
+        $prop = self::getProperty(new \ReflectionObject($object), $property);
 
         return $prop->getValue($object);
     }
@@ -43,7 +43,7 @@ class Sudo
      */
     public static function assignProperty($object, string $property, $value)
     {
-        $prop = static::getProperty(new \ReflectionObject($object), $property);
+        $prop = self::getProperty(new \ReflectionObject($object), $property);
         $prop->setValue($object, $value);
 
         return $value;
@@ -54,19 +54,17 @@ class Sudo
      *
      * @param object $object
      * @param string $method  method name
-     * @param mixed  $args...
+     * @param mixed  ...$args
      *
      * @return mixed
      */
-    public static function callMethod($object, string $method, $args = null)
+    public static function callMethod($object, string $method, ...$args)
     {
-        $args = \func_get_args();
-        $object = \array_shift($args);
-        $method = \array_shift($args);
-
         $refl = new \ReflectionObject($object);
         $reflMethod = $refl->getMethod($method);
-        $reflMethod->setAccessible(true);
+        if (\PHP_VERSION_ID < 80100) {
+            $reflMethod->setAccessible(true);
+        }
 
         return $reflMethod->invokeArgs($object, $args);
     }
@@ -81,8 +79,10 @@ class Sudo
      */
     public static function fetchStaticProperty($class, string $property)
     {
-        $prop = static::getProperty(new \ReflectionClass($class), $property);
-        $prop->setAccessible(true);
+        $prop = self::getProperty(new \ReflectionClass($class), $property);
+        if (\PHP_VERSION_ID < 80100) {
+            $prop->setAccessible(true);
+        }
 
         return $prop->getValue();
     }
@@ -98,8 +98,14 @@ class Sudo
      */
     public static function assignStaticProperty($class, string $property, $value)
     {
-        $prop = static::getProperty(new \ReflectionClass($class), $property);
-        $prop->setValue($value);
+        $prop = self::getProperty(new \ReflectionClass($class), $property);
+        $refl = $prop->getDeclaringClass();
+
+        if (\method_exists($refl, 'setStaticPropertyValue')) {
+            $refl->setStaticPropertyValue($property, $value);
+        } else {
+            $prop->setValue($value);
+        }
 
         return $value;
     }
@@ -109,19 +115,17 @@ class Sudo
      *
      * @param string|object $class   class name or instance
      * @param string        $method  method name
-     * @param mixed         $args...
+     * @param mixed         ...$args
      *
      * @return mixed
      */
-    public static function callStatic($class, string $method, $args = null)
+    public static function callStatic($class, string $method, ...$args)
     {
-        $args = \func_get_args();
-        $class = \array_shift($args);
-        $method = \array_shift($args);
-
         $refl = new \ReflectionClass($class);
         $reflMethod = $refl->getMethod($method);
-        $reflMethod->setAccessible(true);
+        if (\PHP_VERSION_ID < 80100) {
+            $reflMethod->setAccessible(true);
+        }
 
         return $reflMethod->invokeArgs(null, $args);
     }
@@ -138,6 +142,11 @@ class Sudo
     {
         $refl = new \ReflectionClass($class);
 
+        // Special case the ::class magic constant, because `getConstant` does the wrong thing here.
+        if ($const === 'class') {
+            return $refl->getName();
+        }
+
         do {
             if ($refl->hasConstant($const)) {
                 return $refl->getConstant($const);
@@ -147,6 +156,28 @@ class Sudo
         } while ($refl !== false);
 
         return false;
+    }
+
+    /**
+     * Construct an instance of a class, bypassing private constructors.
+     *
+     * @param string $class   class name
+     * @param mixed  ...$args
+     */
+    public static function newInstance(string $class, ...$args)
+    {
+        $refl = new \ReflectionClass($class);
+        $instance = $refl->newInstanceWithoutConstructor();
+
+        $constructor = $refl->getConstructor();
+        if ($constructor !== null) {
+            if (\PHP_VERSION_ID < 80100) {
+                $constructor->setAccessible(true);
+            }
+            $constructor->invokeArgs($instance, $args);
+        }
+
+        return $instance;
     }
 
     /**
@@ -165,7 +196,9 @@ class Sudo
         do {
             try {
                 $prop = $refl->getProperty($property);
-                $prop->setAccessible(true);
+                if (\PHP_VERSION_ID < 80100) {
+                    $prop->setAccessible(true);
+                }
 
                 return $prop;
             } catch (\ReflectionException $e) {

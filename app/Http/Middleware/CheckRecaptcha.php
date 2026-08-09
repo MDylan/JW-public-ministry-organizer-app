@@ -26,7 +26,7 @@ class CheckRecaptcha
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, ?string $expectedAction = null)
     {
         // A kapcsoló KORÁBBAN közvetlenül env()-ből jött, tehát egy
         // `php artisan config:cache` után hamisra váltott volna, és a
@@ -41,7 +41,11 @@ class CheckRecaptcha
                     ->post("https://www.google.com/recaptcha/api/siteverify", [
                         'secret' => config('services.recaptcha.secret_key'),
                         'response' => $request->recaptcha_token,
-                        'ip' => request()->ip(),
+                        // A Google API `remoteip` néven várja a kliens címét.
+                        // A mező KORÁBBAN `ip` volt, amit a végpont némán
+                        // eldobott: a kérés attól még sikeres volt, csak a
+                        // címellenőrzés nem történt meg soha.
+                        'remoteip' => $request->ip(),
                     ]);
             } catch (ConnectionException $e) {
                 // FAIL-OPEN, kimondott döntéssel.
@@ -59,6 +63,11 @@ class CheckRecaptcha
                 // rendelkezésre állás nyer: a kérés átmegy, a hiba naplózódik.
                 // A fail-closed ugyanolyan védhető lenne (captcha-hibaüzenet az
                 // 500 helyett), de a korábbi viselkedés egyik sem volt.
+                //
+                // A nyitva maradó ablakot mostantól route-throttle zárja: a
+                // /login, /register és /forgot-password mindegyike visel saját
+                // sebességkorlátot, tehát egy Google-kimaradás nem teszi
+                // korlátlanul automatizálhatóvá ezeket a végpontokat.
                 Log::warning('reCAPTCHA verification unreachable, letting the request through', [
                     'exception' => $e->getMessage(),
                     'ip'        => $request->ip(),
@@ -68,7 +77,19 @@ class CheckRecaptcha
                 return $next($request);
             }
 
-            if ($response->successful() && $response->json('success') && $response->json('score') > config('services.recaptcha.min_score')) {
+            // Az `action` szerveroldali ellenőrzését a Google kifejezetten
+            // javasolja a v3 dokumentációjában. Nélküle egy MÁSIK űrlapon
+            // (vagy egy másik oldalon, ugyanazzal a site key-jel) begyűjtött
+            // token bármelyik itt védett végponton felhasználható. A kliens
+            // KORÁBBAN mindhárom űrlapon `register` actiont kért, a szerver
+            // pedig a visszakapott mezőt meg sem nézte.
+            $actionMatches = $expectedAction === null
+                || $response->json('action') === $expectedAction;
+
+            if ($response->successful()
+                && $response->json('success')
+                && $actionMatches
+                && $response->json('score') > config('services.recaptcha.min_score')) {
                 $probablyABot = false;
             } else {
                 $probablyABot = true;

@@ -43,6 +43,14 @@
    "web"
   ]
  },
+ "livewire.message-localized": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
  "livewire.preview-file": {
   "methods": [
    "GET",

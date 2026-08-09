@@ -112,5 +112,5 @@
 </div>
 @endsection
 @if (config('security.use_recaptcha'))
-    @include('auth.recaptcha-script', ['formId' => 'registerForm'])
+    @include('auth.recaptcha-script', ['formId' => 'registerForm', 'action' => 'register'])
 @endif

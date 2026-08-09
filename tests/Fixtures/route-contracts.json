@@ -1,12 +1,10 @@
 {
     "admin.loginback": {
         "methods": [
-            "GET",
-            "HEAD"
+            "POST"
         ],
         "middleware": [
             "auth",
-            "signed",
             "web"
         ]
     },
@@ -123,13 +121,11 @@
     },
     "admin.users.login": {
         "methods": [
-            "GET",
-            "HEAD"
+            "POST"
         ],
         "middleware": [
             "auth",
             "can:is-admin",
-            "password.confirm",
             "profileFull",
             "verified",
             "web"
@@ -160,8 +156,7 @@
     },
     "finish_registration_cancel": {
         "methods": [
-            "GET",
-            "HEAD"
+            "POST"
         ],
         "middleware": [
             "signed",
@@ -554,8 +549,9 @@
             "POST"
         ],
         "middleware": [
-            "checkRecaptcha",
+            "checkRecaptcha:password_reset",
             "guest:web",
+            "throttle:5,1",
             "web"
         ]
     },
@@ -785,6 +781,7 @@
             "HEAD"
         ],
         "middleware": [
+            "auth",
             "web"
         ]
     },

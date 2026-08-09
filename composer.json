@@ -20,7 +20,7 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "joedixon/laravel-translation": "^1.1",
-        "laravel/fortify": "^1.7",
+        "laravel/fortify": "~1.11.2",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
@@ -86,8 +86,26 @@
         "sort-packages": true,
         "platform": {
             "php": "8.0.9"
+        },
+        "policy": {
+            "advisories": {
+                "ignore-id": {
+                    "PKSA-m5cs-t1y6-qpcs": {
+                        "reason": "Temporary signed URL path confusion. Fixed in 12.61.1 only - there is no Laravel 8 backport and Laravel 8 is EOL. Unblocks resolution only; composer audit still reports it. See upgrade-roadmap.md, v1-patch H.",
+                        "on-audit": false
+                    },
+                    "PKSA-3r5d-mb8f-1qw9": {
+                        "reason": "CRLF injection in the default email validation rule. Fixed in 12.60.0 only - no Laravel 8 backport. Unblocks resolution only; composer audit still reports it. See upgrade-roadmap.md, v1-patch H.",
+                        "on-audit": false
+                    },
+                    "PKSA-8qx3-n5y5-vvnd": {
+                        "reason": "CVE-2025-27515 file validation bypass. Fixed in 10.48.29 only - no Laravel 8 backport. Unblocks resolution only; composer audit still reports it. See upgrade-roadmap.md, v1-patch H.",
+                        "on-audit": false
+                    }
+                }
+            }
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

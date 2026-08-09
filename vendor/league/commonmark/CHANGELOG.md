@@ -6,6 +6,361 @@ Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) princi
 
 ## [Unreleased][unreleased]
 
+## [2.9.0] - 2026-08-03
+
+This is a **security release** to address five denial of service vulnerabilities and one cross-site scripting (XSS) vulnerability.
+
+### Added
+
+- Added a new `NormalizeHeadingsExtension` to constrain headings to a configured level range (#989)
+    - Rewrites headings that skip levels so the resulting HTML is valid (#1115)
+    - `normalize_headings/rebase_to_min_level` - rebases each document so its headings begin at `min_level`
+- Added a new `footnote/enable_inline_footnotes` config option to disable the inline `^[Footnote text]` syntax (#1112)
+- Added `Cursor::getBytePosition()` for obtaining the cursor's current byte offset within the line
+- Added a new `xml/max_indentation_level` config option to control how far `XmlRenderer` indents nested elements (default: `16`; set to `0` for unindented output)
+
+### Changed
+
+- The `FootnoteExtension` now uses only the first definition of a footnote label, removing any duplicate definitions instead of rendering them in place
+- `NumberFootnotesListener` now stores footnote backrefs under a single `footnote/backrefs` key in the document data instead of one key per footnote destination
+- Optimized `Cursor` to translate character positions to byte offsets in constant time instead of re-decoding the line with `mb_substr()`
+- Optimized `Cursor::match()` to match against the line at the cursor's byte offset instead of copying the remaining line on every call
+- Optimized `InlineParserEngine` and `UrlAutolinkParser` to work with byte offsets directly
+
+### Fixed
+
+- Fixed quadratic parsing performance on lines containing multibyte characters, which could be abused to cause a denial of service (GHSA-2q4p-g7hv-5rgv)
+- Fixed the unsafe link filter failing to detect dangerous schemes obfuscated with embedded tabs, newlines, or leading control characters (such as `java<TAB>script:`), which allowed the `allow_unsafe_links` protection to be bypassed via `href` and `src` attributes (GHSA-29pj-957v-52mc)
+- Fixed duplicate footnote definitions each claiming the full list of backrefs for their label, causing a quadratic number of backrefs to be generated, which could be abused to cause a denial of service (GHSA-jfm3-95jq-q3rf)
+- Fixed footnote labels being treated as `.`/`/`-delimited key paths when storing backrefs, which allowed distinct labels such as `[^a.b]` and `[^a/b]` to share a single backref list (GHSA-jfm3-95jq-q3rf)
+- Fixed a fatal error when one footnote label was a prefix of another, such as `[^a]` and `[^a.b]`
+- Fixed the unique slug normalizer restarting its suffix search from `1` on every collision, causing headings or inline footnotes which normalize to the same slug to be de-duplicated in quadratic time, which could be abused to cause a denial of service (GHSA-mh25-x5hq-wrqp)
+- Fixed the `AttributesExtension` scanning the remaining siblings of an inline attribute which can only apply to its parent block, causing long runs of adjacent inline attributes to be resolved in quadratic time, which could be abused to cause a denial of service (GHSA-g2gp-3wwq-f4ph)
+- Fixed `XmlRenderer` indenting every element by its full nesting depth without any upper bound, causing deeply-nested documents to render as quadratically-sized XML, which could be abused to cause a denial of service (GHSA-mj63-m3rc-8ppr)
+- Fixed `MarkDelimiterProcessor` not being declared as a `CacheableDelimiterProcessorInterface`, preventing the delimiter stack from caching the opener search for `==` runs (#1133)
+
+## [2.8.3] - 2026-07-12
+
+### Fixed
+- Fixed tab-indented fenced code blocks inside list items losing the first character of each line and having their info string mangled (#981, #1130)
+- Fixed the unsafe link filter incorrectly blocking safe URLs containing `vbscript:`, `file:`, or `data:` anywhere after the start (#1131)
+
+## [2.8.2] - 2026-03-19
+
+This is a **security release** to address an issue where the `allowed_domains` setting for the `Embed` extension can be bypassed, resulting in a possible SSRF and XSS vulnerabilities.
+
+### Fixed
+- Fixed `DomainFilteringAdapter` hostname boundary bypass where domains like `youtube.com.evil` could match an allowlist entry for `youtube.com` (GHSA-hh8v-hgvp-g3f5)
+
+## [2.8.1] - 2026-03-05
+
+This is a **security release** to address an issue where `DisallowedRawHtml` can be bypassed, resulting in a possible cross-site scripting (XSS) vulnerability.
+
+### Fixed
+- Fixed `DisallowedRawHtmlRenderer` not blocking raw HTML tags with trailing ASCII whitespace (GHSA-4v6x-c7xx-hw9f)
+- Fixed PHP 8.5 deprecation (#1107)
+
+## [2.8.0] - 2025-11-26
+
+### Added
+- Added a new `HighlightExtension` for marking important text using `==` syntax (#1100)
+
+### Fixed
+- Fixed `AutolinkExtension` incorrectly matching URLs after invalid `www.` prefix (#1095, #1103)
+
+## [2.7.1] - 2025-07-20
+
+### Changed
+- Optimized several regular expressions in `RegexHelper` to improve performance (#674, #1086)
+
+### Fixed
+- `EmbedProcessor` no longer calls `updateEmbeds()` when there are no embeds to update (#1081)
+- Fixed missing `benchmark.php` CSV path validation for non-existent files (#1068, #1085)
+
+## [2.7.0] - 2025-05-05
+
+This is a **security release** to address a potential cross-site scripting (XSS) vulnerability when using the `AttributesExtension` with untrusted user input.
+
+### Added
+- Added `attributes/allow` config option to specify which attributes users are allowed to set on elements (default allows virtually all attributes)
+
+### Changed
+- The `AttributesExtension` blocks all attributes starting with `on` unless explicitly allowed via the `attributes/allow` config option
+- The `allow_unsafe_links` option is now respected by the `AttributesExtension` when users specify `href` and `src` attributes
+
+## [2.6.2] - 2025-04-18
+
+### Fixed
+
+- Fixed Attributes extension parsing regression (#1071)
+
+## [2.6.1] - 2024-12-29
+
+### Fixed
+
+- Rendered list items should only add newlines around block-level children (#1059, #1061)
+
+## [2.6.0] - 2024-12-07
+
+This is a **security release** to address potential denial of service attacks when parsing specially crafted,
+malicious input from untrusted sources (like user input).
+
+### Added
+
+- Added `max_delimiters_per_line` config option to prevent denial of service attacks when parsing malicious input
+- Added `table/max_autocompleted_cells` config option to prevent denial of service attacks when parsing large tables
+- The `AttributesExtension` now supports attributes without values (#985, #986)
+- The `AutolinkExtension` exposes two new configuration options to override the default behavior (#969, #987):
+    - `autolink/allowed_protocols` - an array of protocols to allow autolinking for
+    - `autolink/default_protocol` - the default protocol to use when none is specified
+- Added `RegexHelper::isWhitespace()` method to check if a given character is an ASCII whitespace character
+- Added `CacheableDelimiterProcessorInterface` to ensure linear complexity for dynamic delimiter processing
+- Added `Bracket` delimiter type to optimize bracket parsing
+
+### Changed
+
+- `[` and `]` are no longer added as `Delimiter` objects on the stack; a new `Bracket` type with its own stack is used instead
+- `UrlAutolinkParser` no longer parses URLs with more than 127 subdomains
+- Expanded reference links can no longer exceed 100kb, or the size of the input document (whichever is greater)
+- Delimiters should always provide a non-null value via `DelimiterInterface::getIndex()`
+  - We'll attempt to infer the index based on surrounding delimiters where possible
+- The `DelimiterStack` now accepts integer positions for any `$stackBottom` argument
+- Several small performance optimizations
+
+## [2.5.3] - 2024-08-16
+
+### Changed
+
+- Made compatible with CommonMark spec 0.31.1, including:
+  - Remove `source`, add `search` to list of recognized block tags
+
+## [2.5.2] - 2024-08-14
+
+### Changed
+
+- Boolean attributes now require an explicit `true` value (#1040)
+
+### Fixed
+
+- Fixed regression where text could be misinterpreted as an attribute (#1040)
+
+## [2.5.1] - 2024-07-24
+
+### Fixed
+
+- Fixed attribute parsing incorrectly parsing mustache-like syntax (#1035)
+- Fixed incorrect `Table` start line numbers (#1037)
+
+## [2.5.0] - 2024-07-22
+
+### Added
+
+- The `AttributesExtension` now supports attributes without values (#985, #986)
+- The `AutolinkExtension` exposes two new configuration options to override the default behavior (#969, #987):
+    - `autolink/allowed_protocols` - an array of protocols to allow autolinking for
+    - `autolink/default_protocol` - the default protocol to use when none is specified
+
+### Changed
+
+- Made compatible with CommonMark spec 0.31.0, including:
+    - Allow closing fence to be followed by tabs
+    - Remove restrictive limitation on inline comments
+    - Unicode symbols now treated like punctuation (for purposes of flankingness)
+    - Trailing tabs on the last line of indented code blocks will be excluded
+    - Improved HTML comment matching
+- `Paragraph`s only containing link reference definitions will be kept in the AST until the `Document` is finalized
+    - (These were previously removed immediately after parsing the `Paragraph`)
+
+### Fixed
+
+- Fixed list tightness not being determined properly in some edge cases
+- Fixed incorrect ending line numbers for several block types in various scenarios
+- Fixed lowercase inline HTML declarations not being accepted
+
+## [2.4.4] - 2024-07-22
+
+### Fixed
+
+- Fixed SmartPunct extension changing already-formatted quotation marks (#1030)
+
+## [2.4.3] - 2024-07-22
+
+### Fixed
+
+- Fixed the Attributes extension not supporting CSS level 3 selectors (#1013)
+- Fixed `UrlAutolinkParser` incorrectly parsing text containing `www` anywhere before an autolink (#1025)
+
+
+## [2.4.2] - 2024-02-02
+
+### Fixed
+
+- Fixed declaration parser being too strict
+- `FencedCodeRenderer`: don't add `language-` to class if already prefixed
+
+### Deprecated
+
+- Returning dynamic values from `DelimiterProcessorInterface::getDelimiterUse()` is deprecated
+    - You should instead implement `CacheableDelimiterProcessorInterface` to help the engine perform caching to avoid performance issues.
+- Failing to set a delimiter's index (or returning `null` from `DelimiterInterface::getIndex()`) is deprecated and will not be supported in 3.0
+- Deprecated `DelimiterInterface::isActive()` and `DelimiterInterface::setActive()`, as these are no longer used by the engine
+- Deprecated `DelimiterStack::removeEarlierMatches()` and `DelimiterStack::searchByCharacter()`, as these are no longer used by the engine
+- Passing a `DelimiterInterface` as the `$stackBottom` argument to `DelimiterStack::processDelimiters()` or `::removeAll()` is deprecated and will not be supported in 3.0; pass the integer position instead.
+
+### Fixed
+
+- Fixed NUL characters not being replaced in the input
+- Fixed quadratic complexity parsing unclosed inline links
+- Fixed quadratic complexity parsing emphasis and strikethrough delimiters
+- Fixed issue where having 500,000+ delimiters could trigger a [known segmentation fault issue in PHP's garbage collection](https://bugs.php.net/bug.php?id=68606)
+- Fixed quadratic complexity deactivating link openers
+- Fixed quadratic complexity parsing long backtick code spans with no matching closers
+- Fixed catastrophic backtracking when parsing link labels/titles
+
+## [2.4.1] - 2023-08-30
+
+### Fixed
+
+- Fixed `ExternalLinkProcessor` not fully disabling the `rel` attribute when configured to do so (#992)
+
+## [2.4.0] - 2023-03-24
+
+### Added
+
+- Added generic `CommonMarkException` marker interface for all exceptions thrown by the library
+- Added several new specific exception types implementing that marker interface:
+    - `AlreadyInitializedException`
+    - `InvalidArgumentException`
+    - `IOException`
+    - `LogicException`
+    - `MissingDependencyException`
+    - `NoMatchingRendererException`
+    - `ParserLogicException`
+- Added more configuration options to the Heading Permalinks extension (#939):
+    - `heading_permalink/apply_id_to_heading` - When `true`, the `id` attribute will be applied to the heading element itself instead of the `<a>` tag
+    - `heading_permalink/heading_class` - class to apply to the heading element
+    - `heading_permalink/insert` - now accepts `none` to prevent the creation of the `<a>` link
+- Added new `table/alignment_attributes` configuration option to control how table cell alignment is rendered (#959)
+
+### Changed
+
+- Change several thrown exceptions from `RuntimeException` to `LogicException` (or something extending it), including:
+    - `CallbackGenerator`s that fail to set a URL or return an expected value
+    - `MarkdownParser` when deactivating the last block parser or attempting to get an active block parser when they've all been closed
+    - Adding items to an already-initialized `Environment`
+    - Rendering a `Node` when no renderer has been registered for it
+- `HeadingPermalinkProcessor` now throws `InvalidConfigurationException` instead of `RuntimeException` when invalid config values are given.
+- `HtmlElement::setAttribute()` no longer requires the second parameter for boolean attributes
+- Several small micro-optimizations
+- Changed Strikethrough to only allow 1 or 2 tildes per the updated GFM spec
+
+### Fixed
+
+- Fixed inaccurate `@throws` docblocks throughout the codebase, including `ConverterInterface`, `MarkdownConverter`, and `MarkdownConverterInterface`.
+    - These previously suggested that only `\RuntimeException`s were thrown, which was inaccurate as `\LogicException`s were also possible.
+
+## [2.3.9] - 2023-02-15
+
+### Fixed
+
+- Fixed autolink extension not detecting some URIs with underscores (#956)
+
+## [2.3.8] - 2022-12-10
+
+### Fixed
+
+- Fixed parsing issues when `mb_internal_encoding()` is set to something other than `UTF-8` (#951)
+
+## [2.3.7] - 2022-11-03
+
+### Fixed
+
+- Fixed `TaskListItemMarkerRenderer` not including HTML attributes set on the node by other extensions (#947)
+
+## [2.3.6] - 2022-10-30
+
+### Fixed
+
+- Fixed unquoted attribute parsing when closing curly brace is followed by certain characters (like a `.`) (#943)
+
+## [2.3.5] - 2022-07-29
+
+### Fixed
+
+- Fixed error using `InlineParserEngine` when no inline parsers are registered in the `Environment` (#908)
+
+## [2.3.4] - 2022-07-17
+
+### Changed
+
+- Made a number of small tweaks to the embed extension's parsing behavior to fix #898:
+    - Changed `EmbedStartParser` to always capture embed-like lines in container blocks, regardless of parent block type
+    - Changed `EmbedProcessor` to also remove `Embed` blocks that aren't direct children of the `Document`
+    - Increased the priority of `EmbedProcessor` to `1010`
+
+### Fixed
+
+- Fixed `EmbedExtension` not parsing embeds following a list block (#898)
+
+## [2.3.3] - 2022-06-07
+
+### Fixed
+
+- Fixed `DomainFilteringAdapter` not reindexing the embed list (#884, #885)
+
+## [2.3.2] - 2022-06-03
+
+### Fixed
+
+- Fixed FootnoteExtension stripping extra characters from tab-indented footnotes (#881)
+
+## [2.2.5] - 2022-06-03
+
+### Fixed
+
+- Fixed FootnoteExtension stripping extra characters from tab-indented footnotes (#881)
+
+## [2.3.1] - 2022-05-14
+
+### Fixed
+
+- Fixed AutolinkExtension not ignoring trailing strikethrough syntax (#867)
+
+## [2.2.4] - 2022-05-14
+
+### Fixed
+
+- Fixed AutolinkExtension not ignoring trailing strikethrough syntax (#867)
+
+## [2.3.0] - 2022-04-07
+
+### Added
+
+- Added new `EmbedExtension` (#805)
+- Added `DocumentRendererInterface` as a replacement for the now-deprecated `MarkdownRendererInterface`
+
+### Deprecated
+
+- Deprecated `MarkdownRendererInterface`; use `DocumentRendererInterface` instead
+
+## [2.2.3] - 2022-02-26
+
+### Fixed
+
+- Fixed front matter parsing with Windows line endings (#821)
+
+## [2.1.3] - 2022-02-26
+
+### Fixed
+
+- Fixed front matter parsing with Windows line endings (#821)
+
+## [2.0.4] - 2022-02-26
+
+### Fixed
+
+- Fixed front matter parsing with Windows line endings (#821)
+
 ## [2.2.2] - 2022-02-13
 
 ### Fixed
@@ -416,13 +771,47 @@ No changes were introduced since the previous release.
     - Alternative 1: Use `CommonMarkConverter` or `GithubFlavoredMarkdownConverter` if you don't need to customize the environment
     - Alternative 2: Instantiate a new `Environment` and add the necessary extensions yourself
 
-[unreleased]: https://github.com/thephpleague/commonmark/compare/2.2.2...main
+[unreleased]: https://github.com/thephpleague/commonmark/compare/2.9.0...HEAD
+[2.9.0]: https://github.com/thephpleague/commonmark/compare/2.8.3...2.9.0
+[2.8.3]: https://github.com/thephpleague/commonmark/compare/2.8.2...2.8.3
+[2.8.2]: https://github.com/thephpleague/commonmark/compare/2.8.1...2.8.2
+[2.8.1]: https://github.com/thephpleague/commonmark/compare/2.8.0...2.8.1
+[2.8.0]: https://github.com/thephpleague/commonmark/compare/2.7.1...2.8.0
+[2.7.1]: https://github.com/thephpleague/commonmark/compare/2.7.0...2.7.1
+[2.7.0]: https://github.com/thephpleague/commonmark/compare/2.6.2...2.7.0
+[2.6.2]: https://github.com/thephpleague/commonmark/compare/2.6.1...2.6.2
+[2.6.1]: https://github.com/thephpleague/commonmark/compare/2.6.0...2.6.1
+[2.6.0]: https://github.com/thephpleague/commonmark/compare/2.5.3...2.6.0
+[2.5.3]: https://github.com/thephpleague/commonmark/compare/2.5.2...2.5.3
+[2.5.2]: https://github.com/thephpleague/commonmark/compare/2.5.1...2.5.2
+[2.5.1]: https://github.com/thephpleague/commonmark/compare/2.5.0...2.5.1
+[2.5.0]: https://github.com/thephpleague/commonmark/compare/2.4.4...2.5.0
+[2.4.4]: https://github.com/thephpleague/commonmark/compare/2.4.3...2.4.4
+[2.4.3]: https://github.com/thephpleague/commonmark/compare/2.4.2...2.4.3
+[2.4.2]: https://github.com/thephpleague/commonmark/compare/2.4.1...2.4.2
+[2.4.1]: https://github.com/thephpleague/commonmark/compare/2.4.0...2.4.1
+[2.4.0]: https://github.com/thephpleague/commonmark/compare/2.3.9...2.4.0
+[2.3.9]: https://github.com/thephpleague/commonmark/compare/2.3.8...2.3.9
+[2.3.8]: https://github.com/thephpleague/commonmark/compare/2.3.7...2.3.8
+[2.3.7]: https://github.com/thephpleague/commonmark/compare/2.3.6...2.3.7
+[2.3.6]: https://github.com/thephpleague/commonmark/compare/2.3.5...2.3.6
+[2.3.5]: https://github.com/thephpleague/commonmark/compare/2.3.4...2.3.5
+[2.3.4]: https://github.com/thephpleague/commonmark/compare/2.3.3...2.3.4
+[2.3.3]: https://github.com/thephpleague/commonmark/compare/2.3.2...2.3.3
+[2.3.2]: https://github.com/thephpleague/commonmark/compare/2.3.2...main
+[2.3.1]: https://github.com/thephpleague/commonmark/compare/2.3.0...2.3.1
+[2.3.0]: https://github.com/thephpleague/commonmark/compare/2.2.3...2.3.0
+[2.2.5]: https://github.com/thephpleague/commonmark/compare/2.2.4...2.2.5
+[2.2.4]: https://github.com/thephpleague/commonmark/compare/2.2.3...2.2.4
+[2.2.3]: https://github.com/thephpleague/commonmark/compare/2.2.2...2.2.3
 [2.2.2]: https://github.com/thephpleague/commonmark/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/thephpleague/commonmark/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/thephpleague/commonmark/compare/2.1.1...2.2.0
+[2.1.3]: https://github.com/thephpleague/commonmark/compare/2.1.2...2.1.3
 [2.1.2]: https://github.com/thephpleague/commonmark/compare/2.1.1...2.1.2
 [2.1.1]: https://github.com/thephpleague/commonmark/compare/2.0.2...2.1.1
 [2.1.0]: https://github.com/thephpleague/commonmark/compare/2.0.2...2.1.0
+[2.0.4]: https://github.com/thephpleague/commonmark/compare/2.0.3...2.0.4
 [2.0.3]: https://github.com/thephpleague/commonmark/compare/2.0.2...2.0.3
 [2.0.2]: https://github.com/thephpleague/commonmark/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/thephpleague/commonmark/compare/2.0.0...2.0.1

@@ -121,7 +121,7 @@ class DuskBrowserMacros
     {
         return function () {
             /** @var \Laravel\Dusk\Browser $this */
-            return $this->waitUsing(5, 75, function () {
+            return $this->waitUsing(6, 25, function () {
                 return $this->driver->executeScript("return !! window.Livewire.components.initialRenderIsFinished");
             });
         };
@@ -131,7 +131,7 @@ class DuskBrowserMacros
     {
         return function ($callback = null) {
             /** @var \Laravel\Dusk\Browser $this */
-            $id = rand(100, 1000);
+            $id = str()->random();
 
             $this->script([
                 "window.duskIsWaitingForLivewireRequest{$id} = true",
@@ -143,22 +143,22 @@ class DuskBrowserMacros
             if ($callback) {
                 $callback($this);
 
-                // Wait a quick sec for Livewire to hear a click and send a request.
-                $this->pause(25);
-
-                return $this->waitUsing(5, 50, function () use ($id) {
+                return $this->waitUsing(6, 25, function () use ($id) {
                     return $this->driver->executeScript("return window.duskIsWaitingForLivewireRequest{$id} === undefined");
                 }, 'Livewire request was never triggered');
             }
 
             // If no callback is passed, make ->waitForLivewire a higher-order method.
             return new class($this, $id) {
+                public $browser;
+                public $id;
+                
                 public function __construct($browser, $id) { $this->browser = $browser; $this->id = $id; }
 
                 public function __call($method, $params)
                 {
                     return tap($this->browser->{$method}(...$params), function ($browser) {
-                        $browser->waitUsing(5, 25, function () use ($browser) {
+                        $browser->waitUsing(6, 25, function () use ($browser) {
                             return $browser->driver->executeScript("return window.duskIsWaitingForLivewireRequest{$this->id} === undefined");
                         }, 'Livewire request was never triggered');
                     });

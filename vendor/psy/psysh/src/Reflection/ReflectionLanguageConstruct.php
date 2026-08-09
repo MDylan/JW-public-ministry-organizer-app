@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2026 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -21,20 +21,18 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
     /**
      * Language construct parameter definitions.
      */
-    private static $languageConstructs = [
+    private const LANGUAGE_CONSTRUCTS = [
         'isset' => [
-            'var' => [],
-            '...' => [
-                'isOptional'   => true,
-                'defaultValue' => null,
+            'var'  => [],
+            'vars' => [
+                'isVariadic' => true,
             ],
         ],
 
         'unset' => [
-            'var' => [],
-            '...' => [
-                'isOptional'   => true,
-                'defaultValue' => null,
+            'var'  => [],
+            'vars' => [
+                'isVariadic' => true,
             ],
         ],
 
@@ -44,14 +42,26 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
 
         'echo' => [
             'arg1' => [],
-            '...'  => [
-                'isOptional'   => true,
-                'defaultValue' => null,
+            'args' => [
+                'isVariadic' => true,
             ],
         ],
 
         'print' => [
             'arg' => [],
+        ],
+
+        'array' => [
+            'values' => [
+                'isVariadic' => true,
+            ],
+        ],
+
+        'list' => [
+            'var'  => [],
+            'vars' => [
+                'isVariadic' => true,
+            ],
         ],
 
         'die' => [
@@ -95,8 +105,6 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
 
     /**
      * Get language construct name.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -105,12 +113,20 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
 
     /**
      * None of these return references.
-     *
-     * @return bool
      */
     public function returnsReference(): bool
     {
         return false;
+    }
+
+    public function hasReturnType(): bool
+    {
+        return false;
+    }
+
+    public function getReturnType(): ?\ReflectionType
+    {
+        return null;
     }
 
     /**
@@ -121,7 +137,7 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
     public function getParameters(): array
     {
         $params = [];
-        foreach (self::$languageConstructs[$this->keyword] as $parameter => $opts) {
+        foreach (self::LANGUAGE_CONSTRUCTS[$this->keyword] as $parameter => $opts) {
             $params[] = new ReflectionLanguageConstructParameter($this->keyword, $parameter, $opts);
         }
 
@@ -145,8 +161,6 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
 
     /**
      * To string.
-     *
-     * @return string
      */
     public function __toString(): string
     {
@@ -157,11 +171,19 @@ class ReflectionLanguageConstruct extends \ReflectionFunctionAbstract
      * Check whether keyword is a (known) language construct.
      *
      * @param string $keyword
-     *
-     * @return bool
      */
     public static function isLanguageConstruct(string $keyword): bool
     {
-        return \array_key_exists($keyword, self::$languageConstructs);
+        return \array_key_exists($keyword, self::LANGUAGE_CONSTRUCTS);
+    }
+
+    /**
+     * Get known language construct names.
+     *
+     * @return string[]
+     */
+    public static function getNames(): array
+    {
+        return \array_keys(self::LANGUAGE_CONSTRUCTS);
     }
 }

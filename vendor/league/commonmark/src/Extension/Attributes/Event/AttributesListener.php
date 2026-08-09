@@ -29,6 +29,19 @@ final class AttributesListener
     private const DIRECTION_PREFIX = 'prefix';
     private const DIRECTION_SUFFIX = 'suffix';
 
+    /** @var list<string> */
+    private array $allowList;
+    private bool $allowUnsafeLinks;
+
+    /**
+     * @param list<string> $allowList
+     */
+    public function __construct(array $allowList = [], bool $allowUnsafeLinks = true)
+    {
+        $this->allowList        = $allowList;
+        $this->allowUnsafeLinks = $allowUnsafeLinks;
+    }
+
     public function processDocument(DocumentParsedEvent $event): void
     {
         foreach ($event->getDocument()->iterator() as $node) {
@@ -50,7 +63,7 @@ final class AttributesListener
                     $attributes = AttributesHelper::mergeAttributes($node->getAttributes(), $target);
                 }
 
-                $target->data->set('attributes', $attributes);
+                $target->data->set('attributes', AttributesHelper::filterAttributes($attributes, $this->allowList, $this->allowUnsafeLinks));
             }
 
             $node->detach();
@@ -81,7 +94,16 @@ final class AttributesListener
             }
 
             if ($node instanceof AttributesInline && ($previous === null || ($previous instanceof AbstractInline && $node->isBlock()))) {
-                continue;
+                // Once this condition holds it holds for every remaining iteration, as walking
+                // further to the left can only ever yield another inline sibling or null. No
+                // sibling can therefore be chosen, so the target must be the parent; continuing
+                // to walk would only re-scan the remaining siblings for nothing.
+                if (! $node->parent() instanceof FencedCode) {
+                    $target    = $node->parent();
+                    $direction = self::DIRECTION_SUFFIX;
+                }
+
+                break;
             }
 
             if ($previous !== null && ! self::isAttributesNode($previous)) {

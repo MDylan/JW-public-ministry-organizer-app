@@ -16,15 +16,15 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
             'name' => null,
         ]);
 
-        $this->get(route('finish_registration_cancel', ['id' => $registered->id]))->assertForbidden();
+        // A `cancel` a v1-patch H óta POST: az aláírás önmagában azt igazolja,
+        // hogy a linket mi adtuk ki, azt nem, hogy a felhasználó szándékosan
+        // nyitotta meg - egy adatot törlő GET-et böngészőelőtöltés is elsüthet.
+        $this->post(route('finish_registration_cancel', ['id' => $registered->id]))->assertForbidden();
 
-        $admin = $this->createUser([
-            'role' => 'mainAdmin',
-            'email' => 'signed-admin@example.test',
-        ]);
-        $this->actingAs($admin)
-            ->get(route('admin.loginback', ['id' => $admin->id]))
-            ->assertForbidden();
+        // Az `admin.loginback` KORÁBBAN itt szerepelt, aláírt GET-ként. A
+        // visszaút azóta nem URL-ből, hanem szerveroldali sessionből dolgozik,
+        // ezért az aláírás-ellenőrzés helyét a session-kötés vette át; azt a
+        // Tests\Feature\Auth\ImpersonationTest fedi.
 
         $user = $this->createUser(['email' => 'signed-delete@example.test']);
         $this->actingAs($user)

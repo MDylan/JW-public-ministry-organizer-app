@@ -89,5 +89,5 @@
 </div>
 @endsection
 @if (config('security.use_recaptcha'))
-    @include('auth.recaptcha-script', ['formId' => 'loginForm'])
+    @include('auth.recaptcha-script', ['formId' => 'loginForm', 'action' => 'login'])
 @endif
