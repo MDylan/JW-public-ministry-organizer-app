@@ -83,9 +83,29 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   3. Deleting a user left the row orphaned. Fixed by TODO 33.5 in `UserObserver::deleted()`, which
      calls `clearPendingEmail()`. `User` has no `SoftDeletes`, so that event is a real delete.
 
+  **A model event is not enough on its own, and that is worth knowing before adding another delete
+  path.** A builder delete (`User::where(...)->delete()`) fires no model events, so the observer
+  never runs. Both live routes that did that — `users:purge-unverified` and
+  `FinishRegistration::cancel()` — now delete one instance at a time for exactly this reason. Any
+  new bulk delete of users has to do the same, or clear the pending rows itself.
+
   `activate()` carries a second guard from the same change set: if another user took the address
   while the mail was in flight, it reports the collision instead of throwing `SQLSTATE[23000]`
-  inside a signed-link GET. All of it is pinned by `tests/Feature/NewEmail/` (40 tests).
+  inside a signed-link GET. Both halves are needed — a pre-check for the ordinary case, and a catch
+  around the write for the window the pre-check cannot cover, since the competing row belongs to a
+  user that does not exist yet.
+
+  **The locking contract.** Every mutation of a user's pending rows runs inside a transaction
+  holding `lockForUpdate()` on that user's `users` row, and `activate()` re-reads the user *after*
+  taking the lock rather than trusting the instance the relation loaded. Without that re-read a
+  concurrent anonymization was silently undone: `Model::save()` writes only the dirty attributes, so
+  the activation would have written `email` alone and left a row reading `isAnonymized = 1` while
+  carrying the real address. The unique index `pending_user_emails_user_unique` on
+  `(user_type, user_id)` is the backstop underneath the lock — one pending row per user is now a
+  schema rule, not just an intention.
+
+  All of it is pinned by `tests/Feature/NewEmail/` (53 tests), the concurrency and cleanup halves in
+  `PendingEmailIntegrityTest`.
 
 - **The `settings.languages` blob has one shape, and it was not always written that way.**
   It is the registry of the locales the deployment offers, read everywhere through

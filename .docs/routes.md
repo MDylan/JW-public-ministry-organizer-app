@@ -334,12 +334,14 @@ framework redirected and the package's own message never reached anyone. Roadmap
 direction and added the message.
 
 Two further outcomes leave `users.email` untouched and land on the same pages with a
-`profile_message` flash: the user was anonymized since the link went out, and the address was taken
-by someone else while the mail was in flight. **The flash key is `profile_message` on purpose** —
+`profile_message` flash: the user was anonymized since the link went out (checked on a re-read under
+`lockForUpdate()`, not on the instance the relation loaded), and the address was taken by someone
+else while the mail was in flight (reported both by a pre-check and by catching the unique
+violation, which covers the window the pre-check cannot). **The flash key is `profile_message` on purpose** —
 `user/profile.blade.php` and `auth/login.blade.php` are the two views that render it as a red alert,
 and nothing in the project renders one named `error`.
 
-Behaviour is pinned by `tests/Feature/NewEmail/` (40 tests, roadmap TODO 19.1 and 33.5).
+Behaviour is pinned by `tests/Feature/NewEmail/` (53 tests, roadmap TODO 19.1 and 33.5).
 
 ## Route Observations
 

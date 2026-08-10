@@ -18,7 +18,7 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 
 | Signature | Class | Purpose |
 |---|---|---|
-| `users:purge-unverified` | `PurgeUnverifiedUsers` | Deletes users who have not verified their email within a week. **Skips anonymized rows** - anonymization empties `email_verified_at` (TODO 33.2), and those rows are retained deliberately so `events.user_id` and `group_user.user_id` keep resolving. |
+| `users:purge-unverified` | `PurgeUnverifiedUsers` | Deletes users who have not verified their email within a week. **Skips anonymized rows** - anonymization empties `email_verified_at` (TODO 33.2), and those rows are retained deliberately so `events.user_id` and `group_user.user_id` keep resolving. **Deletes one instance at a time on purpose** (TODO 33.5): a builder delete fires no model events, so `UserObserver::deleted()` never ran and the pending e-mail row of every purged user was left orphaned. |
 | `events:expire-pending` | `ExpirePendingEvents` | Marks still-pending events (`status=0`) as denied (`status=2`) once their start time has passed. |
 | `gdpr:anonymize-inactive` | `AnonymizeInactiveUsers` | Anonymizes users inactive beyond `gdpr.settings.ttl` months. Skips anyone the succession rule blocks (see below), then detaches group memberships and anonymizes. Reports the skipped count. No-op when `gdpr.enabled` is false. |
 | `gdpr:notify-anonymization` | `NotifyUpcomingAnonymization` | Warns users approaching the retention limit, and separately alerts group editors (`roler`, `admin`) about members in a narrow 6-7 day window. Both halves apply the same succession rule as the anonymizer, so a user who cannot be anonymized is not warned either. No-op when `gdpr.enabled` is false. |

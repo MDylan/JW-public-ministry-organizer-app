@@ -944,7 +944,8 @@ somebody pressed save. The instruction had been written from reading the vendor
 driver, not from measuring the data.
 
 **TODO 33.5 shipped on 2026-08-10 too**, again in one sitting, suite
-**1340 -> 1348 tests**. Its lesson is not about the package at all: the plan
+**1340 -> 1361 tests** including a same-day audit follow-up. Its first lesson is
+not about the package at all: the plan
 said "fail into a flash message", and the obvious key for that - `error` - is
 rendered by **no view in this project**. Writing it would have reproduced, in the
 fix, the exact defect TODO 19 recorded as its sixth finding: the package's own
@@ -953,6 +954,16 @@ the layouts actually render. The other measurement worth carrying forward: all
 three numbers this item was specified with (30 tests, 5 known-gap cases, 2
 language files) were stale by the time it ran - 32, 7 and 3. Re-measure before
 executing a Phase 2 specification, however precise it looks.
+
+**And then an external audit found three more defects in the same change set**,
+two of which were the original defect in a different disguise. The one worth
+carrying into every later item: **a guard that reads its condition before the
+window and writes after it is not a guard**, and `Model::save()` writing only the
+dirty attributes is what makes that failure silent rather than loud. The second:
+**an observer only fixes the paths that go through the model** - a builder delete
+fires no events, and this codebase had two of those on live routes. Both are
+patterns, not accidents of this feature; the roadmap has other items that lean on
+observers and on read-then-write guards.
 
 Still open in this phase: **TODO 32** (migration squash), which deserves its own
 plan - though every item priced as multi-day so far has turned out to be one
@@ -1676,7 +1687,7 @@ and is not covered by a general test.
   - Expected changes: as delivered.
 
 - [x] **TODO 33.5: Replace `protonemedia/laravel-verify-new-email` with in-house code** - DONE
-  - Delivered on 2026-08-10, in one sitting. Suite **1340 -> 1348 tests, 3728 -> 3753 assertions, green.** This is the execution of the TODO 19 decision. It sat in Phase 3 rather than Phase 10 for a reason that differs from 33.2/33.3/33.4: this package's constraint really **is** bounded (`illuminate/support ^8.67||^9.0` in the installed 1.6.0), so Composer really would have failed on it - at **Phase 5**, not Phase 10. But that half was a lock bump, not a decision, and the replacement code is framework-neutral, so writing it here removed the package from the Phase 5, 8, 9 and 10 resolutions in one move. Read TODO 19 first; it carries the measurements and the five defects.
+  - Delivered on 2026-08-10, in one sitting, plus a same-day follow-up for an external audit (see below). Suite **1340 -> 1361 tests, 3728 -> 3790 assertions, green.** This is the execution of the TODO 19 decision. It sat in Phase 3 rather than Phase 10 for a reason that differs from 33.2/33.3/33.4: this package's constraint really **is** bounded (`illuminate/support ^8.67||^9.0` in the installed 1.6.0), so Composer really would have failed on it - at **Phase 5**, not Phase 10. But that half was a lock bump, not a decision, and the replacement code is framework-neutral, so writing it here removed the package from the Phase 5, 8, 9 and 10 resolutions in one move. Read TODO 19 first; it carries the measurements and the five defects.
 
   - **CORRECTION to this entry's own numbers, all three measured before starting.** They had gone stale between TODO 19 and the execution:
     1. **The suite is 32 tests, not 30.** `PendingEmailFlowTest` 12, `PendingEmailVerificationTest` 13, `PendingEmailKnownGapsTest` **7** - the v1-patch B12/B13 work added two and reversed four.
@@ -1710,9 +1721,21 @@ and is not covered by a general test.
 
   - **One test-writing note worth keeping:** `Mail::fake()` and `Mailable::render()` are mutually exclusive - `MailFake` has no `render()`. The test that proves the first-verification body carries no untranslated stub text therefore creates its row through `createPendingUserEmailModel()`, the non-sending half of `newEmail()`, and skips the fake entirely.
 
+  - **AN EXTERNAL AUDIT OF THIS CHANGE SET FOUND THREE MORE, AND TWO OF THEM WERE THE ORIGINAL DEFECT WEARING A DIFFERENT HAT.** Fixed in a follow-up commit on the same day; suite **1348 -> 1361 tests, 3753 -> 3790 assertions**. All three are worth reading, because the pattern behind them is not specific to this feature.
+
+    1. **The anonymization guard was defeated by an interleaving, and it failed silently.** `activate()` decided on the user instance the relation had already loaded, then saved it. An anonymization landing in between was undone - and because `Model::save()` writes only the DIRTY attributes, only `email` was written: the row kept `isAnonymized = 1` while carrying the real address back. Anonymized to every reader, and not anonymized in fact - precisely the GDPR defect this item recorded as closed. **A guard that reads before the window and writes after it is not a guard.** Fixed with a transaction that re-reads the user under `lockForUpdate()`; the same rule now covers the create side, so every mutation of a user's pending rows happens under a lock on that user's `users` row.
+
+    2. **The observer was the only cleanup path, and two live routes delete users without firing model events.** `users:purge-unverified` (hourly) and `FinishRegistration::cancel()` both used `User::where(...)->delete()`, which is a builder delete: no `deleted` event, so `UserObserver::deleted()` never ran. The purge is the sharper one - it selects *unverified* users, which is exactly the population that has a pending row, because an unverified account is the one that receives the first confirmation mail. Both now delete one instance at a time. **The general lesson: an observer is a fix only for the paths that go through the model.** Grep for builder deletes before calling an observer sufficient.
+
+    3. **Nothing enforced "one pending row per user", and the collision catch had a hole.** The clear-then-create was two statements with no transaction and no unique index behind it, so two concurrent profile updates could leave two rows and two live signed links - and a resend would stop being a token rotation. And `addressIsTaken()` could not close its own window: the competing row belongs to a user that does not exist yet, so there is nothing to lock, and the documented `SQLSTATE[23000]` 500 was still reachable. Fixed by the transaction above, by `2026_08_10_170000_add_unique_user_index_to_pending_user_emails` (which deduplicates deterministically - highest `id` per user survives - before adding the index), and by catching the unique violation on the write and reporting it as `REJECTED_TAKEN`.
+
+  - **Test churn from the audit: 40 -> 53**, the new ones in `tests/Feature/NewEmail/PendingEmailIntegrityTest.php`. **Five control experiments were run, one per fix**, each confirming the matching test fails without it: the stale re-read (2 tests fail), the two builder deletes (2), the unique-violation catch (1, as an error), the migration held out of `database/migrations/` (2 - rolling it back on the dev database proves nothing, because `RefreshDatabase` builds the test schema from the files), and the create transaction (1).
+  - **One test was written that did not discriminate, and it is recorded because the mistake is easy to repeat.** "The pending row is gone after a refusal" stays green when the activation *succeeds*, since a successful activation also clears the table. It only became a test of the guard once paired with an assertion that the address did **not** move. A test that passes in both worlds measures nothing.
+  - **And one limit stated rather than papered over:** a single-threaded PHPUnit run cannot produce the interleaving the row lock exists for. What the suite does cover from one process is the transaction (a failed create rolls the clear back, so the earlier request survives), the unique index, and the stale-snapshot path - which is reproducible exactly, by writing the competing state through the query builder.
+
   - ~~**Defects 1 and 2 are NOT fixed here - they belong to TODO 33.2**, where `User::anonymize()` is rewritten.~~ **Both shipped earlier, on `v1-patch`, and TODO 33.2 carried them through its rewrite unchanged.** This change set re-pointed `clearPendingEmail()` at the in-house trait and kept the model guard, with its full explanatory comment.
   - **The release note, as executed**, the same shape as TODO 33.4: `install()` never deletes, so `release/upgrade.php` block 5d removes `vendor/protonemedia/` and `resources/views/vendor/verify-new-email/` from deployed hosts. `config/verify-new-email.php`, the `pending_user_emails` table and its migration all **stay** - no data migration, same shape.
-  - Expected changes: as delivered - five new files under `app/`, two new Blade views, one route registration, `config/verify-new-email.php`, `composer.json` / `composer.lock`, six language files, `auth/login.blade.php`, `release/upgrade.php`, three test files, and `.docs/models.md` / `notifications.md` / `routes.md`.
+  - Expected changes: as delivered - five new files under `app/`, two new Blade views, one route registration, `config/verify-new-email.php`, `composer.json` / `composer.lock`, six language files, `auth/login.blade.php`, `release/upgrade.php`, three test files, and `.docs/models.md` / `notifications.md` / `routes.md`. The audit follow-up added one migration, one test file, and touched `PurgeUnverifiedUsers`, `FinishRegistration` and `.docs/commands.md`.
 
 - [x] **TODO 33.6: Replace `rakibdevs/openweather-laravel-api` with a direct `Http::` client** - DONE on `v1-patch`
   - Delivered as described, plus the coverage that was the real reason for the swap: `tests/Feature/Weather/OpenWeatherClientTest.php` (15 cases) finally exercises the SUCCESS path with `Http::fake()`, which the package's inline Guzzle client made impossible. One extra defect found while doing it: a failed refresh used to bump `updated_at`, so an unreachable API marked stale data fresh for an hour.

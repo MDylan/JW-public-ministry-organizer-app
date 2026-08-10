@@ -71,9 +71,19 @@ class FinishRegistration extends Controller
 
     public function cancel($id, Request $request) {
 
-        User::where('id', '=', $id)
+        // TODO 33.5: DELIBERATELY first() + delete() rather than a mass
+        // `->delete()` on the builder, which fires no model events - so
+        // UserObserver::deleted() never ran and the abandoned registration left
+        // its pending_user_emails row (a real, never-confirmed address) behind
+        // with nothing pointing at it.
+        $user = User::where('id', '=', $id)
                 ->whereNull('email_verified_at')
-                ->where('role', '=', 'registered')->delete();
+                ->where('role', '=', 'registered')
+                ->first();
+
+        if ($user !== null) {
+            $user->delete();
+        }
 
         $request->session()->flash('status', __('user.finish.cancelDone'));
 

@@ -4,6 +4,7 @@ namespace App\Support\Email;
 
 use App\Models\PendingUserEmail;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 
@@ -31,6 +32,18 @@ use Illuminate\Support\Facades\Password;
  *
  * The activation itself - and the two guards that go with it - lives in the
  * PendingUserEmail model, not here.
+ *
+ * THE LOCKING CONTRACT
+ *
+ * Every mutation of a user's pending rows runs inside a transaction holding
+ * `lockForUpdate()` on that user's `users` row, and the unique index on
+ * (user_type, user_id) is the backstop underneath it. Without both, two
+ * concurrent profile updates could leave two rows and two live tokens behind,
+ * and a resend would stop being a token rotation. See the PendingUserEmail
+ * docblock for the other half of the contract.
+ *
+ * The mail is DELIBERATELY sent outside that transaction: a rollback cannot
+ * unsend it, so it must not go out until the row it points at is committed.
  */
 trait MustVerifyNewEmail
 {
@@ -69,18 +82,23 @@ trait MustVerifyNewEmail
     /**
      * A user can have only one pending address at a time, so this clears before
      * it creates. That is what turns a resend into a token rotation rather than
-     * an accumulation.
+     * an accumulation - but only while the clear and the create cannot be
+     * interleaved, which is what the transaction and the row lock are for.
      */
     public function createPendingUserEmailModel(string $email): Model
     {
-        $this->clearPendingEmail();
+        return DB::transaction(function () use ($email) {
+            $this->newQuery()->lockForUpdate()->find($this->getKey());
 
-        return $this->getEmailVerificationModel()->create([
-            'user_type' => get_class($this),
-            'user_id' => $this->getKey(),
-            'email' => $email,
-            'token' => Password::broker()->getRepository()->createNewToken(),
-        ]);
+            $this->clearPendingEmail();
+
+            return $this->getEmailVerificationModel()->create([
+                'user_type' => get_class($this),
+                'user_id' => $this->getKey(),
+                'email' => $email,
+                'token' => Password::broker()->getRepository()->createNewToken(),
+            ]);
+        });
     }
 
     /**
