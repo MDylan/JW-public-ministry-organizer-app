@@ -2,14 +2,14 @@
 
 namespace App\Observers;
 
-// Az EventAutoCheck job a v1-patch B9-ben törölve lett. Futásképtelen volt
-// (üres foreach, érvénytelen '=<' SQL operátor, és a törzse tömbelemen olvasott
-// objektum-property-t), a két dispatch helye pedig kezdettől ki volt
-// kommentelve - lásd lentebb -, tehát bizonyíthatóan soha nem futott.
+// The EventAutoCheck job was removed in v1-patch B9. It was unable to run
+// (empty foreach, invalid '=<' SQL operator, and its body read an
+// object property on an array element), and its two dispatch sites had been
+// commented out from the start - see below -, so it demonstrably never ran.
 //
-// Az automatikus jóváhagyás mint FUNKCIÓ nem szűnt meg: az auto_approval és az
-// auto_back csoportmezők megmaradnak, csak nincs mögöttük megvalósítás. Ha
-// egyszer megírják, új jobbal kell, nem ennek a felélesztésével.
+// Automatic approval as a FEATURE hasn't gone away: the auto_approval and
+// auto_back group fields remain, there's just no implementation behind them.
+// If it's ever built, it needs a new job, not reviving this one.
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\LogHistory;
@@ -46,9 +46,9 @@ class EventObserver
         $history = new LogHistory($saved_data);
         $event->histories()->save($history);
 
-        // A rendszer (causerId 0) sosem egyezik meg az esemény gazdájával,
-        // tehát az értesítés ilyenkor mindig kimegy - ahogy az updated() és a
-        // deleted() is teszi.
+        // The system (causerId 0) never matches the event owner, so the
+        // notification always goes out in this case - just as updated() and
+        // deleted() also do.
         if($event->user_id != $causerId) {
             $data = [
                 'userName' => $this->causerName(),
@@ -68,7 +68,7 @@ class EventObserver
             );
         }
 
-        // Itt állt az EventAutoCheck kikommentelt dispatch-e (v1-patch B9).
+        // The commented-out EventAutoCheck dispatch used to sit here (v1-patch B9).
     }
 
     /**
@@ -84,11 +84,12 @@ class EventObserver
         if(count($changes)) {
             $fillable = $event->getFillable();
             foreach($fillable as $field) {
-                // array_key_exists(), NEM isset(): az isset() NULL értékű
-                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
-                // az audit naplóban. A getDirty() csak ténylegesen változott
-                // mezőket ad vissza, és az alatta lévő $old !== $new őr
-                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                // array_key_exists(), NOT isset(): isset() is false for a key
+                // with a NULL value, so every set-to-NULL change was invisible
+                // in the audit log. getDirty() only returns fields that
+                // actually changed, and the $old !== $new guard below stays
+                // in place, so this simply lets in the previously missing
+                // cases.
                 if(array_key_exists($field, $changes)) {
                     $old = $event->getOriginal($field);
                     $new = $event->$field;
@@ -157,7 +158,7 @@ class EventObserver
                     new EventStatusChangedNotification($data)
                 );
 
-                // Itt állt az EventAutoCheck másik kikommentelt dispatch-e (v1-patch B9).
+                // The other commented-out EventAutoCheck dispatch used to sit here (v1-patch B9).
 
                 if($event->status == 1) {
                     //accept this event, delete in other groups
@@ -192,8 +193,8 @@ class EventObserver
         $event->histories()->save($history);
 
         $data = [
-            // Korábban false volt rendszer-törléskor, ami üresen jelent meg a
-            // levélben; most "SYSTEM", ahogy az updated() már régóta írja.
+            // Used to be false on a system delete, which showed up empty in
+            // the email; now it's "SYSTEM", as updated() has long written it.
             'userName' => $this->causerName(),
             'groupName' => $event->groups->name,
             'replyTo' => $event->groups->replyTo,

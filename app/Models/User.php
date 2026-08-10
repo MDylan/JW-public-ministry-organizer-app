@@ -287,7 +287,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     }
 
     /**
-     * TODO 12.2: az anonimizálás feltétele az utódlás.
+     * TODO 12.2: the condition for anonymization is succession.
      *
      * The guard sits here rather than in the nightly command on purpose: four
      * code paths anonymize a user - the command, the profile-initiated GDPR
@@ -295,11 +295,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      * a rule placed in any one of them is bypassed by the other three.
      * TODO 33.2 removed a fifth path with the Dialect package's own command.
      *
-     * A hívók előre is ellenőrizzenek az AnonymizationPolicy-vel, ha a
-     * blokkolásnak következménye van (üzenet a felhasználónak, a tagságbontás
-     * kihagyása) - ez a metódus csendben nem csinál semmit.
+     * Callers should check with AnonymizationPolicy beforehand if the
+     * blocking has a consequence (a message to the user, skipping the
+     * membership dissolution) - this method silently does nothing in that case.
      *
-     * @return bool megtörtént-e az anonimizálás
+     * @return bool whether the anonymization happened
      */
     public function anonymize($modelChecker = [])
     {
@@ -309,14 +309,13 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
 
         $this->anonymizeAttributes($modelChecker);
 
-        // A függő e-mail cím NEM anonimizálódik magától: a
-        // pending_user_emails sor külön táblában áll, nincs rá idegen kulcs,
-        // és a nyolc observer egyike sem nyúl hozzá. A users.email tehát
-        // lecserélődött, miközben a felhasználó VALÓDI címe határozatlan
-        // ideig bennmaradt a függő táblában - pontosan az az adat, aminek a
-        // törlését kérte.
+        // The pending email address does NOT get anonymized on its own: the
+        // pending_user_emails row lives in a separate table, has no foreign
+        // key to it, and none of the eight observers touch it. So users.email
+        // gets replaced while the user's REAL address stays in the pending
+        // table indefinitely - exactly the data whose deletion was requested.
         //
-        // A kiadott alairt link masik feleert lasd App\Models\PendingUserEmail.
+        // For the other half of the signed link that was issued, see App\Models\PendingUserEmail.
         $this->clearPendingEmail();
 
         return true;

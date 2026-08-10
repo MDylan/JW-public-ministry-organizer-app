@@ -8,37 +8,37 @@ use App\Support\Retention\RetentionWindow;
 use Illuminate\Console\Command;
 
 /**
- * A retenciós ablaknál régebbi csoportadatok végleges törlése.
+ * Permanent deletion of group data older than the retention window.
  *
- * MIÉRT KÜLÖN PARANCS, ÉS MIÉRT NEM A GDPR KAPCSOLÓ VEZÉRLI
+ * WHY A SEPARATE COMMAND, AND WHY IT'S NOT CONTROLLED BY THE GDPR TOGGLE
  *
- * A két érintett tábla nem tartalmaz személyes adatot: a `day_stats` sorai
- * csoportot, napot, idősávot és egy DARABSZÁMOT hordoznak, a `group_dates`
- * pedig a csoport adott napi időpont-beállításait. A törlésüket a méret
- * indokolja - élesben 471 754, illetve 48 033 sor, 2022 júniusáig
- * visszamenőleg, retenció nélkül. Ezért saját, admin felületen állítható
- * kapcsolójuk van (`settings.group_data_retention`), nem a GDPR-é: az
- * ezen a telepítésen ki van kapcsolva, és egy karbantartási feladatot nem
- * blokkolhat egy adatvédelmi kapcsoló.
+ * The two affected tables don't contain personal data: the `day_stats` rows
+ * carry a group, a day, a time slot and a COUNT, and `group_dates`
+ * carries the group's time settings for a given day. Their deletion is
+ * justified by size - 471,754 and 48,033 rows respectively in production, going back
+ * to June 2022, without retention. That's why they have their own toggle,
+ * settable in the admin UI (`settings.group_data_retention`), not the GDPR one: it's
+ * turned off on this installation, and a data-protection toggle must not
+ * block a maintenance task.
  *
- * MIÉRT MEGY A GROUP_DATES IS
+ * WHY GROUP_DATES GOES TOO
  *
- * A Groups\Statistics a napi sorokat a `group_dates`-ből építi, nem a
- * `day_stats`-ból (`isset($dates[$key])`). Ha csak a statisztika tűnne el,
- * a felület nem üres táblát mutatna, hanem minden régi napra egy sort azzal
- * az állítással, hogy a csoport 0 órát szolgált N elérhetőből. A hamis adat
- * rosszabb, mint a hiányzó, ezért a kettő együtt jár.
+ * Groups\Statistics builds the daily rows from `group_dates`, not from
+ * `day_stats` (`isset($dates[$key])`). If only the statistics disappeared,
+ * the UI wouldn't show an empty table, but a row for every old day stating
+ * that the group served 0 hours out of N available. False data is
+ * worse than missing data, so the two go together.
  *
- * KÖTEGELÉS
+ * BATCHING
  *
- * Egyik modellen sincs observer és soft delete, tehát a builder ->delete()
- * eleve nyers DELETE. 350 000 sor viszont egyetlen tranzakcióban nem mehet,
- * ezért 5000-es kötegek `id` szerint - a MySQL grammar támogatja a
- * DELETE ... ORDER BY ... LIMIT alakot.
+ * Neither model has an observer or soft deletes, so the builder's ->delete()
+ * is a raw DELETE to begin with. 350,000 rows, however, can't go in a single
+ * transaction, so it's done in batches of 5000 by `id` - MySQL's grammar supports the
+ * DELETE ... ORDER BY ... LIMIT form.
  */
 class PurgeOldGroupData extends Command
 {
-    /** Egy kötegben ennyi sort törlünk. */
+    /** This many rows deleted per batch. */
     private const BATCH = 5000;
 
     protected $signature = 'maintenance:purge-old-group-data {--dry-run : Report what would be deleted without deleting anything}';
@@ -75,9 +75,9 @@ class PurgeOldGroupData extends Command
     }
 
     /**
-     * Kötegelt törlés. A lezáró feltétel a ténylegesen érintett sorok száma,
-     * nem egy külön count() - így egy párhuzamos írás sem tudja végtelen
-     * ciklusba vinni.
+     * Batched deletion. The closing condition is the number of actually affected rows,
+     * not a separate count() - so a concurrent write can't drive it into an
+     * infinite loop.
      */
     private function purge($query): int
     {

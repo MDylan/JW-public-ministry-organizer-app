@@ -12,10 +12,10 @@ class StaticPageController extends Controller
         $page = StaticPage::where('slug', '=', $slug)->first();
         if(isset($page->id)) {
             //draft, only admin can see this
-            //Auth::check() nélkül a can() null-on hívódna: a route nyilvános
-            //(web.php:62), a '/' pedig guest middleware-rel fut, tehát itt a
-            //vendég a normál eset, nem a kivétel. Vendégként az elseif-lánc
-            //végigfut az else-ig, ami 403-at ad - a 'home' slugra home-404-et.
+            //Without Auth::check() can() would be called on null: the route is public
+            //(web.php:62), and '/' runs with the guest middleware, so here the
+            //guest is the normal case, not the exception. As a guest, the elseif chain
+            //runs through to the else, which gives 403 - and home-404 for the 'home' slug.
             if($page->status === 0 && Auth::check() && Auth::user()->can('is-admin')) {
                 return view('layouts.staticpage', ['page' => $page]);
             } 

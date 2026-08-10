@@ -50,11 +50,12 @@ class GroupDayObserver
         if(count($changes)) {
             $fillable = $groupDay->getFillable();
             foreach($fillable as $field) {
-                // array_key_exists(), NEM isset(): az isset() NULL értékű
-                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
-                // az audit naplóban. A getDirty() csak ténylegesen változott
-                // mezőket ad vissza, és az alatta lévő $old !== $new őr
-                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                // array_key_exists(), NOT isset(): isset() is false for a key
+                // with a NULL value, so every set-to-NULL change was invisible
+                // in the audit log. getDirty() only returns fields that
+                // actually changed, and the $old !== $new guard below stays
+                // in place, so this simply lets in the previously missing
+                // cases.
                 if(array_key_exists($field, $changes)) {
                     $old = $groupDay->getOriginal($field);
                     $new = $groupDay->$field;
@@ -76,10 +77,10 @@ class GroupDayObserver
             $history = new LogHistory($saved_data);
             $groupDay->histories()->save($history);
 
-            // Ugyanaz az isset()-csapda, mint fent, csak itt nem naplózás a
-            // tét, hanem egy job: ha a nyitás vagy zárás idejét NULL-ra
-            // állítják, az éppúgy időpont-változás, és a hatókörön kívülre
-            // került eseményeket akkor is takarítani kell.
+            // Same isset() trap as above, but here it's not logging that's at
+            // stake, it's a job: setting the opening or closing time to NULL
+            // is just as much a time change, and events that fall outside the
+            // scope still need to be cleaned up.
             if(array_key_exists('start_time', $changes) || array_key_exists('end_time', $changes)) {
                 // //we must delete feature events, which not in right timeslot
 
@@ -120,11 +121,11 @@ class GroupDayObserver
         $history = new LogHistory($saved_data);
         $groupDay->histories()->save($history);
 
-        // A takarítást (a sablonból kieső jövőbeli események törlése) korábban
-        // egy innen indított GroupDayDeletedProcess végezte volna. Azt a jobot
-        // a TODO 10.2 törölte: a munkát a GroupDateHelper ->
-        // CalculateDateProcess -> CalculateDatesEvents lánc már elvégzi, még
-        // mielőtt a group_days sorok egyáltalán módosulnának.
+        // The cleanup (deleting future events that fall out of the template)
+        // used to be done by a GroupDayDeletedProcess dispatched from here.
+        // That job was removed by TODO 10.2: the work is already done by the
+        // GroupDateHelper -> CalculateDateProcess -> CalculateDatesEvents
+        // chain, before the group_days rows even change.
     }
 
     /**
@@ -151,10 +152,10 @@ class GroupDayObserver
         $history = new LogHistory($saved_data);
         $groupDay->histories()->save($history);
 
-        // Itt korábban egy GroupDayDeletedProcess::dispatch([...]) állt, ami a
-        // hat konstruktor-argumentumot EGYETLEN tömbként adta át - vagyis
-        // ArgumentCountError lett volna belőle, ha a metódus valaha lefut. Nem
-        // fut le: a GroupDay nem használ SoftDeletes-t, tehát nincs rajta
-        // forceDelete(). A job törlésével (TODO 10.2) a hiba is megszűnt.
+        // A GroupDayDeletedProcess::dispatch([...]) call used to sit here,
+        // passing the six constructor arguments as a SINGLE array - which
+        // would have been an ArgumentCountError if the method ever ran. It
+        // never runs: GroupDay doesn't use SoftDeletes, so it has no
+        // forceDelete(). Removing the job (TODO 10.2) also removed the bug.
     }
 }

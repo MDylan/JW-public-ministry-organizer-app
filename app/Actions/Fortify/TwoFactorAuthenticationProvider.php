@@ -8,27 +8,27 @@ use PragmaRX\Google2FA\Google2FA;
 use Throwable;
 
 /**
- * A TOTP-visszajátszás tényleges megakadályozása (CVE-2022-25838).
+ * Actually preventing TOTP replay (CVE-2022-25838).
  *
- * A Fortify v1.11.2 - az az első verzió, amit az advisory javítottnak jelöl -
- * gyorsítótárazza a felhasznált kód időbélyegét, és onnantól `verifyKeyNewer()`
- * hívással csak SZIGORÚAN újabb kódot fogadna el. A javítás azonban nem ér
- * célba, mert a `PragmaRX\Google2FA` `findValidOTP()`-ja a *legelső* híváskor -
- * amikor még nincs eltárolt időbélyeg, tehát `$oldTimestamp === null` - nem
- * számlálót, hanem a `true` értéket adja vissza. A Fortify azt teszi el, a
- * második hívás pedig `true`-t ad tovább `$oldTimestamp`-ként, amiből a
- * `max($timestamp - $window, true + 1)` kifejezés `2`-t számol - vagyis a
- * kezdőidőbélyeg semmivel nem tolódik el, és ugyanaz a kód másodszor is átmegy.
+ * Fortify v1.11.2 - the first version the advisory marks as fixed -
+ * caches the used code's timestamp, and from then on only accepts a
+ * STRICTLY newer code via the `verifyKeyNewer()` call. The fix, however, doesn't
+ * land, because `PragmaRX\Google2FA`'s `findValidOTP()` on the *very first* call -
+ * when there's no stored timestamp yet, i.e. `$oldTimestamp === null` - returns
+ * not a counter but the value `true`. Fortify stores that away, and the
+ * second call then passes `true` along as `$oldTimestamp`, from which the
+ * expression `max($timestamp - $window, true + 1)` computes `2` - meaning
+ * the starting timestamp doesn't shift at all, and the same code passes a second time too.
  *
- * A provider nemcsak számlálóvá normalizálja az eredményt: a credential és a
- * számláló hashével elkülöníti a felhasználókat, majd atomikus cache-adddal
- * biztosítja, hogy párhuzamos kérések közül is csak egy válthassa be a kódot.
+ * The provider doesn't just normalize the result into a counter: it separates users by
+ * hashing the credential and the counter together, then uses an atomic cache-add to
+ * ensure that even among concurrent requests only one can redeem the code.
  *
- * A kötés az App\Providers\FortifyServiceProvider::boot()-ban él, ugyanúgy,
- * ahogy a DisableTwoFactorAuthentication felüldefiniálása. Mindkét ellenőrzési
- * útvonal - a bejelentkezési kihívás (Fortify TwoFactorLoginRequest) és az
- * alkalmazás saját megerősítése (App\Models\User::confirmTwoFactorAuth) - a
- * contracton keresztül oldja fel a providert, tehát mindkettőre hat.
+ * The binding lives in App\Providers\FortifyServiceProvider::boot(), the same way
+ * DisableTwoFactorAuthentication's override does. Both verification
+ * paths - the login challenge (Fortify TwoFactorLoginRequest) and the
+ * application's own confirmation (App\Models\User::confirmTwoFactorAuth) - resolve
+ * the provider through the contract, so it affects both.
  */
 class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProvider
 {
@@ -49,8 +49,8 @@ class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProv
      */
     public function verify($secret, $code)
     {
-        // A nem null kezdőérték miatt a Google2FA mindig a ténylegesen
-        // illeszkedő időszámlálót adja vissza, nem a `true` értéket.
+        // Because of the non-null starting value, Google2FA always returns the
+        // actually matching time counter, not the value `true`.
         $timestamp = $this->engine->verifyKeyNewer(
             $secret, $code, 0
         );
@@ -65,12 +65,12 @@ class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProv
         $ttl = max($regeneration, (2 * $window + 1) * $regeneration);
 
         try {
-            // Repository::add() atomikus: pontosan egy párhuzamos kérés tudja
-            // lefoglalni ugyanazt a credential + időszámláló párost.
+            // Repository::add() is atomic: exactly one concurrent request can
+            // claim the same credential + time counter pair.
             return $this->cache->add($key, true, $ttl);
         } catch (Throwable $exception) {
-            // Cache nélkül nem tudjuk bizonyítani az egyszeri felhasználást.
-            // A kivételjelentés nem tartalmazza sem a secretet, sem a TOTP-kódot.
+            // Without the cache we can't prove single use.
+            // The exception report contains neither the secret nor the TOTP code.
             report($exception);
 
             return false;

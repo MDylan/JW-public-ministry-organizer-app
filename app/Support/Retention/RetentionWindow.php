@@ -5,40 +5,40 @@ namespace App\Support\Retention;
 use Carbon\Carbon;
 
 /**
- * v1-patch E: meddig visszamenőleg őrzünk adatot.
+ * v1-patch E: how far back we retain data.
  *
- * Ez az EGYETLEN hely, ahol retenciós határnap keletkezik. A két törlő
- * parancs és a négy felületi korlát ugyanezeket a metódusokat hívja, mert
- * a kettőnek nem szabad elsodródnia egymástól: ha a naptár olyan hónapot
- * enged megnyitni, amit a purge már kiürített, a felület nem üres táblát
- * mutat, hanem hamis adatot - nullákat egy valóban ledolgozott időszakra.
+ * This is the ONE place where a retention floor date is produced. The two delete
+ * commands and the four UI limits all call these same methods, because
+ * the two must not drift apart from each other: if the calendar allows opening a
+ * month that the purge has already cleared out, the UI doesn't show an empty
+ * table, it shows false data - zeros for a period that was actually worked.
  *
- * KÉT BUKTATÓ, AMI ITT VAN EGYSZER MEGOLDVA
+ * TWO PITFALLS SOLVED HERE, ONCE
  *
- * 1. A csoportadat-beállítás értékét CASTOLNI TILOS. A settings táblába a
- *    Livewire Admin\Settings validáció nélkül ír, a $state pedig publikus
- *    property - egy odacsempészett 'x' érték (int)-tel nulla lenne,
- *    subMonths(0) pedig a MAI napra tenné a padlót, azaz a parancs az
- *    egész day_stats és group_dates táblát letarolná. Ezért whitelist
- *    (config('retention.group_data_options')), nem konverzió, és minden
- *    ismeretlen érték - a null is - kikapcsolt állapotot jelent.
+ * 1. The group-data setting's value must NOT BE CAST. The Livewire Admin\Settings
+ *    writes into the settings table without validation, and $state is a public
+ *    property - a sneaked-in 'x' value would become zero with (int), and
+ *    subMonths(0) would put the floor on TODAY, i.e. the command would wipe out the
+ *    entire day_stats and group_dates table. Hence a whitelist
+ *    (config('retention.group_data_options')), not a conversion, and every
+ *    unknown value - including null - means a disabled state.
  *
- * 2. subMonthsNoOverflow(), és nap pontosságú összehasonlítás. A Carbon
- *    subMonths() alapból túlcsordul (2026-03-31 mínusz 13 hónap nála
- *    2025-03-03, nem 2025-02-28), az events.day és a day_stats.day pedig
- *    DATE oszlop: időponttal összevetve a határnapi sorok attól függően
- *    törlődnének vagy maradnának, hogy hány órakor futott a scheduler.
- *    A padló ezért mindig nap kezdete, és toDateString()-gel kell
- *    összehasonlítani.
+ * 2. subMonthsNoOverflow(), and day-precision comparison. Carbon's
+ *    subMonths() overflows by default (2026-03-31 minus 13 months gives
+ *    2025-03-03 for it, not 2025-02-28), and events.day and day_stats.day are
+ *    DATE columns: compared against a timestamp, the boundary-day rows would
+ *    get deleted or kept depending on what hour the scheduler ran.
+ *    So the floor is always the start of a day, and must be compared with
+ *    toDateString().
  *
- * A visszaadott Carbon minden hívásnál friss példány, tehát a hívó
- * nyugodtan mutálhatja (startOfMonth(), format() stb.).
+ * The returned Carbon is a fresh instance on every call, so the caller can
+ * safely mutate it (startOfMonth(), format(), etc.).
  */
 class RetentionWindow
 {
     /**
-     * Az események padlója. Null, ha a GDPR-kezelés ki van kapcsolva -
-     * ilyenkor semmilyen esemény nem törlődik.
+     * The events floor. Null if GDPR handling is disabled -
+     * in that case no event gets deleted.
      */
     public static function eventsFloor(): ?Carbon
     {
@@ -50,12 +50,12 @@ class RetentionWindow
     }
 
     /**
-     * A csoportadatok (day_stats, group_dates) padlója. Null, ha az admin
-     * felületi beállítás kikapcsolt vagy ismeretlen értéken áll.
+     * The floor for group data (day_stats, group_dates). Null if the admin
+     * UI setting is disabled or set to an unknown value.
      *
-     * Szándékosan NEM a gdpr.enabled kapcsolja: ezekben a táblákban nincs
-     * személyes adat (csoport, nap, idősáv, darabszám), a törlésüket a
-     * méret indokolja.
+     * Deliberately NOT gated by gdpr.enabled: these tables contain no
+     * personal data (group, day, time slot, count), their deletion is justified by
+     * size.
      */
     public static function groupDataFloor(): ?Carbon
     {
@@ -79,17 +79,17 @@ class RetentionWindow
     }
 
     /**
-     * A felületeken megjeleníthető legkorábbi nap: a két aktív padló közül
-     * a KÉSŐBBI.
+     * The earliest day that can be displayed in the UI: the LATER of the
+     * two active floors.
      *
-     * Azért a későbbi, mert egy nézet annyit tud megbízhatóan mutatni,
-     * amennyihez minden forrása megvan. Egy naptár, ami eseményt és
-     * day_stats-ot is renderel, csak addig hiteles, ameddig mindkettő él.
+     * The later one, because a view can only reliably show what all of
+     * its sources have. A calendar that renders both events and
+     * day_stats is only accurate as long as both are alive.
      *
-     * Vigyázat: csak azoknak a nézeteknek jó, amelyek MINDKÉT adatforrást
-     * használják. Ami csak eseményt kérdez (Events\LastEvents), annak az
-     * eventsFloor() való - a displayFloor() ott létező, szerkeszthető
-     * eseményeket rejtene el.
+     * Careful: this is only good for views that use BOTH data sources.
+     * Anything that queries only events (Events\LastEvents) should use
+     * eventsFloor() - displayFloor() would hide existing, editable
+     * events there.
      */
     public static function displayFloor(): ?Carbon
     {

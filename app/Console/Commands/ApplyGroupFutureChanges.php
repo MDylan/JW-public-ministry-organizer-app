@@ -7,9 +7,9 @@ use App\Models\GroupFutureChange;
 use Illuminate\Console\Command;
 
 /**
- * Korábban a percenkénti closure első fele volt az
- * App\Console\Kernel::schedule()-ben. A második fele külön parancsba
- * került: newsletters:send-due.
+ * Previously this was the first half of the per-minute closure in
+ * App\Console\Kernel::schedule(). The second half was moved into a separate
+ * command: newsletters:send-due.
  */
 class ApplyGroupFutureChanges extends Command
 {

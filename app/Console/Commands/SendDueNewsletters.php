@@ -8,8 +8,8 @@ use App\Notifications\Newsletter;
 use Illuminate\Console\Command;
 
 /**
- * Korábban a percenkénti closure második fele volt az
- * App\Console\Kernel::schedule()-ben.
+ * Previously this was the second half of the every-minute closure in
+ * App\Console\Kernel::schedule().
  */
 class SendDueNewsletters extends Command
 {
@@ -36,17 +36,17 @@ class SendDueNewsletters extends Command
             } elseif ($newsletter->send_to == 'groupServants') {
                 $users = User::whereHas('userGroupsEditable')->get();
             } else {
-                // Ismeretlen send_to érték. Korábban itt `return` állt, ami a
-                // ciklus HÁTRALÉVŐ hírleveleit is kihagyta - nem csak az
-                // aktuálisat -, és mivel a sent_time sem íródott ki, a parancs
-                // percenként újrapróbálkozott, tartósan a sor elé állva. Egyetlen
-                // elgépelt címzett-érték tehát minden további hírlevelet
-                // határozatlan ideig blokkolt.
+                // Unknown send_to value. Previously there was a `return` here, which also
+                // skipped the REMAINING newsletters in the loop - not just the
+                // current one -, and since sent_time wasn't written out either, the command
+                // retried every minute, permanently blocking the queue. A single
+                // mistyped recipient value therefore blocked every subsequent newsletter
+                // indefinitely.
                 //
-                // Most a hibás sort átugorjuk, naplózzuk, és a többit kézbesítjük.
-                // A sent_time SZÁNDÉKOSAN üresen marad: a hírlevél nem ment ki,
-                // tehát nem szabad kézbesítettnek jelölni - de már nem is
-                // akadályoz senkit.
+                // Now we skip the faulty row, log it, and deliver the rest.
+                // sent_time DELIBERATELY stays empty: the newsletter didn't go out,
+                // so it must not be marked as delivered - but it no longer
+                // blocks anyone either.
                 $skipped++;
 
                 $this->error(sprintf(

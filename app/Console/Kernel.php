@@ -32,9 +32,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // A korábbi névtelen closure-ök helyett nevesített parancsok futnak.
-        // Az ütemezés és a sorrend változatlan; a parancsok törzse az
-        // app/Console/Commands könyvtárban él és egyenként tesztelhető.
+        // Named commands run instead of the previous anonymous closures.
+        // The scheduling and order are unchanged; the commands' bodies live in the
+        // app/Console/Commands directory and are individually testable.
         $schedule->command('queue:work --name=kozteruletek-job-1 --queue=default --max-time=25 --max-jobs=100 --sleep=3 --tries=3 --backoff=20')
                     ->everyMinute()
                     ->withoutOverlapping(1);
@@ -47,25 +47,25 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('gdpr:notify-anonymization')->dailyAt('7:10');
 
-        // A retenciós takarítás hajnali 3 után fut, nem a 00:00-s torlódásban
-        // (purge-log-history, daily-cleanup, record-daily-users mind ott van).
-        // Az események előbb, a belőlük származtatott csoportadatok utána.
+        // The retention cleanup runs after 3am, not in the 00:00 pile-up
+        // (purge-log-history, daily-cleanup, record-daily-users are all there).
+        // Events first, the group data derived from them after.
 
-        // A Spatie parancsa eddig SOHA nem futott, pedig a
-        // config/activitylog.php 90 napos retenciót deklarál - a beállítás
-        // ezért négy éve nem lépett életbe (élesben a 7739 sorból 7581 már
-        // túl van a 90 napon).
+        // Spatie's command has NEVER run until now, even though
+        // config/activitylog.php declares a 90-day retention - the setting
+        // therefore hasn't taken effect for four years (in production, 7581 of the
+        // 7739 rows are already past 90 days).
         //
-        // A --force nem elhagyható: a CleanActivitylogCommand a
-        // ConfirmableTrait::confirmToProceed()-del indul, ami production
-        // környezetben megerősítést kér. Ütemezőből futva nincs TTY, a
-        // confirm() a false alapértéket adja, a parancs kiírja, hogy
-        // "Command Cancelled!", 1-gyel kilép és SEMMIT nem töröl - némán,
-        // mert a scheduler kilépőkódját semmi nem jelzi ki.
+        // --force cannot be omitted: CleanActivitylogCommand starts with
+        // ConfirmableTrait::confirmToProceed(), which asks for confirmation in
+        // production environments. Running from the scheduler there's no TTY, so
+        // confirm() returns the false default, the command prints
+        // "Command Cancelled!", exits with 1 and deletes NOTHING - silently,
+        // because nothing surfaces the scheduler's exit code.
         //
-        // Az őr itt when()-ben van, nem a parancs törzsében: a vendor
-        // parancsba nem tudunk beleírni. Kézzel indítva ezért megkerülhető -
-        // az viszont explicit üzemeltetői művelet.
+        // The guard is here in when(), not in the command body: we can't
+        // write into the vendor command. So running it manually bypasses it -
+        // but that is an explicit operator action.
         $schedule->command('activitylog:clean --force')
                     ->dailyAt('3:20')
                     ->when(fn () => (bool) config('gdpr.enabled'));
@@ -88,10 +88,10 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('scheduler:heartbeat')->everyMinute();
 
-        // Háromóránként. Az ingyenes OpenWeather szint 1000 hívás/nap, egy
-        // település frissítése 2 hívás - ez így nagyjából 60 települést bír el
-        // a kereten belül. Az előrejelzés maga is 3 óránkénti felbontású, tehát
-        // sűrűbb futás nem adna több információt.
+        // Every three hours. The free OpenWeather tier is 1000 calls/day, and
+        // refreshing one city is 2 calls - this fits roughly 60 cities within
+        // the budget. The forecast itself has 3-hourly resolution, so a
+        // denser run wouldn't yield more information.
         $schedule->command('weather:refresh')->cron('0 */3 * * *');
     }
 

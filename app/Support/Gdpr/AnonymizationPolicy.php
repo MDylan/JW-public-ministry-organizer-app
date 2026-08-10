@@ -5,22 +5,22 @@ namespace App\Support\Gdpr;
 use App\Models\User;
 
 /**
- * TODO 12.2: mikor szabad egy felhasználót anonimizálni.
+ * TODO 12.2: when a user may be anonymized.
  *
- * A feltétel az UTÓDLÁS, nem a szerep. Korábban a napi parancs egy szereplistát
- * zárt ki (mainAdmin, groupCreator), ami két irányban is tévedett: védte azt a
- * groupCreator-t, akinek minden csoportját ellátja más, és nem védte azt a
- * csoportadmint, aki az egyetlen a csoportjában.
+ * The condition is SUCCESSION, not role. The nightly command used to exclude
+ * a role list (mainAdmin, groupCreator), which was wrong in two directions: it
+ * protected a groupCreator whose every group is covered by someone else, and it
+ * did not protect a group admin who is the only one in their group.
  *
- * Két szabály:
- *   1. mainAdmin csak akkor, ha marad másik, nem anonimizált mainAdmin.
- *      A `role` benne van a $gdprAnonymizableFields-ben, tehát az anonimizálás
- *      egyben le is fokoz `registered`-re - az utolsó főadmin elvesztésével az
- *      oldal adminisztrátor nélkül maradna.
- *   2. Csoportadmin csak akkor, ha MINDEN csoportjára igaz a
- *      pwbs_check_group_other_admins(). Ez ugyanaz a helper, amit a
- *      csoportelhagyás használ (Groups\ListGroups::confirmLogout()) - a két
- *      szabály nem sodródhat el egymástól.
+ * Two rules:
+ *   1. mainAdmin only if another, non-anonymized mainAdmin remains.
+ *      `role` is part of $gdprAnonymizableFields, so anonymization also
+ *      demotes to `registered` - losing the last main admin would leave the
+ *      site without an administrator.
+ *   2. Group admin only if pwbs_check_group_other_admins() holds for EVERY
+ *      one of their groups. This is the same helper used by
+ *      leaving a group (Groups\ListGroups::confirmLogout()) - the two
+ *      rules must not drift apart from each other.
  *
  * Called from User::anonymize(), so it applies on every path that anonymizes a
  * user - the nightly gdpr:anonymize-inactive command, the profile-initiated
@@ -35,7 +35,7 @@ class AnonymizationPolicy
 
     private User $user;
 
-    /** @var array<int, array>|null Lusta, egy példányon belül egyszer számolt. */
+    /** @var array<int, array>|null Lazily computed once per instance. */
     private ?array $blockers = null;
 
     public function __construct(User $user)
@@ -49,7 +49,7 @@ class AnonymizationPolicy
     }
 
     /**
-     * Anonimizálható-e a felhasználó.
+     * Whether the user may be anonymized.
      */
     public function allows(): bool
     {
@@ -57,9 +57,9 @@ class AnonymizationPolicy
     }
 
     /**
-     * A blokkoló okok, strukturáltan.
+     * The blocking reasons, structured.
      *
-     * Alakja: [['reason' => self::BLOCKED_*, 'groups' => ['Név', ...]], ...]
+     * Shape: [['reason' => self::BLOCKED_*, 'groups' => ['Name', ...]], ...]
      */
     public function blockers(): array
     {
@@ -86,9 +86,9 @@ class AnonymizationPolicy
     }
 
     /**
-     * A blokkolás oka a felhasználónak, lefordítva - a profiloldali GDPR-kérés
-     * használja. Nem elég csendben kihagyni a kérést: a felhasználónak tudnia
-     * kell, mit tegyen (adja át a csoportját, nevezzen ki másik főadmint).
+     * The blocking reason for the user, translated - used by the
+     * profile-page GDPR request. Silently skipping the request isn't enough:
+     * the user needs to know what to do (hand over their group, appoint another main admin).
      */
     public function reason(): ?string
     {
@@ -110,8 +110,8 @@ class AnonymizationPolicy
     }
 
     /**
-     * 1. szabály. Egy már anonimizált főadmin nem utód: a sora megmarad, de a
-     * szerepe `registered`-re változott, és be sem tud lépni.
+     * Rule 1. An already anonymized main admin is not a successor: their row
+     * remains, but their role has changed to `registered`, and they can't even log in.
      */
     private function isTheLastMainAdmin(): bool
     {
@@ -126,13 +126,13 @@ class AnonymizationPolicy
     }
 
     /**
-     * 2. szabály. Azok a csoportok, ahol a felhasználó elfogadott admin, és
-     * nincs, aki átvegye.
+     * Rule 2. The groups where the user is an accepted admin and there is no
+     * one to take over.
      *
-     * A userGroupsDeletable() reláció query alakban kell: a TODO 07.2 rögzítette,
-     * hogy a lustán betöltött változat egy kérésen belül elavult adatot ad.
+     * The userGroupsDeletable() relation must be used in query form: TODO 07.2
+     * established that the eagerly-loaded variant returns stale data within a request.
      *
-     * @return array<int, string> a blokkoló csoportok nevei
+     * @return array<int, string> the names of the blocking groups
      */
     private function groupsWithoutSuccessor(): array
     {
@@ -140,8 +140,8 @@ class AnonymizationPolicy
 
         foreach ($this->user->userGroupsDeletable()->get() as $group) {
             if (pwbs_check_group_other_admins($group->id, $this->user->id) === false) {
-                // A groups.name `encrypted` cast, modellen keresztül olvasva
-                // már a nyílt szöveg.
+                // groups.name has an `encrypted` cast; read through the model
+                // it's already plaintext.
                 $groups[] = (string) $group->name;
             }
         }

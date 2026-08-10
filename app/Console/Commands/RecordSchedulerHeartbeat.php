@@ -6,11 +6,11 @@ use App\Models\Settings;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * everyMinute() ütemezéssel.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with everyMinute().
  *
- * A last_schedule_run beállítást az admin felület használja annak
- * jelzésére, hogy fut-e egyáltalán a cron.
+ * The last_schedule_run setting is used by the admin panel to
+ * indicate whether the cron is running at all.
  */
 class RecordSchedulerHeartbeat extends Command
 {

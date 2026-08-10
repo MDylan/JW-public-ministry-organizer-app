@@ -19,9 +19,9 @@ class deletePersonalDataController extends Controller
 
         $u = User::findOrFail(Auth::id());
 
-        // TODO 12.2: az utódlási feltétel a levélküldés ELŐTT dől el, hogy a
-        // felhasználó azonnal megtudja, mit kell tennie. A GDPR-kérés nem
-        // tűnhet el csendben.
+        // TODO 12.2: the succession condition is decided BEFORE the email is sent, so
+        // the user immediately knows what to do. The GDPR request must not
+        // silently disappear.
         if ($blocked = $this->blockedReason($u)) {
             Session::flash('profile_message', $blocked);
 
@@ -52,8 +52,8 @@ class deletePersonalDataController extends Controller
         // dd('itt');
         $user = User::findOrFail(Auth::id());
 
-        // Az aláírt link 60 órán át érvényes, közben változhat az állapot
-        // (kiléphet mellőle a másik admin), ezért itt is ellenőrizni kell.
+        // The signed link is valid for 60 hours, during which the state can change
+        // (the other admin may leave the group), so it must be checked here too.
         if ($blocked = $this->blockedReason($user)) {
             Session::flash('profile_message', $blocked);
 
@@ -77,11 +77,11 @@ class deletePersonalDataController extends Controller
     }
 
     /**
-     * Az anonimizálást blokkoló ok szövege, vagy null, ha nincs ilyen.
+     * The text of the reason blocking anonymization, or null if there is none.
      *
-     * A szabály forrása az AnonymizationPolicy, ugyanaz, amit a napi parancsok
-     * és a User::anonymize() használ - így a felhasználó ugyanazt a döntést
-     * kapja mindenhol (TODO 12.2).
+     * The rule comes from AnonymizationPolicy, the same one used by the daily
+     * commands and User::anonymize() - so the user gets the same decision
+     * everywhere (TODO 12.2).
      */
     private function blockedReason(User $user): ?string
     {

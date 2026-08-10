@@ -8,9 +8,9 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * daily() ütemezéssel. A closure harmadik része (napi statisztika) külön
- * parancsba került: statistics:record-daily-users.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with daily(). The third part of the closure (daily statistics) was moved
+ * into a separate command: statistics:record-daily-users.
  */
 class DailyCleanup extends Command
 {
@@ -20,12 +20,12 @@ class DailyCleanup extends Command
 
     public function handle()
     {
-        // Három hónapnál régebbi, már soft-deletelt események végleges törlése.
+        // Permanently delete already soft-deleted events older than three months.
         $purgedEvents = Event::onlyTrashed()
             ->where('day', '<=', Carbon::now()->subMonths(3))
             ->forceDelete();
 
-        // Egy hétnél régebbi csoportüzenetek.
+        // Group messages older than one week.
         $purgedMessages = GroupMessage::where('created_at', '<', now()->subDays(7))->delete();
 
         $this->info("Purged {$purgedEvents} trashed event(s) and {$purgedMessages} group message(s).");

@@ -9,8 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * dailyAt('7:00') ütemezéssel.
+ * Previously an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with dailyAt('7:00').
  *
  * TODO 33.2: this is now the ONLY anonymizer. It used to share the night with
  * Dialect\Gdpr\Commands\AnonymizeInactiveUsers, which ran at 00:00 - seven
@@ -18,12 +18,12 @@ use Illuminate\Console\Command;
  * anonymized user stayed on the newsletter recipient list. That package is
  * gone, and with it the divergence.
  *
- * TODO 12.2: a korábbi szerepszűrés (whereNotIn('role', ['mainAdmin',
- * 'groupCreator'])) megszűnt. Helyette az AnonymizationPolicy dönt, ami az
- * UTÓDLÁST nézi: van-e, aki átveszi a főadmin szerepet, illetve a csoportokat.
- * A szabály a User::anonymize()-ban is ott van, tehát a közvetlen modellhívások
- * sem kerülhetik meg - az itteni ellenőrzés a helyes sorrendért és a
- * jelentésért van.
+ * TODO 12.2: the previous role filter (whereNotIn('role', ['mainAdmin',
+ * 'groupCreator'])) is gone. AnonymizationPolicy decides instead, looking at
+ * SUCCESSION: whether there is someone to take over the main-admin role or
+ * the groups. The rule also lives in User::anonymize(), so direct model calls
+ * can't bypass it either - the check here exists for the correct ordering and
+ * for reporting.
  */
 class AnonymizeInactiveUsers extends Command
 {
@@ -47,10 +47,10 @@ class AnonymizeInactiveUsers extends Command
         $skipped = 0;
 
         foreach ($users as $user) {
-            // A sorrend kritikus: az alkalmasságot ELŐBB kell eldönteni, mint
-            // hogy a tagságokat bontanánk. Fordítva a blokkolt felhasználó
-            // tagság nélkül, de anonimizálatlanul maradna - és épp az utódlás
-            // bizonyítéka veszne el.
+            // The order is critical: eligibility must be decided BEFORE
+            // dissolving memberships. In reverse order, a blocked user would
+            // end up without membership but still not anonymized - and exactly
+            // the evidence of succession would be lost.
             if (! AnonymizationPolicy::for($user)->allows()) {
                 $skipped++;
 

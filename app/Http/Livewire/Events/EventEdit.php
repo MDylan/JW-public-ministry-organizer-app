@@ -122,15 +122,15 @@ class EventEdit extends AppComponent
     }
 
     /**
-     * A következő szabad cellaindex, ha a sáv előre foglalt cellái elfogytak.
+     * The next free cell index, once a slot's pre-reserved cells have run out.
      *
-     * A `cells` tömb kulcsai 1-től indulnak, és az elhasznált cellák
-     * kikerülnek belőle - a "meddig jutottunk" tehát nem olvasható ki
-     * közvetlenül. Az egész napra vett legnagyobb valaha kiosztott index után
-     * adunk egyet, így az érték a sávon belül biztosan egyedi, és a
-     * túlcsordult esemény saját oszlopot kap.
+     * The `cells` array's keys start from 1, and used-up cells are
+     * removed from it - so "how far we've gotten" can't be read off
+     * directly. We take the highest index ever allocated for the whole day and
+     * add one, so the value is guaranteed unique within the slot, and the
+     * overflowed event gets its own column.
      *
-     * Lásd a hívási hely magyarázatát (v1-patch B11).
+     * See the explanation at the call site (v1-patch B11).
      */
     private function overflowCellFor(array $day_table, string $key): int
     {
@@ -302,23 +302,23 @@ class EventEdit extends AppComponent
             $key = "'".date('Hi', $event['start'])."'";
             $cell = 1;
             if(isset($slots[$key])) {
-                // A getInfo() sávonként (max_publishers + events.max_columns)
-                // cellát foglal (:241-243), és eseményenként egyet elhasznál.
-                // Ha egy sávon több esemény van, mint ahány cella, a cellalista
-                // kiürül, és a korábbi feltétel nélküli min() PHP 8 alatt
-                // ValueError-t dobott ("must contain at least one element") -
-                // amitől a nap MEGNYITHATATLANNÁ vált, nem csak hibásan
-                // rajzolttá.
+                // getInfo() reserves (max_publishers + events.max_columns)
+                // cells per slot (:241-243), and uses up one per event.
+                // If a slot has more events than cells, the cell list
+                // empties out, and the previous unconditional min() threw a
+                // ValueError under PHP 8 ("must contain at least one element") -
+                // which made the day UNOPENABLE, not just incorrectly
+                // drawn.
                 //
-                // Ez elérhető állapot, nem elméleti: az események a régi,
-                // magasabb maximum mellett jönnek létre, majd egy admin
-                // lejjebb viszi a date_max_publishers-t - vagy egy jövőbeli
-                // csoportmódosítás írja felül. A meglévő eseményeket ilyenkor
-                // senki nem törli.
+                // This is a reachable state, not a theoretical one: events get created
+                // under the old, higher maximum, and then an admin
+                // lowers date_max_publishers - or a future group edit
+                // overwrites it. Nobody deletes the existing events in that
+                // case.
                 //
-                // A táblázat szélessége innentől a foglalt cellák számához
-                // igazodik: a túlcsordult esemény új oszlopot kap a sorban
-                // ahelyett, hogy az egész napot ledöntené.
+                // From here on the table's width adapts to the number of reserved
+                // cells: the overflowed event gets a new column in the row
+                // instead of bringing down the whole day.
                 $freeCells = array_keys($day_table[$key]['cells']);
                 $cell = count($freeCells) > 0
                     ? min($freeCells)

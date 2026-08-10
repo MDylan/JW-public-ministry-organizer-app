@@ -32,17 +32,16 @@ class LastEvents extends AppComponent
     }
 
     /**
-     * A hónaplista kezdete: a regisztráció és a retenciós padló közül a
-     * KÉSŐBBI, hónap elejére kerekítve.
+     * The start of the month list: the LATER of the registration date and the
+     * retention floor, rounded to the start of the month.
      *
-     * Itt az eventsFloor() a helyes padló, NEM a displayFloor(): ez a nézet
-     * csak eseményt kérdez, day_stats-ot nem. A displayFloor() 12 hónapos
-     * csoportadat-beállítás mellett későbbi lenne a 13 hónapos
-     * eseményablaknál, tehát egy hónapnyi létező, szerkeszthető eseményt
-     * rejtene el.
+     * Here eventsFloor() is the correct floor, NOT displayFloor(): this view
+     * only queries events, not day_stats. With a 12-month group data
+     * setting, displayFloor() would be later than the 13-month
+     * event window, so it would hide a month's worth of existing, editable events.
      *
-     * A felső korlát a mai hónap: enélkül egy jövőbe csúszott padló üres
-     * CarbonPeriod-ot adna, és a választó eltűnne.
+     * The upper bound is the current month: without it a floor that slipped into the
+     * future would produce an empty CarbonPeriod, and the picker would disappear.
      */
     private function earliestSelectableMonth(): Carbon
     {

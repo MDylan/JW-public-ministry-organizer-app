@@ -8,28 +8,30 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Fortify;
 
 /**
- * Szigorú e-mail-formátum a Fortify saját, vendorban élő végpontjain.
+ * Strict email format for Fortify's own vendor-side endpoints.
  *
- * A Laravel alapértelmezett `email` szabálya RFCValidation-t használ, ami
- * ELFOGADJA a CR/LF karaktereket a címben (GHSA-5vg9-5847-vvmq, high). Onnan a
- * cím levélfejlécbe kerül, ahol a sortörés új fejlécet nyit: a támadó
- * befolyásolhatja a levél tartalmát, más címzettnek kézbesíttetheti, vagy a
- * levelezőt idegen üzenetek küldésére bírhatja. A javítás csak a 12.60.0-ban
- * van meg, a Laravel 8-ra nincs backport, ezért ez a réteg a válasz.
+ * Laravel's default `email` rule uses RFCValidation, which ACCEPTS CR/LF
+ * characters in the address (GHSA-5vg9-5847-vvmq, high). From there the
+ * address ends up in an email header, where the line break opens a new
+ * header: an attacker can influence the email's content, have it delivered
+ * to a different recipient, or make the mailer send unrelated messages. The
+ * fix only landed in 12.60.0, there's no backport for Laravel 8, so this
+ * layer is the answer.
  *
- * Az alkalmazás SAJÁT validációi mind `email:filter`-t használnak
+ * The application's OWN validations all use `email:filter`
  * (CreateNewUser, UpdateUserProfileInformation, Admin\Users\ListUsers,
- * Groups\ListUsers), ami `filter_var(FILTER_VALIDATE_EMAIL)`-lel dolgozik és a
- * CRLF-et eleve elutasítja - ott nincs teendő. Két végpont maradt csupasz
- * `email` szabállyal, és mindkettő a VENDORBAN van, ahol a szabály nem
- * szerkeszthető anélkül, hogy a következő `composer update` felülírná:
+ * Groups\ListUsers), which works with `filter_var(FILTER_VALIDATE_EMAIL)` and
+ * rejects CRLF outright - nothing to do there. Two endpoints were left with
+ * the bare `email` rule, and both are in the VENDOR, where the rule can't be
+ * edited without the next `composer update` overwriting it:
  *
- * - `POST /forgot-password` - ANONIM, és a megadott címre levelet küld;
- * - `POST /reset-password` - a jelszó-visszaállító tokent oldja fel cím szerint.
+ * - `POST /forgot-password` - ANONYMOUS, and sends an email to the given address;
+ * - `POST /reset-password` - resolves the password-reset token by address.
  *
- * A middleware ugyanazt a szabályt futtatja rájuk, mint az alkalmazás a saját
- * űrlapjaira, tehát a hibaüzenet és az űrlapra való visszatérés is a megszokott.
- * A mező neve paraméterezhető; alapból a `Fortify::email()` beállítást követi.
+ * The middleware runs the same rule on them as the application does on its
+ * own forms, so the error message and the return-to-form behavior are also
+ * the usual ones. The field name is configurable; by default it follows the
+ * `Fortify::email()` setting.
  */
 class EnsureWellFormedEmail
 {

@@ -26,13 +26,13 @@ class WeatherCity extends Model
     ];
 
     /**
-     * Az ezt a települést használó csoportok.
+     * The groups using this city for weather.
      *
-     * A kulcsot expliciten megnevezzük: a `hasMany(Group::class)` alapértelmezés
-     * szerint `weather_city_id`-t keresett volna a groups táblában, ilyen oszlop
-     * viszont nincs - a valódi neve `city_id`. A reláció így egy nem létező
-     * oszlopra mutatott, tehát minden hívása hibára futott volna. Használat
-     * híján ez eddig nem derült ki (v1-patch C).
+     * The key is named explicitly: by default `hasMany(Group::class)` would
+     * have looked for `weather_city_id` in the groups table, but no such
+     * column exists - its real name is `city_id`. The relation therefore
+     * pointed at a nonexistent column, so every call to it would have errored
+     * out. For lack of use, this hadn't surfaced until now (v1-patch C).
      */
     public function groups()
     {

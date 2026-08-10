@@ -6,27 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * A statikus oldalak oldalmenü-gyorsítótárának érvénytelenítése.
+ * Invalidates the side-menu cache for static pages.
  *
- * MIÉRT LÉTEZIK
+ * WHY IT EXISTS
  *
- * A SetLocale middleware Cache::rememberForever('sidemenu_auth' / 'sidemenu_guest')
- * hívással építi az oldalmenüt, tehát a bejegyzésnek NINCS lejárata. Az ürítés
- * korábban mindössze két helyen történt meg kézzel: Admin\StaticPageEdit és a
- * telepítő AccountController. Bármi más - seeder, artisan parancs, import,
- * közvetlen modellírás, egy jövőbeli másik szerkesztő - létrehozhatott vagy
- * módosíthatott oldalt úgy, hogy az SOHA nem jelent meg a menüben.
+ * The SetLocale middleware builds the side menu with
+ * Cache::rememberForever('sidemenu_auth' / 'sidemenu_guest'), so the entry has
+ * NO expiry. Flushing used to happen manually in only two places:
+ * Admin\StaticPageEdit and the installer's AccountController. Anything else -
+ * a seeder, an artisan command, an import, a direct model write, a future
+ * other editor - could create or modify a page such that it NEVER showed up
+ * in the menu.
  *
- * Az observer ezt a menü FORRÁSÁHOZ köti a hívási helyek helyett: ha a
- * StaticPage vagy a fordítása változik, a gyorsítótár ürül. A két kézi
- * forget() hívás ezért törölhető lett.
+ * The observer ties this to the menu's SOURCE instead of the call sites: if a
+ * StaticPage or its translation changes, the cache is flushed. The two manual
+ * forget() calls could therefore be removed.
  *
- * A fordításokra is figyelünk, mert a menü a címeket jeleníti meg, azok pedig a
- * static_page_translations táblában élnek - egy puszta címátírás a StaticPage
- * sorát nem is érinti.
+ * We also watch translations, because the menu displays titles, and those
+ * live in the static_page_translations table - a plain title edit doesn't
+ * touch the StaticPage row itself.
  *
- * Ugyanez az osztály szolgálja ki mindkét modellt, ezért a paraméter Model és
- * nem konkrét típus.
+ * The same class serves both models, which is why the parameter is Model and
+ * not a concrete type.
  */
 class StaticPageObserver
 {
@@ -41,7 +42,7 @@ class StaticPageObserver
     }
 
     /**
-     * A modell-eseményeken kívüli ürítés belépési pontja.
+     * Entry point for flushing outside of model events.
      */
     public static function flush(): void
     {

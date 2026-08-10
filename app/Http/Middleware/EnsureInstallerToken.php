@@ -8,43 +8,47 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * A telepítő hozzáférés-védelme.
+ * Access protection for the installer.
  *
- * A PROBLÉMA
+ * THE PROBLEM
  *
- * A `setup/*` útvonalcsoport egyetlen jogosultsági ellenőrzést sem hordozott:
- * se `auth`, se gate, se aláírás. A telepítési ablakban tehát BÁRKI, aki
- * ismerte a címet, létrehozhatott `mainAdmin` fiókot - ismételten, ahányszor
- * csak akart -, és bárki lezárhatta a telepítőt, mert a `setup.complete`
- * egyszerű GET-en írta ki a sentinel fájlt. Egy friss telepítés a
- * DNS-átállástól az első admin létrehozásáig teljesen nyitva állt.
+ * The `setup/*` route group carried no authorization check whatsoever: no
+ * `auth`, no gate, no signature. During the installation window, therefore,
+ * ANYONE who knew the URL could create a `mainAdmin` account - repeatedly, as
+ * many times as they wanted -, and anyone could lock the installer, because
+ * `setup.complete` wrote out the sentinel file on a plain GET. A fresh
+ * install stood completely open from the DNS cutover to the creation of the
+ * first admin.
  *
- * Bejelentkezéshez kötni nem lehet: a telepítés PONTOSAN az a szakasz, amikor
- * még nincs felhasználó. Az iparági megoldás ezért a "bizonyítsd, hogy hozzáférsz
- * a szerver fájlrendszeréhez" ellenőrzés, és ez a middleware is azt csinálja.
+ * Tying it to login isn't possible: installation is PRECISELY the phase when
+ * there's no user yet. The industry solution is therefore a "prove you have
+ * access to the server's filesystem" check, and that's what this middleware
+ * does too.
  *
- * HOGYAN MŰKÖDIK
+ * HOW IT WORKS
  *
- * A telepítő első megnyitásakor generálunk egy véletlen tokent, és kiírjuk a
- * `storage/app/installer-token.txt` fájlba. A telepítést végző személynek ezt
- * kell beírnia a nyitóképernyőn; onnantól a munkamenet hordozza. A tokent tehát
- * csak az tudja megadni, aki a szerver fájljaihoz hozzáfér - aki pedig hozzáfér,
- * annak ez a védelem amúgy sem akadály.
+ * On the installer's first open, we generate a random token and write it to
+ * the `storage/app/installer-token.txt` file. The person performing the
+ * install has to enter it on the welcome screen; from then on the session
+ * carries it. So the token can only be supplied by someone who has access to
+ * the server's files - and anyone who has that access isn't blocked by this
+ * protection anyway.
  *
- * A token a `setup.complete` lefutásakor törlődik, a sentinel fájllal együtt.
+ * The token is deleted, together with the sentinel file, when
+ * `setup.complete` runs.
  *
- * KIVÉTEL
+ * EXCEPTION
  *
- * A nyitóképernyő (`setup.welcome`) és a token beküldése MAGA nem lehet a kapun
- * belül, különben nincs hova beírni. Ez a két útvonal ezért nyitva marad; érdemi
- * műveletet egyik sem végez.
+ * The welcome screen (`setup.welcome`) and the token submission itself
+ * cannot be behind the gate, otherwise there'd be nowhere to enter it. These
+ * two routes therefore stay open; neither performs any meaningful action.
  */
 class EnsureInstallerToken
 {
-    /** A tokent hordozó fájl a `local` diszken (storage/app). */
+    /** The file carrying the token, on the `local` disk (storage/app). */
     public const TOKEN_FILE = 'installer-token.txt';
 
-    /** A munkamenet kulcsa, ahol a már megadott token él. */
+    /** The session key where the already-submitted token lives. */
     public const SESSION_KEY = 'installer_token';
 
     public function handle(Request $request, Closure $next)
@@ -64,10 +68,10 @@ class EnsureInstallerToken
     }
 
     /**
-     * A hatályos token; ha még nincs, generál egyet.
+     * The current token; generates one if it doesn't exist yet.
      *
-     * A generálás szándékosan lusta: a fájl csak akkor keletkezik, amikor
-     * valaki tényleg megnyitja a telepítőt.
+     * The generation is deliberately lazy: the file is only created when
+     * someone actually opens the installer.
      */
     public static function currentToken(): string
     {
@@ -78,7 +82,7 @@ class EnsureInstallerToken
         return trim((string) Storage::get(self::TOKEN_FILE));
     }
 
-    /** A telepítés végén a token elveszti a jelentését. */
+    /** At the end of installation the token loses its meaning. */
     public static function forget(): void
     {
         if (Storage::exists(self::TOKEN_FILE)) {

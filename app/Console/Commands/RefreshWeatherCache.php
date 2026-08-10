@@ -7,33 +7,33 @@ use App\Support\Weather\WeatherCache;
 use Illuminate\Console\Command;
 
 /**
- * Az időjárás-gyorsítótár frissítése az időjárást használó csoportok
- * településeire.
+ * Refreshing the weather cache for the cities of groups that use the
+ * weather feature.
  *
- * MIÉRT LÉTEZIK
+ * WHY IT EXISTS
  *
- * A funkció legnagyobb hiányossága az volt, hogy SEMMI nem frissítette a
- * gyorsítótárat. A `weather_cities` sorok kizárólag akkor íródtak, amikor egy
- * csoportadmin elmentette a csoport űrlapját vagy megnyomta az ellenőrzés
- * gombot; a naptár tiszta olvasó. A benne lévő 59 perces frissesség-szabály
- * ezért soha nem futott le a megjelenítési úton, és a hírnökök tetszőlegesen
- * régi előrejelzést láttak - akár hetekig, ha közben senki nem nyúlt a csoport
- * beállításaihoz.
+ * The feature's biggest shortcoming was that NOTHING refreshed the
+ * cache. The `weather_cities` rows were only ever written when a
+ * group admin saved the group's form or pressed the check
+ * button; the calendar is a pure reader. The 59-minute freshness rule inside it
+ * therefore never ran on the display path, and publishers saw an arbitrarily
+ * old forecast - even for weeks, if nobody touched the group's
+ * settings in the meantime.
  *
- * A NAPTÁR TISZTA OLVASÓ MARAD. Renderelés közben semmilyen HTTP-hívás nem
- * indul; a frissítés kizárólag itt, az ütemezőn keresztül történik.
+ * THE CALENDAR STAYS A PURE READER. No HTTP call starts during
+ * rendering; refreshing happens exclusively here, via the scheduler.
  *
- * KERET ÉS ÜTEMEZÉS
+ * QUOTA AND SCHEDULE
  *
- * Az ingyenes szint 1000 hívás/nap és 60 hívás/perc. Egy frissítés
- * TELEPÜLÉSENKÉNT 2 hívás (jelenlegi időjárás + előrejelzés). Az ütemezés
- * `0 * /3 * * *`, azaz háromóránként: 2 hívás/település/futás mellett ez
- * nagyjából 60 települést támogat, bőven a napi kereten belül. Az előrejelzés
- * maga is csak 3 óránkénti felbontású, tehát sűrűbb frissítés nem adna többet.
- * A WeatherCache 15 perces `last_try` korlátja marad a végső fék.
+ * The free tier is 1000 calls/day and 60 calls/minute. One refresh is
+ * 2 calls PER CITY (current weather + forecast). The schedule is
+ * `0 * /3 * * *`, i.e. every three hours: at 2 calls/city/run this
+ * supports roughly 60 cities, comfortably within the daily quota. The forecast
+ * itself is only resolved to 3-hour buckets anyway, so a more frequent refresh wouldn't add anything.
+ * WeatherCache's 15-minute `last_try` limit remains the final safeguard.
  *
- * A településeket DISTINCT módon járjuk be: több csoport is használhatja
- * ugyanazt, és nem akarunk kétszer fizetni érte.
+ * We iterate over the cities DISTINCT: multiple groups can use
+ * the same one, and we don't want to pay for it twice.
  */
 class RefreshWeatherCache extends Command
 {
@@ -85,9 +85,9 @@ class RefreshWeatherCache extends Command
             $this->warn("{$failed} city/cities could not be refreshed.");
         }
 
-        // A részleges sikertelenség NEM hiba: egy ismeretlen település vagy egy
-        // átmeneti API-kimaradás nem szabad, hogy riasztást váltson ki az
-        // ütemezőben. Az érintett sorok üzenete a naplóban ott van.
+        // A partial failure is NOT an error: an unknown city or a
+        // transient API outage should not trigger an alert in the
+        // scheduler. The affected rows' messages are there in the log.
         return self::SUCCESS;
     }
 }

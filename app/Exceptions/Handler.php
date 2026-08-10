@@ -49,10 +49,10 @@ class Handler extends ExceptionHandler
                 return redirect()->route('setup.welcome');
             }
 
-            // Egyébként a beépített kezelőre esünk vissza: a null visszatérés
-            // után a keretrendszer rendereli az errors/500 nézetet. Korábban
-            // itt dd() állt, ami az APP_DEBUG-tól függetlenül nyers üzenetet
-            // írt ki, és exit-tel zárt.
+            // Otherwise we fall back to the built-in handler: once null is returned,
+            // the framework renders the errors/500 view. Previously
+            // there was a dd() here, which printed a raw message regardless of
+            // APP_DEBUG and terminated with exit.
             return null;
         });
 
@@ -61,10 +61,10 @@ class Handler extends ExceptionHandler
                 return redirect()->route('setup.welcome');
             }
 
-            // Telepített oldalon a normál hibakezelés a helyes válasz: a
-            // report() már lefutott (Pipeline::handleException hívja a render()
-            // előtt), tehát a kivétel naplózva van, a felhasználó pedig
-            // hibaoldalt kap a nyers adatbázis-üzenet helyett.
+            // On an installed site, the normal error handling is the correct response:
+            // report() has already run (Pipeline::handleException calls it before render()),
+            // so the exception is logged, and the user
+            // gets an error page instead of the raw database error message.
             return null;
         });
     }

@@ -21,16 +21,16 @@ class UpdateNotification extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * Három állapot van, nem kettő:
+     * There are three states, not two:
      *
-     *   - nincs újabb verzió                     => semmi
-     *   - van, és az aktuális major ágon van     => a szokásos kártya, gombbal
-     *   - van, de magasabb majorra vinne         => figyelmeztető kártya, gomb
-     *                                               NÉLKÜL, kézi frissítéssel
+     *   - no newer version                        => nothing
+     *   - there is one, and it's on the current major branch => the usual card, with a button
+     *   - there is one, but it would move to a higher major   => warning card, button
+     *                                                 OMITTED, with manual update
      *
-     * A harmadik ágat az App\Support\Updates\UpdateBranch dönti el, ugyanaz,
-     * amit az /updater.update kapuja (EnsureUpdateWithinBranch) is használ -
-     * a felület és a tényleges tiltás nem sodródhat el egymástól.
+     * The third branch is decided by App\Support\Updates\UpdateBranch, the same
+     * class used by the /updater.update gate (EnsureUpdateWithinBranch) -
+     * the UI and the actual restriction must not drift apart from each other.
      *
      * @return \Illuminate\Contracts\View\View|\Illuminate\Support\HtmlString|string
      */
@@ -38,7 +38,7 @@ class UpdateNotification extends Component
     {        
         $update = new \MDylan\LaraUpdater\LaraUpdaterController;
         $version = $update->check();
-        //TODO: cache törlés utána. Talán ajax kérés kéne a frissítéshez? Lásd view fájlokat!
+        //TODO: clear cache afterwards. Maybe an ajax request is needed for the update? See the view files!
         
         if(!$version) {
             return <<<'blade'
@@ -48,9 +48,9 @@ class UpdateNotification extends Component
         $description = $update->getDescription();
 
         if(! UpdateBranch::allows($version)) {
-            // Az online felhasználók száma itt szándékosan nem szerepel: azt a
-            // karbantartás módba kapcsolás miatt mutatjuk, ami ezen az ágon
-            // nem fog megtörténni.
+            // The number of online users is deliberately absent here: we show it
+            // because of switching into maintenance mode, which is not going to
+            // happen on this branch.
             return view('components.update-notification-manual', [
                 'version' => $version,
                 'description' => $description,

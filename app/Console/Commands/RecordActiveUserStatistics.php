@@ -7,8 +7,8 @@ use App\Models\User;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * hourly() ütemezéssel.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with hourly().
  */
 class RecordActiveUserStatistics extends Command
 {
@@ -21,8 +21,8 @@ class RecordActiveUserStatistics extends Command
         $time = now()->subHour();
         $activeUsers = User::where('last_activity', '>=', $time)->count();
 
-        // insert() és nem create(): így írja a kód eredetileg is, és ez
-        // kerüli meg a timestamp oszlopok hiányát a statistics táblán.
+        // insert() and not create(): this is how the code originally wrote it, and this
+        // works around the missing timestamp columns on the statistics table.
         Statistics::insert([
             'type' => 'active_users',
             'date' => $time->format('Y-m-d H:i:00'),

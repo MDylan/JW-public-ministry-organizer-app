@@ -5,14 +5,14 @@ namespace App\Support\Weather;
 use RuntimeException;
 
 /**
- * Az időjárás-lekérdezés hibái, VALÓDI üzenettel.
+ * Weather-lookup errors, with a REAL message.
  *
- * A korábban használt csomag a hibás API-kulcsot egy üzenet nélküli
- * `InvalidConfiguration` kivétellel jelezte, ezért a hívó helyen
- * `['error' => '']` keletkezett: a csoportadmin üres hibapanelt kapott, és
- * semmi nem árulta el, hogy a kulcs hiányzik vagy rossz.
+ * The previously used package signaled a bad API key with a message-less
+ * `InvalidConfiguration` exception, so `['error' => '']` resulted at the
+ * call site: the group admin got an empty error panel, and
+ * nothing revealed whether the key was missing or wrong.
  *
- * Az itteni gyártó metódusok mindegyike megnevezi az okot.
+ * Every factory method here names the reason.
  */
 class WeatherException extends RuntimeException
 {

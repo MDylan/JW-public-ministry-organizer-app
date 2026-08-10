@@ -9,37 +9,38 @@ use Illuminate\Support\Facades\Cache;
 use MDylan\LaraUpdater\LaraUpdaterController;
 
 /**
- * A frissítő végpont kapuja: major verziót nem enged átlépni.
+ * Gate for the update endpoint: does not allow crossing a major version.
  *
- * MIÉRT KELL, HA A FELÜLET ÚGYIS ELREJTI A GOMBOT
+ * WHY IS THIS NEEDED IF THE UI ALREADY HIDES THE BUTTON
  *
- * Mert a gomb elrejtése nem védelem. Az `updater.update` egy sima GET cím,
- * amit könyvtárjelzőből, előzményekből vagy kézzel is meg lehet nyitni, és
- * onnantól a `update()` letölt, karbantartás módba kapcsol és migrál. A
- * korlátnak ott kell lennie, ahol a művelet elindul.
+ * Because hiding the button isn't protection. `updater.update` is a plain GET
+ * URL, which can be opened from a bookmark, browser history, or by hand, and
+ * from there `update()` downloads, switches to maintenance mode, and
+ * migrates. The limit needs to be where the action actually starts.
  *
- * MIÉRT CSAK AZ UPDATE VÉGPONTON
+ * WHY ONLY ON THE UPDATE ENDPOINT
  *
- * A middleware a config('laraupdater.middleware') tömbön keresztül MINDHÁROM
- * végpontra rákerül, de a `check` és a `currentVersion` írásmentes lekérdezés
- * - azokat elzárni értelmetlen lenne, hiszen épp az elérhető verzió
- * megmutatása a cél.
+ * The middleware gets attached to ALL THREE endpoints via the
+ * config('laraupdater.middleware') array, but `check` and `currentVersion`
+ * are read-only queries - locking those down would be pointless, since their
+ * whole purpose is to show the available version.
  *
- * MIÉRT A CACHE ÜRÍTÉSÉVEL
+ * WHY BY FLUSHING THE CACHE
  *
- * Az `update()` szándékosan cache-t megkerülve olvassa a manifesztet
- * (`$this->cache = false`), mert egy 15 perces cache-bejegyzésből indítani
- * telepítést kockázatos. Ha a kapu a cache-elt állapotot nézné, a kettő
- * elcsúszhatna: a guard egy régi 1.x verziót látna, az update() pedig már a
- * frissen kirakott 2.0.0-t telepítené. Ezért itt is friss olvasás történik,
- * és a check() rögtön újra is tölti a cache-t a következő oldalrendereléshez.
+ * `update()` deliberately bypasses the cache to read the manifest
+ * (`$this->cache = false`), because starting an installation from a
+ * 15-minute-old cache entry is risky. If the gate looked at the cached
+ * state, the two could drift apart: the guard would see an old 1.x version,
+ * while update() would already be installing the freshly published 2.0.0.
+ * So a fresh read happens here too, and check() immediately refills the
+ * cache for the next page render.
  *
- * A SORREND A CONFIGBAN SZÁMÍT
+ * ORDER IN THE CONFIG MATTERS
  *
- * Ez a middleware az `auth` és a `can:is-admin` MÖGÖTT áll. Így a kimenő
- * hálózati kérés csak bejelentkezett adminnál fut le - vendéget és nem-admint
- * továbbra is az előtte álló két réteg utasít el, még a csatorna megkérdezése
- * előtt.
+ * This middleware sits BEHIND `auth` and `can:is-admin`. So the outbound
+ * network request only runs for a logged-in admin - guests and non-admins
+ * are still rejected by the two layers ahead of it, before the channel is
+ * even queried.
  */
 class EnsureUpdateWithinBranch
 {

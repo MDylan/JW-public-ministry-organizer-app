@@ -5,36 +5,36 @@ namespace App\Support\Weather;
 use App\Models\WeatherCity;
 
 /**
- * A `weather_cities` tábla mint gyorsítótár az OpenWeather hívások elé.
+ * The `weather_cities` table as a cache in front of the OpenWeather calls.
  *
- * A logika a helpers.php `pwbs_weather_api_call()` függvényéből költözött ide;
- * az továbbra is létezik, egysoros átjáróként, hogy a két Livewire hívási hely
- * ne mozduljon ugyanabban a változtatásban.
+ * The logic moved here from the helpers.php `pwbs_weather_api_call()` function;
+ * that still exists, as a one-line pass-through, so the two Livewire call sites
+ * don't have to move in the same change.
  *
- * A KÉT IDŐKORLÁT
+ * THE TWO TIME LIMITS
  *
- * - `updated_at` 59 perc: ennél frissebb adatot nem kérünk le újra.
- * - `last_try` 15 perc: sikertelen kísérlet után ennyi ideig nem próbálkozunk.
+ * - `updated_at` 59 minutes: we don't re-fetch data fresher than this.
+ * - `last_try` 15 minutes: after a failed attempt we don't retry for this long.
  *
- * Mindkettő megmarad. Az érdemi különbség a korábbi kódhoz képest, hogy a
- * sikertelen lekérés MOST IS visszaadja a városazonosítót és a legutóbbi ismert
- * adatot, ha van - lásd a `failure()` magyarázatát.
+ * Both are kept. The material difference from the previous code is that a
+ * failed fetch STILL returns the city id and the latest known
+ * data, if any - see the `failure()` explanation.
  *
- * A TÁROLT ALAK
+ * THE STORED SHAPE
  *
- * A `WeatherCity` modell `current_weather` és `forecast_weather` mezői `json`
- * castot használnak, tehát tömböt várnak és tömböt adnak vissza. A korábbi kód
- * ezek MELLETT kézzel is `json_encode`-olt, így a mező kétszer kódolt sztringet
- * tárolt, és minden olvasónak kézzel kellett dekódolnia. Innentől a cast az
- * egyetlen kódolási pont - a tárolt érték valódi JSON objektum, nem
- * JSON-ba csomagolt sztring.
+ * The `WeatherCity` model's `current_weather` and `forecast_weather` fields use
+ * a `json` cast, so they expect and return an array. The previous code ALSO
+ * `json_encode`d these by hand on top of that, so the field stored a doubly
+ * encoded string, and every reader had to decode it by hand. From here on, the
+ * cast is the single encoding point - the stored value is a genuine JSON object, not
+ * a JSON-wrapped string.
  */
 class WeatherCache
 {
-    /** Ennyi ideig tekintjük frissnek a tárolt adatot. */
+    /** How long the stored data is considered fresh. */
     private const FRESH_MINUTES = 59;
 
-    /** Sikertelen kísérlet után ennyi ideig nem hívjuk újra az API-t. */
+    /** How long we don't call the API again after a failed attempt. */
     private const RETRY_MINUTES = 15;
 
     private OpenWeatherClient $client;
@@ -45,7 +45,7 @@ class WeatherCache
     }
 
     /**
-     * A megadott település időjárása, gyorsítótárral.
+     * The weather for the given city, with caching.
      *
      * @return array{city_id?: int, current_weather?: array, forecast_weather?: array, error?: string}
      */
@@ -67,11 +67,11 @@ class WeatherCache
     }
 
     /**
-     * Feltétel nélküli frissítés - a `weather:refresh` parancs használja.
+     * Unconditional refresh - used by the `weather:refresh` command.
      *
-     * A `last_try` korlát ITT IS érvényes, mert az az API védelme, nem a
-     * hívóé: enélkül egy sűrűn futó ütemezés minden körben újrapróbálná a
-     * hibás településeket.
+     * The `last_try` limit applies HERE TOO, because it protects the API, not the
+     * caller: without it, a frequently running schedule would retry the
+     * failing cities on every run.
      *
      * @return array{city_id?: int, current_weather?: array, forecast_weather?: array, error?: string}
      */
@@ -89,8 +89,8 @@ class WeatherCache
     }
 
     /**
-     * A tárolt alak normalizálása: a település nagybetűvel kezdve, az
-     * országkód csupa nagybetűvel. Ez a kulcsa a `weather_cities` sornak.
+     * Normalizing the stored shape: the city starting with a capital letter, the
+     * country code all uppercase. This is the key of the `weather_cities` row.
      *
      * @return array{0: string, 1: string}
      */
@@ -120,14 +120,14 @@ class WeatherCache
             $current = $this->client->currentByCity($city, $country);
             $forecast = $this->client->forecastByCity($city, $country);
         } catch (WeatherException $e) {
-            // A sikertelen kísérlet is időbélyeget kap, különben minden
-            // oldalletöltés újrapróbálná - a 15 perces fék korábban éppen ezért
-            // nem kapcsolt be rosszul konfigurált kulcsnál.
+            // The failed attempt also gets a timestamp, otherwise every
+            // page load would retry it - which is exactly why the 15-minute brake
+            // previously didn't kick in for a misconfigured key.
             //
-            // Az `updated_at` viszont NEM mozdulhat: azt a 59 perces
-            // frissesség-szabály olvassa, és egy sikertelen frissítés nem teheti
-            // frissé a régi adatot. Ezért firstOrNew + kikapcsolt időbélyeg,
-            // nem updateOrCreate.
+            // `updated_at`, however, must NOT move: it's read by the 59-minute
+            // freshness rule, and a failed refresh must not make the
+            // stale data look fresh. Hence firstOrNew + a disabled timestamp,
+            // not updateOrCreate.
             $row = WeatherCity::firstOrNew(['city' => $city, 'country' => $country]);
             $row->last_try = now();
 
@@ -144,7 +144,7 @@ class WeatherCache
         $row = WeatherCity::updateOrCreate(
             ['city' => $city, 'country' => $country],
             [
-                // Nyers tömb: a json cast végzi a kódolást, egyszer.
+                // Raw array: the json cast does the encoding, once.
                 'current_weather'  => $current,
                 'forecast_weather' => $forecast,
                 'last_try'         => now(),
@@ -167,16 +167,16 @@ class WeatherCache
     }
 
     /**
-     * Hibás lekérés eredménye.
+     * The result of a failed fetch.
      *
-     * A `city_id` SZÁNDÉKOSAN benne van. Korábban a hívó (UpdateGroupForm) a
-     * hibaágon nullázta a `city_id`-t, miközben a validáció megkövetelte
-     * (`required_if:weather_enabled,1`) - aki bekapcsolta az időjárást és az
-     * API épp nem válaszolt, egyáltalán nem tudta menteni a csoportot. A
-     * mentésnek nem szabad egy külső szolgáltatás elérhetőségén múlnia.
+     * `city_id` is DELIBERATELY included. Previously the caller (UpdateGroupForm)
+     * nulled out `city_id` on the error branch, while validation required it
+     * (`required_if:weather_enabled,1`) - anyone who enabled the weather feature while the
+     * API wasn't responding couldn't save the group at all. Saving must not
+     * depend on the availability of an external service.
      *
-     * A legutóbbi ismert adatot is visszaadjuk, ha van: egy órás késésű
-     * előrejelzés használhatóbb, mint a semmi.
+     * We also return the latest known data, if any: an hour-stale
+     * forecast is more usable than nothing.
      *
      * @return array{city_id: int, error: string, current_weather?: array, forecast_weather?: array}
      */

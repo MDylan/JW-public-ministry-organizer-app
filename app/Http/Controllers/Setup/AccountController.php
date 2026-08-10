@@ -47,7 +47,7 @@ class AccountController extends Controller
         (new DatabaseSeeder())->callWith(\Database\Seeders\StaticPagesSetupSeeder::class, [
             'user_id' => $user->id
         ]);
-        // A gyorsítótár ürítését a StaticPageObserver végzi (v1-patch B4).
+        // Clearing the cache is done by StaticPageObserver (v1-patch B4).
 
         Auth::login($user, true);
 

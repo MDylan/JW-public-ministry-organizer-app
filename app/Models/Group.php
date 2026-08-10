@@ -13,10 +13,10 @@ class Group extends Model
 {
     use HasFactory, SoftDeletes, Anonymizable;
 
-    // TODO 29: a `protected $dates = ['deleted_at']` sor innen eltűnt. A
-    // Laravel 10 a propertyt megszüntette, és a `deleted_at` castolását
-    // amúgy is a `SoftDeletes` trait végzi (`initializeSoftDeletes()` beírja
-    // a `$casts`-ba, ha nincs ott), tehát a sor eleve redundáns volt.
+    // TODO 29: the `protected $dates = ['deleted_at']` line has been removed from here.
+    // Laravel 10 discontinued the property, and casting `deleted_at`
+    // is done by the `SoftDeletes` trait anyway (`initializeSoftDeletes()` adds it
+    // to `$casts` if it's not there), so the line was redundant to begin with.
 
     protected $fillable = [
         'name',
@@ -117,18 +117,18 @@ class Group extends Model
     }
 
     /**
-     * Azok az adminok, akik valóban át tudják venni a csoportot.
+     * The admins who can actually take over the group.
      *
-     * A groupAdmins() nem szűri sem az isAnonymized-et, sem az accepted_at-ot,
-     * ezért egy anonimizált felhasználó vagy egy még el nem fogadott meghívott
-     * is adminnak látszik rajta keresztül. Az utódlási vizsgálatnak
-     * (pwbs_check_group_other_admins(), TODO 12.2) ez nem elég: a csomag napi
-     * anonimizálója meghagyja a tagságot, így az anonimizált sor utódnak
-     * számítana, és a csoport összes valódi adminja egymás után kiüríthető lenne.
+     * groupAdmins() filters neither isAnonymized nor accepted_at, so an
+     * anonymized user or a not-yet-accepted invitee also appears as an admin
+     * through it. That's not enough for the succession check
+     * (pwbs_check_group_other_admins(), TODO 12.2): the package's nightly
+     * anonymizer leaves the membership in place, so the anonymized row would
+     * count as a successor, and every real admin of the group could be emptied out one after another.
      *
-     * A groupAdmins() maga szándékosan változatlan: a további hívási helyei a
-     * SAJÁT jogosultságot ellenőrzik (wherePivot('user_id', Auth::id())), ott a
-     * szűrés felesleges.
+     * groupAdmins() itself is deliberately left unchanged: its other call
+     * sites check the caller's OWN permission (wherePivot('user_id', Auth::id())), where
+     * the filtering is unnecessary.
      */
     public function activeAdmins() {
         return $this->groupAdmins()
@@ -137,7 +137,7 @@ class Group extends Model
     }
 
     /**
-     * Akik szerkeszteni tudják a csoportot
+     * Those who can edit the group
      */
     public function editors() {
         return $this->belongsToMany(User::class)
@@ -261,7 +261,7 @@ class Group extends Model
 
 
     /**
-     * Az adott css-t adja vissza, a megjelenítésnél van szerepe
+     * Returns the given css; used for display purposes
      */
     public function getGroupRoleAttribute() {
         $css = [

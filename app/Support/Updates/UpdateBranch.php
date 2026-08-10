@@ -5,52 +5,51 @@ namespace App\Support\Updates;
 use MDylan\LaraUpdater\LaraUpdaterController;
 
 /**
- * Meddig frissíthet a rendszer AUTOMATIKUSAN: a saját major ágán belül.
+ * How far the system may update AUTOMATICALLY: within its own major branch.
  *
- * A PROBLÉMA
+ * THE PROBLEM
  *
- * A laraupdater egyetlen feltétele az, hogy a csatorna újabbat hirdessen a
- * telepítettnél (`version_compare($remote, $local, '>')`). Sem PHP-, sem
- * Laravel-, sem major-verzió korlátja nincs. Amint a 2.x vonal megjelenik a
- * csatornán, minden 1.x telepítés EGY KATTINTÁSRA ráfrissülne - karbantartás
- * módban, `migrate --force`-szal -, holott a 2.x már PHP 8.3+-t és egy másik
- * Laravel majort feltételez. A `restore()` a felülírt fájlokat visszahozza, a
- * lefuttatott migrációkat NEM: a telepítés használhatatlan maradna.
+ * laraupdater's only condition is that the channel advertises something newer
+ * than what's installed (`version_compare($remote, $local, '>')`). It has no PHP,
+ * Laravel, or major-version limit. As soon as the 2.x line appears on the
+ * channel, every 1.x installation would update itself with ONE CLICK - in
+ * maintenance mode, with `migrate --force` - even though 2.x already assumes PHP 8.3+ and a
+ * different Laravel major. `restore()` brings back the overwritten files, but
+ * NOT the migrations that already ran: the installation would remain unusable.
  *
- * A SZABÁLY
+ * THE RULE
  *
- * Major verziót automatikusan nem lépünk át. Ami az aktuális ágon van, az
- * változatlanul egy kattintás; ami magasabb majorra visz, arról a rendszer
- * csak ÉRTESÍT, és kézi frissítést kér.
+ * We do not cross a major version automatically. What's on the current branch
+ * is still a single click; anything that would move to a higher major, the system
+ * only NOTIFIES about, and asks for a manual update.
  *
- * A plafon szándékosan DERIVÁLT, nem konfigurált: a version.txt majorjából
- * jön. Így nincs mit elfelejteni karbantartani - a 2.x vonal ugyanígy védve
- * lesz a 3.x-től -, és nincs olyan config érték, aminek a kiürítése némán
- * visszakapcsolná az automatikus major-ugrást.
+ * The ceiling is deliberately DERIVED, not configured: it comes from
+ * version.txt's major. This way there's nothing to forget to maintain - the 2.x line
+ * will be protected from 3.x the same way - and there's no config value whose
+ * being emptied out would silently re-enable automatic major jumps.
  *
  * FAIL-CLOSED
  *
- * Ha bármelyik oldal majorja nem olvasható ki, a válasz `false`, azaz tiltás.
- * A két hibalehetőség nem egyenrangú: a téves tiltás annyit jelent, hogy az
- * adminnak kézzel kell frissítenie, a téves engedés viszont éles rendszert
- * tesz tönkre.
+ * If either side's major can't be read, the answer is `false`, i.e. deny.
+ * The two failure modes are not equivalent: a false denial just means the
+ * admin has to update manually, while a false allow destroys a live system.
  *
- * AMI EZT KIVÜLRŐL IS BIZTOSÍTJA
+ * WHAT SECURES THIS FROM THE OUTSIDE AS WELL
  *
- * Ez a korlát csak azokon a telepítéseken véd, amelyeken MÁR FUT az őt
- * tartalmazó kiadás. A régebbieket a vendor `previous_version` lánca hozza
- * ide: ha a csatorna feje 2.0.0, és a `previous_version`-je az utolsó 1.x
- * kiadás, akkor egy régi telepítés előbb arra frissül fel - vagyis a korlátot
- * megkerülve senki nem juthat 2.0.0-ra. A manifeszt ilyen alakja tehát nem
- * kényelmi kérdés, hanem ennek a védelemnek a része (lásd release/README.md).
+ * This limit only protects installations on which the release containing it
+ * is ALREADY RUNNING. Older ones are brought here by the vendor's `previous_version`
+ * chain: if the channel head is 2.0.0, and its `previous_version` is the last 1.x
+ * release, then an old installation updates to that one first - meaning
+ * no one can reach 2.0.0 by bypassing the limit. The manifest's shape is therefore not
+ * a matter of convenience, but part of this protection (see release/README.md).
  */
 final class UpdateBranch
 {
     /**
-     * Telepíthető-e ez a verzió automatikusan?
+     * May this version be installed automatically?
      *
-     * A hívó a laraupdater check() eredményét adja át, tehát a verzió itt már
-     * biztosan újabb a telepítettnél; egyedül a major számít.
+     * The caller passes in the result of laraupdater's check(), so the version here is
+     * already guaranteed to be newer than what's installed; only the major matters.
      */
     public static function allows(string $version): bool
     {
@@ -65,12 +64,12 @@ final class UpdateBranch
     }
 
     /**
-     * A telepített verzió majorja.
+     * The installed version's major.
      *
-     * A verziót a laraupdater kontrollerétől kérjük, nem a version.txt
-     * újraolvasásával: ott van a trim(), ami nélkül a fájl záró sortörése
-     * minden összehasonlítást elront (lásd a UpdaterContractTest erre írt
-     * külön tesztjét).
+     * We ask the laraupdater controller for the version, rather than
+     * re-reading version.txt: it has the trim(), without which the file's trailing line break
+     * would break every comparison (see the dedicated test written for this
+     * in UpdaterContractTest).
      */
     public static function currentMajor(): ?int
     {
@@ -78,11 +77,11 @@ final class UpdateBranch
     }
 
     /**
-     * Egy verziószám majorja, vagy null, ha nem olvasható ki.
+     * A version number's major, or null if it can't be read.
      *
-     * Megengedő a bemenetre ('v2.0.0', '2.0.0-beta1', ' 2.0 '), mert a
-     * csatorna tartalmát nem mi validáljuk - de ami nem számjeggyel kezdődik,
-     * az nem verzió, és a hívó oldalán tiltást jelent.
+     * Permissive about input ('v2.0.0', '2.0.0-beta1', ' 2.0 '), because we
+     * don't validate the channel's content - but anything that doesn't start with a
+     * digit is not a version, and means denial on the caller's side.
      */
     public static function majorOf(string $version): ?int
     {

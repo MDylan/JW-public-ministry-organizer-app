@@ -9,7 +9,7 @@ class Statistics extends Model
 {
     use HasFactory;
 
-    // A statistics táblában nincs created_at/updated_at oszlop.
+    // The statistics table has no created_at/updated_at column.
     public $timestamps = false;
 
     protected $fillable = [

@@ -66,12 +66,12 @@ class SpecialDateModal extends Component
 
     public function openModal($date = false) {
         $this->getGroupData();
-        // A "Mégsem" gomb csak data-dismiss="modal": szerveroldalon nem fut le
-        // semmi, ezért az előző szerkesztés $date/$state értéke bennmaradt a
-        // komponensben, és a "Hozzáadás" a régi nap adataival nyílt - letiltott
-        // dátum mezővel, törlés gombbal, és mentésnél a régi napot írta felül.
-        // Minden nyitás tiszta lappal indul, ahogy az Events\Modal::openModal()
-        // reset()-je és a PosterEditModal is teszi.
+        // The "Mégsem" button is just data-dismiss="modal": nothing runs
+        // server-side, so the previous edit's $date/$state value stayed in
+        // the component, and "Hozzáadás" opened with the old day's data -
+        // disabled date field, delete button, and it overwrote the old day
+        // on save. Every open now starts with a clean slate, the way
+        // Events\Modal::openModal()'s reset() and PosterEditModal also do.
         $this->resetExcept('groupId');
         $this->resetValidation();
         if($date) {

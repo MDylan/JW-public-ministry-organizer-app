@@ -55,11 +55,11 @@ class Settings extends AppComponent
         'MAIL_USERNAME',
         'MAIL_PASSWORD',
         'MAIL_FROM_ADDRESS',
-        // A kulcs neve KORÁBBAN OPENWAETHER_API_KEY volt - elírás, ami
-        // következetesen szerepelt öt helyen, ezért működött. A
-        // config/openweather.php egy kiadás erejéig a régi nevet is olvassa
-        // fallbackként, mert a telepített hostok .env fájlja még azt hordozza;
-        // ez a lista viszont már az új nevet írja ki mentéskor (v1-patch C).
+        // The key name was PREVIOUSLY OPENWAETHER_API_KEY - a typo that
+        // consistently appeared in five places, which is why it worked. The
+        // config/openweather.php reads the old name as a fallback for one more
+        // release, because deployed hosts' .env files still carry it;
+        // this list, however, already writes out the new name on save (v1-patch C).
         'OPENWEATHER_API_KEY'
     ];
 
@@ -80,12 +80,12 @@ class Settings extends AppComponent
             }
         }
 
-        // Ez az űrlap magát a .env FÁJLT szerkeszti, tehát a fájlból kell
-        // olvasnia. Korábban env()-ből olvasott, ami gyorsítótárazott
-        // konfiguráció mellett null - a szerkesztő ilyenkor csupa ÜRES mezőt
-        // mutatott, és a saveOthers() minden from_env kulcsot feltétel nélkül
-        // visszaír, tehát egyetlen mentés kitörölte volna az APP_NAME, APP_URL
-        // és az összes MAIL_* beállítást a .env-ből. Lásd
+        // This form edits the .env FILE itself, so it has to read from the
+        // file. It used to read from env(), which is null when the
+        // configuration is cached - the editor then showed nothing but EMPTY
+        // fields, and saveOthers() unconditionally writes back every from_env
+        // key, so a single save would have wiped out APP_NAME, APP_URL
+        // and all the MAIL_* settings from the .env. See
         // App\Classes\setEnvironment::value().
         $this->state['recaptcha']['site_key'] = setEnvironment::value('RECAPTCHA_SITE_KEY', '');
         $this->state['recaptcha']['secret_key'] = setEnvironment::value('RECAPTCHA_SECRET_KEY', '');
@@ -94,11 +94,11 @@ class Settings extends AppComponent
             $this->state['env'][$key] = setEnvironment::value($key, '');
         }
 
-        // A csoportadatok megőrzési ideje szándékosan KÍVÜL van a $others
-        // tömbön és a state['others'] ágon is. A $others elemeit a nézet
-        // kapcsoló-ciklusa rendereli (bootstrap-switch), ez viszont
-        // háromértékű választó; a state['others'] pedig a saveOthers()
-        // hatókörébe esne - lásd a saveGroupDataRetention() magyarázatát.
+        // The group data retention period is deliberately OUTSIDE both the
+        // $others array and the state['others'] branch. The $others elements
+        // are rendered by the view's toggle-switch loop (bootstrap-switch),
+        // while this one is a three-valued select; and state['others'] would
+        // fall within saveOthers()'s scope - see the saveGroupDataRetention() explanation.
         $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
     }
 
@@ -205,22 +205,22 @@ class Settings extends AppComponent
     }
 
     /**
-     * A csoportadatok (day_stats, group_dates) megőrzési ideje.
+     * The retention period for group data (day_stats, group_dates).
      *
-     * Saját mentője van, nem a saveOthers()-é, három okból:
+     * Has its own saver, not saveOthers()'s, for three reasons:
      *
-     *  - a saveOthers() a settings sorok után az EGÉSZ .env fájlt újraírja
-     *    (USE_HTTPS, GDPR_ENABLED, minden MAIL_*, APP_URL) és config:clear-t
-     *    hív; egy megőrzési beállításnak nincs szüksége ekkora hatósugárra,
-     *  - a setEnvironmentValue() abort(403)-mal elszállhat AZUTÁN, hogy a
-     *    settings sorok már elmentek - részleges sikert hagyva maga után,
-     *  - a saveOthers() a komponens egyetlen szándékosan teszteletlen
-     *    metódusa (a .env.testing fájlt írná felül, lásd az AdminSettingsTest
-     *    osztálydokját). Egy VÉGLEGES TÖRLÉST vezérlő beállítás nem
-     *    maradhat lefedettség nélkül.
+     *  - saveOthers() rewrites the ENTIRE .env file after the settings rows
+     *    (USE_HTTPS, GDPR_ENABLED, all MAIL_*, APP_URL) and calls config:clear;
+     *    a retention setting doesn't need that large a blast radius,
+     *  - setEnvironmentValue() can bail out with abort(403) AFTER the
+     *    settings rows have already been saved - leaving a partial success behind,
+     *  - saveOthers() is the component's one deliberately untested
+     *    method (it would overwrite the .env.testing file, see the AdminSettingsTest
+     *    class doc block). A setting that governs PERMANENT DELETION cannot
+     *    be left without coverage.
      *
-     * A whitelist itt is kötelező, nem csak a RetentionWindow-ban: a settings
-     * táblába érvénytelen érték se kerüljön be.
+     * The whitelist is mandatory here too, not just in RetentionWindow: no
+     * invalid value should be allowed into the settings table either.
      */
     public function saveGroupDataRetention() {
         $value = (string) ($this->state['retention']['group_data'] ?? '0');
@@ -284,9 +284,9 @@ class Settings extends AppComponent
             }
             $setEnv['GDPR_ENABLED'] = ($this->state['others']['gdpr']) ? "true" : "false";
 
-            // A getenv() ugyanabba a csapdába esett, mint az env(): gyorsítótárazott
-            // konfiguráció mellett a .env be sem töltődik, tehát hamisat ad, és a
-            // CSS-gyorsítótár minden mentésnél fölöslegesen kiürült.
+            // getenv() fell into the same trap as env(): when the
+            // configuration is cached, the .env doesn't even get loaded, so it returns
+            // a false value, and the CSS cache was needlessly cleared on every save.
             if($setEnv['USE_HTTPS'] != setEnvironment::value('USE_HTTPS')) {
                 //clear css cache
                 foreach (glob(public_path()."/plugins/fontawesome-free/css/*-cache_fontawesome.css") as $filename) {

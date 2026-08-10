@@ -21,8 +21,8 @@ if(!function_exists('pwbs_poster_set_read')) {
 if(!function_exists('pwbs_check_group_other_admins')) {
     function pwbs_check_group_other_admins(int $groupId, int $userId) {
         $group = Group::findOrFail($groupId);
-        // Utódnak csak nem anonimizált, elfogadott admin számít - lásd a
-        // Group::activeAdmins() indoklását (TODO 12.2).
+        // Only a non-anonymized, accepted admin counts as a successor - see the
+        // rationale for Group::activeAdmins() (TODO 12.2).
         $users = $group->activeAdmins()->get()->toArray();
         $total_group = 1;
         $admins = 0;
@@ -65,12 +65,12 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
     function pwbs_get_newsletter_roles() {
         $in = [];
 
-        // A gate neve 'is-groupcreator', csupa kisbetűvel (AuthServiceProvider.php:37).
-        // Itt korábban 'is-groupCreator' állt, és mivel a Laravel a gate-eket
-        // kulcs szerinti tömbben tartja, a nevek kis-nagybetű érzékenyek: a
-        // feltétel MINDIG hamis volt, tehát egy sima groupCreator soha nem kapta
-        // meg a neki címzett hírleveleket - csak a mainAdmin jutott át az
-        // is-admin ágon.
+        // The gate name is 'is-groupcreator', all lowercase (AuthServiceProvider.php:37).
+        // Here it used to say 'is-groupCreator', and since Laravel keeps
+        // gates in an array keyed by name, the names are case-sensitive: the
+        // condition was ALWAYS false, so a plain groupCreator never got
+        // the newsletters addressed to them - only the mainAdmin got through the
+        // is-admin branch.
         if(auth()->user()->can('is-groupcreator') || auth()->user()->can('is-admin')) {
             //create group
             $in[] = 'groupCreators';
@@ -87,15 +87,15 @@ if(!function_exists('pwbs_get_newsletter_roles')) {
 
 if(!function_exists('pwbs_weather_api_call')) {
     /**
-     * Egy település időjárása, gyorsítótárral.
+     * The weather for a given city, with caching.
      *
-     * A törzs a v1-patch C csomagjában az App\Support\Weather\WeatherCache
-     * osztályba költözött (TODO 33.6). Ez a függvény szándékosan megmaradt
-     * átjárónak, hogy a két Livewire hívási hely - Groups\UpdateGroupForm
-     * :215 és :524 - ne mozduljon ugyanabban a változtatásban.
+     * The body moved into the App\Support\Weather\WeatherCache class in the
+     * v1-patch C package (TODO 33.6). This function deliberately remains as a
+     * pass-through, so the two Livewire call sites - Groups\UpdateGroupForm
+     * :215 and :524 - don't have to move in the same change.
      *
-     * A visszatérési szerződés változatlan: 'city_id' plusz vagy
-     * 'current_weather' + 'forecast_weather', vagy 'error'.
+     * The return contract is unchanged: 'city_id' plus either
+     * 'current_weather' + 'forecast_weather', or 'error'.
      */
     function pwbs_weather_api_call(string $city, string $country) {
         if(config('weather') != 1) return;
@@ -106,28 +106,28 @@ if(!function_exists('pwbs_weather_api_call')) {
 
 if(!function_exists('pwbs_asset')) {
     /**
-     * Egy public/ alatti statikus fájl URL-je, cache-busting tokennel.
+     * The URL of a static file under public/, with a cache-busting token.
      *
-     * Ez váltja az `eusonlito/laravel-packer`-t (TODO 21 döntése, TODO 33.8
-     * végrehajtása). A csomag egyetlen valóban hasznos szolgáltatása a cache
-     * busting volt, ami egy `filemtime()` hívás - minden más, amit csinált,
-     * kárt okozott:
+     * This replaces `eusonlito/laravel-packer` (TODO 21 decision, TODO 33.8
+     * execution). The package's only genuinely useful service was cache
+     * busting, which is a single `filemtime()` call - everything else it did
+     * caused harm:
      *
-     *  - Minden `url(`-t abszolúttá írt át, és ezzel 181 beágyazott `data:`
-     *    URI-t tett tönkre (177 az adminlte.min.css-ben, 4 a toastr-ben).
-     *  - Az abszolút URL-be a GENERÁLÓ kérés sémája sült bele, a fájl pedig
-     *    korlátlanul újrahasznosult - egy http alatt készült CSS https-en
-     *    mixed contentet okozott, és soha nem gyógyult meg magától.
-     *  - Kérés közben írt a webgyökérbe, `local` kivételével minden
-     *    környezetben - a tesztfutás is, ami a böngészőnek kiszolgált
-     *    fájlokat írta felül.
+     *  - It rewrote every `url(` to be absolute, and in doing so broke 181
+     *    embedded `data:` URIs (177 in adminlte.min.css, 4 in toastr).
+     *  - The absolute URL baked in the scheme of the GENERATING request, and
+     *    the file was then reused without limit - CSS generated under http
+     *    caused mixed content on https, and it never healed itself.
+     *  - It wrote into the web root mid-request, in every environment except
+     *    `local` - including the test run, which overwrote the
+     *    files served to the browser.
      *
-     * Ez a függvény egyiket sem tudja megtenni: nem ír lemezre, nem nyúl a
-     * fájl tartalmához, és az URL-t kérésenként az `asset()`-ből számolja,
-     * tehát a séma mindig az aktuális kérésé.
+     * This function can do none of that: it doesn't write to disk, doesn't touch
+     * the file's contents, and computes the URL per request from `asset()`,
+     * so the scheme is always that of the current request.
      *
-     * Hiányzó fájlnál nem dob hibát, csak token nélküli URL-t ad - egy
-     * elgépelt útvonal ne öljön meg egy oldalt.
+     * On a missing file it doesn't throw, it just returns a URL without a token - a
+     * mistyped path shouldn't kill a page.
      */
     function pwbs_asset(string $path): string {
         $file = public_path(ltrim($path, '/'));

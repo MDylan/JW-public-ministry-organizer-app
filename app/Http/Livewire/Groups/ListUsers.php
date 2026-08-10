@@ -91,10 +91,10 @@ class ListUsers extends AppComponent
         }
 
         //we cannot add new user, if this is a child group
-        // A csupasz return korábban NÉMA volt: sem hibaüzenet, sem modal
-        // visszajelzés nem keletkezett, tehát az adminisztrátor abban a hitben
-        // maradt, hogy a meghívó elment. A tiltás maga helyes - alcsoportba a
-        // főcsoporton keresztül kerülnek be a hírnökök -, csak a hallgatás nem.
+        // The bare return used to be SILENT: no error message, no modal
+        // feedback was produced, so the administrator was left believing
+        // the invite went out. The restriction itself is correct - publishers
+        // get into a child group through the parent group -, only the silence isn't.
         if($this->group->parent_group_id) {
             $this->addError('new_users', __('group.user.add.error_this_is_child'));
             return;
@@ -261,12 +261,12 @@ class ListUsers extends AppComponent
         
         $validatedData = $v->validate();
 
-        // A profilmezők validációja KORÁBBAN a pivot mentése UTÁN futott, külön
-        // Validator::make()-kel és tranzakció nélkül. Egy hibás név ezért
-        // részlegesen mentett rekordot hagyott maga után: a jegyzet és a szerep
-        // már az adatbázisban volt, a profil viszont nem, a felhasználó pedig
-        // csak egy hibaüzenetet látott. Minden validáció ezért ide, az első írás
-        // ELÉ került, és ami utána marad, az egyetlen tranzakcióban fut le.
+        // Validation of the profile fields used to run AFTER the pivot save, with a
+        // separate Validator::make() and no transaction. An invalid name therefore
+        // left behind a partially saved record: the note and the role were
+        // already in the database, but the profile wasn't, and the user
+        // only saw an error message. All validation was therefore moved to
+        // BEFORE the first write, and whatever remains runs in a single transaction.
         $profileChanged = $selected_user->name !== $this->state['user']['name']
             || $selected_user->phone_number !== $this->state['user']['phone_number']
             || $selected_user->congregation !== $this->state['user']['congregation'];
@@ -280,15 +280,14 @@ class ListUsers extends AppComponent
             ])->validate();
         }
 
-        // A finish_guest_registration NEM oszlopa a group_user táblának: az
-        // editUser() az űrlap állapotába teszi, a validáció átengedi, és eddig a
-        // teljes $validatedData ment a syncWithoutDetaching()-nek. Ez kizárólag
-        // azért nem hasalt el, mert a GroupUser egyedi Pivot osztály $fillable
-        // listával, így a Laravel az updateExistingPivotUsingCustomClass() ágon
-        // fill()-lel csendben eldobta az ismeretlen kulcsot - egy
-        // keretrendszer-verziótól függő útvonal, ami egy nyers update/insert
-        // fallbacken ismeretlen oszlop hibával járna. A kulcsot ezért itt
-        // vesszük ki, a vezérlő értéket pedig külön tartjuk meg.
+        // finish_guest_registration is NOT a column of the group_user table: editUser()
+        // puts it into the form state, validation lets it through, and up to now the
+        // full $validatedData was going to syncWithoutDetaching(). This only didn't
+        // blow up because the GroupUser custom Pivot class has a $fillable
+        // list, so Laravel's updateExistingPivotUsingCustomClass() path
+        // silently dropped the unknown key via fill() - a framework-version-dependent
+        // path that would fail with an unknown column error on a raw update/insert
+        // fallback. The key is therefore stripped out here, and the control value is kept separately.
         $finishGuestRegistration = (int) ($validatedData['finish_guest_registration'] ?? 0);
         unset($validatedData['finish_guest_registration']);
 
@@ -347,9 +346,9 @@ class ListUsers extends AppComponent
             }
         });
 
-        // Az értesítések a COMMIT UTÁN mennek ki. Tranzakción belül egy queue-ra
-        // tett job elindulhatna, mielőtt a hozzá tartozó sorok láthatóvá válnak,
-        // egy rollback pedig olyan jelszót küldene ki, ami sehol nincs elmentve.
+        // Notifications go out AFTER the COMMIT. A job placed on a queue inside a
+        // transaction could start before the associated rows become visible,
+        // and a rollback would then send out a password that isn't saved anywhere.
         foreach($notifications as [$notifiable, $notification]) {
             $notifiable->notify($notification);
         }
@@ -458,10 +457,10 @@ class ListUsers extends AppComponent
             $this->filter['myself'] = false;
         }
         $this->filter['inactive'] = false;
-        // A többi szűrő (updatedSearchTerm, filterMyself, filterIcon,
-        // filterOff) mind nullázza a lapozó kurzort; ez a kettő nem tette. A
-        // 3. oldalon állva az online szűrő ezért üres listát adott, holott volt
-        // találat - a paginátor a leszűkített halmaz 3. oldalát kérte.
+        // The other filters (updatedSearchTerm, filterMyself, filterIcon,
+        // filterOff) all reset the paginator cursor; these two didn't. Standing on
+        // page 3, the online filter therefore returned an empty list even though
+        // there were results - the paginator asked for page 3 of the narrowed set.
         $this->resetPage();
     }
 
@@ -548,13 +547,13 @@ class ListUsers extends AppComponent
     }
 
     /**
-     * A user_admin_groups() párja: csoportfelvigyázó-e a felhasználó a megadott
-     * csoportban ÚGY, hogy az maga is alcsoport.
+     * The counterpart of user_admin_groups(): is the user a group admin in the given
+     * group WHERE that group is itself a child group.
      *
-     * Ez választja szét a linkToGroup() két hibaokát: "nem vagy benne
-     * csoportfelvigyázó" kontra "a csoport már máshoz van kötve". A
-     * user_admin_groups() önmagában nem tudja megkülönböztetni a kettőt, mert
-     * az alcsoportokat már a lekérdezésben kiszűri.
+     * This is what separates the two error causes in linkToGroup(): "you aren't a
+     * group admin in it" versus "the group is already linked elsewhere". On its own,
+     * user_admin_groups() can't distinguish the two, because it already
+     * filters out child groups in the query.
      */
     private function isAdminOfChildGroup($groupId) {
         if(!$groupId) return false;
@@ -585,16 +584,16 @@ class ListUsers extends AppComponent
             $this->addError('parent_group_id', __('group.link.error_same_group'));
         }
 
-        // Itt korábban KÉT ellenőrzés állt egymás után, és mindkettő ugyanazt
-        // mérte: a user_admin_groups() eleve whereNull('parent_group_id')-vel
-        // kérdez, tehát a visszaadott gyűjteményben alcsoport nem is lehet. A
-        // második feltétel (->whereNull('parent_group_id') ugyanazon a
-        // gyűjteményen) ezért mindig együtt teljesült az elsővel, és a
-        // felhasználó két hibaüzenetet kapott egyszerre - köztük a
-        // félrevezető "nem vagy csoportfelvigyázó benne"-t, holott lehet, hogy
-        // éppen ő az, csak a csoport már egy másik alá van kötve.
+        // There used to be TWO checks here in a row, and both measured the
+        // same thing: user_admin_groups() already queries with
+        // whereNull('parent_group_id'), so the returned collection can't contain a
+        // child group anyway. The second condition (->whereNull('parent_group_id') on
+        // the same collection) therefore always held together with the first, and the
+        // user got two error messages at once - including the
+        // misleading "you aren't a group admin in it", even though they might well
+        // be, and it's just that the group is already linked under a different one.
         //
-        // Most egyetlen ok jelenik meg, és az a valódi.
+        // Now only a single reason appears, and it's the real one.
         $groups = $this->user_admin_groups();
         if($groups->where('id', $this->new_parent_group_id)->count() == 0) {
             if($this->isAdminOfChildGroup($this->new_parent_group_id)) {
@@ -722,25 +721,25 @@ class ListUsers extends AppComponent
             abort(403);
         }
 
-        // A ->first() null is lehet (ismeretlen vagy már lecsatolt detachId).
-        // A korábbi `!$selected_group->id` ilyenkor NULL-on hívott property-t,
-        // tehát fatal jött 403 helyett - ugyanaz a hibaosztály, amit a
-        // detachParentGroup()-nál a TODO 11.1 javított.
+        // ->first() can also be null (unknown or already-detached detachId).
+        // The previous `!$selected_group->id` was calling a property on NULL in that
+        // case, so a fatal error came instead of a 403 - the same class of bug that
+        // TODO 11.1 fixed for detachParentGroup().
         $selected_group = $group->childGroups()->where('id', $this->detachId)->first();
         if($selected_group === null) abort(403);
 
-        // Az értesítés adatai az update() ELŐTT állnak össze, mert utána a
-        // kapcsolat már nem áll fenn.
+        // The notification data is assembled BEFORE the update(), because afterward the
+        // relationship no longer exists.
         $data = [
             'groupName' => $group->name,
             'childGroupName' => $selected_group->name,
             'userName' => auth()->user()->name
         ];
 
-        // Modellen keresztül mentünk, nem tömeges update()-tel. A korábbi
-        // ->childGroups()->where(...)->update() megkerülte az Eloquent
-        // eseményeket, így a GroupObserver audit bejegyzése elmaradt - a szülő
-        // oldalról bontott UGYANEZ a kapcsolat viszont naplózódott.
+        // We save through the model, not with a bulk update(). The previous
+        // ->childGroups()->where(...)->update() bypassed the Eloquent
+        // events, so the GroupObserver audit entry was missing - whereas the SAME
+        // relationship, detached from the parent side, was logged.
         $selected_group->update([
             'parent_group_id' => null,
             'copy_from_parent' => null
@@ -748,10 +747,10 @@ class ListUsers extends AppComponent
 
         $this->detachId = null;
 
-        // A detachParentGroup() ugyanezt a kapcsolatot a másik oldalról bontva
-        // értesíti az alcsoport adminisztrátorait. Innen eddig SEMMI nem ment
-        // ki, tehát az érintettek attól függően kaptak tájékoztatást, hogy
-        // melyik képernyőről nyúlt hozzá valaki.
+        // detachParentGroup() notifies the child group's administrators when
+        // breaking this same relationship from the other side. NOTHING was going out
+        // from here until now, so the affected parties got notified or not
+        // depending on which screen someone used to make the change.
         Notification::send(
             $selected_group->groupAdmins,
             new GroupParentGroupDetachedNotification($data)
@@ -791,13 +790,13 @@ class ListUsers extends AppComponent
         if($group->parent_group_id != $this->detachId)
             abort(403);
 
-        // Az értesítés adatai a jogosultsági őrök UTÁN épülnek: az
-        // auth()->user()->name korábban itt fentebb állt, tehát bejelentkezett
-        // felhasználó nélkül fatal jött 403 helyett.
+        // The notification data is built AFTER the authorization guards: the
+        // auth()->user()->name call used to sit further up here, so a fatal error came
+        // instead of a 403 when there was no logged-in user.
         //
-        // De még az update() ELŐTT kell összeállnia: a parent_group_id
-        // nullázása után a parentGroup reláció már nem adná vissza az
-        // elhagyott szülőcsoport nevét.
+        // But it still has to be assembled BEFORE the update(): once parent_group_id
+        // is nulled out, the parentGroup relation would no longer return the
+        // abandoned parent group's name.
         $parent_group = $group->parentGroup;
         $parent_group_name = ($parent_group !== null) ? $parent_group->name : null;
         $data = [
@@ -915,14 +914,14 @@ class ListUsers extends AppComponent
             ->select('group_role')
             ->first();
 
-        // Tagsági sor nélkül korábban a ->toArray() szállt el null-on, vagyis
-        // egy 500-as hiba tartotta zárva a komponenst. A route-on ott van a
-        // groupMember middleware, de a getGroupInfo()-t hívó Livewire
-        // metódusok saját jogon is elérhetők, ezért itt is zárni kell.
+        // Without a membership row, ->toArray() used to fail on null, meaning
+        // a 500 error kept the component locked. The route has the
+        // groupMember middleware, but the Livewire methods that call getGroupInfo() are
+        // also reachable in their own right, so this needs to be locked down here too.
         //
-        // Nem elég a role-t null-ra hagyni: a render() nem ellenőriz
-        // jogosultságot, csak $editor-t számol, tehát a kívülálló
-        // lerenderelné a taglistát nem-szerkesztőként.
+        // Leaving role as null isn't enough: render() doesn't check
+        // authorization, it only computes $editor, so an outsider would
+        // have the member list rendered for them as a non-editor.
         if($info === null) {
             abort(403);
         }

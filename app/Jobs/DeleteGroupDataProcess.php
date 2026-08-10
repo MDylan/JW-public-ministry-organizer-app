@@ -68,17 +68,18 @@ class DeleteGroupDataProcess implements ShouldQueue
             $users = GroupUser::with('user', 'user.userGroups')->where('group_id', $this->groupId)->get();
             foreach($users as $user) {
                 if($this->deleteUsers !== false && $user->user !== null) {
-                    // A feltétel korábban `count($user->user->userGroups) == 0`
-                    // volt, ami CSAK akkor teljesült, ha a csoport a job
-                    // futásakor MÁR soft-deleted: a userGroups reláció a groups
-                    // táblához joinol, és az onnan kiesett sor nem számított
-                    // bele. Az éles GroupDelete útvonal előbb töröl, aztán
-                    // dispatch-el, ezért működött - de a jobot élő csoportra
-                    // hívva az anonimizálás NÉMÁN kimaradt.
+                    // The condition used to be `count($user->user->userGroups) == 0`,
+                    // which was ONLY true if the group was ALREADY soft-deleted
+                    // by the time the job ran: the userGroups relation joins
+                    // to the groups table, and a row that had dropped out of
+                    // there didn't count. The live GroupDelete path deletes
+                    // first and dispatches afterward, so it worked there -
+                    // but calling the job on a still-live group made the
+                    // anonymization SILENTLY not happen.
                     //
-                    // Most explicit: a saját csoportot zárjuk ki a számlálásból,
-                    // tehát az eredmény független attól, mikor törlik a
-                    // csoportot magát.
+                    // Now it's explicit: we exclude the group itself from the
+                    // count, so the result no longer depends on when the
+                    // group itself gets deleted.
                     $otherGroups = $user->user->userGroups
                         ->filter(function ($group) {
                             return (int) $group->id !== (int) $this->groupId;
@@ -86,15 +87,15 @@ class DeleteGroupDataProcess implements ShouldQueue
                         ->count();
 
                     if($otherGroups === 0) {
-                        // A User::anonymize() maga is elutasíthatja a kérést,
-                        // ha az utódlási szabály nem teljesül (TODO 12.2).
+                        // User::anonymize() can itself reject the request if
+                        // the succession rule isn't satisfied (TODO 12.2).
                         $user->user->anonymize();
                     }
                 }
 
-                // A null-ellenőrzés SORRENDJE is hibás volt: a régi feltétel
-                // előbb olvasta a $user->user->userGroups-ot, és csak utána
-                // vizsgálta, hogy $user->user egyáltalán létezik-e.
+                // The ORDER of the null check was also wrong: the old
+                // condition read $user->user->userGroups first, and only
+                // afterward checked whether $user->user even exists.
                 $user->delete();
             }
         });

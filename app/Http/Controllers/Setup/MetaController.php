@@ -44,12 +44,12 @@ class MetaController extends Controller
     }
 
     /**
-     * A telepítő feloldása a szerveren elhelyezett tokennel.
+     * Unlocking the installer with the token placed on the server.
      *
-     * A tokent a middleware generálja a storage/app/installer-token.txt fájlba;
-     * megadni tehát csak az tudja, aki a szerver fájljaihoz hozzáfér. Ez az
-     * egyetlen ellenőrzés, ami a telepítés szakaszában értelmezhető - itt még
-     * definíció szerint nincs felhasználó, akihez kötni lehetne.
+     * The middleware generates the token into storage/app/installer-token.txt;
+     * so only someone with access to the server's files can supply it. This is the
+     * only check that makes sense during the installation phase - at this point
+     * there is, by definition, no user to tie it to yet.
      */
     public function unlock(Request $request): RedirectResponse
     {
@@ -73,13 +73,13 @@ class MetaController extends Controller
      */
     public function complete()
     {
-        // A sentinel kiírása KORÁBBAN feltétel nélkül futott egy GET-en, tehát
-        // bárki lezárhatta a telepítőt, mielőtt az első adminisztrátor
-        // létrejött volna - és onnantól a `setup/*` csoport nem is
-        // regisztrálódik, vagyis a telepítés befejezhetetlenné vált.
+        // Writing the sentinel used to run unconditionally on a GET, so
+        // anyone could close off the installer before the first administrator
+        // was created - and from that point the `setup/*` group would no longer
+        // register, meaning the installation could never be completed.
         //
-        // A sentinel jelentése "a telepítés befejeződött", és ez pontosan azt
-        // jelenti, hogy van adminisztrátori fiók. Ezt ellenőrizzük.
+        // The sentinel's meaning is "the installation is complete", and that's exactly
+        // what having an administrator account means. That's what we check here.
         if (! User::where('role', 'mainAdmin')->exists()) {
             return redirect()
                 ->route('setup.account')
@@ -88,7 +88,7 @@ class MetaController extends Controller
 
         Storage::put('installed.txt', "The program installed successfully at ".date("Y-m-d H:i:s").".\n\nPlease DO NOT DELETE this file, unless you want to reinstall this program.");
 
-        // A token elveszti a jelentését; ne maradjon a lemezen.
+        // The token loses its meaning; it shouldn't remain on disk.
         EnsureInstallerToken::forget();
 
         return view('setup.complete');

@@ -99,7 +99,7 @@ class UserObserver
     }
 
     /**
-     * Értesítem a többi admint, hogy létrejött egy új admin
+     * Notify the other admins that a new admin has been created
     */
     public function adminAdded(User $user) {
 

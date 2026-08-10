@@ -215,12 +215,12 @@ class CalculateDatesEvents {
         }
         // dd($disabled_slots, $days_disabled_slots, $debug, $modifies, 'Upd', $updates, 'Del:', $deletes, $events, $original_data);
 
-        // A causer neve NEM olvasható közvetlenül modellről: ez a metódus a
-        // CalculateDateProcess és a GroupDayUpdatedProcess sorkezelőjéből is
-        // fut, ahol az auth() sosem ad felhasználót, a rendszer-okozó
-        // azonosítója pedig 0 - amire a User::find() null-t ad. Az
-        // eredményt a hívó közvetlenül értesítés szövegébe teszi, tehát a
-        // null itt ErrorException-t okozna.
+        // The causer's name CANNOT be read directly from the model: this method also
+        // runs from the queue worker of CalculateDateProcess and GroupDayUpdatedProcess,
+        // where auth() never returns a user, and the system causer's
+        // id is 0 - for which User::find() returns null. The
+        // caller puts the result directly into a notification text, so a
+        // null here would cause an ErrorException.
         $causerName = self::causerNameFor($user_id ?: auth()->user()?->id);
         $group = Group::find($group_id);
 

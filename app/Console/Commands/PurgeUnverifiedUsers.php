@@ -6,8 +6,8 @@ use App\Models\User;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * hourlyAt(50) ütemezéssel.
+ * Previously an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with hourlyAt(50).
  */
 class PurgeUnverifiedUsers extends Command
 {

@@ -6,8 +6,8 @@ use App\Models\Event;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * everyFiveMinutes() ütemezéssel.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with everyFiveMinutes().
  */
 class ExpirePendingEvents extends Command
 {
@@ -17,7 +17,7 @@ class ExpirePendingEvents extends Command
 
     public function handle()
     {
-        // status: 0 = függőben, 1 = elfogadva, 2 = elutasítva/lejárt
+        // status: 0 = pending, 1 = accepted, 2 = denied/expired
         $expired = Event::where('status', '=', '0')
             ->where('start', '<=', date('Y-m-d H:i:s'))
             ->update(['status' => 2]);

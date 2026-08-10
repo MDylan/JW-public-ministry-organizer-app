@@ -141,15 +141,15 @@ class GenerateStatProcess implements ShouldQueue
      */
     public function handle()
     {
-        // A retenciós padló alatt nem gyártunk újra statisztikát.
+        // We don't regenerate statistics below the retention floor.
         //
-        // A GroupDateHelper::generateDate() múltvédelme hibás (a $date_info
-        // ágon kiértékeli a toArray()-t, eldobja, majd átesik az
-        // updateOrCreate-re), így egy csoportsablon-szerkesztés a régi
-        // napokra is dispatch-eli ezt a jobot. A forrásesemények viszont már
-        // törölve vannak, tehát a getInfo() csupa nulla slotot adna vissza:
-        // egy éppen most kitakarított napra egy vadonatúj day_stats sor
-        // kerülne azzal az állítással, hogy ott senki nem szolgált.
+        // GroupDateHelper::generateDate()'s past-protection is buggy (on the
+        // $date_info branch it evaluates the toArray(), discards it, and then
+        // falls through to updateOrCreate()), so editing a group template
+        // also dispatches this job for old days. But the source events have
+        // already been deleted, so getInfo() would return all-zero slots: a
+        // day that was just cleaned up would get a brand-new day_stats row
+        // claiming that nobody served there.
         $floor = RetentionWindow::groupDataFloor();
         if($floor !== null && $this->date < $floor->toDateString()) {
             return;
@@ -159,12 +159,12 @@ class GenerateStatProcess implements ShouldQueue
         // $this->date = $date;
         if($this->forceReset) {
             //we reset timeslot for this day
-            // A ->first() null is lehet: a jobot a queue akkor is lefuttatja,
-            // ha a GroupDate sor a dispatch óta eltűnt (párhuzamos törlés,
-            // csoport-törlés, kézi adatjavítás). A korábbi feltétel nélküli
-            // ->delete() ilyenkor null-on hívott metódust, tehát a job fatal
-            // hibával halt meg ahelyett, hogy egyszerűen továbbment volna -
-            // a reset célja pedig épp az, hogy a sor NE legyen ott.
+            // ->first() can be null: the queue still runs the job even if the
+            // GroupDate row has disappeared since the dispatch (concurrent
+            // delete, group deletion, manual data fix). The previous
+            // unconditional ->delete() then called a method on null, so the
+            // job died with a fatal error instead of simply moving on - and
+            // the whole point of the reset is for the row NOT to be there.
             $groupDate = GroupDate::where('group_id', '=', $this->groupId)
                         ->where('date', '=', $this->date)
                         ->first();

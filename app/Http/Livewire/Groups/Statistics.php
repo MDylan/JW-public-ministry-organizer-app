@@ -33,40 +33,43 @@ class Statistics extends AppComponent
     }
 
     /**
-     * A szűrőűrlap elküldése.
+     * Submitting the filter form.
      *
-     * Ez a metódus korábban setMonth() volt, és egy hónapválasztóhoz tartozott.
-     * A választót date-range páros váltotta fel - a select a nézetben ki van
-     * kommentelve -, a metódus törzse viszont ottmaradt: egy `$this->months`
-     * tömbre hivatkozott, aminek a DEKLARÁCIÓJA is ki volt kommentelve. Így
-     * dinamikus property lett belőle, amit a Livewire nem perzisztál, tehát az
-     * isset() mindig hamis volt, és a metódus semmit nem csinált. A gomb csak
-     * azért működött, mert BÁRMELY Livewire-akció újraküldi a `wire:model.defer`
-     * mezőket - a hatás a metódustól teljesen független volt.
+     * This method used to be setMonth(), and belonged to a month picker. The
+     * picker was replaced by a date-range pair - the select is commented out
+     * in the view -, but the method body was left behind: it referenced a
+     * `$this->months` array whose DECLARATION was also commented out. That
+     * made it a dynamic property, which Livewire doesn't persist, so isset()
+     * was always false, and the method did nothing. The button only worked
+     * because ANY Livewire action resubmits the `wire:model.defer` fields -
+     * the effect was completely independent of the method.
      *
-     * A törzs ezért törölve. A metódus megmarad, mert a szerepe valódi: ez az
-     * akció küldi be a halasztott dátummezőket. A render() a $startDate és az
-     * $endDate alapján dolgozik, más bemenete nincs.
+     * The body has therefore been removed. The method stays, because its
+     * role is real: this is the action that submits the deferred date
+     * fields. render() works off $startDate and $endDate, it has no other
+     * input.
      *
-     * (A dinamikus property PHP 8.2-től deprecated - ezzel az a csapda is
-     * eltűnik a Phase 8 elől.)
+     * (Dynamic properties are deprecated as of PHP 8.2 - this also removes
+     * that trap ahead of Phase 8.)
      */
     public function applyDateRange() {
-        // A render() mindent a frissített $startDate / $endDate alapján számol.
+        // render() computes everything from the updated $startDate / $endDate.
     }
 
     /**
-     * A választott időszakot felhúzza a retenciós padlóra.
+     * Pulls the selected period up to the retention floor.
      *
-     * A padló alatt a day_stats és a group_dates sorok már törölve vannak, az
-     * események is elfogyhattak - a nézet viszont nem üres táblát rajzolna,
-     * hanem a group_dates hiányában is végigmenne a napokon, és minden régi
-     * napra azt állítaná, hogy a csoport 0 órát szolgált. A hamis adat
-     * rosszabb, mint a hiányzó, ezért a korlát SZERVEROLDALI: a nézetbeli
-     * `min` attribútum csak tanácsadó, a wire:model.defer bármit felküldhet.
+     * Below the floor, the day_stats and group_dates rows are already
+     * deleted, and the events may have run out too - but the view wouldn't
+     * draw an empty table, it would still walk through the days even without
+     * group_dates, and would claim for every old day that the group served 0
+     * hours. False data is worse than missing data, so the limit is
+     * SERVER-SIDE: the `min` attribute in the view is only advisory,
+     * wire:model.defer can submit anything.
      *
-     * A displayFloor() azért a helyes padló, mert ez a nézet eseményt ÉS
-     * day_stats-ot is olvas - csak addig hiteles, ameddig mindkettő él.
+     * displayFloor() is the correct floor here because this view reads both
+     * events AND day_stats - it's only accurate as long as both are still
+     * alive.
      */
     private function clampToRetentionFloor(): void
     {
@@ -86,8 +89,8 @@ class Statistics extends AppComponent
     }
 
     /**
-     * A dátumválasztó legkorábbi napja: a csoport létrehozása és a retenciós
-     * padló közül a KÉSŐBBI.
+     * The earliest day the date picker allows: whichever is LATER of the
+     * group's creation date and the retention floor.
      */
     private function earliestSelectableDate(): string
     {
@@ -133,11 +136,11 @@ class Statistics extends AppComponent
                             ->get()
                             ->toArray();
         $total = [
-            'service_hour' => 0,    //hány órát töltöttünk szolgálatban
-            'ready' => 0,   //hány alkalommal volt legalább elég a hírnökszám
-            'max' => 0,      //hány alkalommal volt teljes a létszám
-            'empty' => 0,   //hány alkalommal nem volt senki
-            'not_enough' => 0 //hány alkalommal nem volt meg a minimális létszám
+            'service_hour' => 0,    //how many hours were spent in service
+            'ready' => 0,   //how many times there were at least enough publishers
+            'max' => 0,      //how many times the full complement was present
+            'empty' => 0,   //how many times nobody was present
+            'not_enough' => 0 //how many times the minimum complement was not met
         ];
         
         $hours = [

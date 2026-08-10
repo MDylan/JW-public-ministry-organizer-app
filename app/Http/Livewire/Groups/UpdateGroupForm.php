@@ -212,17 +212,17 @@ class UpdateGroupForm extends AppComponent
                 'country' => 'required|string|max:2'
             ])->validate();
             
-            // A hibaág KORÁBBAN nullázta a city_id-t, miközben a lenti
-            // validáció megköveteli (required_if:weather_enabled,1). Aki tehát
-            // bekapcsolta az időjárást, és az API épp nem válaszolt, EGYÁLTALÁN
-            // nem tudta menteni a csoportot - egy külső szolgáltatás
-            // elérhetetlensége blokkolta a teljes űrlapot, olyan mezőkkel
-            // együtt, amiknek semmi közük az időjáráshoz.
+            // The error branch USED TO null out city_id, while the validation
+            // below requires it (required_if:weather_enabled,1). So anyone
+            // who turned on weather, and whose API call happened not to
+            // respond, could NOT save the group AT ALL - an external
+            // service's unavailability blocked the entire form, including
+            // fields that have nothing to do with weather.
             //
-            // A WeatherCache hibaágon is visszaadja a város azonosítóját (a
-            // sort a sikertelen kísérlet is létrehozza), tehát a mentés
-            // mehet; a hiba magát a felhasználó a weather_messages panelen
-            // látja.
+            // WeatherCache also returns the city's id on the error branch
+            // (the row is created even by a failed attempt), so the save can
+            // proceed; the user sees the error itself on the weather_messages
+            // panel.
             $weather = pwbs_weather_api_call($this->weather['city'], $this->weather['country']);
             if(isset($weather['city_id'])) {
                 $this->state['city_id'] = $weather['city_id'];
@@ -251,9 +251,9 @@ class UpdateGroupForm extends AppComponent
             'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
-            // `email:filter`, nem sima `email`: ez az érték a csoport leveleinek
-            // Reply-To FEJLÉCÉBE megy, az alapértelmezett szabály pedig
-            // elfogadja a CR/LF-et a címben (GHSA-5vg9-5847-vvmq).
+            // `email:filter`, not plain `email`: this value goes into the
+            // Reply-To HEADER of the group's emails, and the default rule
+            // accepts CR/LF in the address (GHSA-5vg9-5847-vvmq).
             'replyTo' => 'nullable|email:filter',
             'showPhone' => 'required|numeric|in:0,1',
             'messages_on' => 'required|numeric|in:0,1',

@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * dailyAt('7:10') ütemezéssel.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with dailyAt('7:10').
  *
- * Két értesítést küld:
- *  - az érintett felhasználónak, 15 nappal a törlés előtt,
- *  - a csoportjuk szervezőinek/felelőseinek, egy szűkebb, 6-7 napos ablakban.
+ * Sends two notifications:
+ *  - to the affected user, 15 days before deletion,
+ *  - to their group's organizers/admins, in a narrower, 6-7 day window.
  */
 class NotifyUpcomingAnonymization extends Command
 {
@@ -48,11 +48,11 @@ class NotifyUpcomingAnonymization extends Command
         $model = config('gdpr.settings.user_model_fqn', 'App\Models\User');
         $user = new $model();
 
-        // TODO 12.2: a korábbi szerepszűrés helyett ugyanaz az utódlási
-        // feltétel dönt, mint az anonimizálásnál. Enélkül két hiba állna elő:
-        // egy groupCreator figyelmeztetés nélkül anonimizálódna, egy blokkolt
-        // felhasználó pedig NAPONTA kapna levelet a soha be nem következő
-        // törlésről - a lekérdezés ugyanis nem ablak, hanem küszöb.
+        // TODO 12.2: instead of the previous role filter, the same succession
+        // condition decides here as for anonymization. Without this, two bugs would occur:
+        // a groupCreator would get anonymized without a warning, and a blocked
+        // user would get an email DAILY about a deletion that will never
+        // happen - because the query is not a window, but a threshold.
         $anonymizableUsers = $user::where('last_activity', '!=', null)
             ->where('isAnonymized', 0)
             ->where('last_activity', '<=', $date)
@@ -97,9 +97,9 @@ class NotifyUpcomingAnonymization extends Command
             ->whereBetween('U.last_activity', [$maxDate->format('Y-m-d'), $minDate->format('Y-m-d')])
             ->get();
 
-        // TODO 12.2: nyers join, itt nem fűzhető rá az utódlási feltétel -
-        // ezért utószűrés. A modelleket egyetlen lekérdezéssel töltjük be, az
-        // ablak eleve egy nap széles, tehát a halmaz kicsi.
+        // TODO 12.2: raw join, the succession condition can't be attached here -
+        // hence the post-filter. The models are loaded with a single query, and the
+        // window is already only one day wide, so the set is small.
         $candidates = User::whereIn('id', $anonymizableUsers->pluck('id')->unique())->get()->keyBy('id');
 
         $anonymizableUsers = $anonymizableUsers->filter(
@@ -114,8 +114,8 @@ class NotifyUpcomingAnonymization extends Command
             $editorsList[$user->group_id]['users'][$user->id] = [
                 'lastDate' => $lastDate->format('Y-m-d'),
                 'last_activity' => $user->last_activity,
-                // Nyers DB lekérdezés, ezért a titkosított oszlopokat kézzel
-                // kell visszafejteni - az Eloquent cast itt nem fut le.
+                // Raw DB query, so the encrypted columns must be decrypted
+                // manually - the Eloquent cast doesn't run here.
                 'name' => Crypt::decryptString($user->name),
             ];
             $editorsList[$user->group_id]['name'] = Crypt::decryptString($user->group_name);

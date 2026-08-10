@@ -46,20 +46,20 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
-        // A kulcs KORÁBBAN a nyers `email . ip` összefűzés volt. Két baja volt:
+        // The key USED TO BE the raw `email . ip` concatenation. It had two problems:
         //
-        // 1. Normalizálatlan e-mail. A MySQL alapértelmezett collationje
-        //    kis-/nagybetűre érzéketlen, tehát a `User@x.hu` és a `user@x.hu`
-        //    UGYANAZT a fiókot találja meg - a limiter viszont két külön
-        //    vödörnek látta őket, így az 5/perc korlát a betűváltozatokkal
-        //    tetszőlegesen sokszorozható volt.
-        // 2. Nincs elválasztó. A `bob@x.hu` + `1.2.3.41` és a `bob@x.hu1` +
-        //    `.2.3.41` ugyanazt a kulcsot adja - önmagában ártalmatlan, de a
-        //    kulcsütközés soha nem szándékos.
+        // 1. Non-normalized email. MySQL's default collation is
+        //    case-insensitive, so `User@x.hu` and `user@x.hu`
+        //    resolve to the SAME account - but the limiter saw them as two separate
+        //    buckets, so the 5/minute limit could be multiplied at will
+        //    with letter-case variants.
+        // 2. No separator. `bob@x.hu` + `1.2.3.41` and `bob@x.hu1` +
+        //    `.2.3.41` produce the same key - harmless on its own, but a
+        //    key collision is never intentional.
         //
-        // A második, IP-alapú korlát az e-mail-forgatásos próbálkozást fogja
-        // meg: egy IP-ről percenként 20 bejelentkezési kísérlet mehet, akárhány
-        // különböző címmel.
+        // The second, IP-based limit catches the email-rotation attempt:
+        // 20 login attempts per minute may go through from one IP, with any
+        // number of different addresses.
         RateLimiter::for('login', function (Request $request) {
             $email = Str::lower(trim((string) $request->input('email')));
 
@@ -106,12 +106,12 @@ class FortifyServiceProvider extends ServiceProvider
             \App\Actions\Fortify\DisableTwoFactorAuthentication::class
         );
 
-        // A TOTP-visszajátszás elleni védelem. A Fortify 1.11.2 saját javítása
-        // nem ér célba a google2fa `findValidOTP()` `true` visszatérése miatt -
-        // a részletes indoklás a felüldefiniált osztály fejlécében áll.
+        // Protection against TOTP replay. Fortify 1.11.2's own fix doesn't
+        // reach its target because of google2fa's `findValidOTP()` returning `true` -
+        // the detailed rationale is in the overriding class's header.
         //
-        // A Fortify a SAJÁT kötését register()-ben teszi le, ez a boot() pedig
-        // minden register() után fut, tehát ez nyer.
+        // Fortify lays down its OWN binding in register(), and this boot()
+        // runs after every register(), so this one wins.
         $this->app->singleton(
             \Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider::class,
             function ($app) {

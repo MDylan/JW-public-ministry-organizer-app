@@ -7,8 +7,8 @@ use App\Models\User;
 use Illuminate\Console\Command;
 
 /**
- * Korábban a napi takarító closure harmadik része volt az
- * App\Console\Kernel::schedule()-ben, daily() ütemezéssel.
+ * Previously this was the third part of the daily cleanup closure in
+ * App\Console\Kernel::schedule(), scheduled with daily().
  */
 class RecordDailyUserStatistics extends Command
 {
@@ -20,9 +20,9 @@ class RecordDailyUserStatistics extends Command
     {
         $dailyUsers = User::where('last_activity', '>=', now()->subDay())->count();
 
-        // A 'dialy_users' típusnév elgépelés, de szándékosan marad:
-        // a meglévő adatsorok és az Admin\Statistics komponens is erre
-        // a stringre szűr. Átnevezés csak adatmigrációval együtt lehetséges.
+        // The 'dialy_users' type name is a typo, but it's intentionally kept:
+        // both the existing data rows and the Admin\Statistics component filter on
+        // this string. Renaming is only possible together with a data migration.
         Statistics::insert([
             'type' => 'dialy_users',
             'date' => now()->subDay()->format('Y-m-d'),

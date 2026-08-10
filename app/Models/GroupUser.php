@@ -27,9 +27,9 @@ final class GroupUser extends Pivot
         'message_send_priority'
     ];
 
-    // TODO 29: a `protected $dates = ['created_at','updated_at','deleted_at']`
-    // sor a `$casts`-ba olvadt - a propertyt a Laravel 10 megszüntette. A
-    // `deleted_at` nem került át: azt a `SoftDeletes` trait castolja.
+    // TODO 29: the `protected $dates = ['created_at','updated_at','deleted_at']`
+    // line merged into `$casts` - the property was discontinued by Laravel 10.
+    // `deleted_at` did not move over: that is cast by the `SoftDeletes` trait.
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

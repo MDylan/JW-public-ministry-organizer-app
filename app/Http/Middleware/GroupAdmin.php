@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Ez a middleware ellenőrzi, hogy adott user jogosult e a csoport adatait szerkeszteni.
+ * This middleware checks whether the given user is authorized to edit the group's data.
  */
 class GroupAdmin
 {

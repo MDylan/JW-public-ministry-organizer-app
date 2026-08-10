@@ -8,34 +8,34 @@ use Illuminate\Support\Facades\Artisan;
 class setEnvironment {
 
     /**
-     * A .env fájl beolvasott tartalma, kérésen belül gyorsítótárazva.
+     * The parsed contents of the .env file, cached within the request.
      *
      * @var array<string, string|null>|null
      */
     private static $parsed = null;
 
     /**
-     * A .env fájl EGYETLEN értéke, közvetlenül a fájlból.
+     * A SINGLE value from the .env file, read directly from the file.
      *
-     * MIÉRT NEM env() VAGY config()
+     * WHY NOT env() OR config()
      *
-     * Az ezt hívó képernyők - a telepítő űrlapjai és az admin
-     * beállításszerkesztője - magát a .env FÁJLT szerkesztik. A szerkesztendő
-     * értéket tehát a fájlból kell kiolvasni, nem a futásidejű környezetből:
+     * The screens that call this - the installer's forms and the admin
+     * settings editor - edit the .env FILE itself. The value being edited
+     * therefore has to be read from the file, not from the runtime environment:
      *
-     *  - az env() a gyorsítótárazott konfiguráció mellett null-t ad, mert
-     *    olyankor a Laravel be sem tölti a .env-et. A szerkesztő ezért ÜRES
-     *    mezőket mutatott volna, és mentéskor az üres értékeket írta volna
-     *    vissza a fájlba - vagyis egyetlen kattintás kitörölte volna az
-     *    APP_NAME, APP_URL és MAIL_* beállításokat;
-     *  - a config() a fájl tartalmát csak közvetve, a config-fájlok
-     *    szűrőjén át adja vissza, és a gyorsítótárazott konfiguráció a
-     *    szerkesztés PILLANATÁBAN érvényes fájl helyett a gyorsítótárazáskor
-     *    érvényeset hordozza.
+     *  - env() returns null when configuration is cached, because in that
+     *    case Laravel doesn't even load the .env. The editor would therefore have shown
+     *    EMPTY fields, and on save it would have written the empty values
+     *    back into the file - meaning a single click would have wiped out the
+     *    APP_NAME, APP_URL and MAIL_* settings;
+     *  - config() returns the file's contents only indirectly, filtered
+     *    through the config files, and with cached configuration it carries
+     *    the value that was current AT CACHING TIME instead of the one current at
+     *    the MOMENT OF EDITING.
      *
-     * A Dotenv "array backed" olvasója ugyanazt az idézőjel- és
-     * escape-értelmezést végzi, mint amit a Laravel a betöltéskor, de nem
-     * nyúl a $_ENV/$_SERVER tömbökhöz és a putenv()-hez.
+     * Dotenv's "array backed" reader performs the same quote and
+     * escape parsing that Laravel does at load time, but it doesn't
+     * touch the $_ENV/$_SERVER arrays or putenv().
      *
      * @param  string|null  $default
      * @return string|null
@@ -50,7 +50,7 @@ class setEnvironment {
     }
 
     /**
-     * A teljes .env fájl kulcs-érték párokként.
+     * The full .env file as key-value pairs.
      *
      * @return array<string, string|null>
      */
@@ -69,7 +69,7 @@ class setEnvironment {
         return self::$parsed = Dotenv::createArrayBacked(dirname($path), basename($path))->safeLoad();
     }
 
-    /** A fájl megváltozott; a következő olvasás újra a lemezről dolgozzon. */
+    /** The file has changed; the next read should work off the disk again. */
     static function forgetParsedValues(): void
     {
         self::$parsed = null;
@@ -110,7 +110,7 @@ class setEnvironment {
         if (!file_put_contents($envFile, trim($str))) {
             return false;
         }
-        // A fájl megváltozott: a beolvasott másolat elavult.
+        // The file has changed: the parsed copy is stale.
         self::forgetParsedValues();
         Artisan::call('config:clear');
         return true;

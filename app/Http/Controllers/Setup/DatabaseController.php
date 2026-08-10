@@ -27,9 +27,9 @@ class DatabaseController extends Controller
      */
     public function index(): View
     {
-        // A nézet KORÁBBAN env()-ből olvasta az előre kitöltött értékeket. Ez
-        // az űrlap a .env fájlt írja, tehát a fájlból kell olvasnia; ráadásul
-        // gyorsítótárazott konfiguráció mellett az env() null-t adott volna.
+        // The view used to read the pre-filled values from env(). This
+        // form writes the .env file, so it needs to read from the file; besides,
+        // with cached configuration env() would have returned null.
         return view('setup.database', [
             'dbHost' => setEnvironment::value('DB_HOST', 'localhost'),
             'dbPort' => setEnvironment::value('DB_PORT', '3306'),

@@ -9,7 +9,7 @@ class GroupPosterRead extends Model
 {
     use HasFactory;
 
-    // A group_poster_reads táblában nincs created_at/updated_at oszlop.
+    // The group_poster_reads table has no created_at/updated_at column.
     public $timestamps = false;
 
     protected $fillable = [

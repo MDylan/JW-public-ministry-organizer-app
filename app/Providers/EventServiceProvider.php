@@ -56,10 +56,10 @@ class EventServiceProvider extends ServiceProvider
         GroupNews::observe(GroupNewsObserver::class);
         GroupNewsTranslation::observe(GroupNewsTranslationObserver::class);
 
-        // Az oldalmenü gyorsítótára lejárat nélküli (SetLocale
-        // Cache::rememberForever). A fordításra is figyelünk, mert a menü a
-        // címeket mutatja, azok pedig külön táblában élnek - lásd az observer
-        // osztály magyarázatát.
+        // The side menu cache has no expiry (SetLocale
+        // Cache::rememberForever). We also watch for translations, because the menu
+        // shows the titles, and those live in a separate table - see the observer
+        // class's explanation.
         StaticPage::observe(StaticPageObserver::class);
         StaticPageTranslation::observe(StaticPageObserver::class);
 

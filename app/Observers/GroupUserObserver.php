@@ -34,11 +34,12 @@ class GroupUserObserver
         if(count($changes)) {
             $fillable = $groupUser->getFillable();
             foreach($fillable as $field) {
-                // array_key_exists(), NEM isset(): az isset() NULL értékű
-                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
-                // az audit naplóban. A getDirty() csak ténylegesen változott
-                // mezőket ad vissza, és az alatta lévő $old !== $new őr
-                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                // array_key_exists(), NOT isset(): isset() is false for a key
+                // with a NULL value, so every set-to-NULL change was invisible
+                // in the audit log. getDirty() only returns fields that
+                // actually changed, and the $old !== $new guard below stays
+                // in place, so this simply lets in the previously missing
+                // cases.
                 if(array_key_exists($field, $changes)) {
                     $old = $groupUser->getOriginal($field);
                     $new = $groupUser->$field;

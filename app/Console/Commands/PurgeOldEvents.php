@@ -8,51 +8,51 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Console\Command;
 
 /**
- * A retenciós ablaknál régebbi események VÉGLEGES törlése.
+ * PERMANENT deletion of events older than the retention window.
  *
- * MIÉRT LÉTEZIK
+ * WHY IT EXISTS
  *
- * Semmi nem takarította az `events` táblát kor alapján. A
- * `maintenance:daily-cleanup` csak a MÁR soft-deletelt sorokat üríti 3
- * hónapnál, az élő eseményeket nem érinti - így az élesben 164 371 élő
- * eseménysor gyűlt össze 2022 júniusáig visszamenőleg, benne minden hírnök
- * minden szolgálati beosztásával. Ez személyes adat, ezért a GDPR
- * kapcsolóhoz tartozik.
+ * Nothing cleaned up the `events` table by age. `maintenance:daily-cleanup`
+ * only purges rows that are ALREADY soft-deleted, at 3
+ * months; it doesn't touch live events - so in production 164,371 live
+ * event rows had piled up going back to June 2022, including every publisher's
+ * every service assignment. This is personal data, so it belongs under the GDPR
+ * toggle.
  *
- * A TÖRLÉS BUILDER-SZINTŰ, ÉS EZ NEM STÍLUSKÉRDÉS
+ * THE DELETION IS BUILDER-LEVEL, AND THIS IS NOT A STYLE CHOICE
  *
- * Az Eloquent\Builder::forceDelete() egyetlen `$this->query->delete()`, tehát
- * NEM indít modelleseményt. Modellpéldányonként törölve az
- * EventObserver::deleted() futna le minden soron: levelet küldene az érintett
- * hírnöknek ÉS a csoport minden adminjának, és soronként írna egy
- * log_histories bejegyzést. Az első éles futásnál ez 121 000 esemény -
- * több százezer levél, és egy naplótábla, ami közben nagyobbra hízna, mint
- * amennyit a törlés felszabadított. Ugyanezt a megoldást használja a
- * DailyCleanup is.
+ * Eloquent\Builder::forceDelete() is a single `$this->query->delete()`, so it
+ * does NOT fire model events. Deleting instance by instance would run
+ * EventObserver::deleted() on every row: it would send a mail to the affected
+ * publisher AND every admin of the group, and write a
+ * log_histories entry per row. On the first production run that's 121,000 events -
+ * several hundred thousand emails, and a log table that would grow bigger in the
+ * process than what the deletion freed up. DailyCleanup uses the
+ * same approach.
  *
- * A KÖTEGELÉS `id` SZERINT MEGY
+ * BATCHING GOES BY `id`
  *
- * Az `events.day` nincs önállóan indexelve (csak a `(group_id, day)`
- * összetettben), viszont az `id` és a `day` egy folyamatosan bővülő táblában
- * erősen korrelált, tehát az elsődleges kulcs szerinti 1000-es kötegek
- * gyorsan zárnak. Egyetlen 121 000 soros DELETE ráadásul egyetlen hosszú
- * InnoDB tranzakció lenne, a kaszkáddal együtt.
+ * `events.day` isn't indexed on its own (only in the `(group_id, day)`
+ * composite), but in a continuously growing table `id` and `day` are
+ * strongly correlated, so batches of 1000 by primary key
+ * close quickly. A single 121,000-row DELETE would also be one long
+ * InnoDB transaction, cascade included.
  *
- * AMI VELE MEGY
+ * WHAT GOES WITH IT
  *
- * Az `event_service_reports.event_id` idegen kulcs ON DELETE CASCADE, tehát
- * az esemény szolgálati jelentései (elhelyezések, videók, újralátogatások,
- * bibliatanulmányozások) is törlődnek. Ez tudatos: a jelentés ugyanúgy
- * személyhez kötött adat, mint maga az esemény. A parancs a futás ELŐTT
- * megszámolja őket, hogy a jelentésben ne csak az események száma szerepeljen.
+ * `event_service_reports.event_id` is a foreign key with ON DELETE CASCADE, so
+ * the event's service reports (placements, videos, return visits,
+ * Bible studies) are deleted too. This is deliberate: the report is just as much
+ * personal data as the event itself. The command counts them
+ * BEFORE running, so the report doesn't only state the number of events.
  *
- * A withTrashed() gyakorlatilag semmit nem tesz hozzá - a DailyCleanup a
- * kukát már 3 hónapnál kiüríti -, de nélküle a soft-deletelt régi sorok
- * kimaradnának. Nem teherviselő, csak teljes.
+ * withTrashed() adds practically nothing - DailyCleanup already empties the
+ * trash at 3 months -, but without it old soft-deleted rows
+ * would be left out. Not load-bearing, just thorough.
  */
 class PurgeOldEvents extends Command
 {
-    /** Egy kötegben ennyi eseményt törlünk. */
+    /** This many events deleted per batch. */
     private const BATCH = 1000;
 
     protected $signature = 'gdpr:purge-old-events {--dry-run : Report what would be deleted without deleting anything}';
@@ -61,8 +61,8 @@ class PurgeOldEvents extends Command
 
     public function handle()
     {
-        // Az őr itt van, nem az ütemezőben: a kézzel indított futástól is
-        // védenie kell. A gdpr: előtagú parancsok mind így csinálják.
+        // The guard lives here, not in the scheduler: it must also protect
+        // against a manually started run. All gdpr:-prefixed commands do it this way.
         if (! config('gdpr.enabled')) {
             $this->warn('GDPR handling is disabled, nothing to do.');
 

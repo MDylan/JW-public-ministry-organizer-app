@@ -16,14 +16,14 @@ class HttpsProtocol
      */
     public function handle(Request $request, Closure $next)
     {
-        // A feltétel korábban `env('USE_HTTPS', "false") == "true"` volt, tehát
-        // a LITERÁLIS "true" sztringhez hasonlított. A Laravel env()-je a
-        // "true"/"false" szavakat bool-lá alakítja, az "1"-et viszont
-        // sztringként adja vissza - a .env-ben szokásos USE_HTTPS=1 ezért NEM
-        // kapcsolta be az átirányítást, holott a szándék nyilvánvaló.
+        // The condition used to be `env('USE_HTTPS', "false") == "true"`, i.e.
+        // it compared against the LITERAL string "true". Laravel's env()
+        // converts the words "true"/"false" to bool, but returns "1" as a
+        // string - so the USE_HTTPS=1 commonly used in .env did NOT turn on
+        // the redirect, even though the intent was obvious.
         //
-        // A filter_var() a "1", "true", "on" és "yes" alakokat egységesen
-        // kezeli, ahogy a Laravel saját konfigurációs bool-jait is.
+        // filter_var() handles the "1", "true", "on" and "yes" forms
+        // consistently, the same way Laravel treats its own config booleans.
         if (!$request->secure() && app()->environment('production') && $this->httpsEnforced()) {
             return redirect()->secure($request->getRequestUri());
         }
@@ -32,16 +32,16 @@ class HttpsProtocol
     }
 
     /**
-     * Be van-e kapcsolva a HTTPS-kényszerítés.
+     * Whether HTTPS enforcement is switched on.
      *
-     * A kapcsoló KORÁBBAN közvetlenül env()-ből jött. A Laravel a .env fájlt
-     * csak akkor tölti be, ha nincs gyorsítótárazott konfiguráció, tehát egy
-     * `php artisan config:cache` után az env('USE_HTTPS') null lett volna, és a
-     * HTTPS-kényszerítés némán kikapcsol - pontosan azon a telepítésen, amelyik
-     * elég gondos volt ahhoz, hogy gyorsítótárazza a konfigurációt.
+     * The switch USED TO come straight from env(). Laravel only loads the
+     * .env file when there's no cached config, so after a
+     * `php artisan config:cache`, env('USE_HTTPS') would have been null, and
+     * HTTPS enforcement would silently switch off - on exactly the
+     * deployment that was careful enough to cache its config.
      *
-     * A config/security.php ugyanazt a filter_var() értelmezést végzi, tehát a
-     * "1", "true", "on" és "yes" alakok továbbra is igazak.
+     * config/security.php performs the same filter_var() interpretation, so
+     * the "1", "true", "on" and "yes" forms remain true.
      */
     private function httpsEnforced(): bool
     {

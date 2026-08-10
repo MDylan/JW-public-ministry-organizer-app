@@ -8,22 +8,22 @@ use Illuminate\Support\Facades\Storage;
 class GroupNewsFileDownloadController extends Controller
 {
     /**
-     * Csoporthír mellékletének letöltése.
+     * Downloading a group news attachment.
      *
-     * A `groupMember` middleware KIZÁRÓLAG az útvonal `{group}` paraméterét
-     * nézi (App\Http\Middleware\GroupMember): azt igazolja, hogy a kérő tagja
-     * ANNAK a csoportnak. A `{file}` viszont puszta azonosító szerint kötődik
-     * modellhez, és a controller korábban nem ellenőrizte, hogy a fájl ahhoz a
-     * csoporthoz tartozik-e.
+     * The `groupMember` middleware (App\Http\Middleware\GroupMember) looks
+     * EXCLUSIVELY at the route's `{group}` parameter: it verifies that the requester is a
+     * member of THAT group. The `{file}`, however, binds to the model by a plain
+     * identifier, and the controller previously never checked whether the file
+     * belonged to that group.
      *
-     * Következmény: bármely csoport bármely elfogadott tagja letölthette
-     * BÁRMELY másik csoport privát hírmellékletét - elég volt a saját
-     * csoportazonosítóját és egy idegen fájlazonosítót megadni. A fájlok a
-     * `news_files` privát diszken ülnek, a docrooton kívül, tehát ez volt az
-     * egyetlen út hozzájuk - és nyitva állt.
+     * Consequence: any accepted member of any group could download
+     * ANY other group's private news attachment - all it took was supplying their own
+     * group ID together with someone else's file ID. The files sit on the
+     * `news_files` private disk, outside the docroot, so this was the
+     * only path to them - and it was left open.
      *
-     * A válasz 404, nem 403: egy 403 megerősítené, hogy az adott azonosítójú
-     * fájl létezik.
+     * The response is 404, not 403: a 403 would confirm that a file with
+     * that ID exists.
      */
     public function download($group, GroupNewsFile $file)
     {

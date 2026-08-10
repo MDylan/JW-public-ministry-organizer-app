@@ -62,10 +62,10 @@ class Events extends AppComponent
             $this->month = date('m');
         }
 
-        // A /calendar/{year}/{month} útvonal bármelyik hónapot elérné
-        // közvetlenül, a "vissza" link elrejtése önmagában csak kozmetika.
-        // A retenciós padló alatti hónapok forrása (események, day_stats,
-        // group_dates) már törölve van, ezért a padló hónapjára emeljük.
+        // The /calendar/{year}/{month} route would reach any month
+        // directly, hiding the "vissza" link alone is purely cosmetic.
+        // The source data (events, day_stats, group_dates) for months below the
+        // retention floor is already deleted, so we bump it up to the floor's month.
         $floor = RetentionWindow::displayFloor();
         if($floor !== null) {
             $requested = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
@@ -87,10 +87,10 @@ class Events extends AppComponent
         } else {
             $prevYear = $this->year;
         }
-        // A visszalépés alsó határa a csoport létrehozása ÉS a retenciós
-        // padló közül a későbbi. A naptár eseményt és day_stats-ot is
-        // rajzol, ezért itt a displayFloor() a helyes padló - a padló alatt
-        // a színsávok forrása már nincs meg.
+        // The lower bound for stepping back is the LATER of the group's creation date and the
+        // retention floor. The calendar renders both events and day_stats,
+        // so displayFloor() is the correct floor here - below the floor
+        // the source data for the color bands no longer exists.
         $created = strtotime(date("Y-m-01", strtotime($created_at)));
         $floor = RetentionWindow::displayFloor();
         if($floor !== null) {
@@ -312,24 +312,24 @@ class Events extends AppComponent
             $dates[$date['date']] = $date;
         }
         // dd($dates);
-        // Az őrök: weather_enabled = 1 ÖNMAGÁBAN nem jelenti, hogy van város.
-        // A city_id lehet null - korábban pontosan ezt az állapotot állította
-        // elő a hibaág, ami nullázta -, és a `weather` reláció ilyenkor null,
-        // amin a dereferálás fatalt dobott a naptár renderelése közben.
+        // The guards: weather_enabled = 1 ALONE doesn't mean a city is set.
+        // city_id can be null - the error branch that used to null it out
+        // produced exactly this state -, and the `weather` relation is then null,
+        // dereferencing which threw a fatal error while rendering the calendar.
         if($this->cal_group_data['weather_enabled']
             && config('weather') == 1
             && !empty($this->cal_group_data['weather'])) {
             if($this->cal_group_data['weather']['current_weather'] !== null) {
-                // Nincs json_decode: a WeatherCity modell `json` castja már
-                // tömbként adja vissza mindkét mezőt. Korábban a mentés KÉTSZER
-                // kódolt (kézi json_encode + cast), ezért kellett itt kézzel
-                // dekódolni - a tárolt alak most valódi JSON objektum.
+                // No json_decode: the WeatherCity model's `json` cast already
+                // returns both fields as an array. The save used to encode
+                // TWICE (manual json_encode + cast), which is why manual
+                // decoding was needed here - the stored form is now a genuine JSON object.
                 $current_weather = $this->cal_group_data['weather']['current_weather'];
                 $forecast_weather = $this->cal_group_data['weather']['forecast_weather'];
 
                 $forecast_list = array();
-                // A blob 'list' kulcsa hiányozhat: hibás vagy csonka válasz
-                // esetén a korábbi count($forecast_weather['list']) fatalt dobott.
+                // The blob's 'list' key can be missing: on an invalid or truncated
+                // response, the previous count($forecast_weather['list']) threw a fatal error.
                 if(!empty($forecast_weather['list'])) {
                     foreach($forecast_weather['list'] as $key => $forecast) {
                         $weather_time = Carbon::parse($forecast['dt_txt'], "UTC");

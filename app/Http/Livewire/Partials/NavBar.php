@@ -21,7 +21,7 @@ class NavBar extends Component
         'refresh' => 'refresh'
     ];
 
-    //ne töröld ki, szükséges függvény
+    //don't delete this, the function is needed
     public function refresh() {  }
 
     public function render()

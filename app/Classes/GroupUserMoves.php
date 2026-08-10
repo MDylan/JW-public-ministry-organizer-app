@@ -39,7 +39,7 @@ class GroupUserMoves {
             'groupName' => $this->group->name
         ];
         $res = $this->group->groupUsersAll()->syncWithoutDetaching($user_sync);
-        //az újakat értesítem, hogy hozzá lett adva a csoporthoz
+        //notify the new ones that they've been added to the group
         if(isset($res['attached'])) {
             foreach($res['attached'] as $user) {
                 if($this->user->email_verified_at) {

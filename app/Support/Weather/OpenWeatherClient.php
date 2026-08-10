@@ -6,36 +6,36 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Az OpenWeather API két végpontja, közvetlenül a Http fakadon keresztül.
+ * The OpenWeather API's two endpoints, directly through the Http facade.
  *
- * MIÉRT NEM A CSOMAG
+ * WHY NOT THE PACKAGE
  *
- * A `rakibdevs/openweather-laravel-api` teljes fogyasztott felülete két GET
- * hívás volt (`data/2.5/weather` és `data/2.5/forecast`), a WeatherClientje
- * viszont `new GuzzleHttp\Client(...)`-ot példányosított a metódusa belsejében,
- * konténer-kötés nélkül. Emiatt a `Http::fake()` nem tudta elkapni, tehát a
- * sikeres ág egyáltalán NEM volt tesztelhető - miközben ez a projekt egyetlen
- * kifelé menő HTTP-hívása. A csere ezt oldja meg, nem a csomag mérete.
+ * The entire consumed surface of `rakibdevs/openweather-laravel-api` was two GET
+ * calls (`data/2.5/weather` and `data/2.5/forecast`), but its WeatherClient
+ * instantiated `new GuzzleHttp\Client(...)` inside its method,
+ * without container binding. Because of this, `Http::fake()` couldn't intercept it, so the
+ * success path was NOT testable AT ALL - even though this is the project's only
+ * outbound HTTP call. The replacement fixes this, not the package's size.
  *
- * MIT JAVÍT MÉG
+ * WHAT ELSE THIS FIXES
  *
- * - Az országkód MINDKÉT végpontra elmegy. A csomag `get3HourlyByCity(string $city)`
- *   szignatúrája egyetlen paramétert fogadott, a hívó viszont kettőt adott át:
- *   az 5 napos előrejelzés országkód NÉLKÜL oldódott fel, a jelenlegi időjárás
- *   viszont vele - két különböző település is lehetett a kettő mögött.
- * - Van explicit timeout. A csomagnak nem volt, tehát egy beragadt végpont a
- *   PHP workert tartotta fogva.
- * - A nyelv az alkalmazás aktuális lokáljából jön, nem bedrótozott 'en'-ből.
+ * - The country code goes to BOTH endpoints. The package's `get3HourlyByCity(string $city)`
+ *   signature accepted a single parameter, while the caller passed two:
+ *   the 5-day forecast resolved WITHOUT the country code, while the current weather
+ *   resolved with it - the two could refer to two different cities.
+ * - There is an explicit timeout. The package had none, so a stuck endpoint
+ *   held the PHP worker hostage.
+ * - The language comes from the application's current locale, not a hardcoded 'en'.
  */
 class OpenWeatherClient
 {
     private const BASE_URL = 'https://api.openweathermap.org';
 
-    /** Másodperc. A csomagnak semmilyen időkorlátja nem volt. */
+    /** Seconds. The package had no timeout at all. */
     private const TIMEOUT = 10;
 
     /**
-     * A jelenlegi időjárás egy településre.
+     * The current weather for a city.
      *
      * @throws WeatherException
      */
@@ -45,7 +45,7 @@ class OpenWeatherClient
     }
 
     /**
-     * Az 5 napos, 3 óránkénti előrejelzés egy településre.
+     * The 5-day, 3-hourly forecast for a city.
      *
      * @throws WeatherException
      */
@@ -75,9 +75,9 @@ class OpenWeatherClient
                     'lang'  => $this->language(),
                 ]);
         } catch (ConnectionException $e) {
-            // Hálózati hiba, DNS, timeout: a Http fakad ezt kivételként dobja,
-            // nem válaszként. Projekt-kivétellé alakítjuk, hogy a hívó egyetlen
-            // típust kelljen kezeljen.
+            // Network error, DNS, timeout: the Http facade throws this as an exception,
+            // not as a response. We convert it into a project exception so the caller only
+            // has to handle a single type.
             throw WeatherException::unreachable($e->getMessage());
         }
 
@@ -103,9 +103,9 @@ class OpenWeatherClient
     }
 
     /**
-     * Az OpenWeather kétbetűs nyelvkódot vár. Az alkalmazás lokálja már ilyen
-     * alakú ('hu', 'en', 'de'), de egy 'hu_HU' formátumú érték is előfordulhat,
-     * ezért levágjuk az első szegmensre.
+     * OpenWeather expects a two-letter language code. The application's locale is
+     * already in that form ('hu', 'en', 'de'), but a value in 'hu_HU' format can also
+     * occur, so we truncate it to the first segment.
      */
     private function language(): string
     {

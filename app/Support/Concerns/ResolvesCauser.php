@@ -5,31 +5,31 @@ namespace App\Support\Concerns;
 use App\Models\User;
 
 /**
- * Közös "ki okozta a változást" szerződés observereknek, joboknak és a
- * hozzájuk tartozó szolgáltatás-osztályoknak.
+ * Shared "who caused the change" contract for observers, jobs and their
+ * associated service classes.
  *
- * A modell-események és a háttérfeldolgozás nem csak HTTP-kérésből indulhat:
- * ütemezett parancs, sorkezelő, konzol vagy seeder is írhat modellt. Ilyenkor
- * nincs bejelentkezett felhasználó.
+ * Model events and background processing can start from more than an HTTP request:
+ * a scheduled command, a queue worker, the console, or a seeder can also write a model. In that
+ * case there is no logged-in user.
  *
- * Korábban háromféle viselkedés élt egymás mellett ugyanerre a helyzetre -
- * volt, ahol kimaradt a naplóbejegyzés, volt, ahol 0 került bele, és volt,
- * ahol az auth()->user()->id fatalt adott. A TODO 10 egységesítette:
+ * Previously three different behaviors coexisted for this same situation -
+ * in one place the log entry was missing, in another a 0 was written in, and in
+ * another auth()->user()->id caused a fatal error. TODO 10 unified this:
  *
- *     causer_id = 0  jelentése: a változást a RENDSZER okozta, nem ember.
+ *     causer_id = 0  means: the change was caused by the SYSTEM, not a human.
  *
- * A log_histories.causer_id oszlopon nincs idegen kulcs, ezért a 0 biztonságos;
- * a LogHistory::user() reláció ilyenkor egyszerűen null-t ad vissza.
+ * The log_histories.causer_id column has no foreign key, so 0 is safe;
+ * the LogHistory::user() relation then simply returns null.
  *
- * FONTOS: a 0 azonosítót a fogadó oldalnak is kezelnie kell. A jobok és a
- * CalculateDatesEvents ezért a causerNameFor()-t használják, nem közvetlen
- * User::find()-ot - egy sorkezelőben az auth() sosem ad felhasználót, és a
- * User::find(0) mindig null.
+ * IMPORTANT: the receiving side also has to handle the ID 0. That's why jobs and
+ * CalculateDatesEvents use causerNameFor() instead of calling
+ * User::find() directly - in a queue worker auth() never returns a user, and
+ * User::find(0) is always null.
  */
 trait ResolvesCauser
 {
     /**
-     * A változást okozó felhasználó azonosítója, vagy 0, ha a rendszer.
+     * The ID of the user who caused the change, or 0 if it was the system.
      */
     protected function causerId(): int
     {
@@ -37,8 +37,8 @@ trait ResolvesCauser
     }
 
     /**
-     * A változást okozó neve az értesítésekhez. Rendszer esetén "SYSTEM" -
-     * ezt a szöveget használta az EventObserver::updated() már korábban is.
+     * The name of the change's causer, for notifications. "SYSTEM" for the system -
+     * EventObserver::updated() already used this text previously too.
      */
     protected function causerName(): string
     {
@@ -46,13 +46,13 @@ trait ResolvesCauser
     }
 
     /**
-     * Egy KORÁBBAN RÖGZÍTETT okozó-azonosítóhoz tartozó név.
+     * The name belonging to a PREVIOUSLY RECORDED causer ID.
      *
-     * A jobok a dispatch pillanatában kapják meg az azonosítót, és később,
-     * egy sorkezelőben futnak le - ott az auth() már nem használható
-     * tartaléknak. A 0, a false és a null egyaránt rendszer-okozót jelent.
+     * Jobs get the ID at the moment of dispatch, and run later,
+     * in a queue worker - there auth() is no longer usable as a
+     * fallback. 0, false and null all equally mean a system-caused change.
      *
-     * Statikus, mert a CalculateDatesEvents::generate() is statikus.
+     * Static, because CalculateDatesEvents::generate() is also static.
      */
     protected static function causerNameFor($userId): string
     {

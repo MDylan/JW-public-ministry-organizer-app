@@ -23,11 +23,12 @@ class GroupObserver
         if(count($changes)) {
             $fillable = $group->getFillable();
             foreach($fillable as $field) {
-                // array_key_exists(), NEM isset(): az isset() NULL értékű
-                // kulcsra hamis, ezért minden NULL-ra állítás láthatatlan volt
-                // az audit naplóban. A getDirty() csak ténylegesen változott
-                // mezőket ad vissza, és az alatta lévő $old !== $new őr
-                // megmarad, tehát ez pontosan a hiányzó eseteket engedi be.
+                // array_key_exists(), NOT isset(): isset() is false for a key
+                // with a NULL value, so every set-to-NULL change was invisible
+                // in the audit log. getDirty() only returns fields that
+                // actually changed, and the $old !== $new guard below stays
+                // in place, so this simply lets in the previously missing
+                // cases.
                 if(array_key_exists($field, $changes)) {
                     $old = $group->getOriginal($field);
                     $new = $group->$field;
@@ -60,9 +61,10 @@ class GroupObserver
     public function deleted(Group $group)
     {
         $saved_data = [
-            // A group_id korábban $group->group_id volt - olyan mező, ami a
-            // Group modellen nem létezik (a kulcs neve id), így mindig null
-            // került a NOT NULL oszlopba, és minden Eloquent-törlés elszállt.
+            // group_id used to be $group->group_id - a field that doesn't
+            // exist on the Group model (the key is named id), so it always
+            // put null into the NOT NULL column, and every Eloquent delete
+            // crashed.
             'event' => 'deleted',
             'group_id' => $group->id,
             'causer_id' => $this->causerId(),

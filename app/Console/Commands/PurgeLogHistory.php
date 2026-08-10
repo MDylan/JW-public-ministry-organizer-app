@@ -7,8 +7,8 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 /**
- * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
- * daily() ütemezéssel.
+ * Previously this was an anonymous closure in App\Console\Kernel::schedule(),
+ * scheduled with daily().
  */
 class PurgeLogHistory extends Command
 {
