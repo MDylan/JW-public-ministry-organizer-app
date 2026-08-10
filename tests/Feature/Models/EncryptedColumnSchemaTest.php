@@ -6,34 +6,34 @@ use Illuminate\Support\Facades\DB;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 13: a 9 titkosított oszlop SÉMÁJA, pinelve.
+ * TODO 13: the SCHEMA of the 9 encrypted columns, pinned.
  *
- * Ez a fájl a tulajdonképpeni védőháló a migrációk összevonása (TODO 32) és a
- * Laravel 11 natív change()-e (TODO 66) alá. Az utóbbi minden újra nem
- * deklarált attribútumot ELDOB - nullable, default, charset -, és a lenti
- * kilencből négy mögött épp egy ->change() migráció áll:
+ * This file is the actual safety net underneath the migration squash
+ * (TODO 32) and Laravel 11's native change() (TODO 66). The latter DROPS
+ * every attribute that is not redeclared - nullable, default, charset - and
+ * four of the nine below have exactly one ->change() migration behind them:
  *
  *   2022_04_12_205152  groups.name        string -> text
  *   2022_04_12_210544  events.comment     string(100) -> text
  *   2022_04_12_211517  group_posters.info string -> mediumText
  *   2022_04_12_212618  group_user.note    string -> text
  *
- * A RouteContractSnapshotTest (TODO 01) mintáját követi: a mátrix megváltozása
- * legyen szándékos, látható diff, ne csendes regresszió. Ha ez a teszt bukik
- * egy framework-hop után, akkor az adott migráció elvesztett egy attribútumot -
- * és a titkosított tartalom csonkolódhat vagy elvész.
+ * It follows the pattern of RouteContractSnapshotTest (TODO 01): a change in
+ * the matrix should be deliberate, a visible diff, not a silent regression.
+ * If this test fails after a framework hop, then the given migration lost an
+ * attribute - and the encrypted content may be truncated or lost.
  *
- * A hosszkorlát azért kritikus: az EncryptedAttributeTest mérése szerint egy
- * 100 karakteres nyílt szöveg titkosított alakja már 255 fölött van, tehát egy
- * varchar-ra visszaesett oszlop csendben csonkolna (MySQL nem strict módban)
- * vagy hibát dobna.
+ * The length limit is critical because: per the EncryptedAttributeTest
+ * measurement, a 100-character plaintext's encrypted form already exceeds
+ * 255, so a column that fell back to varchar would silently truncate (MySQL
+ * in non-strict mode) or throw an error.
  */
 class EncryptedColumnSchemaTest extends FeatureTestCase
 {
     /**
-     * Oszlop => [adattípus, nullable, karakteres maximum].
+     * Column => [data type, nullable, character maximum].
      *
-     * Mért értékek a kozter_testing sémából, nem becslés.
+     * Measured values from the kozter_testing schema, not an estimate.
      */
     private const EXPECTED_SCHEMA = [
         'users.name'             => ['text',       true,  65535],
@@ -96,11 +96,11 @@ class EncryptedColumnSchemaTest extends FeatureTestCase
 
     public function test_every_encrypted_column_stays_on_utf8mb4(): void
     {
-        // A titkosított érték base64, tehát ASCII - a charset önmagában nem
-        // rontaná el. De a charset ugyanaz az attribútum-csoport, amit a
-        // Laravel 11 change()-e elejt, és ha egy oszlop utf8mb3-ra esne vissza,
-        // az a MIGRÁCIÓ hibájának első jele lenne, még mielőtt egy nem
-        // titkosított oszlopon adatvesztést okozna.
+        // The encrypted value is base64, hence ASCII - the charset by itself
+        // would not corrupt it. But the charset is part of the same attribute
+        // group that Laravel 11's change() drops, and if a column fell back
+        // to utf8mb3, that would be the first sign of the MIGRATION's error,
+        // before it caused data loss on a non-encrypted column.
         $metadata = $this->columnMetadata();
 
         foreach (array_keys(self::EXPECTED_SCHEMA) as $column) {
@@ -114,11 +114,11 @@ class EncryptedColumnSchemaTest extends FeatureTestCase
 
     public function test_no_encrypted_column_is_a_varchar(): void
     {
-        // A legfontosabb egyetlen állítás. Az EncryptedAttributeTest kimérte,
-        // hogy egy 100 karakteres szöveg titkosított alakja 255 fölé megy, egy
-        // rövidé pedig ~200 - vagyis egy varchar(255) nagyjából 30 karakternyi
-        // nyílt szöveget bír el, egy varchar(100) (az events.comment eredeti
-        // típusa) pedig SEMENNYIT.
+        // The single most important assertion. EncryptedAttributeTest
+        // measured that a 100-character text's encrypted form goes above
+        // 255, and a short one's is ~200 - meaning a varchar(255) can hold
+        // roughly 30 characters of plaintext, and a varchar(100) (the
+        // original type of events.comment) can hold NONE AT ALL.
         $metadata = $this->columnMetadata();
 
         foreach (array_keys(self::EXPECTED_SCHEMA) as $column) {

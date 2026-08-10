@@ -15,7 +15,7 @@ use Livewire\Livewire;
 class HomeLivewireTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. View / route tesztek
+    // 1. View / route tests
     // =========================================================================
 
     public function test_home_page_renders_for_authenticated_user_with_no_groups(): void
@@ -71,7 +71,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->get(route('home.home'))
             ->assertStatus(200);
 
-        // Az "Új hirdetmény" gomb csak admin/roler-nek jelenik meg
+        // The "Új hirdetmény" button only appears for admin/roler
         $response->assertDontSee('wire:click="$emitTo(\'groups.poster-edit-modal\', \'openModal\', '.$group->id.')"', false);
     }
 
@@ -89,7 +89,7 @@ class HomeLivewireTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Home Livewire komponens logika
+    // 2. Home Livewire component logic
     // =========================================================================
 
     public function test_polling_is_enabled_by_default(): void
@@ -217,7 +217,7 @@ class HomeLivewireTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Poster-edit modal tesztek
+    // 3. Poster-edit modal tests
     // =========================================================================
 
     public function test_poster_modal_opens_for_group_admin(): void
@@ -239,7 +239,7 @@ class HomeLivewireTest extends FeatureTestCase
         $group = $this->createGroup();
         $this->attachUserToGroup($user, $group, 'member', true);
 
-        // Member nem szerkeszthet postert: abort(403) megakadályozza a modal megnyílását
+        // Member cannot edit the poster: abort(403) prevents the modal from opening
         Livewire::actingAs($user)
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id)
@@ -315,7 +315,7 @@ class HomeLivewireTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Events modal tesztek
+    // 4. Events modal tests
     // =========================================================================
 
     public function test_events_modal_opens_for_valid_date_and_group(): void
@@ -378,7 +378,7 @@ class HomeLivewireTest extends FeatureTestCase
             'date_end' => $date.' 12:00:00',
         ]);
 
-        // Az observer auth()->user()->id-t használ, ezért be kell jelentkezni az event létrehozása előtt
+        // The observer uses auth()->user()->id, so we need to log in before creating the event
         $this->actingAs($member);
         $event = Event::factory()
             ->forGroup($group)
@@ -427,7 +427,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->call('bulk', $event->id)
             ->call('acceptBulkFinal');
 
-        // Member szerepkörrel a bulk accept nem módosítja az event státuszát
+        // With the member role, bulk accept does not modify the event status
         $this->assertDatabaseHas('events', ['id' => $event->id, 'status' => 0]);
     }
 

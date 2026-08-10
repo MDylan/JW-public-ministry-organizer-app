@@ -96,9 +96,9 @@ class BladePageInteractionTest extends FeatureTestCase
         $response->assertSee('name="password"', false);
         $response->assertSee('name="password_confirmation"', false);
 
-        // A nézet a Mégsem gombot űrlapként rajzolja ki (v1-patch H): a törlés
-        // POST + CSRF, mert egy aláírt GET-et böngészőelőtöltés vagy egy
-        // levelezőrendszer linkellenőrzője is elsüthetett.
+        // The view renders the Mégsem (Cancel) button as a form (v1-patch H): the
+        // deletion is POST + CSRF, because a signed GET could have been fired by
+        // browser prefetching or a mail system's link checker.
         $response->assertSee('method="POST"', false);
 
         $signedCancel = $this->signedRoute('finish_registration_cancel', ['id' => $registered->id]);

@@ -6,17 +6,17 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
 
 /**
- * TODO 12: az Exceptions\Handler telepítő-ága.
+ * TODO 12: the installer branch of Exceptions\Handler.
  *
- * A Handler::register() (:56) minden QueryException-t elkap, és ha nincs
- * installed.txt, a telepítő nyitóoldalára visz. Ez az, ami egy friss
- * kicsomagolás után - amikor még nincs adatbázis - a felhasználót a setupba
- * tereli ahelyett, hogy nyers hibát mutatna.
+ * Handler::register() (:56) catches every QueryException, and if there is no
+ * installed.txt, redirects to the installer's opening page. This is what,
+ * after a fresh unpacking - when there is no database yet - steers the user
+ * into setup instead of showing a raw error.
  *
- * A másik ág - telepített állapot, tehát meglévő sentinel - az
- * InstalledExceptionHandlerTest-ben van. Az korábban lefedhetetlen volt, mert a
- * handler dd()-vel zárt, ami exit-tel megölte volna a PHPUnit folyamatát; a
- * TODO 12.1 ezt szüntette meg.
+ * The other branch - installed state, i.e. an existing sentinel - is in
+ * InstalledExceptionHandlerTest. That was previously uncoverable, because the
+ * handler ended with dd(), which would have killed the PHPUnit process via
+ * exit; TODO 12.1 removed that.
  */
 class InstallerExceptionHandlerTest extends SetupTestCase
 {
@@ -41,10 +41,10 @@ class InstallerExceptionHandlerTest extends SetupTestCase
 
     public function test_the_redirect_target_exists_precisely_because_the_sentinel_is_missing(): void
     {
-        // A két feltétel ugyanarra a fájlra épül: a routes/web.php:78 a
-        // route-ot regisztrálja, a Handler:57 pedig ide irányít. Ha a sentinel
-        // megjelenne, a handler egy nem létező útvonalra próbálna irányítani -
-        // ezért is fontos, hogy a két ág mindig együtt mozogjon.
+        // The two conditions build on the same file: routes/web.php:78
+        // registers the route, and Handler:57 redirects here. If the sentinel
+        // appeared, the handler would try to redirect to a non-existent route -
+        // which is why it is important that the two branches always move together.
         $this->assertTrue(Route::has('setup.welcome'));
 
         $this->get('/__test/query-exception')->assertRedirect(route('setup.welcome'));

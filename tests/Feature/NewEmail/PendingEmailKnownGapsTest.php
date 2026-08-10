@@ -55,17 +55,17 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. GDPR: az anonimizálás nem takarít
+    // 1. GDPR: anonymization does not clean up
     // =========================================================================
 
-    /** MEGFORDÍTVA a v1-patch B12 javításával. */
+    /** REVERSED by the v1-patch B12 fix. */
     public function test_anonymisation_clears_the_real_address_from_the_pending_table(): void
     {
-        // A függő cím nem anonimizálódott magától: a pending_user_emails sor
-        // külön táblában áll, nincs rá idegen kulcs, és a nyolc observer egyike
-        // sem nyúlt hozzá. A users.email lecserélődött, miközben a felhasználó
-        // VALÓDI címe határozatlan ideig bennmaradt a függő táblában -
-        // pontosan az az adat, aminek a törlését kérte.
+        // The pending address was not anonymized on its own: the pending_user_emails
+        // row lives in a separate table, has no foreign key, and none of the eight
+        // observers touched it. users.email got replaced, while the user's
+        // REAL address stayed in the pending table indefinitely -
+        // exactly the data whose deletion they had requested.
         [$user] = $this->userWithPendingEmail('gdpr-old@example.test', 'gdpr-wanted@example.test');
 
         $user->anonymize();
@@ -80,9 +80,9 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
 
     public function test_a_blocked_anonymisation_leaves_the_pending_address_alone(): void
     {
-        // Kontroll-kísérlet: a takarítás az anonimizálás RÉSZE, nem előfeltétele.
-        // Ha az utódlási szabály (TODO 12.2) elutasítja a kérést, semmi nem
-        // történhet - a függő cím sem tűnhet el.
+        // Control experiment: the cleanup is PART of anonymization, not a
+        // precondition of it. If the succession rule (TODO 12.2) rejects the
+        // request, nothing may happen - the pending address must not disappear either.
         [$user] = $this->userWithPendingEmail('gdpr-kept@example.test', 'gdpr-kept-new@example.test');
 
         $group = $this->createGroup();
@@ -96,17 +96,17 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
         );
     }
 
-    /** MEGFORDÍTVA a v1-patch B12/B13 javításával. */
+    /** REVERSED by the v1-patch B12/B13 fix. */
     public function test_a_live_link_can_no_longer_reverse_an_anonymisation(): void
     {
-        // A kiküldött aláírt link a lejáratáig élt, a vendor
-        // PendingUserEmail::activate() pedig nem nézett rá az isAnonymized
-        // jelzőre: VISSZAÍRTA a valódi címet az anonimizált felhasználóra,
-        // ráadásul verifikáltnak jelölve. Az anonimizálás így visszafordítható
-        // volt egy e-mailben ülő linkkel.
+        // The signed link that had already been sent stayed alive until its
+        // expiry, and the vendor PendingUserEmail::activate() did not check the
+        // isAnonymized flag: it WROTE BACK the real address onto the anonymized
+        // user, and even marked it verified. Anonymization was thus reversible
+        // with a link sitting in an e-mail.
         //
-        // A B12 óta a sor már az anonimizáláskor eltűnik, tehát a token sem
-        // található - a link az érvénytelen-link ágra fut.
+        // Since B12 the row already disappears at anonymization time, so the
+        // token cannot be found either - the link runs into the invalid-link branch.
         [$user, $token] = $this->userWithPendingEmail('gdpr-live-old@example.test', 'gdpr-live-wanted@example.test');
 
         $user->anonymize();
@@ -125,11 +125,11 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
 
     public function test_the_model_guard_holds_even_if_the_pending_row_survives(): void
     {
-        // A B13 önálló bizonyítéka. A B12 takarítása az egyik védelem, de nem az
-        // egyetlen szükséges: egy sor túlélhet a takarítást (párhuzamos kérés,
-        // régi adat, jövőbeli másik anonimizáló útvonal). Ezért a modell maga is
-        // őrködik - ezt a sort ITT szándékosan az anonimizálás UTÁN hozzuk
-        // vissza, hogy a guard önmagában legyen mérve.
+        // Independent proof of B13. The B12 cleanup is one line of defense, but
+        // not the only one needed: a row can survive the cleanup (a concurrent
+        // request, old data, a future different anonymization path). That is why
+        // the model itself also guards - here this row is deliberately brought
+        // back AFTER anonymization, so the guard is measured on its own.
         [$user, $token] = $this->userWithPendingEmail('gdpr-race-old@example.test', 'gdpr-race-new@example.test');
 
         $row = DB::table('pending_user_emails')->where('user_id', $user->getKey())->first();
@@ -137,7 +137,7 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
         $user->anonymize();
         $anonymizedEmail = $user->fresh()->email;
 
-        // A sor "visszatér", ahogy egy versenyhelyzetben is tenné.
+        // The row "comes back", the way it would in a race condition.
         DB::table('pending_user_emails')->insert((array) $row);
 
         // REVERSED by TODO 33.5. The vendor activate() returned silently and
@@ -255,7 +255,7 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Lokalizáció
+    // 3. Localization
     // =========================================================================
 
     /** REVERSED by TODO 33.5 (defect 5). */

@@ -49,7 +49,7 @@ class CalculateDateProcessTest extends FeatureTestCase
 
     public function test_handle_accepts_an_array_of_dates(): void
     {
-        // A konstruktor array|string uniót deklarál - mindkettőt fedjük.
+        // The constructor declares an array|string union - we cover both.
         $second = now()->addDays(2)->toDateString();
         GroupDate::factory()->create(['group_id' => $this->group->id, 'date' => $second]);
 
@@ -70,15 +70,15 @@ class CalculateDateProcessTest extends FeatureTestCase
         (new CalculateDateProcess($this->group->id, $this->date, $this->member->id, [$disabled, $this->date]))
             ->handle();
 
-        // A letiltott dátum törlődik...
+        // The disabled date gets deleted...
         $this->assertDatabaseMissing('group_dates', ['group_id' => $this->group->id, 'date' => $disabled]);
-        // ...az aktív viszont marad, mert a törlés date_status = 0 feltételhez kötött.
+        // ...whereas the active one remains, because deletion is conditioned on date_status = 0.
         $this->assertDatabaseHas('group_dates', ['group_id' => $this->group->id, 'date' => $this->date]);
     }
 
     public function test_handle_also_purges_day_stats_for_every_date_in_the_delete_list(): void
     {
-        // A DayStat törlés nincs date_status-hoz kötve: minden felsorolt napra fut.
+        // DayStat deletion is not tied to date_status: it runs for every listed date.
         DayStat::factory()->create([
             'group_id' => $this->group->id,
             'day' => $this->date,

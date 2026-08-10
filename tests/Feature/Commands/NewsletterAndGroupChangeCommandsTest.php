@@ -65,7 +65,7 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
         $this->dueNewsletter();
 
         $this->artisan('newsletters:send-due');
-        Notification::fake(); // számláló nullázása
+        Notification::fake(); // reset the counter
         $this->artisan('newsletters:send-due');
 
         Notification::assertNothingSent();
@@ -108,19 +108,20 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
 
     public function test_an_unknown_recipient_group_no_longer_blocks_the_queue(): void
     {
-        // MEGFORDÍTVA a v1-patch B1 javításával.
+        // REVERSED by the v1-patch B1 fix.
         //
-        // Ismeretlen send_to értéknél a parancs `return`-nel lépett ki, ami a
-        // ciklus HÁTRALÉVŐ hírleveleit is kihagyta - nem csak az aktuálisat. A
-        // sent_time sem íródott ki, így percenként újrapróbálkozott, tartósan a
-        // sor elé állva: egyetlen elgépelt címzett-érték minden további
-        // hírlevelet határozatlan ideig blokkolt.
+        // On an unknown send_to value the command exited via `return`, which
+        // also skipped the REMAINING newsletters in the loop - not just the
+        // current one. sent_time was not written either, so it retried every
+        // minute, permanently stuck at the front of the queue: a single
+        // mistyped recipient value blocked every further newsletter
+        // indefinitely.
         //
-        // Most a hibás sort átugorja, a mögötte állókat kézbesíti, és nem nulla
-        // kilépési kóddal jelzi, hogy volt kihagyott elem.
+        // Now it skips the broken row, delivers the ones behind it, and
+        // signals via a non-zero exit code that something was skipped.
         Notification::fake();
 
-        // A hibás hírlevél kerül előbb a sorba (kisebb id).
+        // The broken newsletter is placed earlier in the queue (lower id).
         $broken = $this->dueNewsletter('somethingUnknown');
         $valid = $this->dueNewsletter('groupCreators');
 
@@ -133,8 +134,8 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
             'A hibás mögött álló hírlevél kimegy.'
         );
 
-        // A hibás sor NEM lesz kézbesítettnek jelölve - nem ment ki -, de már
-        // nem is akadályoz senkit.
+        // The broken row is NOT marked as delivered - it was not sent - but it
+        // no longer blocks anyone either.
         $this->assertNull(
             $broken->fresh()->sent_time,
             'A kihagyott hírlevél nem lehet kézbesítettnek jelölve.'
@@ -143,8 +144,8 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
 
     public function test_a_valid_batch_still_reports_success(): void
     {
-        // A B1 kontroll-kísérlete: a nem nulla kilépési kód CSAK a kihagyás
-        // jelzése, nem lett a parancs alapállapota.
+        // Control experiment for B1: the non-zero exit code is ONLY a skip
+        // signal, it did not become the command's default state.
         Notification::fake();
 
         $this->dueNewsletter('groupCreators');
@@ -168,7 +169,7 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
 
         $this->artisan('groups:apply-future-changes')->assertExitCode(0);
 
-        // A változás feldolgozás után nem marad függőben.
+        // The change no longer remains pending after processing.
         $this->assertSame(0, GroupFutureChange::where('group_id', $group->id)->count());
     }
 
@@ -194,12 +195,12 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
     }
 
     /**
-     * TODO 10.1: a napsablont ténylegesen beíró ág.
+     * TODO 10.1: the branch that actually writes the day template.
      *
-     * A fenti tesztek üres days tömbbel futnak, tehát az
-     * updateGroupFutureChanges::initChanges() Eloquent-írásai (updateOrCreate
-     * és $del->delete()) sosem futottak le. Éppen ezek azok a hívások,
-     * amelyeken a GroupDayObserver elsülne, ha regisztrálva lenne.
+     * The tests above run with an empty days array, so the Eloquent writes in
+     * updateGroupFutureChanges::initChanges() (updateOrCreate and
+     * $del->delete()) never ran. These are exactly the calls that the
+     * GroupDayObserver would fire on, if it were registered.
      */
     public function test_apply_future_changes_writes_the_day_template(): void
     {
@@ -219,7 +220,7 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
             'change_date' => today()->toDateString(),
             'group' => ['min_publishers' => 1, 'max_publishers' => 3],
             'days' => [
-                // szűkítés, törlés (day_number === false) és új nap egyszerre
+                // narrowing, deletion (day_number === false), and a new day all at once
                 1 => ['day_number' => '1', 'start_time' => '10:00', 'end_time' => '12:00'],
                 3 => ['day_number' => false, 'start_time' => '08:00', 'end_time' => '16:00'],
                 5 => ['day_number' => '5', 'start_time' => '09:00', 'end_time' => '11:00'],
@@ -238,9 +239,9 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
     }
 
     /**
-     * TODO 10.1: élesben az ütemező futtatja ezt a parancsot, ahol nincs
-     * bejelentkezett felhasználó - a TODO 10 causer-munkája előtt a
-     * GroupObserver::updated() ilyenkor egyszerűen kihagyta a naplózást.
+     * TODO 10.1: in production this command is run by the scheduler, where
+     * there is no logged-in user - before the TODO 10 causer work,
+     * GroupObserver::updated() simply skipped logging in this case.
      */
     public function test_apply_future_changes_runs_without_an_authenticated_user(): void
     {
@@ -272,7 +273,7 @@ class NewsletterAndGroupChangeCommandsTest extends FeatureTestCase
             GroupDay::where('group_id', $group->id)->where('day_number', 2)->first()->start_time
         );
 
-        // A rendszer okozta módosítás is naplóba kerül, causer_id = 0.
+        // A system-caused change is logged too, causer_id = 0.
         $history = LogHistory::where('model_type', Group::class)
             ->where('model_id', $group->id)
             ->where('event', 'updated')

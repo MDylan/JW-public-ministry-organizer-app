@@ -9,16 +9,17 @@ use Illuminate\Support\Facades\Gate;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.2: az AuthServiceProvider öt gate closure-je.
+ * TODO 07.2: the AuthServiceProvider's five gate closures.
  *
- * Ma csak az is-admin és az is-translator van érintve, azok is közvetve, a
- * RouteMiddlewareRegressionTest route-jain keresztül. Az is-groupcreator,
- * is-groupservant és is-groupadmin closure-jei - amelyek a csoportkezelés
- * teljes jogosultsági felületét adják - lefedetlenek.
+ * Today only is-admin and is-translator are touched, and even those
+ * indirectly, through RouteMiddlewareRegressionTest's routes. The
+ * is-groupcreator, is-groupservant, and is-groupadmin closures - which
+ * provide the entire authorization surface for group management - are
+ * uncovered.
  *
- * A gate-ek a Livewire komponenseken kívülről is hívhatók (Gate::allows a
- * ListGroups::createGroup()-ban, @can a nézetekben, can: middleware a
- * route-okon), ezért a closure-öket közvetlenül mérjük.
+ * The gates can also be called from outside the Livewire components
+ * (Gate::allows in ListGroups::createGroup(), @can in the views, can:
+ * middleware on the routes), so we measure the closures directly.
  */
 class AuthorizationGateTest extends FeatureTestCase
 {
@@ -38,9 +39,10 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_group_creator_gate_is_granted_to_main_admin_group_creator_and_translator(): void
     {
-        // A harmadik ág a meglepő: a translator szerep is csoportot hozhat
-        // létre, pedig a neve fordítási jogosultságot sugall
-        // (AuthServiceProvider.php:37-41). Ma semmi nem védi.
+        // The third branch is the surprising one: the translator role can also
+        // create a group, even though its name suggests translation
+        // permissions (AuthServiceProvider.php:37-41). Today nothing guards
+        // against this.
         $this->assertTrue($this->allows($this->userWithRole('mainAdmin', 'gate-ma@example.test'), 'is-groupcreator'));
         $this->assertTrue($this->allows($this->userWithRole('groupCreator', 'gate-gc@example.test'), 'is-groupcreator'));
         $this->assertTrue($this->allows($this->userWithRole('translator', 'gate-tr@example.test'), 'is-groupcreator'));
@@ -54,8 +56,9 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_group_membership_does_not_grant_the_group_creator_gate(): void
     {
-        // Az is-groupcreator kizárólag a users.role oszlopból dolgozik: hiába
-        // adminisztrátor valaki egy csoportban, új csoportot nem hozhat létre.
+        // is-groupcreator works exclusively off the users.role column: it
+        // makes no difference that someone is an admin within a group, they
+        // still cannot create a new group.
         $group = $this->createGroup();
         $user = $this->userWithRole('activated', 'gate-groupadmin-only@example.test');
         $this->attachUserToGroup($user, $group, 'admin');
@@ -64,7 +67,7 @@ class AuthorizationGateTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // is-groupservant - userGroupsEditable(): admin vagy roler tagság
+    // is-groupservant - userGroupsEditable(): admin or roler membership
     // =========================================================================
 
     public function test_group_servant_gate_is_granted_by_global_role_without_any_membership(): void
@@ -75,8 +78,8 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_group_creator_without_membership_is_not_a_group_servant(): void
     {
-        // A groupCreator NEM szerepel az is-groupservant globális ágában -
-        // csak a mainAdmin és a translator. Enélkül tagságra van szüksége.
+        // groupCreator is NOT part of is-groupservant's global branch - only
+        // mainAdmin and translator are. Without that, it needs membership.
         $this->assertFalse($this->allows($this->userWithRole('groupCreator', 'gs-gc@example.test'), 'is-groupservant'));
     }
 
@@ -104,8 +107,8 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_pending_membership_does_not_grant_the_group_servant_gate(): void
     {
-        // userGroupsEditable() wherePivotNotNull('accepted_at') - egy még el
-        // nem fogadott meghívás nem ad jogosultságot.
+        // userGroupsEditable() wherePivotNotNull('accepted_at') - an
+        // invitation that has not yet been accepted does not grant permission.
         $group = $this->createGroup();
         $user = $this->userWithRole('activated', 'gs-pending@example.test');
         $this->attachUserToGroup($user, $group, 'admin', false);
@@ -115,8 +118,8 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_withdrawn_membership_does_not_grant_the_group_servant_gate(): void
     {
-        // userGroupsEditable() wherePivot('deleted_at', null) - a csoportból
-        // kilépett adminisztrátor elveszíti a jogosultságot.
+        // userGroupsEditable() wherePivot('deleted_at', null) - an admin who
+        // has left the group loses the permission.
         $group = $this->createGroup();
         $user = $this->userWithRole('activated', 'gs-withdrawn@example.test');
 
@@ -132,14 +135,14 @@ class AuthorizationGateTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // is-groupadmin - userGroupsDeletable(): csak admin tagság
+    // is-groupadmin - userGroupsDeletable(): admin membership only
     // =========================================================================
 
     public function test_a_roler_is_a_group_servant_but_not_a_group_admin(): void
     {
-        // Ez a két gate közti egyetlen érdemi különbség: az is-groupservant
-        // az ['admin','roler'] halmazt nézi, az is-groupadmin csak az
-        // 'admin'-t. A helpers.php a hírlevél-célzáshoz mindkettőt használja.
+        // This is the only substantive difference between the two gates:
+        // is-groupservant looks at the ['admin','roler'] set, is-groupadmin
+        // only at 'admin'. helpers.php uses both for newsletter targeting.
         $group = $this->createGroup();
         $roler = $this->userWithRole('activated', 'ga-roler@example.test');
         $this->attachUserToGroup($roler, $group, 'roler');
@@ -182,10 +185,10 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_the_logged_in_gate_returns_the_user_instance_rather_than_a_boolean(): void
     {
-        // A closure a User példányt adja vissza (AuthServiceProvider.php:29-31),
-        // nem bool-t; a Gate a truthy kiértékelésre támaszkodik. Ugyanez a
-        // mintázat a hasRole()-ban is: true VAGY null a visszatérési érték,
-        // sosem false (User.php:132-134).
+        // The closure returns the User instance (AuthServiceProvider.php:29-31),
+        // not a bool; the Gate relies on truthy evaluation. The same pattern
+        // appears in hasRole() too: the return value is true OR null, never
+        // false (User.php:132-134).
         $user = $this->userWithRole('registered', 'gate-loggedin@example.test');
 
         $this->assertTrue($this->allows($user, 'logged-in'));
@@ -194,20 +197,20 @@ class AuthorizationGateTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A gate-nevek kis-nagybetű érzékenysége - látens hiba
+    // Case sensitivity of gate names - a latent bug
     // =========================================================================
 
     public function test_a_group_creator_receives_group_creator_newsletters(): void
     {
-        // MEGFORDÍTVA a v1-patch D1 javításával (TODO 33), a felhasználó
-        // kifejezett jóváhagyásával, mert ez éles viselkedést változtat.
+        // REVERSED by the v1-patch D1 fix (TODO 33), with the user's explicit
+        // approval, because this changes production behavior.
         //
-        // A helpers.php can('is-groupCreator')-t kért, a gate viszont
-        // 'is-groupcreator' néven van definiálva (AuthServiceProvider.php:37).
-        // A Laravel a gate-eket kulcs szerinti tömbben tartja, tehát a nevek
-        // kis-nagybetű érzékenyek: a feltétel MINDIG hamis volt, és a
-        // 'groupCreators'-nek célzott hírlevelek csak a mainAdmin-hoz jutottak
-        // el, az is-admin ágon keresztül. Érintett: Admin\AdminNewsletters,
+        // helpers.php requested can('is-groupCreator'), but the gate is
+        // defined under the name 'is-groupcreator' (AuthServiceProvider.php:37).
+        // Laravel keeps gates in a key-indexed array, so the names are
+        // case-sensitive: the condition was ALWAYS false, and newsletters
+        // targeted at 'groupCreators' only reached the mainAdmin, via the
+        // is-admin branch. Affected: Admin\AdminNewsletters,
         // Partials\NavBar, Partials\SideMenu.
         $creator = $this->userWithRole('groupCreator', 'nl-gc@example.test');
         $this->actingAs($creator);
@@ -217,10 +220,10 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_main_admin_does_receive_group_creator_newsletters(): void
     {
-        // A mainAdmin a javítás előtt is megkapta, de az is-admin ágon. Most
-        // már mindkét ág átviszi - a teszt attól még értékes, mert a
-        // mainAdmin-nak akkor is meg kell kapnia, ha az is-groupcreator gate
-        // definíciója egyszer szűkül.
+        // mainAdmin received it even before the fix, but via the is-admin
+        // branch. Now both branches carry it through - the test is still
+        // valuable because mainAdmin must keep receiving it even if the
+        // is-groupcreator gate's definition is ever narrowed.
         $admin = $this->userWithRole('mainAdmin', 'nl-ma@example.test');
         $this->actingAs($admin);
 
@@ -229,13 +232,13 @@ class AuthorizationGateTest extends FeatureTestCase
 
     public function test_a_translator_also_receives_group_creator_newsletters(): void
     {
-        // A D1 javítás MÁSODIK, kevésbé nyilvánvaló következménye: az
-        // is-groupcreator gate (AuthServiceProvider.php:37-41) a mainAdmin és a
-        // groupCreator mellett a translator szerepet is átengedi. Amíg a
-        // helpers.php elírt nevet kért, ez a hatás nem létezett; most létezik.
-        // Szándékos - a gate definíciója a jogosultsági szerződés, nem az
-        // elírás -, de rögzítve, mert egy hírlevélcímzett-lista bővülése
-        // magyarázat nélkül meglepetés lenne.
+        // The D1 fix's SECOND, less obvious consequence: the is-groupcreator
+        // gate (AuthServiceProvider.php:37-41) admits the translator role too,
+        // alongside mainAdmin and groupCreator. As long as helpers.php
+        // requested the misspelled name, this effect did not exist; now it
+        // does. This is intentional - the gate's definition is the authority
+        // contract, not the typo - but recorded because a newsletter recipient
+        // list expanding without explanation would be a surprise.
         $translator = $this->userWithRole('translator', 'nl-tr@example.test');
         $this->actingAs($translator);
 
@@ -279,15 +282,15 @@ class AuthorizationGateTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A gate-ek relációt olvasnak, nem lekérdezést - cache-elési kockázat
+    // The gates read a relation, not a query - a caching risk
     // =========================================================================
 
     public function test_the_group_gates_read_a_lazily_loaded_relation(): void
     {
-        // Az is-groupservant a $user->userGroupsEditable dinamikus property-t
-        // olvassa, nem a ->userGroupsEditable() lekérdezést. A reláció az
-        // első olvasáskor cache-elődik a modellen, tehát a kérésen belül
-        // létrejövő új tagságot NEM veszi észre, amíg a modellt nem frissítik.
+        // is-groupservant reads the $user->userGroupsEditable dynamic
+        // property, not the ->userGroupsEditable() query. The relation gets
+        // cached on the model on first read, so it does NOT notice new
+        // membership created within the request until the model is refreshed.
         $group = $this->createGroup();
         $user = $this->userWithRole('activated', 'gate-cache@example.test');
 

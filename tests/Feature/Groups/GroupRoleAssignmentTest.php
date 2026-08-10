@@ -12,18 +12,19 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.2: a csoporton belüli szerepkiosztás.
+ * TODO 07.2: role assignment within a group.
  *
- * A Groups\ListUsers::updateUser() (:201-320) nagyjából 120 sor jogosultsági
- * logika, amit ma csak egy "a route 200-at ad" füstteszt érint. Ez a kód
- * dönti el, ki kit léptethet elő vagy vissza egy csoportban.
+ * Groups\ListUsers::updateUser() (:201-320) is roughly 120 lines of
+ * authorization logic, which today is touched only by a "the route returns
+ * 200" smoke test. This code decides who can promote or demote whom in a
+ * group.
  *
- * A roadmap ezt a metódust saveUser() néven említi - olyan metódus nincs a
- * komponensben; a szerkesztés editUser() -> updateUser() páron megy.
+ * The roadmap refers to this method as saveUser() - no such method exists in
+ * the component; editing goes through the editUser() -> updateUser() pair.
  *
- * Négy szabály él benne, és MINDHÁROM validátor-szabály csak akkor fut le,
- * ha a szerep ténylegesen változik (:236). Ez fedési viszonyt teremt az
- * első szabállyal - lásd a 4. szakaszt.
+ * Four rules live in it, and ALL THREE validator rules only run if the role
+ * actually changes (:236). This creates an overlap with the first rule -
+ * see section 4.
  */
 class GroupRoleAssignmentTest extends FeatureTestCase
 {
@@ -62,7 +63,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Belépési jogosultság
+    // 1. Entry authorization
     // =========================================================================
 
     public function test_a_plain_member_cannot_open_the_user_editor(): void
@@ -75,13 +76,14 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_a_helper_cannot_open_the_user_editor_either(): void
     {
-        // KARAKTERIZÁLÓ TESZT: az isNotHelper() (:796-798) szó szerint azonos
-        // az isNotEditor()-ral (:792-794) - mindkettő csak ['admin','roler']-t
-        // enged. A 'helper' szerep tehát nem helper a metódus értelmében.
+        // CHARACTERIZATION TEST: isNotHelper() (:796-798) is literally
+        // identical to isNotEditor() (:792-794) - both only allow
+        // ['admin','roler']. So the 'helper' role is not a helper in the
+        // sense of the method.
         //
-        // Következmény: a maxRoles() (:808-816) a gyakorlatban csak két
-        // értéket adhat vissza, ['member','helper','roler'] (roler) vagy
-        // mind a négy (admin); a 'member' és a 'helper' ága elérhetetlen.
+        // Consequence: maxRoles() (:808-816) can in practice only return two
+        // values, ['member','helper','roler'] (roler) or all four (admin);
+        // the 'member' and 'helper' branches are unreachable.
         $actor = $this->member('ra-helper@example.test', 'helper');
         $target = $this->member('ra-target2@example.test', 'member');
 
@@ -98,17 +100,17 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_an_outsider_gets_a_403(): void
     {
-        // TODO 10 javította a getRole()-t (:800-806): korábban
-        // ->first()->toArray()-jel zárt, tehát tagsági sor nélkül fatalt
-        // dobott, MÉG MIELŐTT az isNotHelper() 403-at adhatott volna.
+        // TODO 10 fixed getRole() (:800-806): previously it ended with
+        // ->first()->toArray(), so without a membership row it threw a
+        // fatal, BEFORE isNotHelper() could have given a 403.
         //
-        // A route-on ott van a groupMember middleware, tehát ez nem volt
-        // aktív biztonsági rés - de egy 500-as hiba tartotta zárva a
-        // komponenst, ami nem védelem. Most a getRole() maga zár.
+        // The groupMember middleware is present on the route, so this was
+        // not an active security hole - but a 500 error kept the component
+        // closed, which is not protection. Now getRole() itself closes it.
         //
-        // Fontos, hogy miért nem a role null-ra hagyása a helyes megoldás: a
-        // render() nem ellenőriz jogosultságot, csak $editor-t számol, tehát
-        // a kívülálló lerenderelné a taglistát nem-szerkesztőként.
+        // It matters why leaving the role at null is not the correct fix:
+        // render() does not check authorization, it only computes $editor,
+        // so the outsider would render the member list as a non-editor.
         $outsider = $this->createUser(['email' => 'ra-outsider@example.test']);
 
         Livewire::actingAs($outsider)
@@ -117,15 +119,15 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Az editUser() által épített state - az updateUser() bemeneti szerződése
+    // 2. The state built by editUser() - the input contract of updateUser()
     // =========================================================================
 
     public function test_edit_user_builds_the_full_state_the_updater_expects(): void
     {
-        // Az updateUser() feltételezi, hogy minden kulcs jelen van; a
-        // validátor szabályai (hidden => required, finish_guest_registration
-        // => Rule::In) hiányzó kulcsra máshogy viselkednek. A state alakja
-        // tehát szerződés a két metódus között.
+        // updateUser() assumes every key is present; the validator's rules
+        // (hidden => required, finish_guest_registration => Rule::In) behave
+        // differently for a missing key. The shape of state is therefore a
+        // contract between the two methods.
         $actor = $this->member('ra-state-actor@example.test', 'admin');
         $target = $this->member('ra-state-target@example.test', 'roler', [
             'name'         => 'Cél Elek',
@@ -139,23 +141,23 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Első szabály: csendes visszaállítás a hatókörön kívüli szerepnél
+    // 3. First rule: silent reset for a role outside of scope
     // =========================================================================
 
     public function test_a_roler_granting_the_admin_role_is_silently_reset_without_any_error(): void
     {
-        // EZ A LEGVESZÉLYESEBB SZABÁLY. A maxRoles() (:808-816) végigmegy a
-        // ['member','helper','roler','admin'] listán, és megáll a hívó saját
-        // szerepénél - egy roler tehát nem adhat admin szerepet.
+        // THIS IS THE MOST DANGEROUS RULE. maxRoles() (:808-816) walks the
+        // ['member','helper','roler','admin'] list and stops at the caller's
+        // own role - so a roler cannot grant the admin role.
         //
-        // A megvalósítás viszont NEM utasít el: a :211-214 némán
-        // visszaállítja a beküldött értéket a célszemély JELENLEGI
-        // szerepére, majd a mentés hiba nélkül lefut. A felhasználó
-        // "mentve" visszajelzést kap, miközben nem történt semmi.
+        // The implementation, however, does NOT reject: :211-214 silently
+        // resets the submitted value to the target's CURRENT role, then the
+        // save runs without error. The user gets a "saved" confirmation
+        // while nothing actually happened.
         //
-        // Egy upgrade során ez úgy törhet el, hogy a validáció zöld marad,
-        // csak a visszaállítás marad el - és onnantól bárki bármilyen
-        // szerepet adhat. Ezért van rá önálló teszt.
+        // During an upgrade this can break in a way where the validation
+        // stays green, only the reset is dropped - and from then on anyone
+        // can grant any role. Hence the dedicated test.
         $actor = $this->member('ra-silent-actor@example.test', 'roler');
         $target = $this->member('ra-silent-target@example.test', 'member');
 
@@ -195,7 +197,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Második szabály: az utolsó adminisztrátor védelme
+    // 4. Second rule: protection of the last administrator
     // =========================================================================
 
     public function test_the_last_admin_cannot_step_down(): void
@@ -225,15 +227,15 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_admin_check_also_walks_the_child_groups(): void
     {
-        // A pwbs_check_group_other_admins() (helpers.php:24-61) a szülő
-        // mellett a gyermekcsoportokat is átnézi, és azt kérdezi, van-e
-        // olyan MÁSIK adminisztrátor, aki MINDEGYIK csoportban admin
+        // pwbs_check_group_other_admins() (helpers.php:24-61) also checks
+        // the child groups besides the parent, and asks whether there is
+        // ANOTHER administrator who is admin in EVERY group
         // (array_search($total_group, $main_admins, true)).
         //
-        // Itt a második admin csak a szülőcsoportban admin, a gyermekben
-        // nem - ezért a visszaminősítés tiltott, pedig a szülőcsoportot
-        // önmagában nézve maradna adminisztrátor. Ez az ág eddig
-        // lefedetlen volt.
+        // Here the second admin is admin only in the parent group, not in
+        // the child - so the demotion is forbidden, even though the parent
+        // group alone would still have an administrator. This branch was
+        // uncovered until now.
         $child = $this->createChildGroup($this->group);
 
         $actor = $this->member('ra-child-actor@example.test', 'admin');
@@ -269,18 +271,18 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Harmadik és negyedik szabály - és a köztük lévő aszimmetria
+    // 5. Third and fourth rule - and the asymmetry between them
     // =========================================================================
 
     public function test_a_roler_cannot_take_the_admin_role_away_from_someone(): void
     {
-        // A harmadik szabály (:243-247) ELÉRHETŐ, mert a lefokozás célértéke
-        // ('roler') a roler saját hatókörén BELÜL van - így az első szabály
-        // nem állítja vissza, a szerep ténylegesen változna, és a validátor
-        // after() blokkja lefut.
+        // The third rule (:243-247) IS REACHABLE, because the demotion's
+        // target value ('roler') is WITHIN the roler's own scope - so the
+        // first rule does not reset it, the role would actually change, and
+        // the validator's after() block runs.
         //
-        // A második adminisztrátor azért kell, hogy a második szabály
-        // (error_no_admin_user) ne fedje el ezt a hibát.
+        // The second administrator is needed so that the second rule
+        // (error_no_admin_user) does not mask this error.
         $actor = $this->member('ra-r3-actor@example.test', 'roler');
         $target = $this->member('ra-r3-target@example.test', 'admin');
         $this->member('ra-r3-other-admin@example.test', 'admin');
@@ -299,18 +301,18 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_no_right_to_grant_admin_rule_is_unreachable(): void
     {
-        // KARAKTERIZÁLÓ TESZT: a negyedik szabály (:248-252,
-        // group.error_no_right) HOLT KÓD.
+        // CHARACTERIZATION TEST: the fourth rule (:248-252,
+        // group.error_no_right) is DEAD CODE.
         //
-        // Ahhoz, hogy lefusson, egy nem-adminnak 'admin' szerepet kellene
-        // beküldenie. De az 'admin' nincs benne a roler maxRoles()-ában,
-        // ezért az első szabály (:211-214) előbb visszaállítja az értéket a
-        // célszemély jelenlegi szerepére - így a :236 feltétele
-        // (pivot != state) hamis lesz, és az egész after() blokk kimarad.
+        // For it to run, a non-admin would have to submit the 'admin' role.
+        // But 'admin' is not in the roler's maxRoles(), so the first rule
+        // (:211-214) resets the value to the target's current role first -
+        // so the :236 condition (pivot != state) becomes false, and the
+        // whole after() block is skipped.
         //
-        // Ugyanaz a mintázat, mint a TODO 07.1 jóváhagyási plafonjánál: a
-        // védelem működik, de nem azon a kapun, amelyiken a kód szándéka
-        // szerint - és más (itt: semmilyen) hibaüzenettel.
+        // Same pattern as the TODO 07.1 approval ceiling: the protection
+        // works, but not through the gate the code's intent suggests - and
+        // with a different (here: no) error message.
         $actor = $this->member('ra-r4-actor@example.test', 'roler');
         $target = $this->member('ra-r4-target@example.test', 'member');
 
@@ -324,7 +326,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. A többi validált mező
+    // 6. The remaining validated fields
     // =========================================================================
 
     public function test_the_pivot_fields_are_saved_together_with_the_role(): void
@@ -352,9 +354,9 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_note_is_stored_encrypted_in_the_pivot_table(): void
     {
-        // A group_user.note encrypted cast alatt van (GroupUser.php:31-32),
-        // és a mentés a syncWithoutDetaching() útján megy - vagyis a cast a
-        // pivot osztályon keresztül érvényesül. TODO 13 tárgya is.
+        // group_user.note is under an encrypted cast (GroupUser.php:31-32),
+        // and the save goes through syncWithoutDetaching() - meaning the
+        // cast is applied via the pivot class. Also the subject of TODO 13.
         $actor = $this->member('ra-note-actor@example.test', 'admin');
         $target = $this->member('ra-note-target@example.test', 'member');
 
@@ -399,10 +401,10 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_an_unknown_role_is_silently_discarded_rather_than_rejected(): void
     {
-        // A Rule::In(self::$group_roles) csak akkor kap szót, ha az érték
-        // túlélte az első szabály visszaállítását - egy teljesen ismeretlen
-        // szerep viszont sosem szerepel a maxRoles()-ban, ezért itt is a
-        // csendes visszaállítás nyer. A validációs hiba tehát NEM jön elő.
+        // Rule::In(self::$group_roles) only gets a say if the value
+        // survived the first rule's reset - but a completely unknown role
+        // never appears in maxRoles() either, so the silent reset wins here
+        // too. The validation error therefore does NOT occur.
         $actor = $this->member('ra-unknown-actor@example.test', 'admin');
         $target = $this->member('ra-unknown-target@example.test', 'member');
 
@@ -416,23 +418,24 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_finish_guest_registration_flag_never_reaches_the_pivot_table(): void
     {
-        // MEGERŐSÍTVE a v1-patch B15 javításával. A megfigyelhető viselkedés
-        // nem változik - a kulcs eddig sem került a pivot táblába -, de az OK
-        // igen, és ezért érdemes ezt a tesztet elolvasni.
+        // CONFIRMED by the v1-patch B15 fix. The observable behaviour does
+        // not change - the key never reached the pivot table before either -
+        // but the WHY does, and that is why this test is worth reading.
         //
-        // Korábban az updateUser() a TELJES $validatedData-t adta a
-        // syncWithoutDetaching()-nek, és a finish_guest_registration mindig
-        // benne volt (az editUser() beállítja). A group_user táblában viszont
-        // nincs ilyen oszlop. A mentés kizárólag azért nem hasalt el, mert a
-        // GroupUser egyedi Pivot osztály $fillable listával: a Laravel az
-        // updateExistingPivotUsingCustomClass() ágon fill()-lel CSENDBEN
-        // eldobta az ismeretlen kulcsot. Ez keretrendszer-verziótól függő
-        // útvonal - pontosan az a fajta, amit egy 8->13 ugrás megpiszkál -, és
-        // egy nyers update/insert fallbacken ismeretlen oszlop hibával járt
-        // volna.
+        // Previously updateUser() passed the FULL $validatedData to
+        // syncWithoutDetaching(), and finish_guest_registration was always
+        // in it (editUser() sets it). But the group_user table has no such
+        // column. The save only did not fail because GroupUser is a custom
+        // Pivot class with a $fillable list: on the
+        // updateExistingPivotUsingCustomClass() branch, Laravel's fill()
+        // SILENTLY dropped the unknown key. This is a path that depends on
+        // the framework version - exactly the kind of thing an 8->13 jump
+        // disturbs -, and on a raw update/insert fallback it would have
+        // failed with an unknown-column error.
         //
-        // A kulcsot most az updateUser() maga veszi ki a payloadból, tehát a
-        // helyes viselkedés nem a Pivot osztály mellékhatásán múlik.
+        // The key is now stripped from the payload by updateUser() itself,
+        // so the correct behaviour no longer depends on the Pivot class's
+        // side effect.
         $actor = $this->member('ra-fgr-actor@example.test', 'admin');
         $target = $this->member('ra-fgr-target@example.test', 'member');
 
@@ -453,10 +456,11 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_updater_strips_the_flag_before_it_reaches_the_pivot_writer(): void
     {
-        // A B15 lényege: a payload tisztítása a komponens felelőssége, nem a
-        // GroupUser Pivot $fillable listájának mellékhatása. Ha ez a szűrés
-        // elmarad, egy nyers pivot-írás "Unknown column" hibával hasal el -
-        // ezért a forrást is állítjuk, nem csak a végeredményt.
+        // The point of B15: cleaning the payload is the component's
+        // responsibility, not a side effect of the GroupUser Pivot's
+        // $fillable list. If this filtering is missing, a raw pivot write
+        // fails with an "Unknown column" error - so we assert the source
+        // too, not just the end result.
         $source = file_get_contents(app_path('Http/Livewire/Groups/ListUsers.php'));
 
         $this->assertStringContainsString(
@@ -467,7 +471,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 7. Vendégaktiválás
+    // 7. Guest activation
     // =========================================================================
 
     private function guest(string $email): User
@@ -510,8 +514,8 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_a_verified_user_cannot_be_run_through_the_guest_activation(): void
     {
-        // A Rule::In($finish_guest) (:216-220, :228-230) csak akkor engedi
-        // az 1-et, ha a célszemély email_verified_at-je null.
+        // Rule::In($finish_guest) (:216-220, :228-230) only allows the 1 if
+        // the target's email_verified_at is null.
         $actor = $this->member('ra-verified-actor@example.test', 'admin');
         $target = $this->member('ra-verified-target@example.test', 'member');
 
@@ -523,10 +527,11 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_the_role_switch_only_happens_for_registered_users(): void
     {
-        // A :293-294 két feltételt köt össze: a jelölőnégyzet ÉS a
-        // 'registered' szerep. Egy már aktivált, de e-mailt nem igazolt
-        // felhasználónál a validátor átengedi az 1-et, a mellékhatás
-        // viszont elmarad - jelszó, szerep és tagság változatlan.
+        // :293-294 ties two conditions together: the checkbox AND the
+        // 'registered' role. For an already activated but not
+        // email-verified user, the validator lets the 1 through, but the
+        // side effect is skipped - password, role and membership stay
+        // unchanged.
         Notification::fake();
 
         $actor = $this->member('ra-actrole-actor@example.test', 'admin');
@@ -553,7 +558,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 8. Profilmódosítás és értesítés
+    // 8. Profile modification and notification
     // =========================================================================
 
     public function test_changing_the_profile_updates_the_encrypted_columns_and_notifies_the_user(): void
@@ -601,17 +606,18 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_a_rejected_profile_leaves_no_partial_save_behind(): void
     {
-        // MEGFORDÍTVA a v1-patch B5 javításával.
+        // REVERSED by the v1-patch B5 fix.
         //
-        // Az updateUser() két lépcsőben mentett: a pivot-adatok már az
-        // adatbázisban voltak, mire a profilmezők validációja lefutott, KÜLÖN
-        // Validator::make()-kel és tranzakció nélkül. Egy hibás név ezért
-        // részleges mentést hagyott maga után - a jegyzet és a szerep
-        // elmentődött, a profil nem -, a felhasználó pedig csak egy
-        // hibaüzenetet látott, és nem tudhatta, mi maradt bent.
+        // updateUser() saved in two stages: the pivot data was already in
+        // the database by the time the profile fields' validation ran, with
+        // a SEPARATE Validator::make() and no transaction. An invalid name
+        // therefore left a partial save behind - the note and the role got
+        // saved, the profile did not -, and the user only saw an error
+        // message, with no way of knowing what had stuck.
         //
-        // Most minden validáció az első írás ELŐTT fut, a maradék pedig egyetlen
-        // tranzakcióban: vagy minden elmentődik, vagy semmi.
+        // Now all validation runs BEFORE the first write, and the rest
+        // happens in a single transaction: either everything gets saved, or
+        // nothing does.
         $actor = $this->member('ra-partial-actor@example.test', 'admin');
         $target = $this->member('ra-partial-target@example.test', 'member', [
             'name' => 'Eredeti Név',
@@ -632,7 +638,8 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
     public function test_a_valid_save_still_writes_both_halves(): void
     {
-        // A B5 kontroll-kísérlete: a tranzakció nem ronthatja el a jó utat.
+        // B5's control experiment: the transaction must not break the happy
+        // path.
         $actor = $this->member('ra-atomic-actor@example.test', 'admin');
         $target = $this->member('ra-atomic-target@example.test', 'member', [
             'name' => 'Eredeti Név',

@@ -8,12 +8,12 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 08: az Admin\Users\ListUsers lapozása.
+ * TODO 08: pagination of Admin\Users\ListUsers.
  *
- * A komponens a keretrendszer paginate(20)-át használja (:134), tehát a
- * lapszámot a Paginator::currentPageResolver köti a WithPagination
- * $paginators tömbjéhez. Ez az az útvonal, ami a Livewire 3 alatt magától
- * rendben marad - ellentétben a Groups\ListUsers kézi paginátorával.
+ * The component uses the framework's paginate(20) (:134), so the
+ * page number is bound by Paginator::currentPageResolver to WithPagination's
+ * $paginators array. This is the path that stays fine on its own
+ * under Livewire 3 - unlike Groups\ListUsers's manual paginator.
  */
 class AdminUserListPaginationTest extends FeatureTestCase
 {
@@ -23,9 +23,9 @@ class AdminUserListPaginationTest extends FeatureTestCase
     {
         parent::setUp();
 
-        // A FeatureTestCase már létrehoz egy mainAdmin owner@example.test
-        // felhasználót, ami szintén szerepel a listában - a fixtúra-számok
-        // ezt is tartalmazzák.
+        // FeatureTestCase already creates a mainAdmin owner@example.test
+        // user, which also appears in the list - the fixture numbers
+        // include this too.
         $this->admin = $this->createUser([
             'role'  => 'mainAdmin',
             'email' => 'aup-admin@example.test',
@@ -33,8 +33,8 @@ class AdminUserListPaginationTest extends FeatureTestCase
     }
 
     /**
-     * A render() üres keresésnél csak a mainAdmin / translator / groupCreator
-     * szerepűeket listázza (:123-125), tehát a fixtúrának ilyeneket kell adnia.
+     * With an empty search, render() lists only mainAdmin / translator / groupCreator
+     * roles (:123-125), so the fixture must supply users with those roles.
      */
     private function seedListedUsers(int $count, int $offset = 0): void
     {
@@ -57,12 +57,12 @@ class AdminUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Lapméret és lapszámok
+    // 1. Page size and page counts
     // =========================================================================
 
     public function test_the_first_page_holds_twenty_users(): void
     {
-        $this->seedListedUsers(23); // + owner + admin = 25 listázott
+        $this->seedListedUsers(23); // + owner + admin = 25 listed
 
         $paginator = $this->list()->viewData('users');
 
@@ -84,10 +84,10 @@ class AdminUserListPaginationTest extends FeatureTestCase
 
     public function test_the_pages_are_disjoint_and_together_cover_every_user(): void
     {
-        // A render() ->latest() szerint rendez, és egy ciklusban létrehozott
-        // felhasználók created_at-je azonos másodpercre eshet - ezért NEM a
-        // sorrendre assertálunk, hanem arra, amit a lapozástól elvárunk:
-        // átfedésmentesség és teljesség.
+        // render() orders by ->latest(), and users created in a loop
+        // can have created_at falling on the same second - so we do NOT
+        // assert on order, but on what we expect from pagination:
+        // no overlap and full coverage.
         $this->seedListedUsers(23);
 
         $firstPage = $this->idsOnPage($this->list());
@@ -127,15 +127,15 @@ class AdminUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A keresés és a lapozás összefüggése
+    // 2. The relationship between search and pagination
     // =========================================================================
 
     public function test_searching_resets_the_cursor_to_the_first_page(): void
     {
-        // Az updatedSearchTerm() (:116-118) az egyetlen resetPage() hívó ebben
-        // a komponensben. Ha ez elmaradna, a szűkített találati halmazon egy
-        // magas lapszám üres listát adna - a felhasználó szempontjából úgy
-        // néz ki, mintha nem lenne találat.
+        // updatedSearchTerm() (:116-118) is the only resetPage() caller in
+        // this component. If this were missing, a high page number on the
+        // narrowed result set would produce an empty list - from the user's
+        // perspective it would look as if there were no results.
         $this->seedListedUsers(23);
 
         $component = $this->list()->call('gotoPage', 2);
@@ -148,8 +148,8 @@ class AdminUserListPaginationTest extends FeatureTestCase
 
     public function test_a_search_switches_to_email_matching_and_shrinks_the_result_set(): void
     {
-        // Kereséskor a render() elhagyja a szerep-szűrőt és e-mail-részletre
-        // illeszt (:120-127) - a lapozás tehát más halmazon dolgozik.
+        // When searching, render() drops the role filter and matches on an
+        // email fragment instead (:120-127) - pagination therefore operates on a different set.
         $this->seedListedUsers(23);
         $this->createUser(['role' => 'registered', 'email' => 'kereses-cel@example.test']);
 
@@ -171,7 +171,7 @@ class AdminUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A lapozó megjelenése
+    // 3. Display of the paginator
     // =========================================================================
 
     public function test_the_pagination_control_is_rendered_only_when_there_is_more_than_one_page(): void

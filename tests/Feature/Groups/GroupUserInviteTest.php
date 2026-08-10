@@ -14,20 +14,20 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 11: a meghívás és a profilmegújítás kiváltó tesztjei.
+ * TODO 11: trigger tests for the invitation and profile-renewal flows.
  *
- * A NotificationRegressionTest mind a 26 értesítésre ellenőrzi a
- * LEVÉLSZERZŐDÉST (queue-e, van-e mail csatorna, épül-e MailMessage), de azt
- * nem, hogy kiváltódik-e egyáltalán, és kinek megy ki. Három osztály -
- * FinishRegistration, UserProfileRenewalNotification,
- * UserProfileRenewalAdminNotification - eddig CSAK azzal a szerződéssel volt
- * lefedve, tehát egy elnémult diszpécs nyomtalanul átcsúszott volna az
- * upgrade-en.
+ * NotificationRegressionTest checks the MAIL CONTRACT (is it queued, does it
+ * have a mail channel, does it build a MailMessage) for all 26
+ * notifications, but not whether it is triggered at all, or to whom it goes.
+ * Three classes - FinishRegistration, UserProfileRenewalNotification,
+ * UserProfileRenewalAdminNotification - were so far covered ONLY by that
+ * contract, so a silenced dispatch would have slipped through the upgrade
+ * without a trace.
  *
- * Mindhármat a Groups\ListUsers váltja ki. Az értesítés viszont csak a
- * belépési pont: a köré épülő üzleti logika (felhasználó-létrehozás aláírt
- * linkkel, a több címes meghívás, a megújítás időküszöbe) ugyanígy
- * lefedetlen volt.
+ * All three are triggered by Groups\ListUsers. But the notification is only
+ * the entry point: the business logic built around it (user creation with a
+ * signed link, multi-address invitation, the renewal time threshold) was
+ * equally uncovered.
  */
 class GroupUserInviteTest extends FeatureTestCase
 {
@@ -64,8 +64,8 @@ class GroupUserInviteTest extends FeatureTestCase
     }
 
     /**
-     * A notification $data property-je privát, ezért reflexióval olvassuk -
-     * ugyanaz a minta, amit az ObserverCauserTest is használ.
+     * The notification's $data property is private, so we read it via
+     * reflection - the same pattern ObserverCauserTest also uses.
      */
     private function notificationPayload($notification): array
     {
@@ -76,7 +76,7 @@ class GroupUserInviteTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Meghívás - createUser()
+    // 1. Invitation - createUser()
     // =========================================================================
 
     public function test_inviting_an_unknown_address_creates_the_user_and_sends_the_finish_registration_mail(): void
@@ -111,7 +111,7 @@ class GroupUserInviteTest extends FeatureTestCase
             function ($notification) use ($invited) {
                 $payload = $this->notificationPayload($notification);
 
-                // Az {id} útvonal-szegmens, nem query paraméter.
+                // The {id} route segment, not a query parameter.
                 return str_contains($payload['url'], 'signature=')
                     && str_contains($payload['url'], '/finish-registration/'.$invited->id)
                     && $payload['groupAdmin'] === $this->admin->name
@@ -122,10 +122,11 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_an_unverified_invitee_does_not_also_get_the_group_added_notification(): void
     {
-        // A GroupUserMoves::attach() (:45, :54) az email_verified_at-hez köti
-        // a GroupUserAddedNotification-t. Egy frissen meghívott vendégnek az
-        // még null, tehát ő CSAK a FinishRegistration-t kapja - különben két
-        // levelet kapna ugyanarról az egy eseményről.
+        // GroupUserMoves::attach() (:45, :54) ties the
+        // GroupUserAddedNotification to email_verified_at. For a freshly
+        // invited guest that is still null, so they get ONLY the
+        // FinishRegistration - otherwise they would get two mails for the
+        // same one event.
         Notification::fake();
 
         $this->invite('invited-single@example.test')->assertHasNoErrors();
@@ -138,8 +139,9 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_several_addresses_can_be_invited_in_one_submission(): void
     {
-        // A createUser() a preg_split("/\R/")-rel bontja sorokra a mezőt
-        // (:97), és a \R a CRLF-et is kezeli - a böngészőből így érkezik.
+        // createUser() splits the field into lines with preg_split("/\R/")
+        // (:97), and \R also handles CRLF - which is how it arrives from the
+        // browser.
         Notification::fake();
 
         $this->invite("first@example.test\r\nsecond@example.test\n\nthird@example.test")
@@ -163,8 +165,9 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_inviting_an_existing_user_attaches_them_without_a_finish_registration_mail(): void
     {
-        // A User::where(...)->firstOr(closure) closure-je nem fut le, ha a
-        // cím már létezik - a meghívó levél tehát elmarad, a csatolás nem.
+        // The closure of User::where(...)->firstOr(closure) does not run if
+        // the address already exists - so the invitation mail is skipped,
+        // but the attach is not.
         Notification::fake();
 
         $existing = $this->createUser(['email' => 'already-registered@example.test']);
@@ -180,7 +183,8 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_inviting_a_current_member_is_a_no_op(): void
     {
-        // A :148 continue-ja miatt a már benne lévő tagnál semmi nem történik.
+        // Because of the continue at :148, nothing happens for a member who
+        // is already in the group.
         Notification::fake();
 
         $member = $this->member('already-member@example.test');
@@ -213,13 +217,13 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_a_child_group_rejects_the_invitation_with_a_visible_message(): void
     {
-        // MEGFORDÍTVA a v1-patch B7 javításával.
+        // REVERSED by the v1-patch B7 fix.
         //
-        // Gyerekcsoportba nem lehet közvetlenül tagot felvenni - a tagságot a
-        // szülőcsoport adja -, de az őr PUSZTA return-nel lépett ki: se
-        // hibaüzenet, se modal-visszajelzés. Az adminisztrátor abban a hitben
-        // maradt, hogy elküldte a meghívót. A tiltás maga helyes; csak a
-        // hallgatás nem volt az.
+        // A member cannot be added directly to a child group - membership is
+        // granted by the parent group -, but the guard exited with a BARE
+        // return: no error message, no modal feedback. The administrator was
+        // left believing they had sent the invitation. The prohibition
+        // itself is correct; only the silence was not.
         Notification::fake();
 
         $child = $this->createChildGroup($this->group);
@@ -238,8 +242,9 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_the_child_group_rejection_message_exists_in_every_maintained_locale(): void
     {
-        // A hibaüzenet csak akkor ér valamit, ha nem nyers kulcsként jelenik
-        // meg. A projekt három karbantartott lokálja a hu, az en és a de.
+        // The error message is only worth something if it does not appear as
+        // a raw key. The project's three maintained locales are hu, en and
+        // de.
         foreach (['hu', 'en', 'de'] as $locale) {
             $this->assertNotSame(
                 'group.user.add.error_this_is_child',
@@ -250,13 +255,13 @@ class GroupUserInviteTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Profilmegújítás - userRenewal()
+    // 2. Profile renewal - userRenewal()
     // =========================================================================
 
     private function inactive(string $email): User
     {
-        // A küszöb: last_activity < now() - ttl hónap + 14 nap (:461).
-        // A gdpr.settings.ttl 6, tehát a határ nagyjából 5,5 hónap.
+        // The threshold: last_activity < now() - ttl months + 14 days (:461).
+        // gdpr.settings.ttl is 6, so the boundary is roughly 5.5 months.
         return $this->member($email, 'member', [
             'last_activity' => now()->subMonths(7),
         ]);
@@ -278,7 +283,7 @@ class GroupUserInviteTest extends FeatureTestCase
 
         $this->renew($target)->assertHasNoErrors();
 
-        // A last_activity nincs castolva a User modellen, tehát nyers string.
+        // last_activity has no cast on the User model, so it is a raw string.
         $this->assertGreaterThan(
             now()->subMinute()->getTimestamp(),
             strtotime($target->fresh()->last_activity),
@@ -312,8 +317,8 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_a_plain_member_is_not_notified_about_someone_elses_renewal(): void
     {
-        // Az adminok értesítője a group->editors relációra megy (:475), ami
-        // csak a 'roler' és 'admin' pivot-szerepeket tartalmazza.
+        // The admins' notification goes through the group->editors relation
+        // (:475), which only contains the 'roler' and 'admin' pivot roles.
         Notification::fake();
 
         $bystander = $this->member('renewal-bystander@example.test', 'member');
@@ -326,8 +331,8 @@ class GroupUserInviteTest extends FeatureTestCase
 
     public function test_an_active_user_cannot_be_renewed(): void
     {
-        // A :461 küszöbe alatt az $error = true ág fut: se írás, se levél,
-        // csak egy böngésző-esemény.
+        // Below the :461 threshold, the $error = true branch runs: no write,
+        // no mail, just a browser event.
         Notification::fake();
 
         $target = $this->member('renewal-active@example.test', 'member', [

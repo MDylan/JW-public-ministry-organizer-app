@@ -9,15 +9,15 @@ use Illuminate\Support\Facades\Config;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 09: a SetGuestLanguage middleware.
+ * TODO 09: the SetGuestLanguage middleware.
  *
- * Egyetlen route-on ül: a signed finish_registration-ön (web.php:66). A
- * feladata, hogy a meghívott - még be nem jelentkezett - felhasználó a saját
- * nyelvén lássa a regisztráció befejezését, mielőtt egyáltalán belépne.
+ * It sits on a single route: the signed finish_registration (web.php:66). Its
+ * job is to let the invited - not yet logged-in - user see the completion of
+ * registration in their own language, before they even log in.
  *
- * Ma nulla lefedettsége van, pedig ez a SetLocale session-ágának egyetlen
- * vendég-oldali forrása: a két middleware kapcsolata sehol nincs
- * dokumentálva.
+ * It has zero coverage today, even though this is the only guest-side source
+ * of SetLocale's session branch: the connection between the two middlewares
+ * is documented nowhere.
  */
 class SetGuestLanguageTest extends FeatureTestCase
 {
@@ -51,7 +51,7 @@ class SetGuestLanguageTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A valódi route
+    // 1. The real route
     // =========================================================================
 
     public function test_the_signed_invitation_link_switches_to_the_invited_users_language(): void
@@ -78,11 +78,11 @@ class SetGuestLanguageTest extends FeatureTestCase
 
     public function test_the_choice_survives_into_the_next_request_through_the_session(): void
     {
-        // Itt kapcsolódik össze a két middleware: a SetGuestLanguage a
-        // session-be ír, a SetLocale pedig a következő kérésen a
-        // session('language') ágon (SetLocale.php:51-53) veszi elő. A vendég
-        // tehát a meghívó link megnyitása után végig a saját nyelvén látja
-        // az oldalt, bejelentkezés nélkül is.
+        // This is where the two middlewares connect: SetGuestLanguage writes
+        // into the session, and SetLocale picks it up on the next request via
+        // the session('language') branch (SetLocale.php:51-53). The guest
+        // therefore sees the site in their own language throughout, after
+        // opening the invitation link, even without logging in.
         $user = $this->invitedUser('en', 'guest-lang-carry@example.test');
 
         $this->get($this->signedRoute('finish_registration', ['id' => $user->id]))
@@ -96,7 +96,7 @@ class SetGuestLanguageTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A védőfeltételek
+    // 2. The guard conditions
     // =========================================================================
 
     public function test_a_request_without_an_id_is_left_alone(): void
@@ -109,8 +109,8 @@ class SetGuestLanguageTest extends FeatureTestCase
 
     public function test_an_unknown_id_is_left_alone(): void
     {
-        // A $user !== null őr miatt egy nem létező azonosító nem okoz hibát -
-        // a kérés érintetlenül halad tovább.
+        // Because of the $user !== null guard, a non-existent id does not
+        // cause an error - the request passes through untouched.
         $response = $this->runMiddleware(Request::create('/valami?id=999999'));
 
         $this->assertSame('ok', $response->getContent());
@@ -119,14 +119,14 @@ class SetGuestLanguageTest extends FeatureTestCase
 
     public function test_an_anonymized_user_still_switches_the_locale(): void
     {
-        // A lekérdezés csupasz User::where('id', ...), tehát semmit nem szűr
-        // az azonosítón kívül. Egy GDPR-anonimizált felhasználó nyelve is
-        // érvényre jut - szemben például a Group::groupUsers() relációval,
-        // ami where('isAnonymized', 0)-val kizárja őket.
+        // The query is a bare User::where('id', ...), so it filters nothing
+        // besides the id. An anonymized GDPR user's language also takes
+        // effect - unlike, for example, the Group::groupUsers() relation,
+        // which excludes them with where('isAnonymized', 0).
         //
-        // Ma ártalmatlan (a nyelv nem személyes adat), de rögzítjük, mert a
-        // TODO 12 GDPR-átvizsgálásakor ez az egyik olyan hely, ahol egy
-        // anonimizált sor még olvasásra kerül.
+        // Harmless today (language is not personal data), but we record it
+        // because it is one of the places, during the TODO 12 GDPR review,
+        // where an anonymized row still gets read.
         $user = $this->invitedUser('en', 'guest-lang-anon@example.test');
         $user->forceFill(['isAnonymized' => 1])->save();
 
@@ -137,20 +137,20 @@ class SetGuestLanguageTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A validáció hiánya
+    // 3. The absence of validation
     // =========================================================================
 
     public function test_a_language_outside_the_available_list_is_applied_without_validation(): void
     {
-        // KARAKTERIZÁLÓ TESZT. A SetGuestLanguage - a SetLocale ?lang=
-        // ágával ellentétben - NEM ellenőrzi az available_languages-t: amit
-        // a users.language oszlopban talál, azt beteszi a locale-ba és a
-        // session-be.
+        // CHARACTERIZATION TEST. SetGuestLanguage - unlike SetLocale's
+        // ?lang= branch - does NOT check available_languages: whatever it
+        // finds in the users.language column, it puts into the locale and
+        // the session.
         //
-        // Következmény: egy olyan nyelv, amit az adminisztrátor időközben
-        // kivett a listából (vagy sosem tett bele), így is érvényre jut, és
-        // a session miatt a további kéréseken is megmarad. Fordítás
-        // hiányában a kulcsok nyersen jelennek meg.
+        // Consequence: a language that the administrator has since removed
+        // from the list (or never added), still takes effect, and persists
+        // across further requests because of the session. In the absence of
+        // a translation, the keys appear raw.
         $user = $this->invitedUser('sk', 'guest-lang-unknown@example.test');
 
         $this->runMiddleware(Request::create('/valami?id='.$user->id));
@@ -161,11 +161,11 @@ class SetGuestLanguageTest extends FeatureTestCase
 
     public function test_any_id_in_the_query_string_is_accepted_not_just_the_route_parameter(): void
     {
-        // A $request->id magic property előbb a route-paramétereket nézi,
-        // aztán a bemenetet - a middleware tehát nem köti magát a
-        // finish_registration route-hoz. Ma ez ártalmatlan, mert csak ott
-        // van bekötve és az az útvonal aláírt; egy jövőbeli újrafelhasználás
-        // előtt viszont tudni kell róla.
+        // The $request->id magic property looks at the route parameters
+        // first, then the input - so the middleware does not bind itself to
+        // the finish_registration route. Harmless today, because it is only
+        // wired up there and that route is signed; but this needs to be
+        // known before any future reuse.
         $user = $this->invitedUser('en', 'guest-lang-query@example.test');
 
         $this->runMiddleware(Request::create('/barmi?id='.$user->id));

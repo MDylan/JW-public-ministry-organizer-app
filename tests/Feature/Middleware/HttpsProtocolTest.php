@@ -8,29 +8,30 @@ use Illuminate\Http\Request;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 09: a HttpsProtocol middleware.
+ * TODO 09: the HttpsProtocol middleware.
  *
- * A web csoport tagja (Kernel.php:47), tehát MINDEN webes kérésen lefut -
- * a törzse viszont három feltétel mögött van, és a jelenlegi
- * konfigurációval egyik sem teljesül maradéktalanul:
+ * It is a member of the web group (Kernel.php:47), so it runs on EVERY web
+ * request - its body, however, sits behind three conditions, and with the
+ * current configuration not one of them is unconditionally satisfied:
  *
  *     !$request->secure() && app()->environment('production') && $this->httpsEnforced()
  *
- * A harmadik feltétel a v1-patch B14-ig `env('USE_HTTPS', "false") == "true"`
- * volt, azaz a literális "true" sztringhez hasonlított; a TODO 28 óta pedig
- * nem is env()-ből jön, hanem a config('security.use_https') kulcsból, ami a
- * szokásos igaz alakokat filter_var()-ral értelmezi.
+ * Until v1-patch B14, the third condition was
+ * `env('USE_HTTPS', "false") == "true"`, i.e. it compared against the
+ * literal "true" string; since TODO 28 it no longer even comes from env(),
+ * but from the config('security.use_https') key, which interprets the usual
+ * truthy spellings with filter_var().
  *
- * Ezért nulla lefedettsége van, és a bekapcsolt állapota ismeretlen terület.
- * A production környezet HTTP-tesztből nem állítható, ezért itt közvetlenül
- * a handle()-t hívjuk.
+ * That is why it has zero coverage, and its enabled state is unknown
+ * territory. The production environment cannot be set up from an HTTP test,
+ * so here we call handle() directly.
  */
 class HttpsProtocolTest extends FeatureTestCase
 {
     /**
-     * A middleware lefuttatása egy adott kérésre; a $next egyszerű
-     * "ok" választ ad, hogy az átengedés megkülönböztethető legyen az
-     * átirányítástól.
+     * Runs the middleware for a given request; $next gives a simple
+     * "ok" response so that passing through can be distinguished from a
+     * redirect.
      */
     private function runMiddleware(Request $request)
     {
@@ -38,8 +39,8 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     /**
-     * Az Application::environment() a konténer 'env' kötését olvassa, tehát
-     * a production környezet így szimulálható. A visszaállítás finally-ben.
+     * Application::environment() reads the container's 'env' binding, so the
+     * production environment can be simulated this way. Restored in a finally block.
      */
     private function inEnvironment(string $environment, callable $callback)
     {
@@ -59,10 +60,10 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     /**
-     * A HTTPS-kapcsoló beállítása a hívás idejére.
+     * Sets the HTTPS flag for the duration of the call.
      *
-     * A TODO 28 előtt ez a $_SERVER tömböt írta (withEnvValue), mert a
-     * middleware futásidőben olvasott env()-et. Most a konfiguráció dönt.
+     * Before TODO 28 this wrote the $_SERVER array (withEnvValue), because
+     * the middleware read env() at runtime. Now the configuration decides.
      */
     private function withHttps(bool $enabled, callable $callback)
     {
@@ -77,14 +78,14 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Miért nem fut ma soha
+    // 1. Why it never runs today
     // =========================================================================
 
     public function test_the_redirect_is_skipped_outside_production_even_when_https_is_enabled(): void
     {
-        // A tesztkörnyezet 'testing', a fejlesztői 'local' - a middleware
-        // tehát csak élesben aktív. Ez az oka annak, hogy a teljes suite
-        // futása alatt egyetlen egyszer sem irányít át.
+        // The test environment is 'testing', the development one is 'local' -
+        // so the middleware is only active in production. That is why it
+        // does not redirect a single time during the entire suite's run.
         $response = $this->withHttps(true, fn () => $this->runMiddleware($this->insecureRequest()));
 
         $this->assertSame('ok', $response->getContent());
@@ -101,7 +102,7 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A bekapcsolt állapot
+    // 2. The enabled state
     // =========================================================================
 
     public function test_an_insecure_production_request_is_redirected_to_https(): void
@@ -129,7 +130,7 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A sztring-összehasonlítás csapdája
+    // 3. The string-comparison trap
     // =========================================================================
 
     /**
@@ -137,24 +138,24 @@ class HttpsProtocolTest extends FeatureTestCase
      */
     public function test_every_common_truthy_spelling_enables_the_redirect(string $value): void
     {
-        // MEGFORDÍTVA előbb a v1-patch B14, majd a TODO 28 javításával.
+        // REVERSED first by the v1-patch B14 fix, then by the TODO 28 fix.
         //
-        // A feltétel `env('USE_HTTPS', "false") == "true"` volt, tehát a
-        // KONKRÉT "true" sztringhez hasonlított. A Laravel env()-je a
-        // "true"/"false" szavakat bool-lá alakítja, az "1"-et viszont
-        // sztringként adja vissza - így az összehasonlítás "1" == "true"
-        // alakot öltött, ami hamis. A .env-ben legszokásosabb USE_HTTPS=1
-        // ezért hatástalan volt, és a HTTPS-kényszerítés némán nem működött.
+        // The condition was `env('USE_HTTPS', "false") == "true"`, so it
+        // compared against the SPECIFIC "true" string. Laravel's env()
+        // converts the words "true"/"false" to bool, but returns "1" as a
+        // string - so the comparison took the form "1" == "true", which is
+        // false. The most common .env setting, USE_HTTPS=1, was therefore
+        // ineffective, and HTTPS enforcement silently did not work.
         //
-        // Az értelmezés a TODO 28 óta a config/security.php dolga, ezért a
-        // vizsgálat is oda költözött: a fájlt a változó beállított értékével
-        // töltjük be, és a belőle kijövő bool-t nézzük. A middleware maga
-        // ugyanezt a bool-t kapja - lásd a 2. szakasz eseteit.
+        // Since TODO 28, interpretation is config/security.php's job, so the
+        // check moved there too: we load the file with the variable set to
+        // the given value, and look at the bool that comes out of it. The
+        // middleware itself receives this same bool - see section 2's cases.
         $security = $this->withEnvValue('USE_HTTPS', $value, fn () => require config_path('security.php'));
 
         $this->assertTrue($security['use_https'], $value.': be kell kapcsolnia.');
 
-        // És a bekapcsolt kulcs tényleg átirányít.
+        // And the enabled key really does redirect.
         $response = $this->inEnvironment('production', fn () => $this->withHttps(
             $security['use_https'],
             fn () => $this->runMiddleware($this->insecureRequest())
@@ -180,8 +181,8 @@ class HttpsProtocolTest extends FeatureTestCase
      */
     public function test_no_other_value_enables_the_redirect(string $value): void
     {
-        // A B14 kontroll-kísérlete: a lazább értelmezés nem kapcsolhatja be a
-        // kényszerítést ott, ahol senki nem kérte.
+        // B14's control experiment: the looser interpretation must not
+        // enable enforcement where nobody asked for it.
         $security = $this->withEnvValue('USE_HTTPS', $value, fn () => require config_path('security.php'));
 
         $this->assertFalse($security['use_https'], $value.': nem szabad bekapcsolnia.');
@@ -214,23 +215,23 @@ class HttpsProtocolTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A kapcsoló forrása - TODO 28
+    // 4. The source of the flag - TODO 28
     // =========================================================================
 
     public function test_the_flag_comes_from_configuration_not_from_the_environment(): void
     {
-        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        // REVERSED by the v1-patch TODO 28 fix.
         //
-        // Korábban ugyanaz a kérés két különböző $_SERVER['USE_HTTPS']
-        // értékkel két különböző eredményt adott: a middleware közvetlenül a
-        // környezetből olvasott. Egy `php artisan config:cache` után viszont a
-        // Laravel be sem tölti a .env-et, az env() null-t ad - a HTTPS-re
-        // kényszerítés tehát némán kikapcsolt volna, méghozzá pontosan azon a
-        // telepítésen, amelyik elég gondos ahhoz, hogy gyorsítótárazza a
-        // konfigurációt. Semmi nem jelezte volna.
+        // Previously the same request with two different
+        // $_SERVER['USE_HTTPS'] values gave two different results: the
+        // middleware read directly from the environment. But after a
+        // `php artisan config:cache`, Laravel does not even load .env, env()
+        // returns null - so HTTPS enforcement would have silently turned
+        // off, and precisely on the deployment careful enough to cache its
+        // configuration. Nothing would have signaled it.
         //
-        // Most a környezeti változó önmagában nem mozdít semmit; a
-        // konfiguráció dönt, az pedig gyorsítótárazható.
+        // Now the environment variable by itself moves nothing; the
+        // configuration decides, and that can be cached.
         $request = $this->insecureRequest();
 
         $this->inEnvironment('production', function () use ($request) {

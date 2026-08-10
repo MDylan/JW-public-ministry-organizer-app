@@ -11,35 +11,35 @@ use Livewire\WithPagination;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 08: az AppComponent lapozási szerződése.
+ * TODO 08: the AppComponent pagination contract.
  *
- * Az AppComponent.php:12 protected $paginationTheme = 'bootstrap' sora NEM
- * létezik Livewire 3-ban; a TODO 48 fogja átírni paginationView()
- * felülírásra. Ez a fájl méri azt, amit a TODO 48-nak újra kell termelnie.
+ * The AppComponent.php:12 line `protected $paginationTheme = 'bootstrap'` does NOT
+ * exist in Livewire 3; TODO 48 will rewrite it as a paginationView()
+ * override. This file measures what TODO 48 needs to reproduce.
  *
- * A roadmap TODO 08 szövege öt komponenst nevez meg (Admin\StaticPages,
+ * The roadmap TODO 08 text names five components (Admin\StaticPages,
  * Admin\AdminNewsletters, Groups\NewsList, Groups\History, Groups\ListUsers).
- * Ellenőrizve: ebből NÉGY nem lapoz, és három nem is AppComponent-
- * leszármazott. A ténylegesen lapozó három komponens - a paginate() és a
- * ->links() hívások alapján, teljes körűen:
+ * Verified: of these, FOUR do not paginate, and three are not even
+ * AppComponent descendants. The three components that actually paginate - based on
+ * the paginate() and ->links() calls, exhaustively:
  *
  *   Admin\Users\ListUsers   paginate(20)   admin/users/list-users.blade:135
  *   Groups\ListGroups       paginate(20)   groups/list-groups.blade:122
- *   Groups\ListUsers        kézi paginátor groups/list-users.blade:312
+ *   Groups\ListUsers        manual paginator groups/list-users.blade:312
  */
 class PaginationBehaviorTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. A téma
+    // 1. The theme
     // =========================================================================
 
     public function test_the_base_component_resolves_the_bootstrap_pagination_views(): void
     {
-        // A WithPagination::paginationView() a 'livewire::' előtagot fűzi a
-        // $paginationTheme elé, ami a vendor views/pagination/ könyvtárára
-        // oldódik fel (LivewireServiceProvider:123-126). Ez a legközvetlenebb
-        // mérés a $paginationTheme property-re, és pontosan ez az az érték,
-        // amit a TODO 48-nak paginationView() felülírással kell adnia.
+        // WithPagination::paginationView() prepends the 'livewire::' prefix to
+        // $paginationTheme, which resolves to the vendor views/pagination/
+        // directory (LivewireServiceProvider:123-126). This is the most direct
+        // measurement of the $paginationTheme property, and this is exactly the value
+        // that TODO 48 needs to supply via a paginationView() override.
         $component = new AppComponent();
 
         $this->assertSame('livewire::bootstrap', $component->paginationView());
@@ -72,11 +72,11 @@ class PaginationBehaviorTest extends FeatureTestCase
      */
     public function test_every_paginating_component_exposes_the_pagination_methods_the_view_calls(string $componentClass): void
     {
-        // A vendor bootstrap sablon wire:click="previousPage('page')",
-        // "nextPage('page')" és "gotoPage(N, 'page')" hívásokat renderel -
-        // ezek a metódusnevek tehát szerződés a nézet felé, nem belső
-        // részletek. A Livewire 3 mindegyiket megtartja, de a setPage()
-        // implementációja megváltozik (lásd GroupUserListPaginationTest).
+        // The vendor bootstrap template renders wire:click="previousPage('page')",
+        // "nextPage('page')" and "gotoPage(N, 'page')" calls - these method
+        // names are therefore a contract with the view, not internal
+        // details. Livewire 3 keeps all of them, but the setPage()
+        // implementation changes (see GroupUserListPaginationTest).
         foreach (['previousPage', 'nextPage', 'gotoPage', 'resetPage', 'setPage'] as $method) {
             $this->assertTrue(
                 method_exists($componentClass, $method),
@@ -86,15 +86,15 @@ class PaginationBehaviorTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A renderelt markup
+    // 2. The rendered markup
     // =========================================================================
 
     public function test_the_rendered_pagination_uses_bootstrap_markup_and_not_tailwind(): void
     {
-        // Ha a Livewire 3 átállás után a komponens csendben visszaesne az
-        // alapértelmezett tailwind témára, a nézet továbbra is renderelne
-        // lapozót - csak más CSS-osztályokkal, ami a bootstrap alapú
-        // felületen elcsúszva jelenne meg. Ezért mindkét irányban mérünk.
+        // If after the Livewire 3 migration the component silently fell back to
+        // the default tailwind theme, the view would still render a
+        // paginator - just with different CSS classes, which would appear
+        // misaligned on the bootstrap-based UI. That's why we measure in both directions.
         $user = $this->createUser(['email' => 'pagination-markup@example.test']);
         $this->attachUserToManyGroups($user, 25);
 
@@ -104,7 +104,7 @@ class PaginationBehaviorTest extends FeatureTestCase
             ->assertSee('page-item', false)
             ->assertSee('page-link', false)
             ->assertSee('<nav>', false)
-            // A tailwind sablon jellegzetes osztálya:
+            // The tailwind template's characteristic class:
             ->assertDontSee('relative inline-flex', false);
     }
 
@@ -121,8 +121,8 @@ class PaginationBehaviorTest extends FeatureTestCase
 
     public function test_no_pagination_markup_is_rendered_below_the_page_size(): void
     {
-        // A vendor sablon @if ($paginator->hasPages()) mögé rejti az egészet.
-        // Enélkül a "van lapozó" assertion mindig igaz lenne.
+        // The vendor template hides the whole thing behind @if ($paginator->hasPages()).
+        // Without this, the "pagination exists" assertion would always be true.
         $user = $this->createUser(['email' => 'pagination-single@example.test']);
         $this->attachUserToManyGroups($user, 3);
 

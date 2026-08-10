@@ -107,9 +107,9 @@ class RetentionCommandsTest extends FeatureTestCase
     }
 
     /**
-     * A day oszlop DATE típusú, a padló pedig nap kezdete. Ha a padló időpontot
-     * hordozna, ez a két eset attól függően fordulna meg, hogy hány órakor
-     * futott a scheduler.
+     * The day column is of type DATE, and the floor is the start of a day.
+     * If the floor carried a time component, these two cases would flip
+     * depending on what hour the scheduler ran at.
      */
     public function test_purge_old_events_treats_the_floor_day_itself_as_inside_the_window(): void
     {
@@ -126,21 +126,22 @@ class RetentionCommandsTest extends FeatureTestCase
     }
 
     /**
-     * Ez a fájl legfontosabb tesztje. Az EventObserver::deleted() levelet küld
-     * az érintett hírnöknek és a csoport minden adminjának, és ír egy
-     * log_histories sort. Modellpéldányonként törölve az első éles futás
-     * 121 000 eseményre indítaná el ezt. A builder-szintű forceDelete() azért
-     * kötelező, mert nem indít modelleseményt - enélkül a teszt nélkül ez a
-     * tervezési döntés őrizetlen maradna.
+     * This is the most important test in this file. EventObserver::deleted()
+     * sends a mail to the affected publisher and to every admin of the
+     * group, and writes a log_histories row. Deleted model-instance by
+     * model-instance, the first live run would trigger this for 121,000
+     * events. The builder-level forceDelete() is therefore mandatory,
+     * because it does not fire a model event - without this test, that
+     * design decision would go unguarded.
      */
     public function test_purge_old_events_fires_no_model_events(): void
     {
         $this->enableGdpr();
         $this->eventOn($this->monthsAgo(14));
 
-        // A fake CSAK a fixtúra létrehozása után jön: az EventObserver::created()
-        // is küld értesítést, és itt nem az érdekel, hanem az, hogy a TÖRLÉS
-        // ne küldjön semmit.
+        // The fake comes ONLY after the fixture is created: EventObserver::created()
+        // also sends a notification, and that is not what we care about here - what
+        // matters is that the DELETION sends nothing.
         Notification::fake();
         $historyCount = LogHistory::count();
 
@@ -162,9 +163,9 @@ class RetentionCommandsTest extends FeatureTestCase
 
         $this->artisan('gdpr:purge-old-events');
 
-        // Ha a tábla nem InnoDB lenne, a kaszkád nem futna le, és ez a sor
-        // árván maradna - a szolgálati jelentés hivatkozna egy nem létező
-        // eseményre.
+        // If the table were not InnoDB, the cascade would not run, and this
+        // row would be left orphaned - the service report would reference a
+        // non-existent event.
         $this->assertSame(0, EventServiceReport::where('id', $report->id)->count());
     }
 
@@ -221,10 +222,10 @@ class RetentionCommandsTest extends FeatureTestCase
     }
 
     /**
-     * A settings tábla értéke a felületről érkezik, és a $state publikus
-     * Livewire property. Egy nem whitelistelt érték castolva nulla hónapos
-     * ablakot adna, azaz a MAI napig mindent törölne. Itt is no-op kell
-     * legyen, nem "óvatosabb" viselkedés.
+     * The settings table's value comes from the UI, and $state is a public
+     * Livewire property. A non-whitelisted value, cast, would give a
+     * zero-month window, i.e. it would delete everything up to TODAY. Here
+     * too the behaviour must be a no-op, not "more cautious" behaviour.
      */
     public function test_purge_old_group_data_is_a_no_op_on_a_tampered_setting_value(): void
     {
@@ -263,9 +264,9 @@ class RetentionCommandsTest extends FeatureTestCase
     }
 
     /**
-     * A Groups\Statistics a napi sorokat a group_dates-ből építi. Ha csak a
-     * day_stats tűnne el, a felület nem üres táblát mutatna, hanem azt
-     * állítaná, hogy a csoport 0 órát szolgált N elérhetőből.
+     * Groups\Statistics builds the daily rows from group_dates. If only
+     * day_stats disappeared, the UI would not show an empty table, but
+     * would claim the group served 0 hours out of N available.
      */
     public function test_purge_old_group_data_removes_the_group_dates_on_the_same_floor(): void
     {

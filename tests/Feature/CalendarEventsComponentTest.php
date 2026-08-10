@@ -10,7 +10,7 @@ use Livewire\Livewire;
 class CalendarEventsComponentTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. Komponens renderelés
+    // 1. Component rendering
     // =========================================================================
 
     public function test_component_renders_error_for_user_with_no_groups(): void
@@ -36,7 +36,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. mount() paraméter kezelés
+    // 2. mount() parameter handling
     // =========================================================================
 
     public function test_mount_sets_year_and_month_from_valid_params(): void
@@ -59,7 +59,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
         $group = $this->createGroup();
         $this->attachUserToGroup($user, $group, 'member', true);
 
-        // Az érvénytelen év nem okoz 500-as hibát — a komponens az aktuális évre vált
+        // An invalid year does not cause a 500 error — the component switches to the current year
         $this->actingAs($user)
             ->get(route('calendar', ['year' => 1990, 'month' => 3]))
             ->assertStatus(200);
@@ -93,7 +93,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Csoportváltás
+    // 3. Group switching
     // =========================================================================
 
     public function test_change_group_emits_to_modal_component(): void
@@ -104,8 +104,8 @@ class CalendarEventsComponentTest extends FeatureTestCase
         $this->attachUserToGroup($user, $group1, 'member', true);
         $this->attachUserToGroup($user, $group2, 'member', true);
 
-        // render() mindig session('groupId')-ból olvassa a form_groupId-t,
-        // ezért a célt a sessionbe állítjuk, hogy changeGroup() azt emittálja
+        // render() always reads form_groupId from session('groupId'),
+        // so we set the target in the session for changeGroup() to emit it
         session(['groupId' => $group2->id]);
 
         Livewire::actingAs($user)
@@ -115,7 +115,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Modal megnyitás
+    // 4. Opening the modal
     // =========================================================================
 
     public function test_open_events_modal_disables_polling_and_emits(): void
@@ -135,7 +135,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Nem jóváhagyott események láthatósága szerepkör szerint
+    // 5. Visibility of unapproved events by role
     // =========================================================================
 
     public function test_pending_events_visible_to_roler_in_view(): void

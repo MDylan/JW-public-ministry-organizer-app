@@ -7,36 +7,39 @@ use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
 /**
- * TODO 27: a jelszószabály - előbb karakterizálva, aztán lecserélve.
+ * TODO 27: the password rule - characterized first, then replaced.
  *
- * MIÉRT KELLETT EZ
+ * WHY THIS WAS NEEDED
  *
- * `PasswordValidationRules::passwordRules()` a `Laravel\Fortify\Rules\Password`
- * osztályt használta, ami a modern Fortify-ból eltűnt - a Phase 4 hop tehát
- * megbukott volna rajta. A csere `Illuminate\Validation\Rules\Password`-re
- * viszont NEM behelyettesítés: a két osztály mást enged át, és a suite eddig
- * egyetlen sort sem állított a szabályok tartalmáról. Ezért készült ez a fájl
- * a csere ELŐTT, a régi viselkedéssel; az alábbi esetek a csere diffjében
- * fordultak át, és ez a fordulás maga a szándék kimondása.
+ * `PasswordValidationRules::passwordRules()` used the
+ * `Laravel\Fortify\Rules\Password` class, which is gone from modern
+ * Fortify - so the Phase 4 hop would have failed on it. The swap to
+ * `Illuminate\Validation\Rules\Password`, however, is NOT a drop-in
+ * replacement: the two classes let different things through, and the suite
+ * had so far not asserted a single line about the rules' content. That is
+ * why this file was written BEFORE the swap, with the old behavior; the
+ * cases below flipped in the swap's diff, and that flip is itself the
+ * statement of intent.
  *
- * A KÉT VÁLTOZÁS, MÉRVE
+ * THE TWO CHANGES, MEASURED
  *
- *  1. SZIGORÍTÁS, a felhasználó jóváhagyásával. A Fortify `requireUppercase()`
- *     bukási feltétele `Str::lower($value) === $value` volt, vagyis csak azt
- *     kérte, hogy a jelszó ne legyen csupa kisbetűs - egy csupa NAGYBETŰS
- *     jelszó (`PASSWORD1`) megfelelt neki. A `mixedCase()` nagy- ÉS kisbetűt
- *     is megkövetel, tehát az ilyen jelszó ezentúl elutasított. Csak új jelszó
- *     megadásakor jelentkezik; a meglévő jelszavakat nem érinti.
+ *  1. TIGHTENING, with the user's approval. Fortify's `requireUppercase()`
+ *     failure condition was `Str::lower($value) === $value`, i.e. it only
+ *     required that the password not be all lowercase - an all-UPPERCASE
+ *     password (`PASSWORD1`) satisfied it. `mixedCase()` requires both
+ *     upper- AND lowercase, so such a password is now rejected. This only
+ *     comes up when a new password is being set; it does not affect
+ *     existing passwords.
  *
- *  2. LAZÍTÁS, amit a csere hozott magával és nem volt tervezve. A Fortify
- *     `requireNumeric()`-je ASCII `[0-9]`-re illesztett, az `Illuminate`
- *     `numbers()`-e a `\pN` unicode osztályra - így egy arab-indiai számjegy
- *     ma már számjegynek számít. Nem kockázat (az entrópia nem lesz kisebb
- *     tőle), de a diffnek ki kell mondania.
+ *  2. RELAXATION, which the swap brought along unplanned. Fortify's
+ *     `requireNumeric()` matched ASCII `[0-9]`; `Illuminate`'s `numbers()`
+ *     matches the `\pN` unicode class - so an Arabic-Indic digit now counts
+ *     as a digit too. Not a risk (entropy does not decrease because of it),
+ *     but the diff must state it.
  *
- * A hossz ellenőrzése a régi listában kétszer szerepelt: a Fortify szabálya
- * maga is nézte (`Str::length($value) >= 8`), és mellette ott volt a `min:8`.
- * Az új listában a `Password::min(8)` viszi, a duplikáció megszűnt.
+ * The length check appeared twice in the old list: Fortify's own rule also
+ * checked it (`Str::length($value) >= 8`), alongside a separate `min:8`. In
+ * the new list `Password::min(8)` carries it alone; the duplication is gone.
  */
 class PasswordRuleTest extends TestCase
 {
@@ -50,21 +53,21 @@ class PasswordRuleTest extends TestCase
             ['password' => $this->currentRules()]
         );
 
-        $this->assertSame($expectedToPass, $validator->passes(), $why.' - jelszó: ['.$password.']');
+        $this->assertSame($expectedToPass, $validator->passes(), $why.' - password: ['.$password.']');
     }
 
     public static function passwordCases(): array
     {
         return [
-            'érvényes: nagybetű, kisbetű, szám, 9 karakter' => ['Password1', true, 'Ez a szabály szándékolt esete'],
-            'csupa nagybetű és szám' => ['PASSWORD1', false, 'SZIGORÍTÁS: a Fortify csak azt kérte, hogy ne legyen csupa kisbetűs, a mixedCase() kisbetűt is megkövetel'],
-            'csupa kisbetű és szám' => ['password1', false, 'mixedCase: nagybetű nélkül bukik - ez a régi szabállyal is így volt'],
-            'nagybetű, de nincs szám' => ['Password', false, 'numbers(): számjegy nélkül bukik'],
-            'túl rövid, egyébként jó' => ['Passw1', false, 'min(8)'],
-            'pontosan 8 karakter' => ['Passwor1', true, 'A 8 karakter még megfelel'],
-            'speciális karakter nem kötelező' => ['Password1', true, 'symbols() nincs bekapcsolva'],
-            'ékezetes nagybetű számít nagybetűnek' => ['Árvíztűrő1', true, 'A mixedCase() a \p{Lu}/\p{Ll} unicode osztályokat nézi, tehát az ékezetes betűk is számítanak'],
-            'unicode számjegy MOST MÁR számít' => ['Password١', true, 'LAZÍTÁS: numbers() a \pN unicode osztályra illeszt, a Fortify ASCII [0-9]-re illesztett'],
+            'valid: uppercase, lowercase, digit, 9 characters' => ['Password1', true, "This is the rule's intended case"],
+            'all uppercase and digit' => ['PASSWORD1', false, 'TIGHTENING: Fortify only required that it not be all lowercase; mixedCase() also requires a lowercase letter'],
+            'all lowercase and digit' => ['password1', false, 'mixedCase: fails without an uppercase letter - this was also true under the old rule'],
+            'uppercase, but no digit' => ['Password', false, 'numbers(): fails without a digit'],
+            'too short, otherwise fine' => ['Passw1', false, 'min(8)'],
+            'exactly 8 characters' => ['Passwor1', true, '8 characters still passes'],
+            'special character is not required' => ['Password1', true, 'symbols() is not enabled'],
+            'an accented uppercase letter counts as uppercase' => ['Árvíztűrő1', true, 'mixedCase() looks at the \p{Lu}/\p{Ll} unicode classes, so accented letters count too'],
+            'a unicode digit counts NOW' => ['Password١', true, 'RELAXATION: numbers() matches the \pN unicode class; Fortify matched ASCII [0-9]'],
         ];
     }
 
@@ -75,7 +78,7 @@ class PasswordRuleTest extends TestCase
             ['password' => $this->currentRules()]
         );
 
-        $this->assertFalse($validator->passes(), 'A `confirmed` szabály a szabálylista része.');
+        $this->assertFalse($validator->passes(), 'The `confirmed` rule is part of the rule list.');
     }
 
     public function test_an_empty_password_is_rejected(): void
@@ -89,16 +92,16 @@ class PasswordRuleTest extends TestCase
     }
 
     /**
-     * A hibaüzenet nem mellékes, és ez volt a csere harmadik mérhető
-     * következménye. Mindkét jelszóosztály a teljes angol mondatot használja
-     * fordítási kulcsként. A Fortify mondata le VAN fordítva magyarra; az
-     * `Illuminate` szabály három mondata a `hu.json`-ban kulcsként ott volt,
-     * de fordítatlanul - a csere tehát angolra váltotta volna a magyar
-     * felhasználók hibaüzenetét. A fordítás ezért ugyanennek a change setnek
-     * a része.
+     * The error message is not incidental, and this was the swap's third
+     * measurable consequence. Both password classes use the full English
+     * sentence as the translation key. Fortify's sentence IS translated into
+     * Hungarian; the `Illuminate` rule's three sentences were present as keys
+     * in `hu.json`, but untranslated - so the swap would have switched
+     * Hungarian users' error message to English. The translation is
+     * therefore part of this same change set.
      *
-     * Nyitva marad: `ro.json` és `sk.json` ugyanígy fordítatlan (a `de` és az
-     * `fr` már tartalmazza mindhármat). Ott ma az angol mondat jelenik meg.
+     * Left open: `ro.json` and `sk.json` are likewise untranslated (`de` and
+     * `fr` already contain all three). There, the English sentence appears today.
      */
     public function test_the_failure_message_is_translated_to_hungarian(): void
     {
@@ -112,7 +115,7 @@ class PasswordRuleTest extends TestCase
         $this->assertFalse($validator->passes());
 
         $message = $validator->errors()->first('password');
-        $this->assertStringNotContainsString('must contain', $message, 'A hibaüzenet magyarul kell megjelenjen, nem az angol kulcs nyersen.');
+        $this->assertStringNotContainsString('must contain', $message, 'The error message must appear in Hungarian, not as the raw English key.');
         $this->assertStringContainsString('nagybetűt', $message);
     }
 

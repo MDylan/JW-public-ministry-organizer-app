@@ -7,29 +7,31 @@ use Illuminate\Http\Request;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * Az asset-pipeline karakterizációs készlete - a TODO 33.8 utáni alakban.
+ * The asset-pipeline characterization suite - in the shape after TODO 33.8.
  *
- * MI VÁLTOZOTT
+ * WHAT CHANGED
  *
- * A fájl eredetileg (TODO 21.1) az `eusonlito/laravel-packer` viselkedését
- * rögzítette: csomagolt fájlneveket, összefűzést, időbélyeges átnevezést és egy
- * `local` / nem-`local` kettősséget. A TODO 33.8-cal a csomag elment, a helyére
- * a `pwbs_asset()` helper lépett (app/Helpers/helpers.php), és ezzel a mért
- * felület is más lett: `?v={filemtime}` query az eredeti fájlon, tagenként egy
- * forrás, összefűzés nélkül, KÖRNYEZETTŐL FÜGGETLENÜL ugyanúgy.
+ * The file originally (TODO 21.1) recorded the behavior of
+ * `eusonlito/laravel-packer`: packaged filenames, concatenation, timestamped
+ * renaming, and a `local` / non-`local` dichotomy. With TODO 33.8 the package
+ * is gone, replaced by the `pwbs_asset()` helper (app/Helpers/helpers.php),
+ * and the measured surface changed with it: a `?v={filemtime}` query on the
+ * original file, one tag per source, no concatenation, IDENTICAL REGARDLESS
+ * OF ENVIRONMENT.
  *
- * AZ UTOLSÓ TAGMONDAT A LÉNYEG
+ * THE LAST CLAUSE IS THE POINT
  *
- * A csomag `local` alatt átjáró volt, minden más környezetben csomagolt - és
- * minden mért hibája (a szétvert `data:` URI-k, a sémát bebetonozó abszolút
- * URL, a webgyökérbe írás) KIZÁRÓLAG a nem-`local` ágon jelentkezett. Ezért nem
- * vette észre őket senki fejlesztés közben, és ezért robbantak élesben. Az
- * itteni tesztek közül három szándékosan azt méri, hogy ez a kettősség
- * megszűnt - nem csak azt, hogy a tagek jól néznek ki.
+ * The package was a passthrough under `local`, and packaged in every other
+ * environment - and every measured defect (the mangled `data:` URIs, the
+ * absolute URL that baked in the scheme, the write into the web root)
+ * occurred EXCLUSIVELY on the non-`local` branch. That is why no one noticed
+ * them during development, and why they blew up in production. Three of the
+ * tests here deliberately measure that this dichotomy is gone - not just that
+ * the tags look right.
  */
 class AssetPipelineTest extends FeatureTestCase
 {
-    /** Ideiglenes fixture a public/ alatt; a tearDown takarítja. */
+    /** Temporary fixture under public/; cleaned up by tearDown. */
     private ?string $fixture = null;
 
     private ?User $user = null;
@@ -44,7 +46,7 @@ class AssetPipelineTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A helper maga
+    // The helper itself
     // =========================================================================
 
     public function test_the_helper_appends_the_files_modification_time(): void
@@ -52,8 +54,8 @@ class AssetPipelineTest extends FeatureTestCase
         $this->assertSame(
             asset('/css/style.css').'?v='.filemtime(public_path('css/style.css')),
             pwbs_asset('/css/style.css'),
-            'A cache busting a csomag EGYETLEN ténylegesen szállított értéke volt; '
-            .'a helper ugyanezt adja, egy filemtime() hívásból, lemezre írás nélkül.'
+            'Cache busting was the ONLY value the package actually delivered; '
+            .'the helper produces the same thing, from a single filemtime() call, with no disk write.'
         );
     }
 
@@ -66,9 +68,9 @@ class AssetPipelineTest extends FeatureTestCase
         clearstatcache(true, $this->fixture);
         $this->assertStringEndsWith('?v=1600000000', pwbs_asset('/pwbs-asset-fixture.css'));
 
-        // A clearstatcache() nem díszlet: nélküle a PHP stat-gyorsítótára a
-        // MÁSODIK filemtime()-ot is az elsőből szolgálja ki, és a teszt zölden
-        // hazudik. Egy kérés egy stat-ot csinál, tehát élesben nincs dolga.
+        // clearstatcache() is not decoration: without it, PHP's stat cache would
+        // serve the SECOND filemtime() from the first one too, and the test
+        // would lie green. A single request does a single stat, so this has no job in production.
         touch($this->fixture, 1700000000);
         clearstatcache(true, $this->fixture);
         $this->assertStringEndsWith('?v=1700000000', pwbs_asset('/pwbs-asset-fixture.css'));
@@ -76,41 +78,42 @@ class AssetPipelineTest extends FeatureTestCase
 
     public function test_the_helper_falls_back_to_a_plain_url_for_a_missing_file(): void
     {
-        // Egy elgépelt útvonal ne öljön meg egy oldalt: token nélküli URL jön,
-        // nem kivétel. A böngésző 404-et kap, ami látható és javítható.
+        // A mistyped path should not kill a page: a URL without a token comes
+        // back, not an exception. The browser gets a 404, which is visible and fixable.
         $this->assertSame(asset('/nincs-ilyen.css'), pwbs_asset('/nincs-ilyen.css'));
     }
 
     public function test_the_helper_treats_a_leading_slash_and_a_bare_path_alike(): void
     {
-        // A régi hívási helyek vegyesen használták a két alakot ('css/style.css'
-        // az összefűzött listában, '/dist/css/adminlte.min.css' egyfájlosként).
-        // A helper mindkettőt ugyanarra az URL-re hozza, dupla perjel nélkül.
+        // The old call sites used both forms interchangeably ('css/style.css'
+        // in the concatenated list, '/dist/css/adminlte.min.css' as a single file).
+        // The helper resolves both to the same URL, without a double slash.
         $this->assertSame(pwbs_asset('/css/style.css'), pwbs_asset('css/style.css'));
         $this->assertStringNotContainsString('//css/style.css', pwbs_asset('/css/style.css'));
     }
 
     public function test_the_helper_follows_the_scheme_of_the_current_request(): void
     {
-        // EZ AZ, AMI ÉLESBEN ELTÖRT. A Packer a generáló kérés sémáját sütötte
-        // bele a csomagolt CSS abszolút url()-jeibe, a fájlt pedig korlátlanul
-        // újrahasznosította - egy http alatt készült fájl https-en mixed
-        // contentet okozott, és soha nem gyógyult meg magától, mert a fájlnév a
-        // FORRÁS filemtime-jából jött, nem a tartalomból. A helper minden
-        // kérésnél újraszámol, tehát ez a hibaosztály nem létezik többé.
+        // THIS IS WHAT BROKE IN PRODUCTION. The Packer baked the scheme of the
+        // generating request into the packaged CSS's absolute url()s, and
+        // reused the file without limit - a file built under http caused
+        // mixed content on https, and never healed itself, because the
+        // filename came from the SOURCE file's filemtime, not from the
+        // content. The helper recomputes on every request, so this class of
+        // defect no longer exists.
         foreach (['https', 'http'] as $scheme) {
             $this->app['url']->setRequest(Request::create($scheme.'://kozter.test/home', 'GET'));
 
             $this->assertStringStartsWith(
                 $scheme.'://kozter.test/',
                 pwbs_asset('/css/style.css'),
-                'A séma az aktuális kérésé, nem egy korábbié.'
+                'The scheme belongs to the current request, not to a previous one.'
             );
         }
     }
 
     // =========================================================================
-    // Amit a böngésző lát
+    // What the browser sees
     // =========================================================================
 
     public function test_the_app_layout_emits_a_versioned_tag_for_every_asset(): void
@@ -121,18 +124,18 @@ class AssetPipelineTest extends FeatureTestCase
             $this->assertMatchesRegularExpression(
                 '#'.preg_quote($path, '#').'\?v=\d+#',
                 $html,
-                $path.' vagy nincs kiírva, vagy nincs rajta cache-busting token.'
+                $path.' is either not emitted, or has no cache-busting token on it.'
             );
         }
 
-        // A három többfájlos hívás egyenként külön tagre bomlott - az összefűzés
-        // szándékosan esett ki (TODO 21 döntése): 16-ból 3 hívási helyet
-        // érintett, HTTP/2 fölött semmit nem hozott, cserébe ő volt az, ami a
-        // webgyökérbe írt.
+        // The three multi-file calls each split into a separate tag -
+        // concatenation was deliberately dropped (TODO 21's decision): it
+        // affected 3 of 16 call sites, gained nothing over HTTP/2, and in
+        // exchange it was the one writing into the web root.
         $this->assertStringContainsString('/js/custom.js?v=', $html);
         $this->assertStringContainsString('/js/modal.js?v=', $html);
 
-        // És nyoma sincs a régi, csomagolt fájlneveknek.
+        // And there is no trace of the old, packaged filenames.
         $this->assertDoesNotMatchRegularExpression('#/cache/(js|css)/\d+-#', $html);
         $this->assertStringNotContainsString('cache_fontawesome', $html);
         $this->assertStringNotContainsString('cache_adminlte', $html);
@@ -145,9 +148,9 @@ class AssetPipelineTest extends FeatureTestCase
         $this->app['env'] = 'production';
         $inProduction = $this->assetUrls($this->renderHome());
 
-        // A Packer alatt ez a két lista KÜLÖNBÖZÖTT, és a különbségben lakott
-        // mind a négy mért hiba. Ha valaha újra eltér, valaki visszahozott egy
-        // környezetfüggő asset-ágat.
+        // Under the Packer these two lists DIFFERED, and all four measured
+        // defects lived in that difference. If they ever diverge again,
+        // someone has brought back an environment-dependent asset branch.
         $this->assertSame($inTesting, $inProduction);
         $this->assertNotSame([], $inTesting);
     }
@@ -158,19 +161,20 @@ class AssetPipelineTest extends FeatureTestCase
 
         $this->renderHome();
 
-        // A Packer process()-e kérés közben mkdir + tempnam + fopen + rename +
-        // chmod-ot futtatott a public/ alatt, `local` kivételével MINDEN
-        // környezetben - a tesztfutás is. Így írta felül egy `composer test` a
-        // böngészőnek kiszolgált fájlokat.
+        // The Packer's process() ran mkdir + tempnam + fopen + rename + chmod
+        // under public/ mid-request, in EVERY environment except `local` -
+        // including the test run. That is how a `composer test` overwrote the
+        // files served to the browser.
         $this->assertSame(
             $before,
             $this->generatedArtifacts(),
-            'Egy oldal renderelése nem hozhat létre fájlt a webgyökérben.'
+            'Rendering a page must not create a file in the web root.'
         );
 
-        // Konkrétan erre az útvonalra a setup layout írt, és ezzel foglalta el a
-        // `storage:link` helyét. Magára a public/storage-ra nem állítunk semmit:
-        // egy rendesen linkelt telepítésen az LÉTEZIK, csak épp szimlinkként.
+        // Specifically, the setup layout wrote to this exact path, and thereby
+        // occupied the spot `storage:link` should hold. We assert nothing
+        // about public/storage itself: on a properly linked install it DOES
+        // exist, just as a symlink.
         $this->assertDirectoryDoesNotExist(public_path('storage/cache'));
     }
 
@@ -183,7 +187,7 @@ class AssetPipelineTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // Amit a böngésző a tageken KERESZTÜL kap
+    // What the browser gets THROUGH the tags
     // =========================================================================
 
     public function test_no_stylesheet_the_page_links_contains_an_absolute_url(): void
@@ -192,8 +196,8 @@ class AssetPipelineTest extends FeatureTestCase
             $this->assertDoesNotMatchRegularExpression(
                 '#url\(\s*["\']?https?://#i',
                 $contents,
-                $path.' abszolút hivatkozást tartalmaz. Pontosan ez okozta a mixed contentet: '
-                .'a séma bele volt sütve a kiszolgált fájlba.'
+                $path.' contains an absolute reference. This is exactly what caused the mixed content: '
+                .'the scheme was baked into the served file.'
             );
         }
     }
@@ -211,9 +215,9 @@ class AssetPipelineTest extends FeatureTestCase
                 $this->assertSame(
                     'data:',
                     $match,
-                    $path.' egyik data: URI-ja elé előtag került. A Packer 181-et tört el így '
-                    .'(177 az adminlte.min.css-ben, 4 a toastr.min.css-ben) - annyi beágyazott '
-                    .'ikon, amennyi az alkalmazás űrlapjain és gombjain végig megjelenik.'
+                    $path.' had a prefix added in front of one of its data: URIs. The Packer broke 181 of these '
+                    .'this way (177 in adminlte.min.css, 4 in toastr.min.css) - as many embedded '
+                    .'icons as appear throughout the application\'s forms and buttons.'
                 );
             }
         }
@@ -221,18 +225,19 @@ class AssetPipelineTest extends FeatureTestCase
         $this->assertGreaterThan(
             170,
             $seen,
-            'Ha ez a szám leesik, a teszt már nem azt méri, amiért íródott.'
+            'If this number drops, the test is no longer measuring what it was written for.'
         );
     }
 
     // =========================================================================
-    // A gyorsítótárazási politika
+    // The caching policy
     // =========================================================================
 
     /**
-     * A `public/.htaccess` szabályát Apache futtatja, tehát PHPUnitból nem lehet
-     * kimérni - a fejléceket curl-lel ellenőriztük a valódi szerveren. Amit ez a
-     * két teszt őriz, az a szabály INDOKA, mert az veszhet el legkönnyebben.
+     * The `public/.htaccess` rule is run by Apache, so it cannot be measured
+     * from PHPUnit - the headers were verified with curl on the real server.
+     * What these two tests guard is the RATIONALE for the rule, because that
+     * is what is easiest to lose.
      */
     public function test_the_long_cache_applies_only_to_versioned_urls(): void
     {
@@ -241,19 +246,19 @@ class AssetPipelineTest extends FeatureTestCase
         $this->assertMatchesRegularExpression(
             '#Header always set Cache-Control "[^"]*max-age=\d+[^"]*" env=PWBS_VERSIONED_ASSET#',
             $htaccess,
-            'A hosszú cache csak a PWBS_VERSIONED_ASSET környezeti változóhoz kötve adható ki.'
+            'The long cache may only be issued tied to the PWBS_VERSIONED_ASSET environment variable.'
         );
 
         $this->assertMatchesRegularExpression(
             '#RewriteCond %\{QUERY_STRING\} \(\^\|&\)v=\[0-9\]\+#',
             $htaccess,
-            'A változót a `?v={filemtime}` query léte állítja be, semmi más.'
+            'The variable is set by the presence of the `?v={filemtime}` query, nothing else.'
         );
 
-        // A veszélyes alak: bármilyen feltétel nélküli cache-direktíva. Egy
-        // `ExpiresByType text/css "access plus 1 year"` sor ugyanezt adná - és
-        // a verziózatlan URL-ekre is ráhúzná, amiket utána egy éven át nem
-        // lehetne érvényteleníteni a látogatók böngészőjében.
+        // The dangerous form: any unconditional cache directive. An
+        // `ExpiresByType text/css "access plus 1 year"` line would produce
+        // the same effect - and would also apply to unversioned URLs, which
+        // could then not be invalidated in visitors' browsers for a year.
         foreach (explode("\n", $htaccess) as $line) {
             $line = trim($line);
 
@@ -265,7 +270,7 @@ class AssetPipelineTest extends FeatureTestCase
                 $this->assertStringContainsString(
                     'env=PWBS_VERSIONED_ASSET',
                     $line,
-                    'Feltétel nélküli cache-direktíva: '.$line
+                    'Unconditional cache directive: '.$line
                 );
             }
         }
@@ -273,25 +278,25 @@ class AssetPipelineTest extends FeatureTestCase
 
     public function test_the_guest_layout_still_serves_unversioned_assets(): void
     {
-        // Ez a query-stringes feltétel PREMISSZÁJA. A public.blade.php ugyanazt
-        // az adminlte.min.css-t szolgálja ki a kijelentkezett felületnek,
-        // verzió nélkül - ezért nem kaphat egyéves cache-t.
+        // This is the PREMISE of the query-string condition. public.blade.php
+        // serves the same adminlte.min.css to the logged-out UI,
+        // unversioned - which is why it cannot get a one-year cache.
         $guest = file_get_contents(base_path('resources/views/public.blade.php'));
 
         $this->assertStringContainsString("asset('dist/css/adminlte.min.css')", $guest);
         $this->assertStringNotContainsString('pwbs_asset(', $guest);
 
-        // HA EZ A TESZT MEGBUKIK, mert valaki átírta a layoutot pwbs_asset()-re:
-        // az jó hír. Akkor már minden asset verziózott, és a .htaccess
-        // query-stringes feltétele elhagyható - de a kettőt együtt kell
-        // átnézni, nem külön.
+        // IF THIS TEST FAILS because someone rewrote the layout to use
+        // pwbs_asset(): that is good news. At that point every asset is
+        // versioned, and the .htaccess's query-string condition can be
+        // dropped - but the two must be reviewed together, not separately.
     }
 
     // =========================================================================
-    // Segédek
+    // Helpers
     // =========================================================================
 
-    /** @return list<string> az app layout által kiírt asset-útvonalak, sorrendben */
+    /** @return list<string> the asset paths emitted by the app layout, in order */
     private function appLayoutAssets(): array
     {
         return [
@@ -315,7 +320,7 @@ class AssetPipelineTest extends FeatureTestCase
         return $this->actingAs($this->pageUser())->get('/home')->assertStatus(200)->getContent();
     }
 
-    /** @return list<string> a HTML-ben szereplő asset-URL-ek, sorrendben */
+    /** @return list<string> the asset URLs present in the HTML, in order */
     private function assetUrls(string $html): array
     {
         preg_match_all('#(?:href|src)="([^"]+\?v=\d+)"#', $html, $matches);
@@ -324,11 +329,11 @@ class AssetPipelineTest extends FeatureTestCase
     }
 
     /**
-     * A linkelt stylesheetek tartalma, útvonal => tartalom.
+     * The content of the linked stylesheets, path => content.
      *
-     * Szándékosan a RENDERELT HTML-ből indul, nem egy kézzel írt listából: ha
-     * valaha újra generált fájl kerül a tagbe, ez a két teszt azt vizsgálja meg,
-     * nem az érintetlen forrást.
+     * Deliberately starts from the RENDERED HTML, not from a hand-written
+     * list: if a generated file ever ends up in the tag again, these two
+     * tests examine that, not the untouched source.
      *
      * @return array<string, string>
      */
@@ -336,7 +341,7 @@ class AssetPipelineTest extends FeatureTestCase
     {
         preg_match_all('#<link rel="stylesheet" href="([^"]+)"#', $this->renderHome(), $matches);
 
-        $this->assertNotEmpty($matches[1], 'A layout nem linkelt egyetlen stylesheetet sem.');
+        $this->assertNotEmpty($matches[1], 'The layout did not link a single stylesheet.');
 
         $files = [];
 
@@ -344,7 +349,7 @@ class AssetPipelineTest extends FeatureTestCase
             $path = ltrim(parse_url($url, PHP_URL_PATH) ?? '', '/');
             $file = public_path($path);
 
-            $this->assertFileExists($file, $url.' a public/ alatt nem létezik.');
+            $this->assertFileExists($file, $url.' does not exist under public/.');
 
             $files[$path] = file_get_contents($file);
         }
@@ -352,7 +357,7 @@ class AssetPipelineTest extends FeatureTestCase
         return $files;
     }
 
-    /** @return list<string> a Packer-korszak generált artefaktjai, ha valamitől visszatérnének */
+    /** @return list<string> the Packer-era generated artifacts, in case something brings them back */
     private function generatedArtifacts(): array
     {
         $found = [];
@@ -375,11 +380,11 @@ class AssetPipelineTest extends FeatureTestCase
     }
 
     /**
-     * Egy sima, aktivált felhasználó, aki a /home-ot 200-zal megkapja.
+     * A plain, activated user who gets a 200 for /home.
      *
-     * Memoizálva: két teszt is kétszer renderel (a környezet-összehasonlítás és
-     * a stylesheet-olvasó), és egy fix e-mail-címmel a második létrehozás az
-     * egyediségi megszorításba futna.
+     * Memoized: two tests render twice each (the environment comparison and
+     * the stylesheet reader), and with a fixed email address the second
+     * creation would run into the uniqueness constraint.
      */
     private function pageUser(): User
     {

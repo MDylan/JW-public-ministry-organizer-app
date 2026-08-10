@@ -8,7 +8,7 @@ use Livewire\Livewire;
 
 class CalendarModalTest extends FeatureTestCase
 {
-    // Segéd: GroupDate factory létrehozás
+    // Helper: creates a GroupDate factory
     private function makeGroupDate($group, string $date): void
     {
         GroupDate::factory()->create([
@@ -20,7 +20,7 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Dátum navigáció
+    // 1. Date navigation
     // =========================================================================
 
     public function test_set_date_navigates_to_new_date_and_resets_active_tab(): void
@@ -43,7 +43,7 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Időpont kiválasztás (setStart)
+    // 2. Time slot selection (setStart)
     // =========================================================================
 
     public function test_set_start_sets_active_tab_to_event_and_disables_polling(): void
@@ -65,7 +65,7 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Polling logika dátum alapján
+    // 3. Polling logic based on date
     // =========================================================================
 
     public function test_polling_is_true_after_opening_future_date(): void
@@ -99,7 +99,7 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Szerkesztés megszakítása
+    // 4. Cancelling the edit
     // =========================================================================
 
     public function test_cancel_edit_resets_active_tab_and_resumes_polling(): void
@@ -122,7 +122,7 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Üres modal állapot
+    // 5. Empty modal state
     // =========================================================================
 
     public function test_modal_renders_empty_view_when_no_date_set(): void

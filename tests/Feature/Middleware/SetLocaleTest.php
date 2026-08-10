@@ -15,16 +15,17 @@ use Tests\Feature\FeatureTestCase;
 /**
  * TODO 09: a SetLocale middleware.
  *
- * A web csoport tagja (Kernel.php:45), tehát MINDEN webes kérésen lefut - és
- * egyetlen handle()-ben négy különálló mellékhatást végez:
+ * It is a member of the web group (Kernel.php:45), so it runs on EVERY web
+ * request - and performs four separate side effects in a single handle():
  *
- *   1. nyelvválasztás a ?lang= paraméterből, session-be és a user sorába írva
- *   2. karbantartási módban kilépteti a nem-admin felhasználót
- *   3. az oldalmenüt Cache::rememberForever-rel olvassa
- *   4. View::share-rel megosztja a nézetekkel
+ *   1. language selection from the ?lang= parameter, written into the session
+ *      and the user's row
+ *   2. logs out the non-admin user in maintenance mode
+ *   3. reads the side menu with Cache::rememberForever
+ *   4. shares it with the views via View::share
  *
- * Mindez ma nulla lefedettséggel. A tesztek valódi HTTP-kérésen mennek, mert
- * így a tényleges bekötés is igazolódik.
+ * All of this currently has zero coverage. The tests run over real HTTP
+ * requests, because that also proves the actual wiring.
  */
 class SetLocaleTest extends FeatureTestCase
 {
@@ -34,9 +35,9 @@ class SetLocaleTest extends FeatureTestCase
     {
         parent::setUp();
 
-        // A ?lang= ág az available_languages configból dolgozik, amit
-        // egyébként az AppServiceProvider::boot() tölt a Settings táblából.
-        // A 'de' szándékosan rejtett: csak mainAdmin és translator kapja meg.
+        // The ?lang= branch works from the available_languages config, which
+        // is otherwise populated by AppServiceProvider::boot() from the Settings
+        // table. 'de' is deliberately hidden: only mainAdmin and translator get it.
         Config::set('available_languages', [
             'hu' => ['name' => 'Magyar', 'visible' => true],
             'en' => ['name' => 'English', 'visible' => true],
@@ -75,7 +76,7 @@ class SetLocaleTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Nyelvválasztás
+    // 1. Language selection
     // =========================================================================
 
     public function test_a_visible_language_is_applied_and_stored_in_the_session(): void
@@ -88,10 +89,10 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_a_visible_language_is_also_persisted_on_the_user(): void
     {
-        // A felhasználó sorába is beíródik ($user->save(), :36), tehát a
-        // választás túléli a session lejártát. Mellékhatásként ez elindítja
-        // a UserObserver name_index-újraszámoló jobját is - minden egyes
-        // nyelvváltásnál.
+        // It also gets written into the user's row ($user->save(), :36), so the
+        // choice survives the session's expiry. As a side effect this also
+        // triggers UserObserver's name_index-recalculating job - on every single
+        // language change.
         $user = $this->createUser(['email' => 'locale-user@example.test', 'language' => 'hu']);
 
         $this->actingAs($user)->get($this->homeUrl().'?lang=en')->assertStatus(200);
@@ -116,8 +117,8 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_a_hidden_language_is_ignored_for_a_guest(): void
     {
-        // Vendégre a rejtett ág egyáltalán nem fut le ($user !== null őr,
-        // :40), tehát csendben elmarad.
+        // For a guest the hidden branch does not run at all (the $user !== null
+        // guard, :40), so it is silently skipped.
         $this->get($this->homeUrl().'?lang=de')->assertStatus(200);
 
         $this->assertSame('hu', app()->getLocale());
@@ -167,10 +168,10 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_the_session_language_is_not_validated_against_the_visible_list(): void
     {
-        // A session-ág (:51-53) NEM ellenőrzi sem a láthatóságot, sem azt,
-        // hogy a nyelv egyáltalán szerepel-e az available_languages-ben -
-        // a szűrés csak a ?lang= ágon van. Egy korábban beállított rejtett
-        // nyelv tehát a jogosultság elvesztése után is érvényben marad.
+        // The session branch (:51-53) checks NEITHER the visibility, NOR
+        // whether the language is even listed in available_languages -
+        // the filtering only exists on the ?lang= branch. A hidden language set
+        // earlier therefore stays in effect even after the privilege is lost.
         $this->withSession(['language' => 'de'])->get($this->homeUrl())->assertStatus(200);
 
         $this->assertSame('de', app()->getLocale());
@@ -186,7 +187,7 @@ class SetLocaleTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Karbantartási mód
+    // 2. Maintenance mode
     // =========================================================================
 
     public function test_maintenance_mode_logs_out_an_ordinary_user_and_redirects_to_login(): void
@@ -234,9 +235,9 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_maintenance_mode_does_not_affect_guests(): void
     {
-        // A teljes ág Auth::check() mögött van (:59), tehát a karbantartási
-        // mód a kijelentkezett látogatókat egyáltalán nem érinti - a
-        // nyilvános oldalak elérhetők maradnak.
+        // The entire branch sits behind Auth::check() (:59), so maintenance mode
+        // does not affect logged-out visitors at all - public pages remain
+        // accessible.
         Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $this->get($this->homeUrl())->assertStatus(200);
@@ -244,9 +245,9 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_a_translator_is_logged_out_in_maintenance_mode_too(): void
     {
-        // A kivétel KIZÁRÓLAG a mainAdmin (:60) - a translator, aki egyébként
-        // az is-translator és is-groupservant gate-eken átmegy, itt nem
-        // kivételezett.
+        // The exception is EXCLUSIVELY the mainAdmin (:60) - the translator, who
+        // otherwise passes the is-translator and is-groupservant gates, is not
+        // exempted here.
         Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $translator = $this->createUser(['email' => 'maintenance-tr@example.test', 'role' => 'translator']);
@@ -276,13 +277,13 @@ class SetLocaleTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Az oldalmenü megosztása
+    // 3. Sharing the side menu
     // =========================================================================
 
     public function test_a_guest_sees_only_the_publicly_visible_menu_entries(): void
     {
-        // A vendég-lekérdezés szűrője: status IN (1,2). A FeatureTestCase
-        // már létrehozott egy 'home' oldalt status = 1 értékkel.
+        // The guest query's filter: status IN (1,2). FeatureTestCase has
+        // already created a 'home' page with status = 1.
         $this->makeStaticPage(0, 'piszkozat');
         $this->makeStaticPage(2, 'csak-vendegnek');
         $this->makeStaticPage(3, 'csak-belepve');
@@ -294,9 +295,9 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_an_authenticated_user_sees_a_different_menu(): void
     {
-        // A bejelentkezett lekérdezés szűrője: status IN (0,1,3). A kettes
-        // státusz tehát KIZÁRÓLAG vendégnek szól, a nulla és a hármas
-        // kizárólag belépve - a két halmaz metszete csak az egyes.
+        // The logged-in query's filter: status IN (0,1,3). Status two is
+        // therefore EXCLUSIVELY for guests, zero and three exclusively for logged-in
+        // users - the intersection of the two sets is only status one.
         $this->makeStaticPage(0, 'piszkozat');
         $this->makeStaticPage(2, 'csak-vendegnek');
         $this->makeStaticPage(3, 'csak-belepve');
@@ -322,18 +323,17 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_a_page_created_outside_the_editor_reaches_the_cached_menu(): void
     {
-        // MEGFORDÍTVA a v1-patch B4 javításával.
+        // REVERSED by the v1-patch B4 fix.
         //
-        // A Cache::rememberForever kulcsai (sidemenu_guest, sidemenu_auth)
-        // MINDÖSSZE két helyen ürültek: Admin\StaticPageEdit és a telepítő
-        // AccountController. Bármely más úton - seeder, konzol, közvetlen
-        // modellírás, adatimport - létrehozott vagy módosított statikus oldal
-        // tehát SOHA nem jelent meg a menüben, amíg valaki kézzel nem
-        // szerkesztett egy oldalt a felületen. Lejárat nincs: a
-        // rememberForever örökre szól.
+        // The Cache::rememberForever keys (sidemenu_guest, sidemenu_auth) were
+        // flushed in ONLY two places: Admin\StaticPageEdit and the installer's
+        // AccountController. A static page created or modified through any other
+        // path - seeder, console, a direct model write, a data import - therefore
+        // NEVER appeared in the menu, until someone manually edited a page in the
+        // UI. There is no expiry: rememberForever means forever.
         //
-        // Az ürítés most a StaticPageObserverben van, tehát a menü FORRÁSÁHOZ
-        // kötve, nem a hívási helyekhez.
+        // The flush now lives in StaticPageObserver, so it is tied to the menu's
+        // SOURCE, not to the call sites.
         $this->get($this->homeUrl())->assertStatus(200);
         $this->assertSame(['home'], $this->sharedMenuSlugs());
 
@@ -350,8 +350,8 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_a_deleted_page_leaves_the_cached_menu(): void
     {
-        // A B4 másik iránya: a törlésnek is ürítenie kell, különben egy már
-        // nem létező oldal marad a menüben - lejárat nélkül, örökre.
+        // The other direction of B4: deletion must also flush, otherwise a page
+        // that no longer exists stays in the menu - with no expiry, forever.
         $page = $this->makeStaticPage(1, 'mulando');
 
         $this->get($this->homeUrl())->assertStatus(200);
@@ -365,9 +365,10 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_renaming_a_page_title_alone_also_clears_the_menu(): void
     {
-        // A menü a CÍMEKET mutatja, azok pedig a static_page_translations
-        // táblában élnek - egy puszta címátírás a StaticPage sorát nem is
-        // érinti. Ezért figyeli az observer a fordítást is.
+        // The menu shows the TITLES, and those live in the
+        // static_page_translations table - a bare title rewrite does not even
+        // touch the StaticPage row. That is why the observer also watches the
+        // translation.
         $page = $this->makeStaticPage(1, 'atnevezendo');
 
         $this->get($this->homeUrl())->assertStatus(200);

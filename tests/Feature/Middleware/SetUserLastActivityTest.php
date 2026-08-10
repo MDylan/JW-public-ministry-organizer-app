@@ -8,15 +8,15 @@ use Illuminate\Support\Facades\DB;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 09: a SetUserLastActivity middleware.
+ * TODO 09: the SetUserLastActivity middleware.
  *
- * A web csoport tagja (Kernel.php:46), tehát MINDEN webes kérésen lefut, és
- * a users.last_activity mezőt tartja karban. Erre a mezőre épül a
- * Groups\ListUsers "online" és "inaktív" szűrője, valamint a GDPR
- * inaktivitás-alapú anonimizálása - ha csendben leáll, mindkettő téves
- * eredményt ad, hibaüzenet nélkül.
+ * It is a member of the web group (Kernel.php:46), so it runs on EVERY web
+ * request, and it maintains the users.last_activity field. This field
+ * underlies Groups\ListUsers's "online" and "inactive" filters, as well as
+ * GDPR's inactivity-based anonymization - if it silently stops working, both
+ * give wrong results, without an error message.
  *
- * Ma nulla lefedettsége van.
+ * It currently has zero coverage.
  */
 class SetUserLastActivityTest extends FeatureTestCase
 {
@@ -26,8 +26,8 @@ class SetUserLastActivityTest extends FeatureTestCase
     }
 
     /**
-     * A last_activity nincs a User $casts-jában, ezért nyersen olvassuk -
-     * így az is látszik, ha az érték egyáltalán nem változott.
+     * last_activity is not in User's $casts, so we read it raw - this way it
+     * is also visible if the value did not change at all.
      */
     private function lastActivityOf(User $user): ?string
     {
@@ -46,13 +46,13 @@ class SetUserLastActivityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Ki kap írást egyáltalán
+    // 1. Who gets a write at all
     // =========================================================================
 
     public function test_a_guest_request_writes_nothing(): void
     {
-        // A teljes törzs Auth::check() mögött van, tehát a nyilvános
-        // oldalak forgalma nem terheli az adatbázist.
+        // The entire body sits behind Auth::check(), so public page traffic
+        // does not load the database.
         $user = $this->userWithLastActivity(null, 'activity-guest@example.test');
 
         $this->get($this->homeUrl())->assertStatus(200);
@@ -62,9 +62,9 @@ class SetUserLastActivityTest extends FeatureTestCase
 
     public function test_a_null_last_activity_is_filled_in_on_the_first_request(): void
     {
-        // A feltétel második fele (last_activity == null) fedi le ezt az
-        // esetet: a diffInSeconds(null) nullát ad, tehát az első fele nem
-        // teljesülne.
+        // The second half of the condition (last_activity == null) covers
+        // this case: diffInSeconds(null) returns zero, so the first half
+        // would not be satisfied.
         $user = $this->userWithLastActivity(null, 'activity-null@example.test');
 
         $this->actingAs($user)->get($this->homeUrl())->assertStatus(200);
@@ -73,13 +73,13 @@ class SetUserLastActivityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A 60 másodperces küszöb
+    // 2. The 60-second threshold
     // =========================================================================
 
     public function test_a_recent_activity_is_not_rewritten(): void
     {
-        // A takarékossági szabály: 60 másodpercnél frissebb bejegyzést nem
-        // írunk felül, hogy ne legyen írás minden egyes kérésnél.
+        // The economy rule: we do not overwrite an entry fresher than 60
+        // seconds, so there is not a write on every single request.
         $recent = now()->subSeconds(10);
         $user = $this->userWithLastActivity($recent, 'activity-recent@example.test');
 
@@ -90,16 +90,17 @@ class SetUserLastActivityTest extends FeatureTestCase
 
     public function test_an_old_activity_is_refreshed(): void
     {
-        // EZ A TESZT BUKIK EL A CARBON 3 ALATT.
+        // THIS TEST FAILS UNDER CARBON 3.
         //
-        // A feltétel: Carbon::now()->diffInSeconds($user->last_activity) >= 60.
-        // A jelenlegi Carbon 2.57-ben a diffIn* ABSZOLÚT értéket ad, tehát egy
-        // múltbeli időpontra pozitív számot - a feltétel teljesül.
+        // The condition: Carbon::now()->diffInSeconds($user->last_activity) >= 60.
+        // In the current Carbon 2.57, diffIn* returns an ABSOLUTE value, so a
+        // positive number for a past timestamp - the condition is satisfied.
         //
-        // A Carbon 3-ban a diffIn* ELŐJELES lett: ugyanez a hívás negatívat
-        // adna, a >= 60 sosem teljesülne, és a last_activity SOHA többé nem
-        // frissülne - csendben, hibaüzenet nélkül. Ellenőrizendő a Laravel 11
-        // hopnál, ahol a Carbon 3 megjelenik.
+        // In Carbon 3, diffIn* became SIGNED: the same call would return a
+        // negative number, the >= 60 would never be satisfied, and
+        // last_activity would NEVER refresh again - silently, without an
+        // error message. To be checked at the Laravel 11 hop, where Carbon 3
+        // appears.
         $old = now()->subMinutes(2);
         $user = $this->userWithLastActivity($old, 'activity-old@example.test');
 
@@ -113,8 +114,8 @@ class SetUserLastActivityTest extends FeatureTestCase
 
     public function test_the_threshold_itself_triggers_a_refresh(): void
     {
-        // A feltétel >=, tehát a pontosan 60 másodperces bejegyzés még
-        // frissül. A határérték a küszöb alatt van, nem fölötte.
+        // The condition is >=, so an entry that is exactly 60 seconds old
+        // still gets refreshed. The boundary value is at the threshold, not above it.
         $threshold = now()->subSeconds(60);
         $user = $this->userWithLastActivity($threshold, 'activity-threshold@example.test');
 
@@ -124,16 +125,16 @@ class SetUserLastActivityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Az írás mellékhatásai
+    // 3. Side effects of the write
     // =========================================================================
 
     public function test_the_write_also_bumps_the_updated_at_column(): void
     {
-        // A tömeges User::where()->update() az Eloquent Builderen megy át,
-        // ami automatikusan hozzáfűzi az updated_at-et. Vagyis minden aktív
-        // felhasználó users sora percenként "módosul" - amit érdemes tudni,
-        // ha valaha bármi az updated_at-re épül (szinkronizálás, cache-kulcs,
-        // riport).
+        // The bulk User::where()->update() goes through the Eloquent
+        // Builder, which automatically appends updated_at. In other words,
+        // every active user's users row "changes" every minute - worth
+        // knowing if anything ever relies on updated_at (syncing, a cache
+        // key, a report).
         $user = $this->userWithLastActivity(now()->subMinutes(5), 'activity-touch@example.test');
 
         DB::table('users')->where('id', $user->id)->update([
@@ -149,10 +150,11 @@ class SetUserLastActivityTest extends FeatureTestCase
 
     public function test_the_write_bypasses_the_model_events(): void
     {
-        // A tömeges update nem indít Eloquent eseményt, tehát a UserObserver
-        // sem fut - a name_index-újraszámoló job (amit egy sima $user->save()
-        // minden alkalommal elindítana) itt elmarad. Ez szándékos és fontos:
-        // enélkül minden kérés egy teljes felhasználó-újraszámozást indítana.
+        // The bulk update does not fire an Eloquent event, so UserObserver
+        // does not run either - the name_index recalculation job (which a
+        // plain $user->save() would trigger every time) is skipped here.
+        // This is deliberate and important: without it, every request would
+        // trigger a full user recalculation.
         $user = $this->userWithLastActivity(now()->subMinutes(5), 'activity-events@example.test');
 
         DB::table('users')->where('id', $user->id)->update(['name_index' => 4242]);

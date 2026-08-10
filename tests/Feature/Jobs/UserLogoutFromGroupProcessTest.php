@@ -63,7 +63,7 @@ class UserLogoutFromGroupProcessTest extends FeatureTestCase
 
     public function test_handle_keeps_past_events(): void
     {
-        // A job csak a start >= most eseményeket törli.
+        // The job only deletes events with start >= now.
         $past = $this->createEvent(now()->subDays(2)->toDateString());
 
         (new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User'))->handle();
@@ -102,9 +102,9 @@ class UserLogoutFromGroupProcessTest extends FeatureTestCase
 
         (new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User'))->handle();
 
-        // Az értesítés csak az elfogadott (status = 1) eseményekre megy ki...
+        // The notification only goes out for accepted (status = 1) events...
         Notification::assertNothingSent();
-        // ...a törlés viszont státusztól függetlenül minden jövőbeli eseményre.
+        // ...whereas deletion applies to every future event regardless of status.
         $this->assertNull(Event::find($pending->id));
     }
 

@@ -49,11 +49,11 @@ class ModelFactoryTest extends FeatureTestCase
     {
         parent::setUp();
 
-        // Több observer (GroupLiteratureObserver, GroupNewsObserver,
-        // GroupNewsTranslationObserver, ...) feltétel nélkül auth()->user()->id-t
-        // olvas, ezért bejelentkezett kontextus nélkül a modell mentése elszáll.
-        // Ez tükrözi az alkalmazás valós működését: minden írás bejelentkezett
-        // felhasználótól érkezik. Lásd: roadmap TODO 10.
+        // Several observers (GroupLiteratureObserver, GroupNewsObserver,
+        // GroupNewsTranslationObserver, ...) unconditionally read
+        // auth()->user()->id, so saving the model fails without a logged-in
+        // context. This reflects the application's real behaviour: every
+        // write comes from a logged-in user. See: roadmap TODO 10.
         $this->actingAs($this->createUser(['email' => 'factory-actor@example.test']));
     }
 
@@ -64,7 +64,7 @@ class ModelFactoryTest extends FeatureTestCase
     public static function factoryBackedModels(): array
     {
         return [
-            // Korábban is létező factory-k
+            // Factories that already existed before
             'User' => [User::class],
             'Group' => [Group::class],
             'GroupUser' => [GroupUser::class],
@@ -73,7 +73,7 @@ class ModelFactoryTest extends FeatureTestCase
             'GroupDay' => [GroupDay::class],
             'StaticPage' => [StaticPage::class],
 
-            // TODO 04-ben hozzáadott factory-k
+            // Factories added in TODO 04
             'AdminNewsletter' => [AdminNewsletter::class],
             'AdminNewsletterRead' => [AdminNewsletterRead::class],
             'AdminNewsletterTranslation' => [AdminNewsletterTranslation::class],
@@ -124,10 +124,11 @@ class ModelFactoryTest extends FeatureTestCase
 
         $modelClass::factory()->count(2)->create();
 
-        // Nem pontos egyezést várunk: a fordítás-factory-k szülője (GroupNews,
-        // AdminNewsletter) maga is ír egy sort a fordítástáblába, így egy
-        // kétszeres create() négy sort eredményez. A lényeg, hogy a factory
-        // ismételhető legyen unique-ütközés nélkül.
+        // We do not expect an exact match: the translation factories'
+        // parent (GroupNews, AdminNewsletter) itself also writes a row to
+        // the translation table, so a double create() produces four rows.
+        // The point is that the factory be repeatable without a
+        // unique-column clash.
         $this->assertGreaterThanOrEqual(
             $before + 2,
             $modelClass::count(),
@@ -137,8 +138,8 @@ class ModelFactoryTest extends FeatureTestCase
 
     public function test_translation_factories_can_add_a_second_locale_to_an_existing_parent(): void
     {
-        // Ez a fordítás-factory-k valós használati mintája: meglévő szülőhöz
-        // adunk egy további nyelvet.
+        // This is the real usage pattern for the translation factories: we
+        // add a further language to an existing parent.
         $news = GroupNews::factory()->create();
         $newsletter = AdminNewsletter::factory()->create();
 
@@ -153,7 +154,7 @@ class ModelFactoryTest extends FeatureTestCase
         $this->assertNotEmpty($news->fresh()->translate('de')->title);
     }
 
-    // --- Célzott ellenőrzések, ahol a factory nem triviális ---
+    // --- Targeted checks where the factory is non-trivial ---
 
     public function test_translatable_factories_write_the_translation_row(): void
     {
@@ -177,12 +178,12 @@ class ModelFactoryTest extends FeatureTestCase
 
     public function test_encrypted_attribute_factories_produce_decryptable_values(): void
     {
-        // Ez a fájl a GYÁRAKRÓL szól, nem a titkosításról: itt csak annyit
-        // kell tudni, hogy a két érintett gyár nyílt szöveget vár és a cast
-        // lefut rá. A titkosítás teljes viselkedését - mind a 9 oszlopon,
-        // nullal, üres stringgel, hosszal, rossz kulccsal és a castot
-        // megkerülő írással - a TODO 13 fájljai mérik:
-        // tests/Feature/Models/EncryptedAttributeTest.php és
+        // This file is about the FACTORIES, not encryption: here it is only
+        // relevant that the two affected factories expect plain text and the
+        // cast runs on it. The full behaviour of encryption - across all 9
+        // columns, with null, empty string, length, a wrong key, and a write
+        // bypassing the cast - is measured by the TODO 13 files:
+        // tests/Feature/Models/EncryptedAttributeTest.php and
         // tests/Feature/Models/EncryptedColumnSchemaTest.php.
         $poster = GroupPosters::factory()->create(['info' => 'Titkos hirdetmény']);
         $message = GroupMessage::factory()->create(['message' => 'Titkos üzenet']);
@@ -200,10 +201,11 @@ class ModelFactoryTest extends FeatureTestCase
         $this->assertIsArray($change->fresh()->days);
         $this->assertIsArray($change->fresh()->disabled_slots);
 
-        // A WeatherCityFactory a v1-patch C csomagja óta az OpenWeather VALÓDI
-        // válaszalakját írja. Korábban egy kitalált, lapos szerkezet állt itt
-        // (['temp' => 21.5]), amit a termelés nem tudott előállítani: a mentés
-        // kétszer kódolt, tehát élesben sztring volt az oszlopban.
+        // Since the v1-patch C package, WeatherCityFactory writes
+        // OpenWeather's REAL response shape. Previously a made-up, flat
+        // structure stood here (['temp' => 21.5]), which production could
+        // never produce: the save double-encoded it, so in production the
+        // column held a string.
         $this->assertIsArray($weather->fresh()->current_weather);
         $this->assertSame(21.5, $weather->fresh()->current_weather['main']['temp']);
 

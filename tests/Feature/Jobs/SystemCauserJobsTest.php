@@ -12,30 +12,30 @@ use Illuminate\Support\Facades\Notification;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 10: a rendszer-okozó (causer_id = 0) a FOGADÓ oldalon.
+ * TODO 10: the system-causer (causer_id = 0) on the RECEIVING side.
  *
- * A TODO 10 egységesítette, hogy bejelentkezés hiányában 0 kerül a causer
- * helyére - de a 0-t a fogadó oldalnak is kezelnie kell. Két hely olvasta a
- * causer NEVÉT közvetlenül modellről, és mindkettő elszállt volna:
+ * TODO 10 standardized that, absent authentication, 0 goes into the causer's
+ * place - but the 0 must also be handled on the receiving side. Two places read the
+ * causer's NAME directly from the model, and both would have crashed:
  *
- *   - GroupDayDeletedProcess::handle(): User::find(0) null, majd ->name
- *   - CalculateDatesEvents::generate(): if($user_id) hamis 0-ra, tehát az
- *     auth()->user() tartalékra esett - ami sorkezelőben MINDIG null
+ *   - GroupDayDeletedProcess::handle(): User::find(0) is null, then ->name
+ *   - CalculateDatesEvents::generate(): if($user_id) is false for 0, so it
+ *     fell back to auth()->user() - which in a queue worker is ALWAYS null
  *
- * A név közvetlenül értesítés szövegébe kerül, és a Laravel a PHP
- * figyelmeztetéseket ErrorException-né alakítja, tehát ez valódi hiba lett
- * volna, nem néma null.
+ * The name goes directly into the notification text, and Laravel turns PHP
+ * warnings into ErrorException, so this would have been a real error,
+ * not a silent null.
  *
- * A TODO 10.2 törölte a GroupDayDeletedProcess-t, tehát az első útvonal
- * megszűnt. A causerNameFor() három ága - a 0, a valódi azonosító és az
- * IDŐKÖZBEN TÖRÖLT felhasználó - így itt már mind a CalculateDatesEvents-en
- * keresztül van lefedve; ez az az útvonal, ami élesben tényleg fut.
+ * TODO 10.2 deleted GroupDayDeletedProcess, so the first path
+ * disappeared. The three branches of causerNameFor() - the 0, the real ID, and the
+ * user DELETED IN THE MEANTIME - are now all covered here via
+ * CalculateDatesEvents; this is the path that actually runs in production.
  *
- * Miért nem derült ki korábban: a meglévő jobtesztek mindig valódi, létező
- * causerrel futottak, a tesztkörnyezet pedig QUEUE_CONNECTION=sync - vagyis
- * a jobok a hitelesített kérésen BELÜL futnak le, ahol az auth() még ad
- * felhasználót. Élesben QUEUE_CONNECTION=database, tehát külön
- * sorkezelő-folyamatban futnának, auth nélkül.
+ * Why this wasn't caught earlier: the existing job tests always ran with a real,
+ * existing causer, and the test environment has QUEUE_CONNECTION=sync - meaning
+ * jobs run INSIDE the authenticated request, where auth() still provides a
+ * user. In production QUEUE_CONNECTION=database, so they would run in a
+ * separate queue-worker process, without auth.
  */
 class SystemCauserJobsTest extends FeatureTestCase
 {
@@ -78,7 +78,7 @@ class SystemCauserJobsTest extends FeatureTestCase
         );
     }
 
-    /** Letiltott nap: a generate() minden rajta lévő eseményt töröl. */
+    /** Disabled day: generate() deletes every event on it. */
     private function disabledDate(string $day): void
     {
         GroupDate::factory()->create([
@@ -91,15 +91,15 @@ class SystemCauserJobsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // CalculateDatesEvents - az egyetlen megmaradt fogadó oldal
+    // CalculateDatesEvents - the only remaining receiving side
     // =========================================================================
 
     public function test_calculate_dates_events_runs_with_a_system_causer(): void
     {
-        // Ez az útvonal a GroupDayUpdatedProcess-en át érhető el, ami a
-        // causer azonosítóját továbbadja. A generate() korábban
-        // if($user_id)-t vizsgált - ami 0-ra HAMIS -, és az auth()->user()
-        // tartalékra esett vissza. Sorkezelőben az mindig null.
+        // This path is reached through GroupDayUpdatedProcess, which passes
+        // along the causer's ID. generate() previously checked
+        // if($user_id) - which is FALSE for 0 - and fell back to
+        // auth()->user(). In a queue worker that is always null.
         Notification::fake();
         $this->assertGuest();
 
@@ -139,9 +139,9 @@ class SystemCauserJobsTest extends FeatureTestCase
 
     public function test_calculate_dates_events_uses_the_authenticated_user_when_no_id_is_given(): void
     {
-        // A Livewire komponensek user_id nélkül (false alapértékkel) hívják,
-        // és ott a bejelentkezett felhasználó a helyes okozó - ezt a
-        // tartalékot meg kellett tartani.
+        // Livewire components call it without a user_id (with a default of false),
+        // and there the logged-in user is the correct causer - this
+        // fallback had to be kept.
         Notification::fake();
 
         $actor = $this->createUser(['email' => 'sysc-actor@example.test', 'name' => 'Belépett Béla']);
@@ -167,14 +167,14 @@ class SystemCauserJobsTest extends FeatureTestCase
 
     public function test_a_deleted_causer_falls_back_to_the_system_name(): void
     {
-        // Nem csak a 0 problémás: egy időközben TÖRÖLT felhasználó
-        // azonosítójára is null-t ad a User::find(). Az azonosító a hívás
-        // pillanatában rögzül, a feldolgozás pedig később fut - addig a
-        // felhasználó eltűnhet.
+        // It's not just 0 that's problematic: User::find() also returns null
+        // for the ID of a user DELETED in the meantime. The ID is fixed at the
+        // moment of the call, but processing runs later - the user can disappear
+        // in between.
         //
-        // Ez az ág korábban a GroupDayDeletedProcess-en volt lefedve; a job
-        // törlésével (TODO 10.2) ide került át, arra az útvonalra, ami
-        // élesben tényleg fut.
+        // This branch used to be covered by GroupDayDeletedProcess; with that job's
+        // deletion (TODO 10.2) it moved here, to the path that
+        // actually runs in production.
         Notification::fake();
 
         $causer = $this->createUser(['email' => 'sysc-gone@example.test']);

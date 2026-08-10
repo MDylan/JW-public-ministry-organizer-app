@@ -11,24 +11,24 @@ use Illuminate\Support\Facades\Log;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 09: a CheckRecaptcha middleware.
+ * TODO 09: the CheckRecaptcha middleware.
  *
- * Route middleware, és három publikus végponton ül (routes/fortify.php):
- * POST /login, POST /register, POST /forgot-password. Vagyis a bejelentkezés
- * és a regisztráció áll vagy bukik rajta.
+ * A route middleware, sitting on three public endpoints (routes/fortify.php):
+ * POST /login, POST /register, POST /forgot-password. In other words, login
+ * and registration stand or fall on it.
  *
- * Ma soha nem fut le érdemben, mert a phpunit.xml és a .env.testing egyaránt
- * USE_RECAPTCHA=false értéket ad - a bekapcsolt állapot tehát teljesen
- * lefedetlen.
+ * It currently never runs in earnest, because both phpunit.xml and
+ * .env.testing set USE_RECAPTCHA=false - so the enabled state is completely
+ * uncovered.
  *
- * A middleware a v1-patch TODO 28-ig FUTÁSIDŐBEN olvasott env()-et, ezért a
- * bekapcsoláshoz a $_SERVER tömböt kellett írni. Most a
- * config('security.use_recaptcha') kulcsot olvassa, tehát a tesztek is azt
- * állítják - és ez az igazi különbség: a régi olvasás egy config:cache után
- * NÉMÁN hamisra váltott volna, vagyis a botvédelem eltűnik anélkül, hogy
- * bármi jelezné.
+ * Until v1-patch TODO 28, the middleware read env() AT RUNTIME, so enabling
+ * it required writing the $_SERVER array. Now it reads the
+ * config('security.use_recaptcha') key, so the tests set that too - and this
+ * is the real difference: the old read would have SILENTLY flipped to false
+ * after a config:cache, meaning bot protection disappears without anything
+ * signaling it.
  *
- * A Http::fake() ebben a suite-ban itt jelenik meg először.
+ * Http::fake() makes its first appearance in this suite here.
  */
 class CheckRecaptchaTest extends FeatureTestCase
 {
@@ -49,7 +49,7 @@ class CheckRecaptchaTest extends FeatureTestCase
         return (new CheckRecaptcha())->handle($request, fn () => response('atengedve'), $expectedAction);
     }
 
-    /** Bekapcsolt recaptcha mellett futtatja a middleware-t. */
+    /** Runs the middleware with recaptcha enabled. */
     private function runEnabled(?string $token = 'teszt-token', ?string $expectedAction = null)
     {
         config(['security.use_recaptcha' => true]);
@@ -65,7 +65,7 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A kikapcsolt alapállapot
+    // 1. The disabled default state
     // =========================================================================
 
     public function test_the_request_passes_through_without_any_network_call_when_disabled(): void
@@ -82,9 +82,9 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_the_login_endpoint_does_not_call_out_with_the_current_configuration(): void
     {
-        // Valódi HTTP-kérés a tényleges bekötés igazolására: a fortify
-        // login route-ján rajta van a checkRecaptcha, de a kikapcsolt
-        // állapotban nem keletkezik hálózati forgalom.
+        // A real HTTP request to prove the actual wiring: checkRecaptcha
+        // sits on fortify's login route, but in the disabled state no
+        // network traffic is generated.
         Http::fake();
 
         $this->post(route('login'), [
@@ -96,7 +96,7 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A bekapcsolt állapot - sikeres ellenőrzés
+    // 2. The enabled state - successful verification
     // =========================================================================
 
     public function test_a_high_score_lets_the_request_through(): void
@@ -115,7 +115,7 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A bekapcsolt állapot - elutasítás
+    // 3. The enabled state - rejection
     // =========================================================================
 
     public function test_a_low_score_is_treated_as_a_bot(): void
@@ -133,9 +133,9 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_a_score_exactly_at_the_threshold_is_treated_as_a_bot(): void
     {
-        // A feltétel szigorú: score > min_score (:28). A küszöbbel PONTOSAN
-        // egyenlő pontszám tehát elbukik - a konfigurációs érték nem
-        // "megengedett minimum", hanem "e fölött".
+        // The condition is strict: score > min_score (:28). A score EXACTLY
+        // equal to the threshold therefore fails - the configuration value
+        // is not an "allowed minimum" but "above this".
         $this->fakeGoogle(['success' => true, 'score' => self::MIN_SCORE]);
 
         $this->assertInstanceOf(RedirectResponse::class, $this->runEnabled());
@@ -150,8 +150,8 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_a_server_error_from_google_is_treated_as_a_bot(): void
     {
-        // A successful() csak 2xx-re igaz, tehát a Google 500-asa
-        // elutasításhoz vezet - a felhasználó nem tud belépni.
+        // successful() is only true for 2xx, so a 500 from Google leads to
+        // rejection - the user cannot log in.
         $this->fakeGoogle(['message' => 'internal error'], 500);
 
         $this->assertInstanceOf(RedirectResponse::class, $this->runEnabled());
@@ -165,28 +165,29 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A kapcsolathiba - látens hiba
+    // 4. The connection failure - a latent defect
     // =========================================================================
 
     public function test_a_connection_failure_lets_the_request_through(): void
     {
-        // MEGFORDÍTVA a v1-patch D3 javításával, a felhasználó jóváhagyásával.
+        // REVERSED by the v1-patch D3 fix, with the user's approval.
         //
-        // A Http::asForm()->post() try/catch NÉLKÜL futott. HTTP-hibakódra a
-        // Laravel Response-t ad - azt a kód helyesen kezeli (lásd a fenti
-        // 500-as tesztet) -, KAPCSOLATHIBÁRA (timeout, DNS, hálózat) viszont
-        // ConnectionException száll fel, amit senki nem kapott el.
+        // Http::asForm()->post() ran WITHOUT a try/catch. For an HTTP error
+        // code, Laravel gives a Response - the code handles that correctly
+        // (see the 500 test above) - but for a CONNECTION FAILURE (timeout,
+        // DNS, network), a ConnectionException is thrown instead, which
+        // nobody caught.
         //
-        // Következmény: egy Google-kimaradás 500-at adott a POST /login, a
-        // POST /register és a POST /forgot-password végponton - senki nem
-        // tudott belépni, regisztrálni vagy jelszót visszaállítani, amíg a
-        // Google vissza nem jött. Ma alszik a USE_RECAPTCHA=false miatt, de a
-        // recaptcha bekapcsolása előtt ez blokkoló hiba lett volna.
+        // Consequence: a Google outage produced a 500 on the POST /login,
+        // POST /register, and POST /forgot-password endpoints - nobody could
+        // log in, register, or reset their password until Google came back.
+        // It is dormant today because of USE_RECAPTCHA=false, but before
+        // recaptcha is enabled this would have been a blocking defect.
         //
-        // A választott politika FAIL-OPEN: rendelkezésre állás a botvédelem
-        // előtt. A kérés átmegy, a hiba naplózódik. A fail-closed ugyanennyire
-        // védhető lett volna (captcha-hibaüzenet az 500 helyett); a korábbi
-        // viselkedés egyik sem volt.
+        // The chosen policy is FAIL-OPEN: availability over bot protection.
+        // The request goes through, the error is logged. Fail-closed would
+        // have been equally defensible (a captcha error message instead of
+        // the 500); the previous behavior was neither.
         Http::fake(function () {
             throw new ConnectionException('cURL error 28: Operation timed out');
         });
@@ -204,9 +205,9 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_the_verification_call_carries_an_explicit_timeout(): void
     {
-        // A híváson korábban SEMMILYEN időkorlát nem volt, tehát egy beragadt
-        // Google-végpont a PHP workert tartotta fogva - épp a bejelentkezési
-        // útvonalon, ahol ez meríti ki leggyorsabban a processzeket.
+        // The call previously had NO timeout at all, so a stuck Google
+        // endpoint held the PHP worker hostage - precisely on the login
+        // path, where this exhausts processes the fastest.
         $reflection = new \ReflectionClass(CheckRecaptcha::class);
 
         $this->assertTrue(
@@ -217,21 +218,22 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. A kapcsoló forrása - TODO 28
+    // 5. The source of the flag - TODO 28
     // =========================================================================
 
     public function test_the_flag_comes_from_configuration_not_from_the_environment(): void
     {
-        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        // REVERSED by the v1-patch TODO 28 fix.
         //
-        // Korábban ugyanaz a kérés két különböző $_SERVER['USE_RECAPTCHA']
-        // értékkel két különböző eredményt adott - vagyis a middleware
-        // közvetlenül a környezetből olvasott. Pontosan ezt fagyasztotta volna
-        // be egy `php artisan config:cache`: a .env olyankor be sem töltődik,
-        // az env() null-t ad, és a botvédelem némán kikapcsol.
+        // Previously the same request with two different
+        // $_SERVER['USE_RECAPTCHA'] values gave two different results - i.e.
+        // the middleware read directly from the environment. A
+        // `php artisan config:cache` would have frozen exactly this in
+        // place: .env does not even get loaded then, env() returns null, and
+        // bot protection silently turns off.
         //
-        // Most a környezeti változó önmagában semmit nem mozdít; a
-        // konfiguráció dönt, az pedig gyorsítótárazható.
+        // Now the environment variable by itself moves nothing; the
+        // configuration decides, and that can be cached.
         $this->fakeGoogle(['success' => true, 'score' => 0.1]);
 
         config(['security.use_recaptcha' => false]);
@@ -250,14 +252,15 @@ class CheckRecaptchaTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. A Google-nak küldött kérés alakja - v1-patch H
+    // 6. The shape of the request sent to Google - v1-patch H
     // =========================================================================
 
     public function test_the_client_ip_is_sent_under_the_field_name_google_expects(): void
     {
-        // A mező KORÁBBAN `ip` volt. A siteverify végpont `remoteip`-et vár, az
-        // ismeretlen kulcsot pedig némán eldobja: a hívás sikeres maradt, csak
-        // a címellenőrzés nem történt meg soha - és semmi nem jelezte.
+        // The field was PREVIOUSLY `ip`. The siteverify endpoint expects
+        // `remoteip`, and it silently discards the unknown key: the call
+        // stayed successful, only the IP check never actually happened -
+        // and nothing signaled it.
         $this->fakeGoogle(['success' => true, 'score' => 0.9]);
 
         $this->runEnabled();
@@ -269,11 +272,12 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_a_token_issued_for_another_action_is_rejected(): void
     {
-        // A Google v3 dokumentációja kifejezetten kéri az action szerveroldali
-        // ellenőrzését. Nélküle egy MÁSIK űrlapon (vagy egy másik oldalon,
-        // ugyanazzal a site key-jel) begyűjtött token bármelyik itt védett
-        // végponton felhasználható. A kliens korábban mindhárom űrlapon
-        // `register` actiont kért, a szerver pedig meg sem nézte a mezőt.
+        // Google's v3 documentation explicitly asks for server-side
+        // verification of the action. Without it, a token collected on
+        // ANOTHER form (or another page, with the same site key) can be used
+        // on any endpoint protected here. The client previously requested
+        // the `register` action on all three forms, and the server did not
+        // even look at the field.
         $this->fakeGoogle(['success' => true, 'score' => 0.9, 'action' => 'register']);
 
         $this->assertInstanceOf(RedirectResponse::class, $this->runEnabled('teszt-token', 'login'));
@@ -295,10 +299,10 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_the_three_public_endpoints_declare_their_own_action(): void
     {
-        // A middleware csak akkor tud ellenőrizni, ha a route megmondja, mit
-        // várjon. Ez a teszt azt őrzi, hogy egyik végpontról se essen le a
-        // paraméter egy későbbi szerkesztéskor - paraméter nélkül a
-        // middleware csendben visszaesne az ellenőrzés nélküli állapotba.
+        // The middleware can only verify if the route tells it what to
+        // expect. This test guards against the parameter falling off any
+        // endpoint during a later edit - without the parameter, the
+        // middleware would silently fall back to an unverified state.
         $expected = [
             'password.email' => 'checkRecaptcha:password_reset',
         ];
@@ -310,7 +314,7 @@ class CheckRecaptchaTest extends FeatureTestCase
             $this->assertContains($middleware, $route->gatherMiddleware(), $name);
         }
 
-        // A /login és a /register névtelen, ezért URI szerint keressük.
+        // /login and /register are unnamed, so we look them up by URI.
         $byUri = [
             'login' => 'checkRecaptcha:login',
             'register' => 'checkRecaptcha:register',
@@ -332,10 +336,10 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_the_two_previously_unthrottled_endpoints_now_carry_a_rate_limit(): void
     {
-        // A /register és a /forgot-password KORÁBBAN semmilyen route-throttle-t
-        // nem viselt: a botvédelmet egyedül a reCAPTCHA adta, ami
-        // kapcsolathibán szándékosan fail-open. Egy Google-kimaradás alatt
-        // tehát mindkettő korlátlanul automatizálható volt.
+        // /register and /forgot-password PREVIOUSLY carried no route
+        // throttle at all: bot protection was provided solely by reCAPTCHA,
+        // which is deliberately fail-open on a connection failure. So during
+        // a Google outage, both were unboundedly automatable.
         $passwordEmail = app('router')->getRoutes()->getByName('password.email');
         $this->assertContains('throttle:5,1', $passwordEmail->gatherMiddleware());
 
@@ -348,9 +352,9 @@ class CheckRecaptchaTest extends FeatureTestCase
 
     public function test_the_configuration_file_still_reads_the_environment_variable(): void
     {
-        // A .env -> config út maga nem veszhet el: a config/security.php a
-        // betöltésekor olvassa a változót, és a szokásos igaz alakokat
-        // egységesen értelmezi.
+        // The .env -> config path itself must not get lost: config/security.php
+        // reads the variable when it loads, and interprets the usual truthy
+        // spellings consistently.
         foreach (['true', '1', 'on', 'yes'] as $value) {
             $security = $this->withEnvValue('USE_RECAPTCHA', $value, fn () => require config_path('security.php'));
             $this->assertTrue($security['use_recaptcha'], $value.': be kell kapcsolnia.');

@@ -7,12 +7,12 @@ use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * TODO 12: a telepítő levelezés-lépése.
+ * TODO 12: the installer's mail step.
  *
- * A configure() nem csak konfigurációt ír: ez az EGYETLEN hely az egész
- * alkalmazásban, ahol a 'languages' és a 'default_language' Settings sorok
- * létrejönnek. Ha ez a lépés kimarad vagy elhasal, az alkalmazás
- * nyelvbeállítás nélkül indul.
+ * configure() does not just write configuration: it is the ONLY place in the
+ * whole application where the 'languages' and 'default_language' Settings
+ * rows are created. If this step is skipped or fails, the application starts
+ * without a language setting.
  */
 class SetupMailTest extends SetupTestCase
 {
@@ -30,7 +30,7 @@ class SetupMailTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 1. Validáció
+    // 1. Validation
     // =========================================================================
 
     public function test_only_three_mailers_are_accepted(): void
@@ -41,8 +41,8 @@ class SetupMailTest extends SetupTestCase
 
     public function test_the_smtp_fields_are_only_required_for_smtp(): void
     {
-        // required_if:MAIL_MAILER,smtp - sendmail esetén a host és a többi
-        // elhagyható. A feladó címe viszont mindig kötelező és validált.
+        // required_if:MAIL_MAILER,smtp - for sendmail, the host and the rest
+        // can be omitted. The from address, however, is always required and validated.
         $this->post(route('setup.save-mail'), [
             'MAIL_MAILER' => 'sendmail',
             'MAIL_FROM_ADDRESS' => 'admin@example.test',
@@ -56,15 +56,15 @@ class SetupMailTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 2. A sikeres ág
+    // 2. The success branch
     // =========================================================================
 
     public function test_a_successful_test_message_advances_the_wizard(): void
     {
-        // A Notification::fake() itt nem kényelmi elem: a kontroller VALÓDI
-        // levelet küld a megadott beállításokkal, és a küldés sikerén múlik a
-        // továbblépés. A fake teszi lehetővé, hogy a küldés utáni lépéseket
-        // mérjük anélkül, hogy tényleg SMTP-szervert keresnénk.
+        // Notification::fake() here is not a convenience: the controller sends a
+        // REAL message with the given settings, and advancing to the next step
+        // depends on the send succeeding. The fake lets us measure the steps
+        // after the send without actually needing an SMTP server.
         Notification::fake();
 
         $this->withTemporaryEnvFile(function () {
@@ -106,19 +106,19 @@ class SetupMailTest extends SetupTestCase
             true
         );
 
-        // A nyelv az APP_LANG env-változóból jön, és láthatóként kerül be.
+        // The language comes from the APP_LANG env variable, and is inserted as visible.
         $this->assertCount(1, $languages);
         $this->assertTrue(reset($languages)['visible']);
     }
 
     // =========================================================================
-    // 3. A hibaág
+    // 3. The error branch
     // =========================================================================
 
     public function test_a_failing_transport_keeps_the_user_on_the_form(): void
     {
-        // Fake NÉLKÜL: az 1-es porton nincs SMTP, tehát a küldés kivételt dob,
-        // amit a kontroller elkap és üzenetté alakít. A .env NEM íródik.
+        // WITHOUT a fake: there is no SMTP on port 1, so the send throws an
+        // exception, which the controller catches and turns into a message. The .env is NOT written.
         $contents = $this->withTemporaryEnvFile(function () {
             $response = $this->post(route('setup.save-mail'), $this->smtpPayload([
                 'MAIL_HOST' => '127.0.0.1',

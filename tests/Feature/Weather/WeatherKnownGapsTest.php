@@ -11,15 +11,16 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * A TODO 20.1 által mért nyolc hiányosság - MIND LEZÁRVA a v1-patch C csomagjában.
+ * The eight gaps measured by TODO 20.1 - ALL CLOSED in the v1-patch C package.
  *
- * A fájl eredetileg a hibás viselkedést rögzítette, hogy a javítás pillanatában
- * bukjon, és az a bukás legyen a reviewálható diff - ugyanaz a fegyelem, mint a
- * TODO 14 duplikált-route tripwire-jeinél. Ez a bukás bekövetkezett: mind a nyolc
- * eset megfordult, és a fájl most azt őrzi, hogy a rés ne nyíljon ki újra.
+ * The file originally recorded the buggy behavior, so it would fail at the
+ * moment of the fix, and that failure would be the reviewable diff - the
+ * same discipline as the TODO 14 duplicate-route tripwires. That failure
+ * occurred: all eight cases flipped, and the file now guards against the gap
+ * reopening.
  *
- * A név szándékosan változatlan: a git történetben így követhető, hogy melyik
- * állítás melyik hiányosság helyére lépett.
+ * The name is deliberately unchanged: this lets the git history track which
+ * assertion took the place of which gap.
  */
 class WeatherKnownGapsTest extends FeatureTestCase
 {
@@ -32,52 +33,51 @@ class WeatherKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A frissítési kör - korábban nem létezett
+    // 1. The refresh cycle - previously didn't exist
     // =========================================================================
 
     public function test_a_scheduled_task_refreshes_the_weather_cache(): void
     {
-        // Korábban EGYETLEN ütemezett feladat sem frissítette a weather_cities
-        // táblát. A sorokba kizárólag akkor került adat, ha egy csoportadmin
-        // mentette a csoport űrlapját vagy megnyomta az ellenőrzés gombot - a
-        // naptár tiszta olvasó. A publikátorok tehát tetszőlegesen régi
-        // előrejelzést láttak, akár hetekig.
+        // Previously NOT A SINGLE scheduled task refreshed the weather_cities
+        // table. Rows only got data when a group admin saved the group's
+        // form or pressed the check button - the calendar is a pure reader.
+        // Publishers therefore saw arbitrarily old forecasts, potentially for weeks.
         $scheduled = collect(app(Schedule::class)->events())
             ->map(fn ($event) => (string) $event->command)
             ->filter(fn ($command) => stripos($command, 'weather:refresh') !== false);
 
-        $this->assertCount(1, $scheduled, 'Pontosan egy weather:refresh feladat legyen ütemezve.');
+        $this->assertCount(1, $scheduled, 'Exactly one weather:refresh task should be scheduled.');
     }
 
     public function test_the_refresh_command_only_visits_cities_that_are_actually_used(): void
     {
-        // A keret dönti el a gyakoriságot: az ingyenes szint 1000 hívás/nap, és
-        // egy település frissítése 2 hívás. Ezért járjuk be DISTINCT módon csak
-        // azokat a városokat, amelyekhez tartozik bekapcsolt csoport.
+        // The plan dictates the frequency: the free tier is 1000 calls/day,
+        // and refreshing one town costs 2 calls. That's why we visit,
+        // DISTINCT, only the cities that have an enabled group attached.
         $used = WeatherCity::factory()->create(['city' => 'Szeged', 'country' => 'HU']);
         $unused = WeatherCity::factory()->create(['city' => 'Debrecen', 'country' => 'HU']);
 
         $this->createGroup(['weather_enabled' => 1, 'city_id' => $used->id]);
         $this->createGroup(['weather_enabled' => 0, 'city_id' => $unused->id]);
 
-        // API-kulcs nélkül minden lekérés elbukik, de a last_try így is megkapja
-        // az időbélyeget - ezen látszik, melyik várost kereste fel a parancs.
+        // Without an API key, every lookup fails, but last_try still gets
+        // the timestamp - that's how it shows which city the command visited.
         $this->artisan('weather:refresh')->assertExitCode(0);
 
-        $this->assertNotNull($used->fresh()->last_try, 'A használt várost frissíti.');
-        $this->assertNull($unused->fresh()->last_try, 'A kikapcsolt csoport városát nem.');
+        $this->assertNotNull($used->fresh()->last_try, 'It refreshes the used city.');
+        $this->assertNull($unused->fresh()->last_try, 'But not the disabled group\'s city.');
     }
 
     // =========================================================================
-    // 2. Az őrizetlen dereferálás a naptárban
+    // 2. The unguarded dereference in the calendar
     // =========================================================================
 
     public function test_the_calendar_survives_weather_enabled_without_a_city(): void
     {
-        // Korábban fatalt dobott: a weather_enabled = 1 önmagában nem jelenti,
-        // hogy van város, a `weather` reláció ilyenkor null, és a render()
-        // őrizetlenül dereferálta. Ez éppen az az állapot, amit a régi hibaág
-        // állított elő, amikor egy sikertelen API-hívás nullázta a city_id-t.
+        // Previously threw a fatal: weather_enabled = 1 by itself doesn't
+        // mean there's a city, the `weather` relation is null in that case,
+        // and render() dereferenced it unguarded. This is exactly the state
+        // the old failure branch produced when a failed API call nulled out city_id.
         $group = $this->createGroup(['weather_enabled' => 1, 'city_id' => null]);
 
         $user = $this->createUser(['email' => 'weather-nocity@example.test']);
@@ -91,8 +91,8 @@ class WeatherKnownGapsTest extends FeatureTestCase
 
     public function test_the_calendar_survives_a_forecast_blob_without_a_list_key(): void
     {
-        // A másik őrizetlen pont: egy csonka vagy hibás válasz blobjában
-        // hiányozhat a `list` kulcs, és a korábbi count() ezen is elhasalt.
+        // The other unguarded spot: a truncated or malformed response blob
+        // can be missing the `list` key, and the previous count() choked on this too.
         $city = WeatherCity::create([
             'city'             => 'Szeged',
             'country'          => 'HU',
@@ -113,14 +113,14 @@ class WeatherKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Az idegen kulcs, ami néma no-op volt
+    // 3. The foreign key that was a silent no-op
     // =========================================================================
 
     public function test_the_groups_city_id_column_has_a_foreign_key(): void
     {
-        // A 2024_12_04_194500 migráció ->constrained()-t hívott
-        // unsignedBigInteger() után; az viszont a foreignId() párja, tehát néma
-        // no-op. Idegen kulcs soha nem jött létre.
+        // Migration 2024_12_04_194500 called ->constrained() after
+        // unsignedBigInteger(); but that method pairs with foreignId(), so
+        // it was a silent no-op. The foreign key was never created.
         $foreignKeys = DB::select(
             'SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME
                FROM information_schema.KEY_COLUMN_USAGE
@@ -130,14 +130,14 @@ class WeatherKnownGapsTest extends FeatureTestCase
                 AND REFERENCED_TABLE_NAME IS NOT NULL'
         );
 
-        $this->assertCount(1, $foreignKeys, 'A groups.city_id-nak idegen kulcsa kell legyen.');
+        $this->assertCount(1, $foreignKeys, 'groups.city_id must have a foreign key.');
         $this->assertSame('weather_cities', $foreignKeys[0]->REFERENCED_TABLE_NAME);
     }
 
     public function test_deleting_a_city_nulls_the_reference_instead_of_orphaning_it(): void
     {
-        // Az onDelete('set null') érdemi hatása: egy törölt település nem hagy
-        // maga után árva hivatkozást, amin a naptár később elhasalna.
+        // The substantive effect of onDelete('set null'): a deleted town does
+        // not leave behind an orphaned reference that the calendar would later choke on.
         $city = WeatherCity::factory()->create(['city' => 'Szeged', 'country' => 'HU']);
         $group = $this->createGroup(['weather_enabled' => 1, 'city_id' => $city->id]);
 
@@ -147,15 +147,15 @@ class WeatherKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A törött reláció
+    // 4. The broken relation
     // =========================================================================
 
     public function test_the_weather_city_groups_relation_points_at_the_real_column(): void
     {
-        // A hasMany(Group::class) alapértelmezés szerint `weather_city_id`-t
-        // keresett a groups táblában; ilyen oszlop nincs, a valódi neve
-        // `city_id`. A reláció minden hívása hibára futott volna - használat
-        // híján ez eddig nem derült ki.
+        // By default, hasMany(Group::class) looked for `weather_city_id` in
+        // the groups table; no such column exists, its real name is
+        // `city_id`. Every call to the relation would have errored - for
+        // lack of use, this had not come to light until now.
         $city = WeatherCity::factory()->create(['city' => 'Szeged', 'country' => 'HU']);
         $group = $this->createGroup(['weather_enabled' => 1, 'city_id' => $city->id]);
         $this->createGroup(['weather_enabled' => 0, 'city_id' => null]);
@@ -167,54 +167,55 @@ class WeatherKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Az országkód, ami csak az egyik végpontra ment el
+    // 5. The country code that only made it to one endpoint
     // =========================================================================
 
     public function test_both_endpoints_take_a_country_code(): void
     {
-        // A csomag `get3HourlyByCity(string $city)` szignatúrája EGY paramétert
-        // fogadott, a hívó viszont kettőt adott át: az 5 napos előrejelzés
-        // országkód NÉLKÜL oldódott fel, a jelenlegi időjárás viszont vele.
+        // The package's `get3HourlyByCity(string $city)` signature accepted
+        // ONE parameter, but the caller passed two: the 5-day forecast
+        // resolved WITHOUT the country code, while the current weather resolved with it.
         //
-        // A tényleges kimenő kérést az OpenWeatherClientTest méri Http::fake()-kel;
-        // itt a szignatúra-szerződést rögzítjük, mert ez volt a hiba forrása.
+        // The actual outgoing request is measured by OpenWeatherClientTest
+        // with Http::fake(); here we pin down the signature contract, because
+        // that was the source of the defect.
         foreach (['currentByCity', 'forecastByCity'] as $method) {
             $reflection = new \ReflectionMethod(\App\Support\Weather\OpenWeatherClient::class, $method);
 
             $this->assertSame(
                 2,
                 $reflection->getNumberOfParameters(),
-                $method.': a település ÉS az országkód is paraméter.'
+                $method.': both the town AND the country code are parameters.'
             );
             $this->assertSame('country', $reflection->getParameters()[1]->getName());
         }
     }
 
     // =========================================================================
-    // 6. A nyelv és a fordítások
+    // 6. The language and the translations
     // =========================================================================
 
     public function test_the_api_language_is_not_hardwired_to_english(): void
     {
-        // A config korábban bedrótozott 'en'-t adott, ezért a magyar és a német
-        // felületen is angol időjárás-leírások jelentek meg.
-        $this->assertSame('', (string) config('openweather.lang'), 'Alapból üres: a lokál dönt.');
+        // The config previously hardwired 'en', which is why English weather
+        // descriptions appeared in the Hungarian and German UI too.
+        $this->assertSame('', (string) config('openweather.lang'), 'Empty by default: the locale decides.');
     }
 
     public function test_the_weather_translations_exist_in_every_maintained_locale(): void
     {
-        // A group.weather.* blokk KIZÁRÓLAG hu-ban létezett, tehát en és de
-        // alatt nyers kulcsok jelentek meg a felületen.
+        // The group.weather.* block existed ONLY in hu, so raw keys appeared
+        // in the UI under en and de.
         $keys = array_keys(__('group.weather', [], 'hu'));
         $this->assertNotEmpty($keys);
 
         foreach (['en', 'de'] as $locale) {
             $translated = __('group.weather', [], $locale);
 
-            $this->assertIsArray($translated, $locale.': hiányzik a weather blokk.');
+            $this->assertIsArray($translated, $locale.': the weather block is missing.');
 
             foreach ($keys as $key) {
-                $this->assertArrayHasKey($key, $translated, $locale.': hiányzó kulcs - '.$key);
+                $this->assertArrayHasKey($key, $translated, $locale.': missing key - '.$key);
                 $this->assertNotSame(
                     __('group.weather.'.$key, [], 'hu'),
                     null,
@@ -225,14 +226,14 @@ class WeatherKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 7. A számláló, amit senki nem olvasott
+    // 7. The counter that nobody read
     // =========================================================================
 
     public function test_the_monthly_call_counter_is_gone(): void
     {
-        // A weather_monthly_call sort minden sikeres lekérés növelte, és SENKI
-        // nem olvasta - egy fölösleges updateOrCreate DB-írás minden hívásra.
-        // A döntés: törölni az írást.
+        // The weather_monthly_call row was incremented by every successful
+        // lookup, and NOBODY read it - a superfluous updateOrCreate DB write
+        // on every call. The decision: delete the write.
         $writers = [];
 
         $iterator = new \RecursiveIteratorIterator(
@@ -247,18 +248,19 @@ class WeatherKnownGapsTest extends FeatureTestCase
             }
         }
 
-        $this->assertSame([], $writers, 'A weather_monthly_call számlálót senki nem írhatja.');
+        $this->assertSame([], $writers, 'Nobody may write to the weather_monthly_call counter.');
     }
 
     // =========================================================================
-    // 8. A csomag, ami eltűnt
+    // 8. The package that disappeared
     // =========================================================================
 
     public function test_the_vendor_package_is_gone(): void
     {
-        // A két fogyasztott végpont az App\Support\Weather névtérbe költözött.
-        // A csomag azért ment, mert a WeatherClientje konténer-kötés nélkül
-        // példányosított Guzzle klienst, tehát a sikeres ág nem volt tesztelhető.
+        // The two consumed endpoints moved into the App\Support\Weather
+        // namespace. The package was removed because its WeatherClient
+        // instantiated a Guzzle client without a container binding, so the
+        // successful branch was not testable.
         $this->assertFalse(class_exists('RakibDevs\\Weather\\Weather'));
 
         $composer = json_decode(file_get_contents(base_path('composer.json')), true);

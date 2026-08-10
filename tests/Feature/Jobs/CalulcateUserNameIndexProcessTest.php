@@ -18,10 +18,10 @@ use Tests\Feature\FeatureTestCase;
 class CalulcateUserNameIndexProcessTest extends FeatureTestCase
 {
     /**
-     * A job a teljes users táblát újraindexeli, ezért determinisztikus
-     * kiindulóállapot kell. A FeatureTestCase::setUp() létrehoz egy owner
-     * felhasználót és egy hozzá tartozó statikus oldalt, ami idegen kulccsal
-     * fogja - ezért azt is takarítani kell.
+     * The job reindexes the entire users table, so it needs a deterministic
+     * starting state. FeatureTestCase::setUp() creates an owner
+     * user and a static page tied to them via a foreign key -
+     * so that must be cleared too.
      */
     private function clearUsers(): void
     {
@@ -47,8 +47,8 @@ class CalulcateUserNameIndexProcessTest extends FeatureTestCase
 
     public function test_handle_sorts_hungarian_accented_names_by_collator_not_by_byte_order(): void
     {
-        // Ez a job létjogosultsága: bájtsorrendben az "Zs" az "Ö" elé kerülne.
-        // A Collator magyar locale-ban a helyes ábécérendet adja.
+        // This is the job's reason for existing: in byte order, "Zs" would come before "Ö".
+        // The Collator in the Hungarian locale produces the correct alphabetical order.
         $this->clearUsers();
 
         $this->createUser(['email' => 'zs@example.test', 'name' => 'Zsolt']);
@@ -90,8 +90,8 @@ class CalulcateUserNameIndexProcessTest extends FeatureTestCase
 
     public function test_job_declares_a_stable_unique_id(): void
     {
-        // ShouldBeUnique: az UserObserver négy helyről is dispatch-eli, a
-        // duplikált futásokat ez a lock akadályozza meg.
+        // ShouldBeUnique: UserObserver dispatches this from four different places;
+        // this lock prevents duplicate runs.
         $this->assertSame('CalculateUserNameIndex', (new CalulcateUserNameIndexProcess())->uniqueId());
     }
 }

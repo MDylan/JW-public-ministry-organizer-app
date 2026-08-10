@@ -6,31 +6,31 @@ use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 /**
- * TODO 01: a nevesített route-ok szerződésének pillanatképe.
- * TODO 14: a pillanatkép megerősítése.
+ * TODO 01: a snapshot of named routes' contract.
+ * TODO 14: hardening the snapshot.
  *
- * Az eredeti teszt NÉV SZERINT aggregál: egy névhez tartozó összes definíció
- * metódusait és middleware-eit unióba olvasztja. Emiatt két dolog láthatatlan,
- * és a TODO 14 pontosan ezt a két vakfoltot zárja be:
+ * The original test aggregates BY NAME: it merges all definitions sharing a
+ * name into a union of their methods and middleware. This makes two things
+ * invisible, and TODO 14 closes exactly these two blind spots:
  *
- * 1. A DUPLIKÁLT NEVEK. A `password.confirm` egyetlen sorként jelent meg, a
- *    `verification.verify` pedig úgy nézett ki, mintha egyetlen definíció lenne -
- *    holott a forrásban kettő volt, és az egyik árnyékban maradt. A v1-patch
- *    mindkettőt feloldotta (A4 és A7), és az itteni tesztek tették azt szándékos,
- *    olvasható diffé egy csendes viselkedésváltozás helyett. A duplikátum nem
- *    csak rendetlenség volt: egyetlen ismétlődő név is LogicExceptionnel
- *    megbuktatja a `route:cache`-t, tehát az `artisan optimize` ezen a
- *    kódbázison sosem futott le.
- * 2. A VENDOR ROUTE-OK, amiket a prefix-szűrő kihagy - így a Phase 6
- *    (Livewire 2 -> 3) routing-változása néma maradna. TODO 33.4 óta a
- *    laraupdater három végpontja is ide tartozik: v1-ben NÉVTELENEK voltak,
- *    ezért kiestek minden pillanatképből, és kettő közülük semmilyen
- *    middleware-t nem viselt.
+ * 1. DUPLICATE NAMES. `password.confirm` showed up as a single row, and
+ *    `verification.verify` looked like it was a single definition - when in
+ *    fact there were two in the source, and one stayed in the shadow. The
+ *    v1-patch resolved both (A4 and A7), and the tests here turned that into
+ *    a deliberate, readable diff instead of a silent behavior change. The
+ *    duplication was not just untidiness: a single repeated name crashes
+ *    `route:cache` with a LogicException, meaning `artisan optimize` never
+ *    once ran successfully on this codebase.
+ * 2. VENDOR ROUTES, which the prefix filter skips - so Phase 6's
+ *    (Livewire 2 -> 3) routing change would have stayed silent. Since
+ *    TODO 33.4, laraupdater's three endpoints also belong here: in v1 they
+ *    were UNNAMED, so they fell out of every snapshot, and two of them
+ *    carried no middleware at all.
  */
 class RouteContractSnapshotTest extends TestCase
 {
     /**
-     * A route-fájlok, amelyekben az alkalmazás saját `->name()` hívásai állnak.
+     * The route files in which the application's own `->name()` calls live.
      */
     private const ROUTE_FILES = [
         'routes/web.php',
@@ -52,12 +52,14 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_livewire_vendor_routes_match_the_snapshot(): void
     {
-        // A Livewire 3 átnevezi a message végpontot (livewire.update) és
-        // átalakítja a feltöltéseket, tehát ez a pillanatkép Phase 6-ban BIZTOSAN
-        // elbukik - épp ezért van itt: legyen a routing-változás explicit diff.
+        // Livewire 3 renames the message endpoint (livewire.update) and
+        // reworks uploads, so this snapshot WILL CERTAINLY fail in Phase 6 -
+        // that is exactly why it is here: let the routing change be an
+        // explicit diff.
         //
-        // A Debugbar szándékosan marad kint: dev-only csomag, amit a TODO 25 amúgy
-        // is kivesz a config/app.php-ból, tehát hamis csatolást hozna ide.
+        // Debugbar deliberately stays out: it is a dev-only package that
+        // TODO 25 removes from config/app.php anyway, so it would bring a
+        // false coupling here.
         $expected = $this->fixtureSubset('vendor-route-contracts.json', 'livewire.');
 
         $this->assertNotEmpty($expected);
@@ -70,12 +72,12 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_laraupdater_vendor_routes_match_the_snapshot(): void
     {
-        // TODO 33.4: a mdylan/laraupdater v2 mind a HÁROM végpontot a
-        // config('laraupdater.middleware') mögé teszi, és nevesíti őket. Az
-        // v1-ben az updater.check és az updater.currentVersion NÉVTELEN volt és
-        // semmilyen middleware-t nem kapott - még `web`-et sem -, tehát bárki
-        // kiolvashatta a telepített verziót. Névtelenül ki is estek ebből a
-        // pillanatképből; ez a teszt zárja be azt a vakfoltot.
+        // TODO 33.4: mdylan/laraupdater v2 puts all THREE endpoints behind
+        // config('laraupdater.middleware') and names them. In v1,
+        // updater.check and updater.currentVersion were UNNAMED and received
+        // no middleware at all - not even `web` - so anyone could read out
+        // the installed version. Being unnamed, they also fell out of this
+        // snapshot; this test closes that blind spot.
         $expected = $this->fixtureSubset('vendor-route-contracts.json', 'laraupdater.');
 
         $this->assertNotEmpty($expected);
@@ -88,9 +90,9 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_every_named_route_is_accounted_for(): void
     {
-        // A két fixture plusz a debugbar prefix együtt lefedi az ÖSSZES nevesített
-        // route-ot. Ez fogja meg, ha egy csomagfrissítés új nevesített route-ot
-        // csempész be: az nem tűnhet el csendben a prefix-szűrő mögött.
+        // The two fixtures plus the debugbar prefix together cover ALL named
+        // routes. This catches it if a package update sneaks in a new named
+        // route: it cannot disappear silently behind the prefix filter.
         $known = array_merge(
             array_keys($this->fixture('route-contracts.json')),
             array_keys($this->fixture('vendor-route-contracts.json'))
@@ -115,10 +117,11 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_fortify_definition_wins_the_verification_verify_name(): void
     {
-        // A `verification.verify` kétszer van definiálva azonos URI-val
-        // (routes/web.php:119 closure és routes/fortify.php:87 controller). A
-        // RouteCollection::addToCollections() `method + domain + uri` kulcsra ír,
-        // tehát a KÉSŐBB regisztrált felülírja a korábbit - és a Fortify a későbbi.
+        // `verification.verify` is defined twice with the same URI
+        // (routes/web.php:119 closure and routes/fortify.php:87 controller).
+        // RouteCollection::addToCollections() writes on a
+        // `method + domain + uri` key, so the one registered LATER overwrites
+        // the earlier one - and Fortify is the later one.
         $routes = $this->routesNamed('verification.verify');
 
         $this->assertCount(1, $routes, 'Csak egy definíció juthat be a routing táblába.');
@@ -134,11 +137,12 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_web_php_verification_verify_closure_is_gone(): void
     {
-        // MEGFORDÍTVA a v1-patch A4 javításával (TODO 26).
+        // REVERSED by the v1-patch A4 fix (TODO 26).
         //
-        // Korábban a forrásban KÉT definíció volt, a routing táblában egy - a
-        // különbség maga volt a halott kód. A routes/web.php-beli closure most
-        // törölve, tehát a forrás és a futásidejű tábla végre egyetért.
+        // Previously there were TWO definitions in the source, one in the
+        // routing table - the difference was itself the dead code. The
+        // closure in routes/web.php is now deleted, so the source and the
+        // runtime table finally agree.
         $this->assertSame(1, $this->sourceRouteNameCounts()['verification.verify']);
         $this->assertCount(1, $this->routesNamed('verification.verify'));
 
@@ -146,8 +150,8 @@ class RouteContractSnapshotTest extends TestCase
             $this->assertNotSame('Closure', $route->getActionName());
         }
 
-        // A törlés nulla futásidejű változást jelentett: ami maradt, az
-        // pontosan az, ami eddig is nyert.
+        // The deletion meant zero runtime change: what remained is exactly
+        // what had already been winning.
         $this->assertStringNotContainsString(
             "name('verification.verify')",
             file_get_contents(base_path('routes/web.php'))
@@ -156,15 +160,16 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_two_confirm_password_definitions_carry_different_names(): void
     {
-        // MEGFORDÍTVA a v1-patch A7 javításával (TODO 26). Korábban mindkét
-        // definíció a `password.confirm` nevet viselte, és ez a teszt azt rögzítette,
-        // hogy MINDKETTŐ életben van - ami igaz is volt, de egyben
-        // cachelhetetlenné tette a route-táblát, lásd
+        // REVERSED by the v1-patch A7 fix (TODO 26). Previously both
+        // definitions carried the `password.confirm` name, and this test
+        // recorded that BOTH are alive - which was true, but at the same
+        // time made the route table uncacheable, see
         // test_the_route_table_survives_route_cache.
         //
-        // A két definíció továbbra is él, változatlan URI-val és middleware-rel,
-        // csak már külön névvel. Az unió-alapú pillanatkép eddig egy sorrá mosta
-        // össze őket, és elrejtette, hogy a throttle CSAK a POST-on van.
+        // The two definitions still live on, with unchanged URI and
+        // middleware, just under separate names now. The union-based
+        // snapshot used to merge them into one row and hid the fact that
+        // throttle is ONLY on the POST.
         $get = $this->routesNamed('password.confirm');
         $post = $this->routesNamed('password.confirm.store');
 
@@ -174,7 +179,7 @@ class RouteContractSnapshotTest extends TestCase
         $this->assertSame(['auth', 'web'], $this->sortedMiddleware($get[0]));
         $this->assertSame(['auth', 'throttle:6,1', 'web'], $this->sortedMiddleware($post[0]));
 
-        // Az URI változatlanul azonos, ezért a javítás egyetlen URL-t sem mozdít el.
+        // The URI stays identically the same, so the fix does not move a single URL.
         $this->assertSame('confirm-password', $get[0]->uri());
         $this->assertSame('confirm-password', $post[0]->uri());
         $this->assertContains('GET', $get[0]->methods());
@@ -183,33 +188,36 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_url_generation_resolves_password_confirm_to_the_get_definition(): void
     {
-        // MEGFORDÍTVA a v1-patch A7 javításával. Korábban a nameList-ből az UTOLSÓ
-        // definíció nyert - vagyis a POST -, és a `password.confirm`
-        // middleware-alias (app/Http/Kernel.php:68) egy POST route nevére
-        // irányított át. Kizárólag azért működött, mert a két URI azonos volt.
-        // A név most a Laravel konvenciója szerint az űrlapot mutató GET ágra
-        // mutat, tehát a RequirePassword átirányítása végre a saját metódusára esik.
+        // REVERSED by the v1-patch A7 fix. Previously the LAST definition in
+        // the nameList won - i.e. the POST one - and the `password.confirm`
+        // middleware alias (app/Http/Kernel.php:68) redirected to a POST
+        // route's name. It only worked because the two URIs were identical.
+        // The name now points, per Laravel's convention, to the GET branch
+        // that shows the form, so RequirePassword's redirect finally lands on
+        // its own method.
         $resolved = app('router')->getRoutes()->getByName('password.confirm');
 
         $this->assertNotNull($resolved);
         $this->assertContains('GET', $resolved->methods());
         $this->assertNotContains('POST', $resolved->methods());
 
-        // A generált URL viszont betűre ugyanaz, mint a javítás előtt.
+        // The generated URL, however, is letter-for-letter the same as before the fix.
         $this->assertSame('/confirm-password', route('password.confirm', [], false));
         $this->assertSame('/confirm-password', route('password.confirm.store', [], false));
     }
 
     public function test_the_route_table_survives_route_cache(): void
     {
-        // EZ A JAVÍTÁS VALÓDI TÉTJE. Az `artisan optimize` (és a `route:cache`) a
-        // teljes táblát Symfony route-gyűjteménnyé alakítja, ahol a név EGYEDI
-        // KULCS: a második azonos nevű route LogicExceptiont dob, és az egész
-        // parancs elhasal. A duplikált `password.confirm` miatt tehát ezen a
-        // kódbázison SOHA nem futott le a route-cache - a v1-en sem.
+        // THIS IS THE REAL STAKE OF THE FIX. `artisan optimize` (and
+        // `route:cache`) converts the whole table into a Symfony route
+        // collection, where the name is a UNIQUE KEY: a second route with the
+        // same name throws a LogicException, and the entire command fails.
+        // So because of the duplicated `password.confirm`, the route cache
+        // NEVER ran successfully on this codebase - not even on v1.
         //
-        // Ugyanazt a kódutat járjuk be, mint a parancs, csak nem írunk fájlt:
-        // AbstractRouteCollection::toSymfonyRouteCollection() az, ami dob.
+        // We walk the same code path as the command, just without writing a
+        // file: it is AbstractRouteCollection::toSymfonyRouteCollection()
+        // that throws.
         $symfony = app('router')->getRoutes()->toSymfonyRouteCollection();
 
         $this->assertNotEmpty($symfony->all());
@@ -219,11 +227,11 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_winner_depends_on_the_service_provider_boot_order(): void
     {
-        // EZ A TODO 14 VALÓDI UPGRADE-ÉRTÉKE. A `verification.verify` győztese
-        // kizárólag attól függ, hogy melyik provider tölti be előbb a maga
-        // route-fájlját. A Laravel 11 skeleton-migráció (TODO 56) a providereket a
-        // bootstrap/providers.php-ba mozgatja - egy ottani sorrendcsere némán
-        // átbillentené a route-ot a halott closure-re.
+        // THIS IS THE REAL UPGRADE VALUE OF TODO 14. The winner of
+        // `verification.verify` depends solely on which provider loads its
+        // own route file first. The Laravel 11 skeleton migration (TODO 56)
+        // moves the providers into bootstrap/providers.php - a reordering
+        // there would silently tip the route back onto the dead closure.
         $providers = config('app.providers');
 
         $routeProvider = array_search(\App\Providers\RouteServiceProvider::class, $providers, true);
@@ -240,35 +248,37 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_route_files_contain_no_duplicate_names(): void
     {
-        // MEGFORDÍTVA a v1-patch A4 (`verification.verify` törlése) és A7
-        // (`password.confirm` szétválasztása) javításával, TODO 26. Mindkét
-        // definíciópár él, csak már külön néven - lásd
+        // REVERSED by the v1-patch A4 (deleting `verification.verify`) and A7
+        // (splitting `password.confirm`) fixes, TODO 26. Both definition
+        // pairs live on, just under separate names now - see
         // test_the_two_confirm_password_definitions_carry_different_names.
         //
-        // FIGYELEM: a forrásszkennert soha ne vessük össze DARABSZÁMRA a
-        // route-contracts.json-nal. A setup.* route-ok a routes/web.php:78
-        // `if (!Storage::exists('installed.txt'))` mögött állnak, tehát a
-        // futásidejű pillanatképben nincsenek, a forrásban viszont ott vannak.
-        // Duplikátum-szűrésre ettől függetlenül használható: a setup nevek egyediek.
+        // WARNING: never compare the source scanner's COUNT against
+        // route-contracts.json. The setup.* routes sit behind
+        // `if (!Storage::exists('installed.txt'))` in routes/web.php:78, so
+        // they are absent from the runtime snapshot but present in the
+        // source. It can still be used for duplicate filtering regardless:
+        // the setup names are unique.
         $duplicates = array_filter(
             $this->sourceRouteNameCounts(),
             fn (int $count): bool => $count > 1
         );
 
-        // MEGFORDÍTVA a v1-patch A7 javításával: a `password.confirm` második
-        // definíciója `password.confirm.store` nevet kapott, tehát a forrásban
-        // már EGYETLEN duplikált név sincs. Az őr innentől bármely új duplikátum
-        // megjelenését elkapja - és mivel egyetlen duplikátum is
-        // cachelhetetlenné teszi a route-táblát, ez immár telepítési hiba, nem
-        // csak rendezetlenség.
+        // REVERSED by the v1-patch A7 fix: `password.confirm`'s second
+        // definition received the name `password.confirm.store`, so there is
+        // NOT A SINGLE duplicated name left in the source. From here on the
+        // guard catches the appearance of any new duplicate - and since even
+        // one duplicate makes the route table uncacheable, this is now a
+        // deployment failure, not just untidiness.
         $this->assertSame([], $duplicates);
     }
 
     public function test_the_route_files_use_no_group_level_name_prefixes(): void
     {
-        // A fenti forrásszkenner lapos névteret feltételez: minden név egyetlen
-        // ->name('...') hívásból áll elő. Csoportszintű prefix (Route::name() vagy
-        // 'as' => a csoport tömbjében) ezt elrontaná, ezért kizárjuk.
+        // The source scanner above assumes a flat namespace: every name comes
+        // from a single ->name('...') call. A group-level prefix
+        // (Route::name() or 'as' => in the group's array) would break this,
+        // so we exclude it.
         foreach (self::ROUTE_FILES as $file) {
             $source = file_get_contents(base_path($file));
 
@@ -278,11 +288,11 @@ class RouteContractSnapshotTest extends TestCase
     }
 
     /**
-     * A hatályos, név szerint aggregált route-szerződés.
+     * The current route contract, aggregated by name.
      *
-     * @param  string|null  $onlyPrefix  ha megadott, csak az ezzel a prefixszel
-     *                                   kezdődő nevek; ha null, akkor az
-     *                                   alkalmazás saját route-jai (vendor nélkül).
+     * @param  string|null  $onlyPrefix  if given, only names starting with
+     *                                   this prefix; if null, then the
+     *                                   application's own routes (without vendor).
      */
     private function currentRouteContracts(?string $onlyPrefix = null): array
     {
@@ -340,7 +350,7 @@ class RouteContractSnapshotTest extends TestCase
     }
 
     /**
-     * A fixture azon bejegyzései, amelyek neve az adott prefixszel kezdődik.
+     * The fixture's entries whose name starts with the given prefix.
      */
     private function fixtureSubset(string $file, string $prefix): array
     {
@@ -360,7 +370,7 @@ class RouteContractSnapshotTest extends TestCase
     }
 
     /**
-     * Az adott néven TÉNYLEGESEN regisztrált összes route.
+     * All routes ACTUALLY registered under the given name.
      *
      * @return \Illuminate\Routing\Route[]
      */
@@ -386,11 +396,11 @@ class RouteContractSnapshotTest extends TestCase
     }
 
     /**
-     * A route-fájlokban SZEREPLŐ `->name('...')` hívások száma névenként.
+     * The count of `->name('...')` calls PRESENT in the route files, by name.
      *
-     * Tokenizálót használ, nem regexet: a kikommentelt Fortify definíciók
-     * (pl. a verification.notice a routes/fortify.php:80-85-ben) így természetes
-     * módon kimaradnak, mert a komment külön token.
+     * Uses a tokenizer, not a regex: this naturally excludes commented-out
+     * Fortify definitions (e.g. verification.notice in
+     * routes/fortify.php:80-85), because the comment is a separate token.
      *
      * @return array<string, int>
      */
@@ -433,7 +443,7 @@ class RouteContractSnapshotTest extends TestCase
     }
 
     /**
-     * A következő token indexe, whitespace-t és kommentet átugorva.
+     * The next token's index, skipping whitespace and comments.
      */
     private function nextMeaningfulToken(array $tokens, int $from): ?int
     {

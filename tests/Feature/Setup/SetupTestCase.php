@@ -9,22 +9,23 @@ use Tests\Concerns\BuildsDomainFixtures;
 use Tests\TestCase;
 
 /**
- * TODO 12: a telepítő tesztelhetővé tétele.
+ * TODO 12: make the installer testable.
  *
- * A setup/* route-csoport a routes/web.php:78-ban egy feltétel mögött áll:
- * csak akkor regisztrálódik, ha a Storage::exists('installed.txt') hamis. Ez a
- * fájl a fejlesztői példányban LÉTEZIK, ezért a csoport a tesztekben eddig nem
- * is jött létre - a tests/Fixtures/route-contracts.json-ban sincs egyetlen
- * setup. bejegyzés sem.
+ * The setup/* route group in routes/web.php:78 sits behind a condition: it
+ * only registers if Storage::exists('installed.txt') is false. This file
+ * EXISTS in the development instance, so the group has never been created in
+ * the tests so far - there is not a single setup. entry in
+ * tests/Fixtures/route-contracts.json either.
  *
- * A valódi sentinel fájlhoz nem nyúlunk. A storage/app/.gitignore mindent
- * kizár, tehát ha egy megszakadt teszt törölve hagyná, a fejlesztői alkalmazás
- * "telepítetlen" állapotban ragadna, és git-ből nem lenne visszaállítható.
+ * We do not touch the real sentinel file. storage/app/.gitignore excludes
+ * everything, so if an interrupted test left it deleted, the development
+ * app would get stuck in an "uninstalled" state, and it would not be
+ * recoverable from git.
  *
- * Helyette az egész storage útvonalat ideiglenes könyvtárra állítjuk - a
- * bootstrap ELŐTT, mert a route-fájl a boot során fut le. A fordított Blade
- * nézetek útját utána visszatesszük az igazira: a TODO 07 mérte, hogy az üres
- * nézet-cache 50 másodpercről 10 percre nyújtja a suite-ot.
+ * Instead we point the entire storage path at a temporary directory - BEFORE
+ * bootstrap, because the route file runs during boot. The compiled Blade
+ * views path is restored to the real one afterwards: TODO 07 measured that an
+ * empty view cache stretches the suite from 50 seconds to 10 minutes.
  */
 abstract class SetupTestCase extends TestCase
 {
@@ -34,15 +35,17 @@ abstract class SetupTestCase extends TestCase
     protected string $temporaryStorage;
 
     /**
-     * A telepítő token-kapuja alapból FELOLDVA.
+     * The installer's token gate is UNLOCKED by default.
      *
-     * A v1-patch D2 óta a `setup/*` csoport (a nyitóképernyőt kivéve) az
-     * `installer` middleware mögött áll: a telepítést végzőnek be kell írnia a
-     * szerveren generált tokent. A csoport ettől függetlenül ugyanazt csinálja,
-     * amit eddig, ezért az itteni leszármazottak alapból feloldott állapotból
-     * indulnak - így minden meglévő teszt továbbra is azt méri, amiért íródott.
+     * Since v1-patch D2, the `setup/*` group (except the landing screen) sits
+     * behind the `installer` middleware: whoever runs the install must enter
+     * the server-generated token. The group otherwise does the same thing it
+     * always did, so subclasses here start from an unlocked state by
+     * default - this way every existing test keeps measuring what it was
+     * written for.
      *
-     * MAGÁT A KAPUT az InstallerAccessTest méri, ami ezt szándékosan nem hívja.
+     * THE GATE ITSELF is measured by InstallerAccessTest, which deliberately
+     * does not call this.
      */
     protected function setUp(): void
     {
@@ -62,7 +65,7 @@ abstract class SetupTestCase extends TestCase
     {
         $app = require __DIR__.'/../../../bootstrap/app.php';
 
-        // A valódi útvonalak, még a felülírás előtt.
+        // The real paths, before the override.
         $realCompiledViews = $app->basePath().'/storage/framework/views';
 
         $this->temporaryStorage = $this->prepareTemporaryStorage();
@@ -76,13 +79,13 @@ abstract class SetupTestCase extends TestCase
     }
 
     /**
-     * Üres storage-váz: a telepítő a logs könyvtár írhatóságát is ellenőrzi
-     * (RequirementsController::checkRequirements), a framework alkönyvtárak
-     * pedig a keretrendszer futásához kellenek.
+     * Empty storage skeleton: the installer also checks the logs directory's
+     * writability (RequirementsController::checkRequirements), and the
+     * framework subdirectories are needed for the framework to run.
      *
-     * Az installed.txt minden teszt előtt törlődik: a setup.complete útközben
-     * kiírja, és ha bennmaradna, a következő teszt bootolásakor a route-csoport
-     * már nem regisztrálódna.
+     * installed.txt is deleted before every test: setup.complete writes it
+     * along the way, and if it stayed behind, the route group would no
+     * longer register on the next test's boot.
      */
     private function prepareTemporaryStorage(): string
     {
@@ -122,12 +125,12 @@ abstract class SetupTestCase extends TestCase
     }
 
     /**
-     * A setEnvironment::setEnvironmentValue() az app()->environmentFilePath()-ra
-     * ír, ami APP_ENV=testing alatt a .env.testing - egy naiv teszt tehát a
-     * saját konfigurációját írná át. Ez a helper egy másolatra irányítja az
-     * írást, és utána visszaállít.
+     * setEnvironment::setEnvironmentValue() writes to
+     * app()->environmentFilePath(), which under APP_ENV=testing is
+     * .env.testing - so a naive test would overwrite its own configuration.
+     * This helper redirects the write to a copy, then restores it afterwards.
      *
-     * @return string a temp env fájl tartalma a callback lefutása után
+     * @return string the temp env file's contents after the callback runs
      */
     protected function withTemporaryEnvFile(callable $callback): string
     {

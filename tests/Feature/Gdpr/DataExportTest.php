@@ -6,24 +6,24 @@ use App\Models\User;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12: az adathordozhatóság (GDPR 20. cikk).
+ * TODO 12: data portability (GDPR Article 20).
  *
- * A lánc: Portable::portable() -> loadMissing($gdprWith) -> setHidden($gdprHidden)
+ * The chain: Portable::portable() -> loadMissing($gdprWith) -> setHidden($gdprHidden)
  * -> User::toPortableArray() (:258).
  *
- * Eddig egyetlen teszt érintette, a RouteAdditionalBehaviorRegressionTest:141 -
- * az viszont assertContains($status, [200, 500])-tel az 500-at is elfogadta, és
- * a letöltött tartalomból semmit nem állított. Vagyis a védőháló látszata volt,
- * nem védőháló.
+ * Until now only one test touched this, RouteAdditionalBehaviorRegressionTest:141 -
+ * but it accepted 500 too via assertContains($status, [200, 500]), and it asserted
+ * nothing about the downloaded content. In other words, it was the appearance of a
+ * safety net, not a safety net.
  */
 class DataExportTest extends FeatureTestCase
 {
     private function exportableUser(): User
     {
-        // fresh(): a create() csak a megadott mezőket tölti a példányba, az
-        // adatbázis-alapértelmezéssel született oszlopokat (pl. isAnonymized)
-        // nem. A GdprController a session-ből betöltött, teljes modellel
-        // dolgozik, tehát az exportnak is azon kell mérődnie.
+        // fresh(): create() only populates the instance with the given fields, not
+        // the columns that come from database defaults (e.g. isAnonymized). The
+        // GdprController works with the full model loaded from the session, so the
+        // export must be measured against that too.
         return $this->createUser([
             'email' => 'export@example.test',
             'password' => bcrypt('titkos-jelszo'),
@@ -34,7 +34,7 @@ class DataExportTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Mi marad ki, és mi kerül bele
+    // 1. What is left out, and what is included
     // =========================================================================
 
     public function test_every_declared_hidden_field_is_absent(): void
@@ -58,10 +58,10 @@ class DataExportTest extends FeatureTestCase
 
     public function test_the_export_reveals_fields_the_normal_api_hides(): void
     {
-        // A setHidden() FELÜLÍRJA a modell $hidden listáját, nem kiegészíti.
-        // Amit a $hidden rejt, de a $gdprHidden nem sorol fel, az az exportban
-        // láthatóvá válik - erre a két lista összevetéséből nem lehet
-        // rájönni, csak a trait olvasásából.
+        // setHidden() OVERWRITES the model's $hidden list, it does not merge with it.
+        // Whatever $hidden conceals but $gdprHidden does not list becomes visible in
+        // the export - this cannot be figured out by comparing the two lists, only
+        // by reading the trait.
         $export = $this->exportableUser()->portable();
 
         foreach (['language', 'created_at', 'updated_at', 'isAnonymized'] as $field) {
@@ -75,10 +75,10 @@ class DataExportTest extends FeatureTestCase
 
     public function test_the_encrypted_columns_are_exported_in_clear_text(): void
     {
-        // A name, phone_number és congregation encrypted cast - az exportban
-        // dekódolva jelennek meg. GDPR szempontból ez a helyes viselkedés (az
-        // érintett a saját adatát kapja meg), de sehol nem volt leírva.
-        // Kapcsolódik: TODO 13.
+        // name, phone_number and congregation have an encrypted cast - they appear
+        // decoded in the export. From a GDPR standpoint this is the correct behavior
+        // (the data subject receives their own data), but it was documented nowhere.
+        // Related: TODO 13.
         $export = $this->exportableUser()->portable();
 
         $this->assertSame('Exportált Név', $export['name']);
@@ -87,7 +87,7 @@ class DataExportTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A relációk átalakítása
+    // 2. Transformation of the relations
     // =========================================================================
 
     public function test_events_lose_the_seven_stripped_fields_but_keep_the_rest(): void
@@ -120,8 +120,8 @@ class DataExportTest extends FeatureTestCase
 
     public function test_groups_are_reduced_to_a_name_and_a_join_date(): void
     {
-        // A csoportokból CSAK a név és a csatlakozás dátuma marad - a szerep,
-        // a jegyzet és minden más pivot-adat kimarad az exportból.
+        // From the groups ONLY the name and the join date remain - the role,
+        // the note and all other pivot data are left out of the export.
         $user = $this->exportableUser();
         $group = $this->createGroup(['name' => 'Export csoport']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -138,10 +138,10 @@ class DataExportTest extends FeatureTestCase
 
     public function test_the_export_shape_changes_when_the_user_has_no_groups(): void
     {
-        // KARAKTERIZÁLÁS: az átnevezés csak nem üres listánál fut le
-        // (:280 count() > 0), tehát csoport nélküli felhasználónál a kulcs
-        // 'groups_accepted' marad. Az export sémája így adatfüggő - egy
-        // feldolgozó szkriptnek mindkét nevet ismernie kell.
+        // CHARACTERIZATION: the renaming only runs for a non-empty list
+        // (:280 count() > 0), so for a user with no groups the key
+        // 'groups_accepted' remains. The export's shape is thus data-dependent - a
+        // consuming script must know both names.
         $export = $this->exportableUser()->portable();
 
         $this->assertArrayHasKey('groups_accepted', $export);
@@ -150,13 +150,13 @@ class DataExportTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A HTTP-ág
+    // 3. The HTTP branch
     // =========================================================================
 
     public function test_a_wrong_password_is_rejected_with_403(): void
     {
-        // A GdprController Auth::attempt()-tel ellenőriz újra, tehát a
-        // letöltéshez a jelszó ismerete kell, nem csak az élő munkamenet.
+        // The GdprController re-verifies with Auth::attempt(), so the download
+        // requires knowing the password, not just an active session.
         $user = $this->exportableUser();
 
         $this->actingAs($user)
@@ -166,10 +166,10 @@ class DataExportTest extends FeatureTestCase
 
     public function test_a_missing_password_fails_validation_rather_than_authorization(): void
     {
-        // Két különböző elutasítás, más státusszal: a hiányzó jelszót a
-        // GdprDownload FormRequest fogja meg (302 + hibaüzenet), a rosszat az
-        // abort_unless (403). Ez a különbség a TODO 16 szempontjából számít -
-        // a validáció a csomagból jön, az őr a kontrollerből.
+        // Two different rejections, with different status codes: the missing
+        // password is caught by the GdprDownload FormRequest (302 + error message),
+        // the wrong one by abort_unless (403). This difference matters for TODO 16 -
+        // the validation comes from the package, the guard from the controller.
         $user = $this->exportableUser();
 
         $this->actingAs($user)

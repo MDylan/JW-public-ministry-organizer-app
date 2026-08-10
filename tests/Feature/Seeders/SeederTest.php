@@ -26,8 +26,8 @@ class SeederTest extends FeatureTestCase
             $this->assertDatabaseHas('settings', ['name' => $name]);
         }
 
-        // A megőrzési idő alapból kikapcsolt: egy friss telepítés semmit nem
-        // törölhet, amíg az adminisztrátor tudatosan be nem kapcsolja.
+        // Retention is off by default: a fresh installation cannot delete anything
+        // until the administrator deliberately turns it on.
         $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '0']);
     }
 
@@ -65,23 +65,23 @@ class SeederTest extends FeatureTestCase
         $this->seed(CoreSettingsSeeder::class);
         $this->seed(CoreSettingsSeeder::class);
 
-        // Meglévő értéket nem ír felül, és nem duplikál.
+        // Does not overwrite an existing value, and does not duplicate.
         $this->assertSame(1, Settings::where('name', 'registration')->count());
         $this->assertSame('0', Settings::where('name', 'registration')->value('value'));
     }
 
     public function test_static_pages_seeder_runs_with_an_explicit_owner(): void
     {
-        // Ez a telepítő útvonala: Setup\AccountController callWith()-szel hív.
-        // A FeatureTestCase::setUp() már létrehozott egy owner@example.test
-        // mainAdmint, ezért itt egy másodikat adunk át explicit módon, hogy
-        // az argumentum tényleges hatása látszódjon.
+        // This is the installer's path: Setup\AccountController calls it with
+        // callWith(). FeatureTestCase::setUp() has already created an
+        // owner@example.test mainAdmin, so here we pass a second one explicitly, so
+        // the argument's actual effect is visible.
         $owner = $this->createUser(['email' => 'seeder-owner@example.test', 'role' => 'mainAdmin']);
 
         StaticPage::query()->delete();
-        // A paraméterek név szerint kötődnek (container->call), ezért a
-        // kulcsnak egyeznie kell a run() argumentumának nevével - pontosan
-        // úgy, ahogy a Setup\AccountController hívja.
+        // The parameters bind by name (container->call), so the key must match
+        // the name of run()'s argument - exactly the way Setup\AccountController
+        // calls it.
         (new DatabaseSeeder())->setContainer($this->app)->callWith(StaticPagesSetupSeeder::class, [
             'user_id' => $owner->id,
         ]);
@@ -93,10 +93,10 @@ class SeederTest extends FeatureTestCase
 
     public function test_static_pages_seeder_falls_back_to_the_first_admin_without_an_argument(): void
     {
-        // Ez teszi lehetővé az `artisan db:seed --class=StaticPagesSetupSeeder`
-        // hívást, ami korábban ArgumentCountError-ral szállt el.
-        // Tulajdonosnak az első mainAdmin kerül be - itt a setUp()-ban
-        // létrehozott owner@example.test.
+        // This is what makes the `artisan db:seed --class=StaticPagesSetupSeeder`
+        // call possible, which used to fail with an ArgumentCountError.
+        // The owner that ends up set is the first mainAdmin - here, the
+        // owner@example.test created in setUp().
         $firstAdmin = User::where('role', 'mainAdmin')->orderBy('id')->firstOrFail();
         $this->createUser(['email' => 'seeder-later-admin@example.test', 'role' => 'mainAdmin']);
 

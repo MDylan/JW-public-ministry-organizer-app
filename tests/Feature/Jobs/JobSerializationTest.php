@@ -57,7 +57,7 @@ class JobSerializationTest extends FeatureTestCase
         ]);
     }
 
-    /** Minden job egy-egy realisztikus példánya. */
+    /** One realistic instance of each job. */
     private function jobs(): array
     {
         return [
@@ -72,13 +72,13 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_the_job_set_matches_what_is_actually_on_disk(): void
     {
-        // ÚJ a v1-patch B9-cel.
+        // NEW with v1-patch B9.
         //
-        // Ez a fájl a jobok TELJES készletét nevezi meg egyenként, tehát csak
-        // akkor ér valamit, ha a lista nem csúszik el a valóságtól. A korábbi
-        // változat 8, majd 7 jobot sorolt fel; az EventAutoCheck törlésével 6
-        // maradt. Egy új job hozzáadása innentől megbuktatja ezt a tesztet -
-        // ami pontosan a szándék: a sorozatosíthatóságát is fel kell venni ide.
+        // This file names the FULL set of jobs individually, so it is only
+        // worth something if the list never drifts from reality. The earlier
+        // version listed 8, then 7 jobs; deleting EventAutoCheck left 6.
+        // Adding a new job from now on will break this test - which is
+        // exactly the intent: its serializability must be added here too.
         $files = glob(app_path('Jobs/*.php'));
 
         $onDisk = array_map(
@@ -95,15 +95,15 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_the_deleted_event_auto_check_job_stays_deleted(): void
     {
-        // Az EventAutoCheck futásképtelen volt - üres foreach, érvénytelen
-        // '=<' SQL operátor, és a törzse tömbelemen olvasott objektum-
-        // property-t -, a két dispatch helye pedig kezdettől ki volt
-        // kommentelve, tehát bizonyíthatóan soha nem futott. Törölve a
-        // v1-patch B9-ben.
+        // EventAutoCheck was unable to run - empty foreach, an invalid
+        // '=<' SQL operator, and its body read an object property on an
+        // array element -, and its two dispatch sites were commented out
+        // from the start, so it demonstrably never ran. Deleted in
+        // v1-patch B9.
         //
-        // Ha valaki egyszer megírja az automatikus jóváhagyást, azt új
-        // jobbal kell, nem ennek a felélesztésével - ezért az osztály nevére
-        // is őrt teszünk, nem csak a fájlra.
+        // If someone ever writes automatic approval, it must be a new job,
+        // not a resurrection of this one - hence the guard on the class
+        // name too, not just the file.
         $this->assertFalse(class_exists('App\\Jobs\\EventAutoCheck'));
         $this->assertFileDoesNotExist(app_path('Jobs/EventAutoCheck.php'));
 
@@ -133,10 +133,11 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_jobs_holding_models_restore_them_after_unserialize(): void
     {
-        // Ez a SerializesModels lényege: a payload csak az azonosítót tárolja,
-        // a modellt a worker kérdezi le újra. Ha a modell időközben eltűnik,
-        // a job ModelNotFoundException-nel bukik - ezért fontos, hogy a
-        // visszatöltés ténylegesen működjön.
+        // This is the point of SerializesModels: the payload only stores the
+        // identifier, the worker re-queries the model. If the model
+        // disappears in the meantime, the job fails with a
+        // ModelNotFoundException - so it matters that the restoration
+        // actually works.
         $job = new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User');
 
         $restored = unserialize(serialize($job));
@@ -156,9 +157,10 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_serialized_payload_stores_a_model_identifier_not_the_model_state(): void
     {
-        // A payload nem tartalmazhatja a modell attribútumait - egyrészt
-        // méret miatt, másrészt mert a User.name és a Group.name titkosított
-        // oszlop, és nem szivároghat a queue táblába nyílt szövegként.
+        // The payload must not contain the model's attributes - partly
+        // because of size, and partly because User.name and Group.name are
+        // encrypted columns and must not leak into the queue table as plain
+        // text.
         $job = new UserLogoutFromGroupProcess($this->group, $this->member, 'Admin User');
 
         $payload = serialize($job);
@@ -169,7 +171,7 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_a_serialized_job_still_does_its_work_after_being_restored(): void
     {
-        // Végponttól végpontig: szerializálás, visszatöltés, futtatás.
+        // End to end: serialization, restoration, execution.
         $event = Event::factory()->create([
             'group_id' => $this->group->id,
             'user_id' => $this->member->id,
@@ -190,8 +192,8 @@ class JobSerializationTest extends FeatureTestCase
 
     public function test_dispatching_through_the_sync_queue_executes_the_job(): void
     {
-        // A phpunit.xml QUEUE_CONNECTION=sync beállítású, így a dispatch a
-        // teljes queue útvonalat végigjárja - beleértve a szerializálást.
+        // phpunit.xml sets QUEUE_CONNECTION=sync, so the dispatch walks the
+        // full queue path - including serialization.
         GroupDate::where('group_id', $this->group->id)->update(['run_job' => 1]);
 
         GenerateStatProcess::dispatch($this->group->id, $this->date, false);

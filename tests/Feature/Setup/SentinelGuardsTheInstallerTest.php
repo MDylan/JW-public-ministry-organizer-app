@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12: a sentinel másik iránya.
+ * TODO 12: the other direction of the sentinel.
  *
- * Ez a fájl szándékosan a normál FeatureTestCase-re épül, nem a
- * SetupTestCase-re: itt a valódi storage van érvényben, benne az installed.txt
- * fájllal. Ez az ellenpróbája a SetupFlowTest-nek - a kettő együtt bizonyítja,
- * hogy a telepítő tényleg a fájl meglététől függ, és nem valami mástól.
+ * This file deliberately builds on the normal FeatureTestCase, not on
+ * SetupTestCase: the real storage is in effect here, with the installed.txt
+ * file present in it. This is the counter-test of SetupFlowTest - together
+ * the two prove that the installer really does depend on the presence of the
+ * file, and not on something else.
  */
 class SentinelGuardsTheInstallerTest extends FeatureTestCase
 {
@@ -42,16 +43,16 @@ class SentinelGuardsTheInstallerTest extends FeatureTestCase
 
     public function test_the_installer_urls_are_404(): void
     {
-        // Nem 403, nem átirányítás: az útvonal egyszerűen nem létezik.
+        // Not 403, not a redirect: the route simply does not exist.
         $this->get('/setup/start')->assertNotFound();
         $this->get('/setup/account')->assertNotFound();
     }
 
     public function test_the_route_contract_fixture_agrees(): void
     {
-        // A TODO 01 route-szerződése sem tartalmaz setup bejegyzést - ez a
-        // teszt köti össze a kettőt, hogy a fixture frissítésekor kiderüljön,
-        // ha valaki telepítetlen állapotban vette fel a pillanatképet.
+        // The TODO 01 route contract also contains no setup entry - this test
+        // ties the two together, so that if someone captures the snapshot in
+        // an uninstalled state, it surfaces when the fixture is updated.
         $fixture = json_decode(
             file_get_contents(base_path('tests/Fixtures/route-contracts.json')),
             true

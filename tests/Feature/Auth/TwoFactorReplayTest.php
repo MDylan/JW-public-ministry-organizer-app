@@ -10,21 +10,24 @@ use RuntimeException;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * v1-patch H: CVE-2022-25838 (GHSA-6w4v-qr4m-97gg) regresszió.
+ * v1-patch H: CVE-2022-25838 (GHSA-6w4v-qr4m-97gg) regression.
  *
- * A telepített Fortify v1.10.2 `TwoFactorAuthenticationProvider::verify()`-ja
- * egyszerűen `verifyKey()`-t hívott, ami minden érvényes időablakban IGAZ-at ad
- * - akárhányszor. Egy egyszer megszerzett TOTP-kód (vállfelettről leolvasva,
- * egy phishing oldalról továbbjátszva, egy naplóból kibányászva) az ablak
- * végéig újra és újra beváltható volt. Ettől a "one-time" jelző elveszett.
+ * The installed Fortify v1.10.2 `TwoFactorAuthenticationProvider::verify()`
+ * simply called `verifyKey()`, which returns TRUE for any valid time window
+ * - any number of times. A TOTP code obtained once (read over someone's
+ * shoulder, replayed from a phishing page, mined out of a log) could be
+ * redeemed again and again until the window ended. This is what made it lose
+ * the "one-time" qualifier.
  *
- * A tényleges védelem az App\Actions\Fortify\TwoFactorAuthenticationProvider:
- * valódi időszámlálót kér, credentialenként elkülönített cache-kulcsot képez,
- * és atomikus Cache::add() művelettel csak egy beváltást enged.
+ * The actual protection lives in
+ * App\Actions\Fortify\TwoFactorAuthenticationProvider: it requests a real time
+ * counter, forms a cache key scoped per credential, and allows only a single
+ * redemption via an atomic Cache::add() operation.
  *
- * A `CACHE_DRIVER` az éles rendszeren `file`; a Laravel FileStore add() művelete
- * fájlzárral atomikus. A tesztkörnyezet közös `array` store-ja a szerződés
- * funkcionális oldalát bizonyítja, külön mock pedig rögzíti az atomi API-t.
+ * `CACHE_DRIVER` is `file` on the production system; Laravel's FileStore
+ * add() operation is atomic via a file lock. The test environment's shared
+ * `array` store proves the functional side of the contract, while a separate
+ * mock records the atomic API.
  */
 class TwoFactorReplayTest extends FeatureTestCase
 {
@@ -42,10 +45,10 @@ class TwoFactorReplayTest extends FeatureTestCase
 
     public function test_the_provider_is_wired_with_a_cache_repository(): void
     {
-        // A visszajátszás-védelem KIZÁRÓLAG akkor működik, ha a providerbe
-        // tényleg bekerül a cache. A projekt a User modellben a contractot
-        // oldja fel (App\Models\User::confirmTwoFactorAuth), tehát a Fortify
-        // saját kötésén megy keresztül - ezt rögzítjük.
+        // The replay protection works ONLY if the cache actually gets wired
+        // into the provider. The project resolves the contract in the User
+        // model (App\Models\User::confirmTwoFactorAuth), so it goes through
+        // Fortify's own binding - this is what we record here.
         $provider = app(TwoFactorAuthenticationProvider::class);
 
         $this->assertInstanceOf(
@@ -138,9 +141,9 @@ class TwoFactorReplayTest extends FeatureTestCase
 
     public function test_the_user_model_confirmation_path_also_rejects_a_replayed_code(): void
     {
-        // Az alkalmazás SAJÁT 2FA-megerősítése (POST /user/2fa-confirm ->
-        // User::confirmTwoFactorAuth) ugyanezt a providert használja, tehát a
-        // javítás ezen az ágon is hat.
+        // The application's OWN 2FA confirmation (POST /user/2fa-confirm ->
+        // User::confirmTwoFactorAuth) uses this same provider, so the fix
+        // takes effect on this branch too.
         $engine = app(Google2FA::class);
         $secret = $engine->generateSecretKey();
 

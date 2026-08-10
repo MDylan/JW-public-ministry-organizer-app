@@ -18,16 +18,16 @@ use Illuminate\Support\Facades\Notification;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 10: a "ki okozta a változást" szerződés.
+ * TODO 10: the "who caused the change" contract.
  *
- * Az observerek modell-eseményekre futnak, azok pedig nem csak HTTP-kérésből
- * indulhatnak: ütemezett parancs, sorkezelő, konzol vagy seeder is írhat
- * modellt. Korábban HÁROMFÉLE viselkedés élt egymás mellett erre a
- * helyzetre - volt, ahol kimaradt a naplóbejegyzés, volt, ahol 0 került
- * bele, és nyolc helyen az auth()->user()->id egyszerűen fatalt adott.
+ * Observers run on model events, and those can be triggered not only by an
+ * HTTP request: a scheduled command, a queue worker, the console, or a seeder
+ * can also write a model. Previously THREE DIFFERENT behaviors coexisted for
+ * this situation - in some places the log entry was missing, in others a 0
+ * was inserted, and in eight places auth()->user()->id simply produced a fatal.
  *
- * A TODO 10 egységesítette: causer_id = 0 jelentése "a rendszer okozta".
- * Ez a fájl az egységesítés regressziós védelme.
+ * TODO 10 unified this: causer_id = 0 means "caused by the system".
+ * This file is the regression protection for that unification.
  */
 class ObserverCauserTest extends FeatureTestCase
 {
@@ -65,15 +65,15 @@ class ObserverCauserTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Az események írása bejelentkezés nélkül nem hasal el
+    // 1. Writing events without being logged in does not fail
     // =========================================================================
 
     public function test_an_event_can_be_created_updated_and_deleted_without_an_authenticated_user(): void
     {
-        // Az EventObserver::created() korábban ŐRIZETLENÜL olvasta az
-        // auth()->user()->id-t, tehát bármely sorkezelőből vagy konzolról
-        // indított esemény-létrehozás fatalt adott. A fixtúráink emiatt
-        // kényszerültek actingAs()-re (lásd TODO 04 tanulságai).
+        // EventObserver::created() previously read auth()->user()->id
+        // UNGUARDED, so any event creation started from a queue worker or the
+        // console produced a fatal. Our fixtures were forced into actingAs()
+        // because of this (see the findings of TODO 04).
         Notification::fake();
 
         $this->assertGuest();
@@ -102,8 +102,8 @@ class ObserverCauserTest extends FeatureTestCase
 
     public function test_a_system_created_event_still_notifies_its_owner_with_the_system_name(): void
     {
-        // A causerId() 0-t ad, ami sosem egyezik meg egy valódi user_id-val,
-        // tehát az értesítés kimegy - és a nevet a causerName() adja.
+        // causerId() returns 0, which never matches a real user_id, so the
+        // notification goes out - and causerName() supplies the name.
         Notification::fake();
 
         $this->makeEvent();
@@ -119,10 +119,10 @@ class ObserverCauserTest extends FeatureTestCase
 
     public function test_a_system_deleted_event_reports_system_instead_of_an_empty_name(): void
     {
-        // VISELKEDÉSVÁLTOZÁS, szándékos: az EventObserver::deleted() korábban
-        // false-t adott a userName mezőnek rendszer-törléskor, ami ÜRESEN
-        // jelent meg a levélben. Most "SYSTEM", ugyanaz, amit az updated()
-        // már régóta használ.
+        // BEHAVIOR CHANGE, deliberate: EventObserver::deleted() previously
+        // returned false for the userName field on a system delete, which
+        // appeared EMPTY in the email. Now it is "SYSTEM", the same as what
+        // updated() has long used.
         Notification::fake();
 
         $this->makeEvent()->delete();
@@ -137,8 +137,8 @@ class ObserverCauserTest extends FeatureTestCase
     }
 
     /**
-     * A notification $data property-je privát, ezért reflexióval olvassuk -
-     * ugyanaz a minta, amit a NotificationRegressionTest is használ.
+     * The notification's $data property is private, so we read it via
+     * reflection - the same pattern that NotificationRegressionTest also uses.
      */
     private function notificationPayload($notification): array
     {
@@ -149,14 +149,14 @@ class ObserverCauserTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A csoport törlése - a group_id hiba regressziós védelme
+    // 2. Deleting a group - regression protection for the group_id bug
     // =========================================================================
 
     public function test_deleting_a_group_writes_the_correct_group_id(): void
     {
-        // A GroupObserver::deleted() korábban $group->group_id-t olvasott,
-        // ami a Group modellen nem létezik - mindig null került a NOT NULL
-        // oszlopba, és minden Eloquent-törlés elszállt.
+        // GroupObserver::deleted() previously read $group->group_id, which
+        // does not exist on the Group model - null always went into the
+        // NOT NULL column, and every Eloquent delete failed.
         $group = $this->createGroup();
 
         $group->delete();
@@ -170,10 +170,10 @@ class ObserverCauserTest extends FeatureTestCase
 
     public function test_group_updates_are_now_logged_even_without_an_authenticated_user(): void
     {
-        // VISELKEDÉSVÁLTOZÁS, szándékos: a GroupObserver::updated() korábban
-        // egy && (auth()->user() !== null) feltétel mögött volt, tehát az
-        // ütemezett csoportmódosítások nyomtalanul történtek. A teljesebb
-        // audit trail kedvéért ez a feltétel kikerült.
+        // BEHAVIOR CHANGE, deliberate: GroupObserver::updated() previously sat
+        // behind an && (auth()->user() !== null) condition, so scheduled
+        // group modifications happened without a trace. For the sake of a
+        // more complete audit trail, this condition was removed.
         $this->group->update(['max_publishers' => 9]);
 
         $history = $this->latestHistory(Group::class, 'updated');
@@ -185,7 +185,7 @@ class ObserverCauserTest extends FeatureTestCase
 
     public function test_membership_changes_are_logged_without_an_authenticated_user(): void
     {
-        // Ugyanez a GroupUserObserver::updated()-re.
+        // Same for GroupUserObserver::updated().
         $pivot = GroupUser::where('group_id', $this->group->id)
             ->where('user_id', $this->member->id)
             ->firstOrFail();
@@ -204,7 +204,7 @@ class ObserverCauserTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A tartalmi observerek
+    // 3. The content observers
     // =========================================================================
 
     public function test_literature_lifecycle_is_logged_without_an_authenticated_user(): void
@@ -253,28 +253,28 @@ class ObserverCauserTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A GroupDayObserver szándékosan kikapcsolva marad
+    // 4. GroupDayObserver deliberately remains disabled
     // =========================================================================
 
     public function test_the_group_day_observer_is_still_not_registered(): void
     {
-        // A GroupDayObserver megkapta ugyan a causer-kezelést, de NINCS
-        // regisztrálva az EventServiceProvider-ben.
+        // GroupDayObserver did get the causer handling, but it is NOT
+        // registered in EventServiceProvider.
         //
-        // Ez tudatos döntés (TODO 10.1). A TODO 10 jegyzete még azt írta,
-        // hogy a bekapcsolás hiányzó funkciót pótolna; ez téves volt. A
-        // napsablon szűkítése utáni takarítás ma is lefut, csak a
-        // GroupDateHelper -> CalculateDateProcess -> CalculateDatesEvents
-        // láncon - ugyanazon a motoron, amit a GroupDayUpdatedProcess is
-        // hívna. Az observer és a két jobja tehát FELVÁLTOTT
-        // implementáció: a bekapcsolásuk nem új képességet adna, hanem
-        // ugyanazt futtatná le másodszor.
+        // This is a deliberate decision (TODO 10.1). The TODO 10 note still
+        // said that enabling it would fill in a missing capability; this was
+        // mistaken. The cleanup after narrowing the day template still runs
+        // today, just via the GroupDateHelper -> CalculateDateProcess ->
+        // CalculateDatesEvents chain - the same engine that
+        // GroupDayUpdatedProcess would also call. The observer and its two
+        // jobs are therefore a REPLACED implementation: enabling them would
+        // not add a new capability, it would just run the same thing a second time.
         //
-        // A másik oldalt a
-        // tests/Feature/Groups/GroupDayTemplateCleanupTest.php tartja: az
-        // bizonyítja, hogy a takarítás observer nélkül is megtörténik.
+        // The other side of this is held by
+        // tests/Feature/Groups/GroupDayTemplateCleanupTest.php: it proves
+        // that the cleanup happens even without the observer.
         //
-        // Ha valaki regisztrálja, ennek a tesztnek kell elsőként elbuknia.
+        // If someone registers it, this test must be the first to fail.
         Bus::fake();
 
         $day = GroupDay::factory()->create(['group_id' => $this->group->id]);

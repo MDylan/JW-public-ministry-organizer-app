@@ -16,15 +16,15 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
             'name' => null,
         ]);
 
-        // A `cancel` a v1-patch H óta POST: az aláírás önmagában azt igazolja,
-        // hogy a linket mi adtuk ki, azt nem, hogy a felhasználó szándékosan
-        // nyitotta meg - egy adatot törlő GET-et böngészőelőtöltés is elsüthet.
+        // `cancel` has been POST since v1-patch H: the signature alone proves
+        // that we issued the link, not that the user opened it deliberately - a
+        // data-deleting GET can also be fired by browser prefetching.
         $this->post(route('finish_registration_cancel', ['id' => $registered->id]))->assertForbidden();
 
-        // Az `admin.loginback` KORÁBBAN itt szerepelt, aláírt GET-ként. A
-        // visszaút azóta nem URL-ből, hanem szerveroldali sessionből dolgozik,
-        // ezért az aláírás-ellenőrzés helyét a session-kötés vette át; azt a
-        // Tests\Feature\Auth\ImpersonationTest fedi.
+        // `admin.loginback` USED TO appear here, as a signed GET. The way back
+        // has since worked from a server-side session rather than a URL, so the
+        // signature check's place was taken over by the session binding; that is
+        // covered by Tests\Feature\Auth\ImpersonationTest.
 
         $user = $this->createUser(['email' => 'signed-delete@example.test']);
         $this->actingAs($user)

@@ -17,27 +17,27 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 10.1: a napsablon szűkítése utáni takarítás - observer nélkül.
+ * TODO 10.1: cleanup after narrowing the day template - without an observer.
  *
- * A TODO 10 jegyzete azt állította, hogy a "töröld a napsablonból kieső
- * jövőbeli eseményeket" takarítás SOHA nem fut le, mert egyedül a
- * regisztrálatlan GroupDayObserver indítaná el a két jobot, és ezért ez
- * hiányzó funkció. Ez az állítás téves volt.
+ * The TODO 10 note claimed that the "delete future events that fall outside
+ * the day template" cleanup NEVER runs, because only the unregistered
+ * GroupDayObserver would trigger the two jobs, and therefore this is a
+ * missing feature. That claim was wrong.
  *
- * A takarítás megvan, csak egy másik láncon:
+ * The cleanup exists, just on a different chain:
  *
  *   UpdateGroupForm::updateGroup()
- *     -> GroupDateHelper::generateDate()   a group_dates sorokat a FÜGGŐBEN
- *                                          lévő új sablonra írja át
+ *     -> GroupDateHelper::generateDate()   rewrites the group_dates rows onto
+ *                                          the PENDING new template
  *     -> GroupDateHelper::recalculateDates()
  *     -> CalculateDateProcess
- *     -> CalculateDatesEvents::generate()  <- pontosan az a motor, amit a
- *                                             GroupDayUpdatedProcess is hív
+ *     -> CalculateDatesEvents::generate()  <- exactly the engine that
+ *                                             GroupDayUpdatedProcess also calls
  *
- * Ez a fájl a bizonyíték és egyben az őr: ha valaki később kiveszi a
- * recalculateDates() hívást vagy átszervezi a láncot, itt bukik el, nem a
- * felhasználók naptárában. A másik oldalt (az observer továbbra sem
- * regisztrált) az ObserverCauserTest tartja.
+ * This file is the proof and the guard at the same time: if someone later
+ * removes the recalculateDates() call or reorganizes the chain, it fails
+ * here, not in users' calendars. The other side (the observer still not
+ * registered) is guarded by ObserverCauserTest.
  */
 class GroupDayTemplateCleanupTest extends FeatureTestCase
 {
@@ -75,8 +75,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
         ]);
         $this->attachUserToGroup($this->member, $this->group, 'member');
 
-        // Egy hét múlva: biztosan a change_date (ma) után van, tehát benne
-        // lesz a $refresh_dates halmazban.
+        // One week from now: definitely after the change_date (today), so it will
+        // be included in the $refresh_dates set.
         $date = now()->addWeek()->startOfDay();
         $this->serviceDate = $date->toDateString();
         $this->dayNumber   = (int) $date->format('w');
@@ -92,8 +92,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     /**
-     * A napsablonnal egyező group_dates sor. A GroupDateHelper ezekből
-     * indul ki: amit itt nem talál, azt nem is számolja újra.
+     * A group_dates row matching the day template. GroupDateHelper starts
+     * from these: whatever it doesn't find here, it doesn't recalculate either.
      */
     private function createServiceDay(string $date): GroupDate
     {
@@ -117,8 +117,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     /**
-     * A csoport beállításai változatlanul - a napsablonon kívül semmit nem
-     * akarunk módosítani, csak a validátort kielégíteni.
+     * The group's settings unchanged - besides the day template we don't
+     * want to modify anything, just satisfy the validator.
      */
     private function formState(): array
     {
@@ -140,9 +140,9 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     /**
-     * A szerkesztőűrlap beküldése a mai change_date-tel - ez az az ág, ahol
-     * a UpdateGroupForm rögtön alkalmazza is a változást (initChanges), nem
-     * hagyja az ütemezőre.
+     * Submitting the edit form with today's change_date - this is the branch
+     * where UpdateGroupForm immediately applies the change too (initChanges),
+     * rather than leaving it to the scheduler.
      */
     private function submitTemplate(array $days): void
     {
@@ -150,9 +150,9 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
             ->test(UpdateGroupForm::class, ['group' => $this->group])
             ->set('change_date', today()->toDateString());
 
-        // A mount() a $group->toArray()-ből tölti a $state-et, abban viszont
-        // nincs benne minden validált mező (pl. weather_enabled), ezért az
-        // űrlap mezőit - ahogy a böngésző is tenné - kitöltjük.
+        // mount() fills $state from $group->toArray(), but that does not
+        // contain every validated field (e.g. weather_enabled), so we fill
+        // the form fields - the way the browser would too.
         foreach ($this->formState() as $field => $value) {
             $component->set('state.'.$field, $value);
         }
@@ -167,8 +167,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     /**
-     * Az Event::getStartAttribute() felülírja a datetime castot, és
-     * unixtime-ot ad vissza - a strtotime() rajta csendben false-t adna.
+     * Event::getStartAttribute() overrides the datetime cast, and
+     * returns a unixtime - strtotime() on it would silently return false.
      */
     private function startTimeOf(Event $event): string
     {
@@ -176,9 +176,9 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     /**
-     * Nem assertNothingSent(), mert az esemény felvétele önmagában is küld
-     * egyet (EventObserver::created) - itt kizárólag a takarítás
-     * értesítéseit tiltjuk.
+     * Not assertNothingSent(), because creating the event on its own already
+     * sends one (EventObserver::created) - here we only forbid the cleanup's
+     * notifications.
      */
     private function assertNoCleanupNotifications(): void
     {
@@ -187,7 +187,7 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A nap szűkítése
+    // 1. Narrowing the day
     // =========================================================================
 
     public function test_narrowing_a_service_day_deletes_the_events_that_fall_outside(): void
@@ -218,7 +218,7 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
             $this->dayNumber => ['start_time' => '10:00', 'end_time' => '12:00'],
         ]);
 
-        // Csak a kezdete lóg ki, tehát nem törlés jár, hanem igazítás.
+        // Only its start sticks out, so it's not deletion but adjustment.
         $this->assertNotNull(Event::find($overlapping->id));
         $this->assertSame('10:00', $this->startTimeOf($overlapping));
     }
@@ -256,7 +256,7 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A nap teljes törlése
+    // 2. Complete deletion of the day
     // =========================================================================
 
     public function test_removing_a_service_day_deletes_every_event_on_it(): void
@@ -266,8 +266,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
         $morning = $this->createEvent($this->serviceDate, '08:00', '09:00');
         $noon    = $this->createEvent($this->serviceDate, '12:00', '13:00');
 
-        // A jelölőnégyzet kivétele false-ot ír a day_number helyére -
-        // az updateGroupFutureChanges ezt olvassa törlésként.
+        // Unchecking the checkbox writes false in place of day_number -
+        // updateGroupFutureChanges reads this as a deletion.
         $this->submitTemplate([
             $this->dayNumber => ['day_number' => false],
         ]);
@@ -322,15 +322,16 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Amit NEM szabad bántania
+    // 3. What it must NOT touch
     // =========================================================================
 
     public function test_events_before_the_change_date_are_left_alone(): void
     {
         Notification::fake();
 
-        // Két héttel korábbi, azonos hét napra eső nap. A $refresh_dates
-        // szűrője date >= change_date, tehát ez ki sem kerül a halmazba.
+        // A day two weeks earlier, falling on the same day of the week. The
+        // $refresh_dates filter is date >= change_date, so this never even
+        // makes it into the set.
         $pastDate = now()->subWeeks(2)->startOfDay()->toDateString();
         $this->createServiceDay($pastDate);
         $pastEvent = $this->createEvent($pastDate, '08:00', '09:00');
@@ -354,8 +355,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
             $this->dayNumber => ['start_time' => '07:00', 'end_time' => '17:00'],
         ]);
 
-        // A lánc lefut - a group_dates sor követi a bővítést -, de nincs
-        // mit takarítania.
+        // The chain runs - the group_dates row follows the widening - but
+        // there's nothing for it to clean up.
         $groupDate = GroupDate::where('group_id', $this->group->id)
             ->where('date', $this->serviceDate)
             ->first();
@@ -368,10 +369,11 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
 
     public function test_the_cleanup_runs_without_the_group_day_observer(): void
     {
-        // A záró állítás: mindaz, ami fent történik, a GroupDayObserver
-        // regisztrálása NÉLKÜL történik. Az observer és a két jobja tehát
-        // felváltott implementáció, nem hiányzó funkció - a bekapcsolásuk
-        // nem új képességet adna, hanem ugyanezt futtatná le másodszor.
+        // The closing assertion: everything that happens above happens
+        // WITHOUT registering the GroupDayObserver. The observer and its two
+        // jobs are therefore a superseded implementation, not a missing
+        // feature - turning them on would not add a new capability, it would
+        // run the same thing a second time.
         Notification::fake();
 
         $event = $this->createEvent($this->serviceDate, '08:00', '09:00');
@@ -382,8 +384,8 @@ class GroupDayTemplateCleanupTest extends FeatureTestCase
 
         $this->assertNull(Event::find($event->id), 'A takarítás observer nélkül is megtörtént.');
 
-        // A GroupDay sor törlődött (initChanges), naplóbejegyzés viszont nem
-        // keletkezett - ez az observer kézjegye lenne.
+        // The GroupDay row was deleted (initChanges), but no log entry
+        // was created - that would be the observer's signature.
         $this->assertSame(
             0,
             LogHistory::where('model_type', GroupDay::class)->count(),

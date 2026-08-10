@@ -8,7 +8,7 @@ use Livewire\Livewire;
 class GroupPosterEditModalTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. Hozzáférés-vezérlés
+    // 1. Access control
     // =========================================================================
 
     public function test_editor_can_open_modal_for_new_poster(): void
@@ -30,7 +30,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
         $group = $this->createGroup();
         $this->attachUserToGroup($member, $group, 'member', true);
 
-        // abort(403) a getGroupData()-ban fut le mielőtt $this->openModal = true beállítódna
+        // abort(403) runs in getGroupData() before $this->openModal is set to true
         Livewire::actingAs($member)
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id)
@@ -38,7 +38,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Hirdetmény létrehozás
+    // 2. Poster creation
     // =========================================================================
 
     public function test_editor_can_create_poster(): void
@@ -56,14 +56,14 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->assertHasNoErrors()
             ->assertDispatchedBrowserEvent('hide-modal');
 
-        // info mező titkosított, ezért modellen keresztül ellenőrzünk
+        // info field is encrypted, so we check via the model
         $poster = GroupPosters::where('group_id', $group->id)->first();
         $this->assertNotNull($poster);
         $this->assertEquals('Teszt hirdetmény tartalom', $poster->info);
     }
 
     // =========================================================================
-    // 3. Hirdetmény szerkesztés
+    // 3. Poster editing
     // =========================================================================
 
     public function test_editor_can_edit_existing_poster(): void
@@ -81,12 +81,12 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->assertHasNoErrors()
             ->assertDispatchedBrowserEvent('hide-modal');
 
-        // info mező titkosított, ezért modellen keresztül ellenőrzünk
+        // info field is encrypted, so we check via the model
         $this->assertEquals('Frissített hirdetmény tartalom', $poster->fresh()->info);
     }
 
     // =========================================================================
-    // 4. Hirdetmény törlés
+    // 4. Poster deletion
     // =========================================================================
 
     public function test_editor_can_delete_poster(): void
@@ -120,7 +120,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Validáció
+    // 5. Validation
     // =========================================================================
 
     public function test_validation_fails_when_info_is_missing(): void
@@ -154,7 +154,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. Modal visszanavigáció (hiddenModal)
+    // 6. Modal back-navigation (hiddenModal)
     // =========================================================================
 
     public function test_hidden_modal_emits_to_events_modal_when_from_date_is_set(): void
@@ -171,7 +171,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 7. Dátumból nyitás (openModalFromDate)
+    // 7. Opening from a date (openModalFromDate)
     // =========================================================================
 
     public function test_open_modal_from_date_sets_from_date_and_opens_modal(): void

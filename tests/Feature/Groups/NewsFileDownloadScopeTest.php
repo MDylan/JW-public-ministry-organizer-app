@@ -7,18 +7,18 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * v1-patch H2: a hírmelléklet-letöltés csoporthoz kötése.
+ * v1-patch H2: scoping the news-attachment download to its group.
  *
- * A `groupMember` middleware KIZÁRÓLAG az útvonal `{group}` paraméterét nézi -
- * azt igazolja, hogy a kérő tagja ANNAK a csoportnak. A `{file}` puszta
- * azonosító szerint kötődik modellhez, és a controller korábban nem nézte meg,
- * hogy a fájl ahhoz a csoporthoz tartozik-e.
+ * The `groupMember` middleware ONLY looks at the route's `{group}`
+ * parameter - it confirms that the requester is a member of THAT group. The
+ * `{file}` binds to a model by a bare identifier, and the controller
+ * previously never checked whether the file belongs to that group.
  *
- * Ebből következett, hogy bármely csoport bármely elfogadott tagja letölthette
- * BÁRMELY másik csoport privát mellékletét: elég volt a SAJÁT csoportjának
- * azonosítóját megadni - amivel a middleware elégedett - és mellé egy idegen
- * fájlazonosítót. A fájlok a `news_files` privát diszken, a docrooton kívül
- * ülnek, tehát ez a controller volt az egyetlen út hozzájuk.
+ * The consequence was that any accepted member of any group could download
+ * ANY other group's private attachment: it was enough to supply THEIR OWN
+ * group's identifier - which satisfied the middleware - together with a
+ * foreign file identifier. The files sit on the `news_files` private disk,
+ * outside the docroot, so this controller was the only path to them.
  */
 class NewsFileDownloadScopeTest extends FeatureTestCase
 {
@@ -44,8 +44,8 @@ class NewsFileDownloadScopeTest extends FeatureTestCase
         ]);
         Storage::disk('news_files')->put('titkos.pdf', 'masik csoport tartalma');
 
-        // A saját csoportazonosító átviszi a middleware-en, az idegen fájl
-        // azonosítója viszont nem oldódhat fel.
+        // The own group identifier gets through the middleware, but the
+        // foreign file's identifier must not resolve.
         $this->actingAs($intruder)
             ->get(route('groups.news.filedownload', [
                 'group' => $ownGroup->id,
@@ -62,8 +62,8 @@ class NewsFileDownloadScopeTest extends FeatureTestCase
         $member = $this->createUser(['email' => 'file-scope-probe@example.test']);
         $this->attachUserToGroup($member, $group, 'member', true);
 
-        // Nem létező azonosító és idegen azonosító ugyanazt a választ adja,
-        // tehát a státuszkódból nem derül ki, melyik fájl létezik.
+        // A non-existent identifier and a foreign identifier give the same
+        // answer, so the status code does not reveal which file exists.
         $this->actingAs($member)
             ->get(route('groups.news.filedownload', ['group' => $group->id, 'file' => 999999]))
             ->assertNotFound();

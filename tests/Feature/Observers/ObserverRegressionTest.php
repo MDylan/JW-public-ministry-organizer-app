@@ -112,15 +112,15 @@ class ObserverRegressionTest extends FeatureTestCase
 
     public function test_setting_a_field_to_null_is_audited_too(): void
     {
-        // ÚJ a v1-patch B16-tal.
+        // NEW with v1-patch B16.
         //
-        // Mind a hét audit-hurok `isset($changes[$field])`-del szűrt, és az
-        // isset() NULL értékű kulcsra HAMIS. Minden olyan módosítás tehát,
-        // ami egy mezőt NULL-ra állít, láthatatlan maradt a naplóban - a
-        // csoportkapcsolat bontása (parent_group_id => null) éppúgy, mint
-        // bármely nullázható mező törlése. A getDirty() csak ténylegesen
-        // változott mezőket ad vissza, és az `$old !== $new` őr megmaradt,
-        // ezért az array_key_exists() pontosan a hiányzó eseteket engedi be.
+        // All seven audit loops filtered with `isset($changes[$field])`, and
+        // isset() is FALSE for a key with a NULL value. So any change that
+        // sets a field to NULL stayed invisible in the log - dissolving a
+        // group relationship (parent_group_id => null) just as much as
+        // clearing any nullable field. getDirty() returns only fields that
+        // actually changed, and the `$old !== $new` guard was kept, so
+        // array_key_exists() lets exactly the missing cases through.
         $user = $this->createUser(['email' => 'null-audit@example.test']);
         $parent = $this->createGroup(['name' => 'Napló szülő']);
         $child = $this->createGroup(['name' => 'Napló gyerek']);
@@ -235,9 +235,9 @@ class ObserverRegressionTest extends FeatureTestCase
 
     public function test_group_day_observer_is_inactive_by_default(): void
     {
-        // Miért marad kikapcsolva, lásd TODO 10.1: felváltott
-        // implementáció. A döntést az ObserverCauserTest és a
-        // GroupDayTemplateCleanupTest tartja együtt.
+        // For why it stays disabled, see TODO 10.1: superseded
+        // implementation. The decision is jointly held by ObserverCauserTest
+        // and GroupDayTemplateCleanupTest.
         Bus::fake();
 
         $user = $this->createUser(['email' => 'group-day-observer@example.test']);

@@ -15,18 +15,19 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 11: a szülő-gyerek csoportkapcsolat.
+ * TODO 11: the parent-child group relationship.
  *
- * A GroupParentGroupAttachedNotification és a
- * GroupParentGroupDetachedNotification volt az utolsó két értesítés, amit
- * csak a levélszerződés szintjén mértünk. Mindkettőt a Groups\ListUsers
- * váltja ki - és velük együtt jön be az a logika, ami eddig teljesen
- * fedetlen volt: a linkToGroup() a kapcsolat felvétele mellett
- * ÁTSZINKRONIZÁLJA a gyerekcsoport tagságát a szülőéhez (:585-610).
+ * GroupParentGroupAttachedNotification and
+ * GroupParentGroupDetachedNotification were the last two notifications we
+ * only measured at the mail-contract level. Both are triggered by
+ * Groups\ListUsers - and along with them comes logic that was until now
+ * completely uncovered: linkToGroup(), besides establishing the
+ * relationship, RE-SYNCHRONIZES the child group's membership to the
+ * parent's (:585-610).
  *
- * A sync() teljes cserét jelent: aki a szülőben nincs benne, az kikerül a
- * gyerekcsoportból is. Ez a TODO leglényegesebb, eddig sehol le nem írt
- * viselkedése.
+ * sync() means a full replacement: anyone not in the parent is also removed
+ * from the child group. This is the TODO's most important, so-far-nowhere
+ * documented behaviour.
  */
 class GroupHierarchyLinkTest extends FeatureTestCase
 {
@@ -41,9 +42,9 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         $this->parent = $this->createGroup(['name' => 'Szülő csoport']);
         $this->child = $this->createGroup(['name' => 'Gyerek csoport']);
 
-        // A linkToGroup() két külön jogosultságot vár: a 403-őr a FORRÁS
-        // csoport adminságát nézi (:504), a user_admin_groups() szűrője
-        // pedig a CÉL csoportét (:523).
+        // linkToGroup() expects two separate authorizations: the 403 guard
+        // checks admin status on the SOURCE group (:504), while
+        // user_admin_groups()'s filter checks it on the TARGET group (:523).
         $this->actor = $this->createUser(['email' => 'link-actor@example.test']);
         $this->attachUserToGroup($this->actor, $this->parent, 'admin');
         $this->attachUserToGroup($this->actor, $this->child, 'admin');
@@ -71,7 +72,7 @@ class GroupHierarchyLinkTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A kapcsolat felvétele
+    // 1. Establishing the relationship
     // =========================================================================
 
     public function test_linking_sets_the_parent_and_notifies_the_child_group_admins(): void
@@ -132,8 +133,8 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_an_unverified_parent_member_is_attached_but_not_notified(): void
     {
-        // A :593-595 és :600-602 whereNotNull('email_verified_at') szűrője:
-        // a tagság megjön, a levél nem.
+        // The whereNotNull('email_verified_at') filter at :593-595 and
+        // :600-602: the membership is created, the mail is not.
         Notification::fake();
 
         $guest = $this->memberOf($this->parent, 'link-guest@example.test', 'member', [
@@ -150,11 +151,11 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_a_child_only_member_is_thrown_out_by_the_membership_sync(): void
     {
-        // A :585 sync()-je TELJES cserét végez a szülő taglistájára, tehát
-        // aki csak a gyerekcsoportban volt benne, azt kilépteti - és a
-        // GroupUserMoves::detach() ki is értesíti róla. A csoportok
-        // összekapcsolása így egy tagsági művelet is, nem csak egy
-        // adminisztratív link.
+        // The sync() at :585 performs a FULL replacement of the parent's
+        // member list, so anyone who was only in the child group gets
+        // removed from it - and GroupUserMoves::detach() also notifies them
+        // about it. Linking the groups is thus also a membership operation,
+        // not just an administrative link.
         Notification::fake();
 
         $childOnly = $this->memberOf($this->child, 'link-childonly@example.test');
@@ -185,7 +186,7 @@ class GroupHierarchyLinkTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Az öt validációs ág - mindegyik némán, értesítés nélkül áll meg
+    // 2. The five validation branches - each stops silently, with no notification
     // =========================================================================
 
     public function test_linking_without_a_selection_fails(): void
@@ -223,16 +224,16 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_a_child_group_cannot_be_used_as_a_parent(): void
     {
-        // MEGFORDÍTVA a v1-patch B8 javításával.
+        // REVERSED by the v1-patch B8 fix.
         //
-        // A user_admin_groups() eleve kiszűri a gyerekcsoportokat
-        // (whereNull('groups.parent_group_id')), ezért erre az esetre KÉT
-        // hibaüzenet került a hibazsákba: az error_not_in_group ÉS az
-        // error_this_is_child. A felhasználó tehát azt is olvasta, hogy "nem
-        // vagy csoportfelvigyázó benne", holott éppen ő az - a csoport csak
-        // már máshoz van kötve.
+        // user_admin_groups() already filters out child groups
+        // (whereNull('groups.parent_group_id')), so for this case TWO error
+        // messages ended up in the error bag: error_not_in_group AND
+        // error_this_is_child. The user therefore also read that "you are
+        // not an administrator in it," even though they in fact are - the
+        // group is just already linked to something else.
         //
-        // Most egyetlen, a valódi okot megnevező üzenet jelenik meg.
+        // Now a single message naming the real reason is shown.
         Notification::fake();
 
         $grandParent = $this->createGroup(['name' => 'Nagyszülő csoport']);
@@ -254,9 +255,9 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_a_group_the_actor_does_not_administer_still_says_so(): void
     {
-        // A B8 kontroll-kísérlete: a másik ág üzenete nem tűnhetett el. Egy
-        // idegen FŐcsoportnál továbbra is az "nem vagy csoportfelvigyázó
-        // benne" a helyes és egyetlen indoklás.
+        // B8's control experiment: the other branch's message must not
+        // disappear. For a foreign TOP-LEVEL group, "you are not an
+        // administrator in it" remains the correct and only reason given.
         Notification::fake();
 
         $foreign = $this->createGroup(['name' => 'Idegen csoport']);
@@ -293,7 +294,7 @@ class GroupHierarchyLinkTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A kapcsolat bontása - a két irány nem szimmetrikus
+    // 3. Breaking the relationship - the two directions are not symmetric
     // =========================================================================
 
     private function linkedChild(): Group
@@ -322,17 +323,18 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_the_detach_notification_still_names_the_former_parent(): void
     {
-        // A $data tömb a frissítés ELŐTT épül (:697-703), tehát a levélben
-        // még benne van az elhagyott szülőcsoport neve. A TODO 11.1 a
-        // jogosultsági őrök alá vitte, de szándékosan az update() fölé.
+        // The $data array is built BEFORE the update (:697-703), so the mail
+        // still contains the name of the abandoned parent group. TODO 11.1
+        // moved it below the authorization guards, but deliberately kept it
+        // above the update().
         $this->linkedChild();
         Notification::fake();
 
-        // A userName-et a levél kirendereli (line_4), ezért a payloadban is
-        // mérjük: enélkül egy null-biztos "javítás" (auth()->user()?->name)
-        // zölden hagyná a suite-ot, miközben üres név menne ki a levélben -
-        // pontosan az a hiba, amit a TODO 10 az EventObserver::deleted()-nél
-        // talált.
+        // The mail renders userName (line_4), so we also measure it in the
+        // payload: without this, a null-safe "fix" (auth()->user()?->name)
+        // would leave the suite green while an empty name went out in the
+        // mail - exactly the bug TODO 10 found in
+        // EventObserver::deleted().
         $actorName = $this->actor->name;
         $this->assertNotEmpty(
             $actorName,
@@ -360,15 +362,16 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_detaching_the_same_link_from_the_parent_side_notifies_the_same_people(): void
     {
-        // MEGFORDÍTVA a v1-patch B6 javításával.
+        // REVERSED by the v1-patch B6 fix.
         //
-        // A detachChildGroup() ugyanazt a kapcsolatot bontja el, csak a másik
-        // oldalról - és korábban EGYETLEN értesítést sem küldött, miközben a
-        // detachParentGroup() küld. Az érintettek tehát attól függően kaptak
-        // tájékoztatást, hogy melyik képernyőről nyúlt hozzá valaki.
+        // detachChildGroup() breaks the same relationship, just from the
+        // other side - and previously it sent NOT A SINGLE notification,
+        // while detachParentGroup() does. So those affected got informed or
+        // not depending on which screen someone used to make the change.
         //
-        // A payload alakja szándékosan azonos a szülő oldali ágéval: groupName
-        // a szülő, childGroupName a gyerek, userName a beavatkozó.
+        // The payload shape is deliberately identical to the parent-side
+        // branch: groupName is the parent, childGroupName is the child,
+        // userName is the actor.
         $this->linkedChild();
         $actorName = $this->actor->name;
         Notification::fake();
@@ -400,9 +403,10 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_detaching_a_child_group_writes_an_audit_record(): void
     {
-        // A B6 másik fele: a korábbi tömeges ->childGroups()->update() megkerülte
-        // az Eloquent eseményeket, tehát a GroupObserver naplóbejegyzése is
-        // elmaradt. A szülő oldalról bontott UGYANEZ a kapcsolat naplózódott.
+        // The other half of B6: the previous mass ->childGroups()->update()
+        // bypassed the Eloquent events, so the GroupObserver log entry was
+        // also skipped. THIS SAME relationship, broken from the parent side,
+        // was logged.
         $this->linkedChild();
 
         $before = LogHistory::where('group_id', $this->child->id)->count();
@@ -421,10 +425,10 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_detaching_an_unknown_child_group_is_forbidden_not_fatal(): void
     {
-        // A B6 harmadik fele: a ->first() null is lehet, és a korábbi
-        // `!$selected_group->id` ilyenkor NULL-on hívott property-t, tehát fatal
-        // jött 403 helyett - ugyanaz a hibaosztály, amit a detachParentGroup()-nál
-        // a TODO 11.1 javított.
+        // The third part of B6: the ->first() can also be null, and the
+        // previous `!$selected_group->id` in that case called a property on
+        // NULL, so a fatal came instead of a 403 - the same class of bug that
+        // TODO 11.1 fixed for detachParentGroup().
         $this->linkedChild();
 
         $this->listUsers(null, $this->parent)
@@ -457,20 +461,23 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
     public function test_an_unauthenticated_call_is_rejected_with_403_not_a_fatal_error(): void
     {
-        // TODO 11.1: a $data tömb korábban a jogosultsági őr ELŐTT épült, és
-        // olvasta az auth()->user()->name-et - bejelentkezett felhasználó
-        // nélkül tehát ErrorException (500) jött ott, ahol 403 a helyes válasz.
+        // TODO 11.1: the $data array used to be built BEFORE the
+        // authorization guard, and read auth()->user()->name - so without a
+        // logged-in user an ErrorException (500) came where 403 is the
+        // correct response.
         //
-        // Ugyanaz a hibacsalád, mint a TODO 10-ben javított getRole(): hiányzó
-        // előfeltétel-ellenőrzés a hívási lánc elején. Az osztály minden
-        // testvér metódusa - detachChildGroup() (:642), confirmParentDetach()
-        // (:663), setCopyInfo() (:845) - ugyanezzel az őrrel indul.
+        // Same bug family as the getRole() fixed in TODO 10: a missing
+        // precondition check at the start of the call chain. Every sibling
+        // method of the class - detachChildGroup() (:642),
+        // confirmParentDetach() (:663), setCopyInfo() (:845) - starts with
+        // this same guard.
         //
-        // A route-on ott van a groupMember middleware, tehát ez nem aktív
-        // biztonsági rés. Az élesben elérhető út: a session él, de a
-        // felhasználó nincs bejelentkezve (másik fülön kijelentkezett), a
-        // metódus pedig benne van a $listeners tömbben (:59-68), tehát a
-        // Livewire message endpointon önállóan is hívható.
+        // The groupMember middleware is present on the route, so this is not
+        // an active security hole. The path reachable in production: the
+        // session is alive, but the user is not logged in (logged out in
+        // another tab), and the method is in the $listeners array (:59-68),
+        // so it can also be called standalone on the Livewire message
+        // endpoint.
         $this->linkedChild();
 
         $component = $this->listUsers()
@@ -478,8 +485,8 @@ class GroupHierarchyLinkTest extends FeatureTestCase
 
         Notification::fake();
 
-        // A Livewire::actingAs() csak auth()->guard()->setUser()-t hív, ezért
-        // a guardok felejtetése állítja vissza a vendég állapotot.
+        // Livewire::actingAs() only calls auth()->guard()->setUser(), so
+        // forgetting the guards restores the guest state.
         $this->app['auth']->forgetGuards();
 
         $component->call('detachParentGroup')->assertForbidden();

@@ -43,17 +43,17 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * $count tag a csoportba, sorrendbe rendezhető névvel és e-mail-címmel.
+     * $count members into the group, with sortable name and email address.
      *
-     * A Group::groupUsers() orderByRaw('name_index, email') szerint rendez.
-     * A name_index-et a CalulcateUserNameIndexProcess írja, amit a
-     * UserObserver MINDEN felhasználó-íráskor elindít: a job az összes
-     * felhasználót NÉV szerint rendezi (CollectionHelper::sortByCollator)
-     * és újraszámozza őket. Azonos nevek mellett a sorrend tehát esetleges -
-     * ezért kap itt minden tag egyedi, nullával tömött nevet, és így lesz a
-     * lapozás kiszámítható.
+     * Group::groupUsers() sorts by orderByRaw('name_index, email').
+     * The name_index is written by CalulcateUserNameIndexProcess, which
+     * UserObserver triggers on EVERY user write: the job sorts all
+     * users by NAME (CollectionHelper::sortByCollator)
+     * and renumbers them. So among identical names the order is arbitrary -
+     * that's why each member here gets a unique, zero-padded name, making
+     * pagination predictable.
      *
-     * A visszatérési érték a felhasználók tömbje, a létrehozás sorrendjében.
+     * The return value is the array of users, in creation order.
      */
     protected function attachManyUsersToGroup(
         Group $group,
@@ -80,8 +80,8 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * $count csoport ugyanahhoz a felhasználóhoz - a Groups\ListGroups
-     * lapozásához, ami a userGroups() reláción paginál.
+     * $count groups for the same user - for Groups\ListGroups
+     * pagination, which paginates on the userGroups() relation.
      */
     protected function attachUserToManyGroups(
         User $user,
@@ -102,9 +102,9 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Gyermekcsoport a megadott szülő alatt. A pwbs_check_group_other_admins()
-     * a szülő mellett a gyermekcsoportok adminjait is átnézi, ezért a
-     * szerepkiosztási teszteknek szükségük van erre az ágra.
+     * Child group under the given parent. pwbs_check_group_other_admins()
+     * examines the admins of child groups besides the parent, so
+     * role-assignment tests need this branch.
      */
     protected function createChildGroup(Group $parent, array $attributes = []): Group
     {
@@ -112,12 +112,12 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * A Groups\ListUsers::editUser() által épített $state szerkezete.
+     * The $state structure built by Groups\ListUsers::editUser().
      *
-     * Az updateUser() feltételezi, hogy minden kulcs jelen van - a validátor
-     * szabályai (`hidden` => required, `finish_guest_registration` => Rule::In)
-     * hiányzó kulcsra máshogy viselkednek, ezért a teszteknek a teljes
-     * szerkezetet kell beküldeniük, ahogy a modal is teszi.
+     * updateUser() assumes every key is present - the validator rules
+     * (`hidden` => required, `finish_guest_registration` => Rule::In)
+     * behave differently for a missing key, so tests must submit the
+     * full structure, the same way the modal does.
      */
     protected function editUserState(User $target, array $overrides = []): array
     {
@@ -153,13 +153,13 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Egy naptári nap beállításai eseménytesztekhez: 08:00-12:00, 60 perces
-     * sávokkal, sávonként legfeljebb 3 hírnökkel.
+     * Settings for a single calendar day for event tests: 08:00-12:00, in 60-minute
+     * slots, with at most 3 servers per slot.
      *
-     * A date_* mezők felülírják a csoport azonos nevű beállításait - az
-     * Events\EventEdit és az Events\Modal is ezekből dolgozik, ha van
-     * current_date sor. Ezért a kapacitást itt kell állítani, nem a
-     * csoporton.
+     * The date_* fields override the group's settings of the same name - both
+     * Events\EventEdit and Events\Modal work from these when there is a
+     * current_date row. That's why the capacity must be set here, not on the
+     * group.
      */
     protected function createEventDate(Group $group, string $date, array $attributes = []): GroupDate
     {
@@ -177,11 +177,11 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Feltölt egy időtartományt $count eseménnyel, mindegyiket külön
-     * felhasználóval, akiket tagként be is léptet a csoportba.
+     * Fills a time range with $count events, each with a separate
+     * user, whom it also adds to the group as a member.
      *
-     * A visszatérési érték a létrehozott felhasználók tömbje, hogy a hívó
-     * ellenőrizhesse őket (pl. a busy vizsgálathoz).
+     * The return value is the array of created users, so the caller
+     * can inspect them (e.g. for the busy check).
      */
     protected function fillSlotRange(
         Group $group,
@@ -207,9 +207,9 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Egyetlen esemény adott tartományra. Az EventObserver a létrehozáskor
-     * értesítést küld és auth()->user()-t olvas, ezért a hívónak
-     * bejelentkezettnek kell lennie (lásd TODO 04 tanulságai).
+     * A single event for a given range. EventObserver sends a
+     * notification on creation and reads auth()->user(), so the caller
+     * must be logged in (see the lessons of TODO 04).
      */
     protected function createEventInRange(
         Group $group,
@@ -230,8 +230,8 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Az Events\EventEdit és az Events\Modal a nap tábláját "'HHmm'" alakú
-     * kulcsokkal indexeli - az aposztrófok a kulcs részei.
+     * Events\EventEdit and Events\Modal index the day's table with keys
+     * in the "'HHmm'" shape - the apostrophes are part of the key.
      */
     protected function slotKey(string $time): string
     {
@@ -244,16 +244,16 @@ trait BuildsDomainFixtures
     }
 
     /**
-     * Ideiglenesen felülír egy környezeti változót a callback idejére.
+     * Temporarily overrides an environment variable for the duration of the callback.
      *
-     * A CheckRecaptcha és a HttpsProtocol FUTÁSIDŐBEN olvas env()-et
-     * (USE_RECAPTCHA, USE_HTTPS), nem konfigurációból - ez maga a TODO 28
-     * tárgya. A phpunit.xml <server> bejegyzéssel adja meg őket, a Laravel
-     * Env repository-ja pedig élőben olvassa a $_SERVER tömböt, tehát a
-     * bekapcsolt állapot csak így mérhető.
+     * CheckRecaptcha and HttpsProtocol read env() AT RUNTIME
+     * (USE_RECAPTCHA, USE_HTTPS), not from configuration - this is exactly the
+     * subject of TODO 28. phpunit.xml supplies them via a <server> entry, and
+     * Laravel's Env repository reads the $_SERVER array live, so the
+     * enabled state can only be measured this way.
      *
-     * A visszaállítás finally-ben történik, hogy egy elbukó assertion se
-     * hagyjon szennyezett környezetet a következő tesztnek.
+     * The restoration happens in a finally block, so that a failing assertion
+     * doesn't leave a polluted environment for the next test.
      *
      * @template T
      * @param  callable():T  $callback

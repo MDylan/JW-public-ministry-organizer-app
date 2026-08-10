@@ -6,11 +6,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * TODO 12: a telepítő útvonalai és a sentinel.
+ * TODO 12: the installer's routes and the sentinel.
  *
- * A csoport léte egyetlen fájl meglétén múlik. Ez a teszt méri, hogy a
- * SetupTestCase infrastruktúrája tényleg azt állítja elő, amit ígér - enélkül
- * az összes többi setup-teszt csak azt bizonyítaná, hogy ő maga nem fut.
+ * The group's existence hinges on a single file's presence. This test
+ * measures that SetupTestCase's infrastructure really produces what it
+ * promises - without it, all the other setup tests would only prove that
+ * they themselves run.
  */
 class SetupFlowTest extends SetupTestCase
 {
@@ -40,9 +41,9 @@ class SetupFlowTest extends SetupTestCase
 
     public function test_the_temporary_storage_is_not_the_real_one(): void
     {
-        // Az ellenpróba a FeatureTestCase oldalán van
-        // (SentinelGuardsTheInstallerTest), itt azt rögzítjük, hogy a valódi
-        // storage-hoz nem nyúltunk.
+        // The counter-check lives on the FeatureTestCase side
+        // (SentinelGuardsTheInstallerTest); here we record that we did not
+        // touch the real storage.
         $this->assertNotSame(
             base_path('storage'),
             storage_path(),
@@ -52,7 +53,7 @@ class SetupFlowTest extends SetupTestCase
     }
 
     // =========================================================================
-    // A GET oldalak
+    // The GET pages
     // =========================================================================
 
     public function test_the_welcome_page_lists_the_available_languages(): void
@@ -114,17 +115,17 @@ class SetupFlowTest extends SetupTestCase
     }
 
     // =========================================================================
-    // A telepítő lezárása
+    // Closing out the installer
     // =========================================================================
 
     public function test_the_complete_page_writes_the_sentinel(): void
     {
         $this->assertFileDoesNotExist($this->sentinelPath());
 
-        // A v1-patch D2 óta a sentinel kiírásának feltétele, hogy létezzen
-        // adminisztrátori fiók - a fájl jelentése ugyanis "a telepítés
-        // befejeződött". A feltétel nélküli kiírást az InstallerAccessTest
-        // méri, mindkét irányból.
+        // Since v1-patch D2, writing the sentinel is conditional on an
+        // administrator account existing - the file's meaning is, after all,
+        // "the installation has completed". The unconditional write is
+        // measured by InstallerAccessTest, from both directions.
         \App\Models\User::factory()->create([
             'role'  => 'mainAdmin',
             'email' => 'flow-admin@example.test',
@@ -143,21 +144,23 @@ class SetupFlowTest extends SetupTestCase
 
     public function test_the_installer_is_guarded_by_a_token_not_by_authentication(): void
     {
-        // MEGFORDÍTVA a v1-patch D2 javításával, a felhasználó jóváhagyásával.
+        // REVERSED by the v1-patch D2 fix, with the user's approval.
         //
-        // Korábban a teljes csoporton NEM volt se auth, se gate, se aláírás: a
-        // telepítési ablakban bárki végigvihette a folyamatot és létrehozhatta
-        // a mainAdmin fiókot - és bárki le is zárhatta a telepítőt egy sima
-        // GET-tel a setup.complete-re, még mielőtt a tulajdonos hozzáfért volna.
+        // Previously the whole group had NEITHER auth, NOR a gate, NOR a
+        // signature: during the installation window anyone could run through
+        // the process and create the mainAdmin account - and anyone could
+        // also lock down the installer with a plain GET to setup.complete,
+        // before the owner ever got access.
         //
-        // `auth` továbbra sincs, és ez SZÁNDÉKOS: a telepítés pontosan az a
-        // szakasz, amikor még nincs felhasználó, akihez kötni lehetne. A
-        // védelem fájlrendszer-hozzáférést bizonyíttat egy tokennel; ezt méri
-        // az InstallerAccessTest.
+        // `auth` is still absent, and this is DELIBERATE: the installation is
+        // exactly the phase where there is not yet a user to bind to. The
+        // protection proves filesystem access with a token; that is what
+        // InstallerAccessTest measures.
         $this->assertGuest();
 
-        // A leszármazott alapból feloldott állapotból indul (SetupTestCase),
-        // ezért ezek most is 200-at adnak - a kaput a másik fájl méri.
+        // The subclass starts from an unlocked state by default
+        // (SetupTestCase), so these still return 200 here - the gate itself
+        // is measured by the other file.
         foreach (['setup.welcome', 'setup.requirements', 'setup.account'] as $name) {
             $this->get(route($name))->assertStatus(200);
         }
@@ -174,7 +177,7 @@ class SetupFlowTest extends SetupTestCase
             $this->assertNotContains('auth', $middleware, "A(z) {$name} nem lehet auth mögött.");
             $this->assertNotContains('signed', $middleware, "A(z) {$name} nem lehet aláírt.");
 
-            // A gatherMiddleware() az ALIAST adja vissza, nem az osztálynevet.
+            // gatherMiddleware() returns the ALIAS, not the class name.
             if (in_array('installer', $middleware, true)) {
                 $guarded[] = $name;
             }
@@ -182,8 +185,9 @@ class SetupFlowTest extends SetupTestCase
 
         sort($guarded);
 
-        // A nyitóképernyő és a token beküldése SZÁNDÉKOSAN marad kívül: oda
-        // kell beírni a tokent. Minden más a kapun belül van.
+        // The landing screen and submitting the token DELIBERATELY stay
+        // outside: that is where the token must be entered. Everything else
+        // is behind the gate.
         $this->assertSame(
             [
                 'setup.account',

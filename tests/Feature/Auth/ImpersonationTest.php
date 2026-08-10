@@ -8,17 +8,17 @@ use Illuminate\Support\Facades\Auth;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * v1-patch H: az adminisztrátori megszemélyesítés visszaútja.
+ * v1-patch H: the return path of admin impersonation.
  *
- * A JAVÍTÁS ELŐTT a `login()` egy 12 órás aláírt URL-t gyártott az admin saját
- * azonosítójával, és a `loginBack()` csak az aláírást ellenőrizte. Az URL-ben
- * álló `{id}` semmihez nem volt kötve: nem a munkamenethez, nem a `mainAdmin`
- * szerephez. Aki megszerezte a linket - a böngészőelőzményből, egy proxy
- * naplójából, egy megosztott képernyőről -, az 12 órán át bármikor
- * visszajátszhatta, és tetszőleges felhasználói azonosítóval léphetett be.
+ * BEFORE THE FIX, `login()` generated a 12-hour signed URL containing the
+ * admin's own id, and `loginBack()` only verified the signature. The `{id}`
+ * embedded in the URL was bound to nothing: not to the session, not to the
+ * `mainAdmin` role. Whoever obtained the link - from browser history, a proxy
+ * log, a shared screen - could replay it at any time for 12 hours, and log in
+ * as any arbitrary user id.
  *
- * Az azonosító innentől kizárólag szerveroldali sessionben él, mindkét váltás
- * POST + CSRF, és a visszaút egyszer használható.
+ * From now on the id lives exclusively in the server-side session, both
+ * switches are POST + CSRF, and the return path is single-use.
  */
 class ImpersonationTest extends FeatureTestCase
 {
@@ -126,9 +126,9 @@ class ImpersonationTest extends FeatureTestCase
 
     public function test_the_identity_switch_is_not_reachable_with_a_get_request(): void
     {
-        // A KORÁBBI alak mindkét irányban GET volt. Egy GET-et böngészőelőtöltés,
-        // egy előolvasó proxy vagy egy idegen oldalról jövő navigáció is
-        // elsüthet - a POST + CSRF ezt zárja ki.
+        // The PREVIOUS shape was GET in both directions. A GET can be fired by
+        // browser prefetching, a prefetching proxy, or navigation coming from
+        // a foreign page - POST + CSRF rules this out.
         $admin = $this->mainAdmin();
         $target = $this->target();
 
@@ -143,9 +143,9 @@ class ImpersonationTest extends FeatureTestCase
 
     public function test_login_back_does_nothing_without_the_session_binding(): void
     {
-        // EZ A JAVÍTÁS LÉNYEGE. Korábban egy érvényes aláírás önmagában elég
-        // volt; most a visszaút kizárólag abból az azonosítóból dolgozik, amit
-        // EBBEN a munkamenetben tettünk el.
+        // THIS IS THE ESSENCE OF THE FIX. Previously a valid signature alone
+        // was enough; now the return path works exclusively from the id we
+        // stored IN THIS session.
         $user = $this->target('no-binding@example.test');
 
         $this->actingAs($user)
@@ -166,8 +166,8 @@ class ImpersonationTest extends FeatureTestCase
         $this->post(route('admin.loginback'));
         $this->assertSame($admin->id, auth()->id());
 
-        // Második visszalépés: a session-kulcs elfogyott, tehát nincs mit
-        // visszajátszani. Korábban ugyanaz az aláírt URL 12 órán át működött.
+        // Second step-back: the session key is used up, so there's nothing to
+        // replay. Previously the same signed URL worked for 12 hours.
         $this->post(route('admin.loginback'))->assertRedirect(route('home.home'));
         $this->assertSame($admin->id, auth()->id());
     }
@@ -181,10 +181,10 @@ class ImpersonationTest extends FeatureTestCase
         ]);
         $target = $this->target();
 
-        // Az `is-admin` gate CSAK a `mainAdmin`-t engedi (AuthServiceProvider),
-        // tehát a kapu már a controller előtt megáll. A controllerben lévő
-        // szerepellenőrzés a második réteg: ha a gate valaha tágul, a
-        // megszemélyesítés attól még nem nyílik meg.
+        // The `is-admin` gate allows ONLY `mainAdmin` (AuthServiceProvider),
+        // so the gate already stops it before the controller. The role check
+        // in the controller is the second layer: if the gate ever widens,
+        // impersonation still won't open up because of it.
         $this->actingAs($admin)
             ->withSession($this->passwordConfirmedSession())
             ->post(route('admin.users.login', ['user' => $target->id]))
@@ -196,12 +196,14 @@ class ImpersonationTest extends FeatureTestCase
 
     public function test_impersonation_cannot_be_chained(): void
     {
-        // Láncolva a második váltás felülírná az eltárolt eredeti azonosítót, és
-        // a visszaút a KÖZTES felhasználóra mutatna: az eredeti admin nem tudna
-        // visszalépni, a köztes fiók viszont igen.
+        // If chained, the second switch would overwrite the stored original
+        // id, and the return path would point to the INTERMEDIATE user: the
+        // original admin couldn't step back, but the intermediate account
+        // could.
         //
-        // A gate csak azért nem fogja meg magától, mert két főadmin is lehet -
-        // ezt a helyzetet KIZÁRÓLAG a controller őrzi.
+        // The gate doesn't catch this on its own only because there can be
+        // two main admins - this situation is guarded EXCLUSIVELY by the
+        // controller.
         $admin = $this->mainAdmin();
         $secondAdmin = $this->mainAdmin('second-admin@example.test');
         $target = $this->target();
@@ -228,7 +230,7 @@ class ImpersonationTest extends FeatureTestCase
             ->withSession($this->passwordConfirmedSession())
             ->post(route('admin.users.login', ['user' => $target->id]));
 
-        // A megszemélyesítés óta az eredeti fiók elveszítette a főadmin jogot.
+        // Since the impersonation started, the original account has lost the main-admin role.
         $admin->role = 'activated';
         $admin->save();
 
@@ -239,8 +241,8 @@ class ImpersonationTest extends FeatureTestCase
 
     public function test_password_confirmation_does_not_survive_an_identity_switch(): void
     {
-        // A `password.confirm` mögötti oldalak különben az ELŐZŐ felhasználó
-        // megerősítésével nyílnának meg az újnak.
+        // Otherwise the pages behind `password.confirm` would open for the new
+        // user using the PREVIOUS user's confirmation.
         $admin = $this->mainAdmin();
         $target = $this->target();
 

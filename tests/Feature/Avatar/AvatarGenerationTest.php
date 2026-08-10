@@ -14,41 +14,42 @@ use RecursiveIteratorIterator;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 22.1: az avatar-generálás karakterizációs készlete.
+ * TODO 22.1: the characterization suite for avatar generation.
  *
- * MIÉRT LÉTEZIK
+ * WHY THIS EXISTS
  *
- * A TODO 22 azt volt hivatott igazolni, hogy a maradék függőségeken elég
- * verziót léptetni. Egyetlen csomagra ez bizonyíthatóan nem igaz: a
- * `laravolt/avatar` telepített 4.1.7-e az `illuminate/support ^9.0`-nál
- * elfogy, tehát MÁR A PHASE 5-ÖN (Laravel 10) elhasal a resolution - és a
- * `composer.json` `^4.1` kényszere egyetlen L10+ kiadást sem enged be. Minden
- * L12/L13-képes vonal (6.1.2 és fölötte) `intervention/image ^3.4`-et vagy
- * `^4.0`-t kér, ahol a lenti mechanizmus egy darabja megszűnik létezni.
+ * TODO 22 was meant to establish that bumping versions on the remaining
+ * dependencies is enough. For a single package this is demonstrably not true:
+ * the installed 4.1.7 of `laravolt/avatar` runs out at `illuminate/support
+ * ^9.0`, so resolution already fails AT PHASE 5 (Laravel 10) - and the
+ * `composer.json` `^4.1` constraint admits no L10+ release at all. Every
+ * L12/L13-capable line (6.1.2 and above) requires `intervention/image ^3.4`
+ * or `^4.0`, where a piece of the mechanism below stops existing.
  *
- * A csomagnak EGYETLEN hívási helye van az egész projektben
- * (app/Http/Livewire/Groups/Messages.php:174-176), és a TODO 22 előtt nulla
- * teszt gyakorolta. Ez a fájl azt rögzíti, ami MA történik, hogy a Phase 5-ös
- * migráció (TODO 39.1) diffje reviewálható legyen.
+ * The package has EXACTLY ONE call site in the whole project
+ * (app/Http/Livewire/Groups/Messages.php:174-176), and before TODO 22 zero
+ * tests exercised it. This file records what happens TODAY, so the Phase 5
+ * migration's (TODO 39.1) diff can be reviewed.
  *
- * A MÉRT TÉNY, AMI A TRIPWIRE-T ELDÖNTI
+ * THE MEASURED FACT THAT DECIDES THE TRIPWIRE
  *
- * Az Intervention Image 2-ben a `stream()` NEM valódi metódus: az Image
- * osztály docblockjának `@method` sora hirdeti (Image.php:53), és a `__call()`
- * (Image.php:106) dobja tovább a Commands\StreamCommand-nak. A v4-es
- * Image.php-ban se `stream()`, se `__call()`, se a Commands namespace nincs -
- * ott `encode(EncoderInterface)` és `encodeUsingFormat(Format)` van helyette.
- * A tripwire-szekció pontosan ezt a különbséget rögzíti, mindkét irányban.
+ * In Intervention Image 2, `stream()` is NOT a real method: it is declared by
+ * the `@method` line of the Image class's docblock (Image.php:53), and
+ * `__call()` (Image.php:106) forwards it on to Commands\StreamCommand. In the
+ * v4 Image.php there is no `stream()`, no `__call()`, and no Commands
+ * namespace - instead there is `encode(EncoderInterface)` and
+ * `encodeUsingFormat(Format)`. The tripwire section records exactly this
+ * difference, in both directions.
  *
- * SZEMETELÉS
+ * LITTERING
  *
- * Az integrációs tesztek a VALÓDI `web` diszkre írnak, mert csak az bizonyítja,
- * hova kerül a fájl. Ez nem új károsítás: a `public/avatars/*` gitignore-olt
- * (.gitignore:5). Amit a teszt létrehoz, azt a tearDown() eltakarítja.
+ * The integration tests write to the REAL `web` disk, because only that
+ * proves where the file ends up. This is not new damage: `public/avatars/*`
+ * is gitignored (.gitignore:5). Whatever the test creates, tearDown() cleans up.
  */
 class AvatarGenerationTest extends FeatureTestCase
 {
-    /** A teszt által létrehozott avatar-fájlok, a `web` diszkhez relatívan. */
+    /** Avatar files created by the test, relative to the `web` disk. */
     private array $written = [];
 
     protected function tearDown(): void
@@ -64,14 +65,14 @@ class AvatarGenerationTest extends FeatureTestCase
         parent::tearDown();
     }
 
-    /** A PNG-signatúra: 89 50 4E 47 0D 0A 1A 0A. */
+    /** The PNG signature: 89 50 4E 47 0D 0A 1A 0A. */
     private function pngSignature(): string
     {
         return chr(0x89).'PNG'.chr(0x0D).chr(0x0A).chr(0x1A).chr(0x0A);
     }
 
     // =========================================================================
-    // A mechanizmus, ahogy ma működik
+    // The mechanism, as it works today
     // =========================================================================
 
     public function test_the_facade_produces_an_intervention_image_and_a_png_stream(): void
@@ -100,14 +101,14 @@ class AvatarGenerationTest extends FeatureTestCase
 
     public function test_the_configured_driver_is_gd_and_it_is_available(): void
     {
-        // A 6.x-re váltás az Intervention driver-kezelését is átírja, ezért a
-        // kiindulási állapot rögzítve: GD, nem Imagick.
+        // Switching to 6.x also rewrites the Intervention driver handling, so
+        // the starting state is recorded here: GD, not Imagick.
         $this->assertSame('gd', config('laravolt.avatar.driver'));
         $this->assertTrue(extension_loaded('gd'));
     }
 
     // =========================================================================
-    // Az integráció: a Groups\Messages komponens
+    // The integration: the Groups\Messages component
     // =========================================================================
 
     public function test_rendering_the_message_board_writes_one_png_per_author_to_the_web_disk(): void
@@ -137,9 +138,9 @@ class AvatarGenerationTest extends FeatureTestCase
         Livewire::actingAs($user)->test(Messages::class, ['group' => $group]);
         $this->assertTrue(Storage::disk('web')->exists($path));
 
-        // A Messages::render() Storage::exists() őre (Messages.php:173) az
-        // egyetlen dolog, ami visszatartja az újragenerálást. Ha elesik, ez a
-        // sentinel eltűnik.
+        // The Storage::exists() guard in Messages::render() (Messages.php:173)
+        // is the only thing holding back regeneration. If it fails, this
+        // sentinel disappears.
         Storage::disk('web')->put($path, 'SENTINEL');
 
         Livewire::actingAs($user)->test(Messages::class, ['group' => $group]);
@@ -164,21 +165,21 @@ class AvatarGenerationTest extends FeatureTestCase
 
     public function test_the_disk_root_and_the_views_url_prefix_are_a_matched_pair(): void
     {
-        // MEGFORDÍTVA a v1-patch A5 javításával.
+        // REVERSED by the v1-patch A5 fix.
         //
-        // Korábban a `web` disk gyökere a csupasz relatív 'public' volt, a
-        // nézet pedig asset('public/avatars/...')-szal címezte ugyanazt a
-        // fájlt. A kettő csak WEBKÉRÉSBEN találkozott, ahol a PHP
-        // munkakönyvtára maga a public/ könyvtár, tehát a relatív 'public'
-        // public/public/-ra oldódott - pontosan oda, ahova az URL is mutatott.
-        // Artisan, queue worker vagy teszt alatt viszont a munkakönyvtár a
-        // projekt gyökere, így ugyanaz a diszk public/-ba írt, miközben a
-        // nézet továbbra is public/public/-ból kérte. A régi .gitignore sora
-        // (`/public/public/avatars/*`) ennek a lenyomata volt.
+        // Previously the `web` disk root was the bare relative 'public', while
+        // the view addressed the same file via asset('public/avatars/...').
+        // The two only met in a WEB REQUEST, where PHP's working directory is
+        // the public/ directory itself, so the relative 'public' resolved to
+        // public/public/ - exactly where the URL pointed too. Under Artisan, a
+        // queue worker, or a test, however, the working directory is the
+        // project root, so the same disk wrote into public/, while the view
+        // still requested from public/public/. The old .gitignore line
+        // (`/public/public/avatars/*`) was the imprint of this.
         //
-        // Most a gyökér abszolút (public_path()), az URL-előtag pedig
-        // elvesztette a duplikált 'public/' szegmenst. A pár továbbra is csak
-        // EGYÜTT helyes - ezért marad ez a teszt egy fájlban a kettővel.
+        // Now the root is absolute (public_path()), and the URL prefix lost
+        // the duplicated 'public/' segment. The pair is still only correct
+        // TOGETHER - that's why this test stays in one file covering both.
         $this->assertSame(public_path(), config('filesystems.disks.web.root'));
 
         $view = file_get_contents(resource_path('views/livewire/groups/messages.blade.php'));
@@ -188,7 +189,7 @@ class AvatarGenerationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // Tripwire: amit az Intervention Image 4 elvesz - TODO 39.1 tulajdona
+    // Tripwire: what Intervention Image 4 removes - property of TODO 39.1
     // =========================================================================
 
     public function test_gap_stream_is_a_magic_method_that_intervention_image_4_removes(): void
@@ -219,9 +220,10 @@ class AvatarGenerationTest extends FeatureTestCase
 
     public function test_gap_the_declared_constraint_admits_no_laravel_10_capable_release(): void
     {
-        // A TODO 22 mérése, rögzítve. A `^4.1` felső határa 5.0.0, az első
-        // L10-képes kiadás pedig pontosan 5.0.0 - tehát a kényszer semmit nem
-        // enged be, és constraint edit kell, nem lock bump.
+        // The TODO 22 measurement, recorded. The `^4.1` upper bound is 5.0.0,
+        // and the first L10-capable release is exactly 5.0.0 - so the
+        // constraint admits nothing, and a constraint edit is needed, not a
+        // lock bump.
         $root = json_decode(file_get_contents(base_path('composer.json')), true);
 
         $this->assertSame('^4.1', $root['require']['laravolt/avatar']);
@@ -235,12 +237,12 @@ class AvatarGenerationTest extends FeatureTestCase
             'A telepített vonal a Laravel 9-nél elfogy, tehát a Phase 5-ön hasal el.'
         );
 
-        // Az intervention/image 2-es vonala az, ami a stream()-et hozza.
+        // It's the intervention/image 2.x line that brings stream().
         $this->assertSame('2.7.2', $this->lockedPackage('intervention/image')['version']);
     }
 
     // =========================================================================
-    // Segédek
+    // Helpers
     // =========================================================================
 
     private function avatarPathFor(int $userId): string
@@ -276,7 +278,7 @@ class AvatarGenerationTest extends FeatureTestCase
         $this->fail($name.' nincs a composer.lock-ban.');
     }
 
-    /** @return array<int, string> "fájl:sor" találatok a projekt saját forrásaiban. */
+    /** @return array<int, string> "file:line" hits in the project's own sources. */
     private function grepProjectSources(string $needle): array
     {
         $hits = [];

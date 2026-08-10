@@ -5,36 +5,38 @@ namespace Tests\Feature\Assets;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * A TODO 21.1 által mért kilenc hiányosság - MIND LEZÁRVA a TODO 33.8-cal.
+ * The nine gaps measured by TODO 21.1 - ALL CLOSED by TODO 33.8.
  *
- * A fájl eredetileg a hibás viselkedést rögzítette, hogy a javítás pillanatában
- * bukjon, és az a bukás legyen a reviewálható diff - ugyanaz a fegyelem, mint a
- * TODO 14 duplikált-route tripwire-jeinél és a TODO 20.1 WeatherKnownGapsTest
- * fájljánál. Ez a bukás bekövetkezett: mind a kilenc eset megfordult, és a fájl
- * most azt őrzi, hogy a rés ne nyíljon ki újra.
+ * The file originally recorded the buggy behavior, so it would fail at the
+ * moment of the fix, and that failure would be the reviewable diff - the same
+ * discipline as the TODO 14 duplicate-route tripwires and the TODO 20.1
+ * WeatherKnownGapsTest file. That failure occurred: all nine cases flipped,
+ * and the file now guards against the gap reopening.
  *
- * A név szándékosan változatlan: a git történetben így követhető, melyik állítás
- * melyik hiányosság helyére lépett.
+ * The name is deliberately unchanged: this lets the git history track which
+ * assertion took the place of which gap.
  *
- * A kilenc eset két commitban fordult meg, mert a TODO 33.8 két commitban
- * szállított: az első az alkalmazásszintű cserét vitte (hívási helyek, provider,
- * alias), a második magát a csomagot. Az első commit után az itteni öt csomag-
- * szintű eset szándékosan MÉG IGAZ VOLT - a telepített csomagot mérték, és a
- * `vendor/eusonlito` a helyén volt. Megmérni becsületesebb volt, mint feltenni.
+ * The nine cases flipped across two commits, because TODO 33.8 shipped in two
+ * commits: the first carried the application-level swap (call sites,
+ * provider, alias), the second the package itself. After the first commit,
+ * the five package-level cases here were deliberately STILL TRUE - they
+ * measured the installed package, and `vendor/eusonlito` was still in place.
+ * Measuring it was more honest than assuming it.
  */
 class AssetPipelineKnownGapsTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. A CSS-átírás élő produkciós kárt okozott
+    // 1. The CSS rewrite caused real production damage
     // =========================================================================
 
     public function test_the_embedded_icons_reach_the_browser_untouched(): void
     {
-        // A Providers/CSS.php:25 MINDEN `url(` elé beszúrta az asset-bázist és a
-        // forrásfájl könyvtárát, feltétel nélkül. Relatív útnál ez helyes volt;
-        // egy data: URI-nál értelmetlen abszolút előtagot adott, és a kép soha
-        // nem töltött be. A TODO 21 négy ilyet rögzített (a toastr ikonjait);
-        // a valódi szám 181, mert az adminlte.min.css-t senki nem nézte meg.
+        // Providers/CSS.php:25 inserted the asset base and the source file's
+        // directory in front of EVERY `url(`, unconditionally. For a relative
+        // path this was correct; for a data: URI it produced a meaningless
+        // absolute prefix, and the image never loaded. TODO 21 recorded four
+        // such cases (the toastr icons); the real number is 181, because no
+        // one ever looked at adminlte.min.css.
         $counts = [
             'dist/css/adminlte.min.css' => 177,
             'plugins/toastr/toastr.min.css' => 4,
@@ -46,42 +48,42 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
             $this->assertSame(
                 $expected,
                 preg_match_all('#url\(\s*["\']?data:#i', $contents),
-                $file.' data: URI-jainak száma elmozdult - a teszt már nem azt méri, amiért íródott.'
+                $file.' - the count of data: URIs has shifted; the test is no longer measuring what it was written for.'
             );
 
             $this->assertSame(
                 0,
                 preg_match_all('#url\(\s*["\']?https?://#i', $contents),
-                $file.' abszolút hivatkozást tartalmaz. Semmi nem írhatja át a kiszolgált CSS-t.'
+                $file.' contains an absolute reference. Nothing may rewrite the served CSS.'
             );
         }
 
-        // És a projekt semmit nem nyert az átírásból: a két saját CSS-ében
-        // nulla `url(` van, tehát nem volt mit kijavítani rajtuk.
+        // And the project gained nothing from the rewrite: its two own CSS
+        // files have zero `url(` in them, so there was nothing to fix on them.
         foreach (['css/style.css', 'css/public_style.css'] as $own) {
             $this->assertStringNotContainsString('url(', file_get_contents(public_path($own)));
         }
     }
 
     // =========================================================================
-    // 2. A csomag nem azt csinálta, aminek a neve mondta
+    // 2. The package didn't do what its name said
     // =========================================================================
 
     public function test_nothing_is_generated_so_there_is_nothing_to_minify(): void
     {
-        // A `css_minify` és a `js_minify` egyaránt `false` volt, tehát a
-        // "packer/minify" csomag ebben a projektben egy összefűző és egy
-        // időbélyeges átnevező volt, semmi más. A konfigurációja már nincs meg.
-        $this->assertNull(config('packer'), 'A config/packer.php elment.');
+        // Both `css_minify` and `js_minify` were `false`, so the
+        // "packer/minify" package in this project was a concatenator and a
+        // timestamped renamer, nothing else. Its configuration is gone.
+        $this->assertNull(config('packer'), 'config/packer.php is gone.');
         $this->assertFileDoesNotExist(base_path('config/packer.php'));
 
-        // Az egyetlen dolog, amit ténylegesen szállított, a cache busting volt.
-        // Azt most egy filemtime() hívás adja, generált fájl nélkül.
+        // The one thing it actually delivered was cache busting.
+        // That is now provided by a filemtime() call, with no generated file.
         $this->assertStringContainsString('?v=', pwbs_asset('/css/style.css'));
     }
 
     // =========================================================================
-    // 3-4. A webgyökérbe írás és a storage:link ütközése
+    // 3-4. The write into the web root and its clash with storage:link
     // =========================================================================
 
     public function test_the_two_layouts_now_reference_the_same_file_by_the_same_url(): void
@@ -89,10 +91,11 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
         $app = file_get_contents(base_path('resources/views/layouts/app.blade.php'));
         $setup = file_get_contents(base_path('resources/views/layouts/setup.blade.php'));
 
-        // Korábban ugyanaz a jQuery két KÜLÖNBÖZŐ kimeneti helyre csomagolódott
-        // (`/cache/js/jquery.js` és `/storage/cache/js/jquery.js`), tehát kétszer
-        // volt a lemezen, két URL alatt, két cache-bejegyzésben. Kimeneti hely
-        // már nincs: mindkét layout ugyanazt a forrásfájlt hivatkozza.
+        // Previously the same jQuery was packaged into two DIFFERENT output
+        // locations (`/cache/js/jquery.js` and `/storage/cache/js/jquery.js`),
+        // so it existed twice on disk, under two URLs, in two cache entries.
+        // There is no output location any more: both layouts reference the
+        // same source file.
         foreach ([$app, $setup] as $layout) {
             $this->assertStringContainsString("pwbs_asset('/plugins/jquery/jquery.min.js')", $layout);
         }
@@ -105,28 +108,29 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
 
     public function test_nothing_occupies_the_storage_symlink_path_any_more(): void
     {
-        // A Packer::checkDir() valódi könyvtárat hozott létre ott, ahová a
-        // `php artisan storage:link` a szimlinket tenné - a setup layout
-        // `/storage/cache/...` céljai miatt, a telepítővarázsló ELSŐ
-        // renderelésekor. Onnantól a parancs "The [public/storage] link already
-        // exists" hibával kihagyta a linket (a --force sem segít, mert az csak
-        // is_link() esetén töröl), és a publikus disk minden URL-je 404-et adott.
+        // Packer::checkDir() created a real directory exactly where
+        // `php artisan storage:link` would place the symlink - because of the
+        // setup layout's `/storage/cache/...` targets, on the installer
+        // wizard's FIRST render. From then on the command skipped the link
+        // with a "The [public/storage] link already exists" error (--force
+        // doesn't help either, because it only deletes for is_link()), and
+        // every URL on the public disk gave a 404.
         $this->assertStringNotContainsString(
             '/storage/',
             file_get_contents(base_path('resources/views/layouts/setup.blade.php')),
-            'A setup layout már semmit nem irányít a szimlink helyére.'
+            'The setup layout no longer directs anything to the symlink location.'
         );
 
-        // A teljes suite renderel setup-oldalakat (tests/Feature/Setup/), tehát
-        // ha bármi újra odaírna, ez a könyvtár megjelenne a futás alatt.
+        // The full suite renders setup pages (tests/Feature/Setup/), so if
+        // anything writes there again, this directory would appear during the run.
         $this->assertDirectoryDoesNotExist(
             public_path('storage/cache'),
-            'Valami újra a webgyökér storage-útvonalára ír.'
+            'Something is writing to the web root storage path again.'
         );
     }
 
     // =========================================================================
-    // 5. A kilenc .gitignore sor, ami csak a kimenetet fékezte
+    // 5. The nine .gitignore lines that only throttled the output
     // =========================================================================
 
     public function test_the_nine_gitignore_lines_are_gone(): void
@@ -142,7 +146,7 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
             'public/plugins/toastr/*-cache_toastr.js',
             'public/plugins/summernote/*-cache_summernote-bs4.min.js',
             '/public/cache',
-            // A kilencedik elgépelt volt: ilyen könyvtár nincs és sosem volt.
+            // The ninth one was a typo: no such directory exists or ever existed.
             '/public/storages/cache/*',
         ];
 
@@ -150,16 +154,16 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
             $this->assertNotContains(
                 $line,
                 $gitignore,
-                'Ez a sor kizárólag azért létezett, mert a Packer kérés közben írt a webgyökérbe.'
+                'This line existed solely because the Packer wrote into the web root mid-request.'
             );
         }
 
-        // A tizedik marad: az a szimlinké, nem a csomagé.
+        // The tenth remains: that one belongs to the symlink, not to the package.
         $this->assertContains('/public/storage', $gitignore);
     }
 
     // =========================================================================
-    // 6-7. A halott függőség és a halott provider
+    // 6-7. The dead dependency and the dead provider
     // =========================================================================
 
     public function test_neither_the_packer_nor_imagecow_is_installed_any_more(): void
@@ -170,14 +174,15 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
         foreach (['eusonlito/laravel-packer', 'imagecow/imagecow'] as $package) {
             $this->assertNull(
                 collect($lock['packages'])->firstWhere('name', $package),
-                $package.' még benne van a lockban.'
+                $package.' is still present in the lock.'
             );
 
             $this->assertArrayNotHasKey($package, $json['require']);
         }
 
-        // Az imagecow-t EGYETLEN csomag húzta be, és az is csak a soha nem hívott
-        // Packer::img() miatt - vagyis egy függőség egy holt API kedvéért.
+        // Imagecow was pulled in by a SINGLE package, and even that only
+        // because of the never-called Packer::img() - i.e., a dependency for
+        // the sake of a dead API.
         $this->assertSame(
             [],
             collect($lock['packages'])
@@ -195,54 +200,56 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
     {
         $config = file_get_contents(base_path('config/app.php'));
 
-        // A TODO 25 második pontja ezt a két sztring-literált `::class`-ra
-        // cserélte volna. A TODO 25 szándékosan nem nyúlt hozzájuk, mert a 33.8
-        // úgyis törli őket - így senki nem szerkesztette kétszer ugyanazt a két
-        // sort, és nem kellett reviewálni egy változtatást útban a törlés felé.
+        // TODO 25's second point would have replaced these two string
+        // literals with `::class`. TODO 25 deliberately left them alone,
+        // because 33.8 was going to delete them anyway - so no one edited the
+        // same two lines twice, and there was no need to review a change on
+        // its way to deletion.
         $this->assertStringNotContainsString('Eusonlito', $config);
 
         $this->assertNotContains('Eusonlito\LaravelPacker\PackerServiceProvider', config('app.providers'));
         $this->assertArrayNotHasKey('Packer', config('app.aliases'));
 
-        // A provider a Laravel 5.8 óta halott `protected $defer = true;` alakot
-        // használta `provides()`-szal, DeferrableProvider nélkül - tehát a
-        // halasztása hat major verzión át hatástalan volt, és a csomag minden
-        // kérésnél eagerly regisztrálódott. Az osztály már nincs meg.
+        // Since Laravel 5.8 the provider used the dead `protected $defer = true;`
+        // form together with `provides()`, without DeferrableProvider - so its
+        // deferral had been ineffective across six major versions, and the
+        // package registered eagerly on every request. The class is gone now.
         $this->assertFalse(class_exists('Eusonlito\LaravelPacker\PackerServiceProvider'));
         $this->assertFalse(class_exists('Eusonlito\LaravelPacker\Packer'));
     }
 
     // =========================================================================
-    // 8-9. TODO 52 / 53 - a Phase 7 premisszájának korrekciója
+    // 8-9. TODO 52 / 53 - correction of Phase 7's premise
     // =========================================================================
 
     public function test_gap_the_mix_pipeline_is_dead_and_the_packer_is_the_only_asset_pipeline(): void
     {
-        // A roadmap Phase 7-e szerint a Vite-migráció azért kötelező, mert a Mix 6
-        // nem épül a Node 24-en, és a TODO 52 szerint `mix()` helpereket kell
-        // `@vite`-ra cserélni a két layoutban. Egyik állítás sem áll.
+        // According to the roadmap's Phase 7, the Vite migration is mandatory
+        // because Mix 6 does not build on Node 24, and per TODO 52, `mix()`
+        // helpers need to be replaced with `@vite` in the two layouts.
+        // Neither statement holds.
         $this->assertSame(
             [],
             $this->grepProjectSources('mix('),
-            'NULLA `mix()` hívás van a projektben - se a layoutokban, se máshol.'
+            'There are ZERO `mix()` calls in the project - not in the layouts, not anywhere else.'
         );
 
-        $this->assertSame(0, filesize(base_path('resources/css/app.css')), 'A CSS-belépési pont üres.');
+        $this->assertSame(0, filesize(base_path('resources/css/app.css')), 'The CSS entry point is empty.');
         $this->assertSame(
             ["require('./bootstrap');"],
             array_map('trim', file(base_path('resources/js/app.js'))),
-            'A JS-belépési pont az érintetlen Laravel-alapértelmezés.'
+            'The JS entry point is the untouched Laravel default.'
         );
 
-        // És a Mix kimenetei nem is léteznek, tehát a build sosem futott le itt.
+        // And the Mix outputs don't even exist, so the build never ran here.
         $this->assertFileDoesNotExist(base_path('public/js/app.js'));
         $this->assertFileDoesNotExist(base_path('public/css/app.css'));
 
-        // A TODO 21 sorrendi korrekciója szerint a Vite NEM tehette feleslegessé
-        // a Packert, mert az volt az alkalmazás egyetlen működő asset-pipeline-ja,
-        // és a TODO 52 a 16 hívási helye közül egyet sem érintett. A 33.8 után a
-        // sorrend megfordult: a TODO 52-nek már `pwbs_asset()` tageket kell
-        // `@vite`-ra cserélnie, nem `Packer::` hívásokat.
+        // Per TODO 21's ordering correction, Vite could NOT have made the
+        // Packer redundant, because the Packer was the application's only
+        // working asset pipeline, and TODO 52 didn't touch a single one of
+        // its 16 call sites. After TODO 33.8 the order reversed: TODO 52 now
+        // needs to replace `pwbs_asset()` tags with `@vite`, not `Packer::` calls.
         $this->assertSame([], $this->grepProjectSources('Packer::'));
 
         $callSites = array_values(array_filter(
@@ -253,24 +260,25 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
         $this->assertCount(
             21,
             $callSites,
-            'app.blade.php 12 + setup.blade.php 8 + poster-edit-modal.blade.php 1. A 16 hívásból '
-            .'21 tag lett, mert a három többfájlos hívás forrásonként külön tagre bomlott.'
+            'app.blade.php 12 + setup.blade.php 8 + poster-edit-modal.blade.php 1. The 16 calls became '
+            .'21 tags because the three multi-file calls each split into a separate tag per source.'
         );
 
-        // A maradék találat maga a definíció - szűrés nélkül 22 jönne, mert a
-        // helper forrása is tartalmazza a keresett szöveget. Sorszámra nem
-        // állítunk semmit: az a helpers.php bármely fölötte lévő módosításától
-        // elmozdulna, és nem az a kérdés, hányadik sorban van.
+        // The remaining hit is the definition itself - without filtering it
+        // would be 22, because the helper's source also contains the
+        // searched-for text. We assert nothing about the line number: that
+        // would shift with any modification above it in helpers.php, and the
+        // question isn't which line it's on.
         foreach (array_diff($this->grepProjectSources('pwbs_asset('), $callSites) as $hit) {
             $this->assertStringStartsWith('app'.DIRECTORY_SEPARATOR.'Helpers', $hit);
         }
     }
 
     // =========================================================================
-    // Segédek
+    // Helpers
     // =========================================================================
 
-    /** @return list<string> a találatok `fájl:sor` alakban */
+    /** @return list<string> the hits in `file:line` form */
     private function grepProjectSources(string $needle): array
     {
         $hits = [];

@@ -5,19 +5,20 @@ namespace Tests\Feature\Setup;
 use Illuminate\Support\Facades\DB;
 
 /**
- * TODO 12: a telepítő adatbázis-lépése - és a Laravel 11-es blokkoló.
+ * TODO 12: the installer's database step - and the Laravel 11 blocker.
  *
- * A sikerág SZÁNDÉKOSAN nincs tesztelve: a configure() migrate:fresh-t futtat a
- * megadott kapcsolaton, és .env-et ír. Egy elhibázott teszt tehát adatbázist
- * ürítene. Ami viszont mérhető - és pont ez a legértékesebb -, az a
- * databaseHasData() ág: ez hívja a getDoctrineSchemaManager()-t, ami a
- * Laravel 11-ben megszűnik (roadmap TODO 66).
+ * The success branch is DELIBERATELY not tested: configure() runs migrate:fresh
+ * on the given connection and writes .env. A mistaken test would therefore
+ * wipe a database. What IS measurable - and this is exactly the most valuable
+ * part - is the databaseHasData() branch: it calls getDoctrineSchemaManager(),
+ * which goes away in Laravel 11 (roadmap TODO 66).
  */
 class SetupDatabaseTest extends SetupTestCase
 {
     /**
-     * A futó teszt-adatbázis adatai: ez garantáltan létezik és tele van
-     * táblákkal, tehát a "van már benne adat" ág biztosan lefut rajta.
+     * The credentials of the running test database: this is guaranteed to
+     * exist and to be full of tables, so the "already has data" branch is
+     * guaranteed to run on it.
      */
     private function existingDatabaseCredentials(): array
     {
@@ -33,8 +34,8 @@ class SetupDatabaseTest extends SetupTestCase
     }
 
     /**
-     * Elérhetetlen kapcsolat: az 1-es port azonnal elutasít, tehát nincs
-     * hosszú időtúllépés - és semmiképp nem érhet el létező adatbázist.
+     * An unreachable connection: port 1 rejects immediately, so there is no
+     * long timeout - and it can under no circumstances reach an existing database.
      */
     private function unreachableCredentials(): array
     {
@@ -48,7 +49,7 @@ class SetupDatabaseTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 1. Validáció
+    // 1. Validation
     // =========================================================================
 
     public function test_the_required_fields_are_validated(): void
@@ -67,8 +68,8 @@ class SetupDatabaseTest extends SetupTestCase
 
     public function test_an_empty_password_is_accepted_by_the_validator(): void
     {
-        // A db_password nullable - a helyi fejlesztői MySQL-ek jelszó nélküli
-        // root felhasználója miatt ez tudatos döntés.
+        // db_password is nullable - this is a deliberate decision, because of
+        // local development MySQL instances' passwordless root user.
         $this->post(route('setup.save-database'), array_merge(
             $this->existingDatabaseCredentials(),
             ['db_password' => '']
@@ -76,14 +77,14 @@ class SetupDatabaseTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 2. A meglévő adat védelme - itt fut a getDoctrineSchemaManager()
+    // 2. Protection of existing data - this is where getDoctrineSchemaManager() runs
     // =========================================================================
 
     public function test_an_existing_database_is_not_overwritten_without_consent(): void
     {
-        // A databaseHasData() a doctrine/dbal séma-managerén keresztül listázza
-        // a táblákat. Ha talál bármit, a configure() MIGRÁCIÓ NÉLKÜL fordul
-        // vissza - ezért biztonságos ezt a valódi teszt-adatbázison mérni.
+        // databaseHasData() lists the tables through doctrine/dbal's schema
+        // manager. If it finds anything, configure() turns back WITHOUT
+        // MIGRATING - which is why it is safe to measure this on the real test database.
         $response = $this->post(
             route('setup.save-database'),
             $this->existingDatabaseCredentials()
@@ -93,7 +94,7 @@ class SetupDatabaseTest extends SetupTestCase
         $response->assertSessionHas('data_present', true);
         $response->assertSessionHas('error_message', trans('setup.database.data_present'));
 
-        // Ellenőrzés, hogy tényleg nem futott migráció: a tábláink megvannak.
+        // Check that no migration actually ran: our tables are still there.
         $this->assertNotEmpty(
             DB::select('SHOW TABLES LIKE "users"'),
             'A users tábla nem tűnhetett el.'
@@ -102,24 +103,24 @@ class SetupDatabaseTest extends SetupTestCase
 
     public function test_the_doctrine_schema_manager_is_still_reachable_on_this_version(): void
     {
-        // Explicit, hogy a Phase 8-ban EZ a hívás fog eltűnni: a Laravel 11
-        // kidobja a doctrine/dbal integrációt, vele a getDoctrineSchemaManager()
-        // metódust is. Ez a teszt a lecserélés pillanatában fog megbukni,
-        // pontosan ott, ahol kell.
+        // Explicit note that in Phase 8 THIS call is the one that will disappear:
+        // Laravel 11 drops the doctrine/dbal integration, and with it the
+        // getDoctrineSchemaManager() method. This test will fail at the moment
+        // of the replacement, exactly where it should.
         $tables = DB::connection()->getDoctrineSchemaManager()->listTableNames();
 
         $this->assertContains('users', $tables);
     }
 
     // =========================================================================
-    // 3. A hibaág
+    // 3. The error branch
     // =========================================================================
 
     public function test_an_unreachable_database_reports_the_error_and_returns(): void
     {
-        // Elérhetetlen kapcsolatnál a databaseHasData() PDOException-t nyel és
-        // false-t ad, tehát a folyamat továbbmegy a migrációra - ami elszáll,
-        // és a catch ág flash-eli a hibát.
+        // With an unreachable connection, databaseHasData() swallows the
+        // PDOException and returns false, so the process moves on to the
+        // migration - which fails, and the catch branch flashes the error.
         $response = $this->post(route('setup.save-database'), array_merge(
             $this->unreachableCredentials(),
             ['overwrite_data' => '1']
@@ -135,7 +136,7 @@ class SetupDatabaseTest extends SetupTestCase
 
     public function test_the_failed_attempt_does_not_advance_the_wizard(): void
     {
-        // A sikeres ág a setup.mail-re visz; a hibás nem mehet tovább.
+        // The success branch leads to setup.mail; the failing one must not advance.
         $response = $this->post(route('setup.save-database'), array_merge(
             $this->unreachableCredentials(),
             ['overwrite_data' => '1']

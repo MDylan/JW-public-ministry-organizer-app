@@ -10,29 +10,32 @@ use Tests\Concerns\BuildsDomainFixtures;
 use Tests\TestCase;
 
 /**
- * TODO 29: a `$dates` property helyett `$casts`.
+ * TODO 29: `$casts` instead of the `$dates` property.
  *
- * MIÉRT KELL EZ
+ * WHY THIS IS NEEDED
  *
- * `protected $dates` a Laravel 10-ben megszűnt - a `Model::getDates()` és a
- * property is. Két modell használja: `Group` (`['deleted_at']`) és `GroupUser`
- * (`['created_at','updated_at','deleted_at']`). Az átírás önmagában triviális,
- * a kérdés az, hogy VISELKEDÉSBEN azonos-e, és arra eddig semmi nem állított.
+ * `protected $dates` was removed in Laravel 10 - both `Model::getDates()` and
+ * the property itself. Two models use it: `Group` (`['deleted_at']`) and
+ * `GroupUser` (`['created_at','updated_at','deleted_at']`). The rewrite
+ * itself is trivial; the question is whether it is BEHAVIORALLY identical,
+ * and nothing has asserted that so far.
  *
- * A két eset nem szimmetrikus:
+ * The two cases are not symmetric:
  *
- *  - `Group`-nak nincs `$casts` tömbje, és a `deleted_at`-et a `SoftDeletes`
- *    trait amúgy is castolja (`initializeSoftDeletes()` beírja a `$casts`-ba,
- *    ha nincs ott). A `$dates` sor ott tehát eleve redundáns volt.
- *  - `GroupUser` egyedi `Pivot`, `SoftDeletes`-szel és `$incrementing = true`-val,
- *    és MÁR VAN `$casts` tömbje (`signs`, `note`) - ez tehát összeolvasztás.
- *    A timestamp-kezelése ráadásul az `AsPivot`-ból jön, ami a `$timestamps`
- *    értékét a betöltött attribútumokból állítja (`AsPivot.php:44,77`), nem
- *    fixen igazra. Emiatt nem magától értetődő, hogy a `created_at` /
- *    `updated_at` dátumként jön vissza - ezt itt mérjük, nem feltételezzük.
+ *  - `Group` has no `$casts` array, and the `SoftDeletes` trait casts
+ *    `deleted_at` anyway (`initializeSoftDeletes()` writes it into `$casts`
+ *    if it's not already there). The `$dates` line there was thus already
+ *    redundant to begin with.
+ *  - `GroupUser` is a custom `Pivot`, with `SoftDeletes` and
+ *    `$incrementing = true`, and ALREADY HAS a `$casts` array (`signs`,
+ *    `note`) - so this is a merge. Its timestamp handling, moreover, comes
+ *    from `AsPivot`, which sets the value of `$timestamps` from the loaded
+ *    attributes (`AsPivot.php:44,77`), not fixed to true. Because of this it
+ *    is not self-evident that `created_at` / `updated_at` come back as
+ *    dates - we measure that here, not assume it.
  *
- * Ez a fájl a csere ELŐTT lett zöld, és utána is zöldnek kell maradnia. Ha
- * bármelyik esete elfordul, az valódi viselkedésváltozás.
+ * This file went green BEFORE the swap, and must stay green after it too. If
+ * any of its cases flips, that is a real behavior change.
  */
 class DateCastingTest extends TestCase
 {
@@ -57,7 +60,7 @@ class DateCastingTest extends TestCase
 
         $fresh = GroupUser::findOrFail($pivot->id);
 
-        $this->assertInstanceOf(Carbon::class, $fresh->created_at, 'A Pivot a $timestamps értékét az attribútumokból veszi - ez a sor méri, hogy a created_at tényleg dátum.');
+        $this->assertInstanceOf(Carbon::class, $fresh->created_at, 'The Pivot derives the value of $timestamps from the attributes - this line measures that created_at is really a date.');
         $this->assertInstanceOf(Carbon::class, $fresh->updated_at);
     }
 
@@ -74,11 +77,11 @@ class DateCastingTest extends TestCase
     }
 
     /**
-     * A `GroupUser` `$casts` tömbje nem csak dátumokat tartalmaz: a `note`
-     * `encrypted`, a `signs` `array`. A TODO 13 körjárati tesztjei ezeket
-     * külön fedik, de ha az összeolvasztás elírja a tömböt, az itt is
-     * látszódjon - egy elveszett `encrypted` cast titkosítatlan adatot
-     * jelentene az adatbázisban.
+     * The `GroupUser` `$casts` array does not contain only dates: `note` is
+     * `encrypted`, `signs` is `array`. TODO 13's round-trip tests cover these
+     * separately, but if the merge mangles the array, that should show up
+     * here too - a lost `encrypted` cast would mean unencrypted data in the
+     * database.
      */
     public function test_the_other_group_user_casts_survive_alongside_the_dates(): void
     {
@@ -95,20 +98,20 @@ class DateCastingTest extends TestCase
         $this->assertSame(['a', 'b'], $fresh->signs);
 
         $raw = $this->getConnection()->table('group_user')->where('id', $pivot->id)->value('note');
-        $this->assertNotSame('titkos megjegyzés', $raw, 'A note oszlopnak titkosítva kell az adatbázisban lennie.');
+        $this->assertNotSame('titkos megjegyzés', $raw, 'The note column must be encrypted in the database.');
     }
 
     /**
-     * Ez a property az, ami a Laravel 10-ben elesne. A teszt nem a
-     * viselkedést méri, hanem azt, hogy a migráció megtörtént - és hogy senki
-     * ne tegye vissza.
+     * This is the property that would break under Laravel 10. The test does
+     * not measure behavior, but that the migration happened - and that no
+     * one puts it back.
      *
-     * Reflectionnel, nem a forrásfájlban keresve: az első változat
-     * `assertStringNotContainsString('protected $dates', ...)` volt, és az
-     * illeszkedett a csere MELLÉ írt magyarázó kommentre, tehát a javítás után
-     * is bukott. A deklaráló osztály lekérdezése azt mondja meg, amit tudni
-     * akarunk - a `$dates` a `Model` ősön Laravel 8-ban még létezik, csak
-     * ezek a modellek nem deklarálhatják felül.
+     * Via Reflection, not by searching the source file: the first version was
+     * `assertStringNotContainsString('protected $dates', ...)`, and it
+     * matched an explanatory comment written ALONGSIDE the swap, so it still
+     * failed after the fix. Querying the declaring class tells us what we
+     * want to know - `$dates` still exists on the `Model` ancestor in
+     * Laravel 8, it's just that these models must not declare it again.
      */
     public function test_neither_model_declares_the_removed_dates_property(): void
     {
@@ -122,7 +125,7 @@ class DateCastingTest extends TestCase
             $this->assertSame(
                 [],
                 $ownDeclarations,
-                $model.' még deklarálja a $dates propertyt, amit a Laravel 10 eltávolított.'
+                $model.' still declares the $dates property, which Laravel 10 removed.'
             );
         }
     }

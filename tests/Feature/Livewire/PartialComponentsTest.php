@@ -39,12 +39,13 @@ class PartialComponentsTest extends FeatureTestCase
         $this->attachUserToGroup($this->member, $this->group);
         $this->actingAs($this->member);
 
-        // A SideMenu nézete a $sidemenu változóra épül, amit nem a komponens
-        // állít elő, hanem a SetLocale middleware oszt meg View::share()-rel
-        // (SetLocale.php:76). A Livewire komponensteszt nem fut át a
-        // middleware-en, ezért itt pótoljuk. Ez az implicit függőség önmagában
-        // is kockázat: a Laravel 11 skeleton-átállásnál a middleware
-        // áthelyezésekor könnyen elveszhet. Lásd: roadmap TODO 07 és TODO 56.
+        // SideMenu's view relies on the $sidemenu variable, which is not
+        // produced by the component, but shared by the SetLocale middleware
+        // via View::share() (SetLocale.php:76). The Livewire component test
+        // does not run through the middleware, so we supply it here. This
+        // implicit dependency is itself a risk: it can easily get lost when
+        // the middleware is relocated during the Laravel 11 skeleton
+        // transition. See: roadmap TODO 07 and TODO 56.
         View::share('sidemenu', StaticPage::where('position', '!=', 'hidden')->get());
     }
 
@@ -122,8 +123,8 @@ class PartialComponentsTest extends FeatureTestCase
 
     public function test_side_menu_normalises_the_request_path_for_nested_routes(): void
     {
-        // A mount a calendar/* és groups/* útvonalakat a gyökérre képezi,
-        // hogy a menüpont kiemelése működjön almenükben is.
+        // mount() maps the calendar/* and groups/* routes to the root, so
+        // that menu item highlighting also works on sub-menus.
         Livewire::actingAs($this->member)
             ->withQueryParams([])
             ->test(SideMenu::class)
@@ -136,8 +137,8 @@ class PartialComponentsTest extends FeatureTestCase
 
     public function test_side_menu_responds_to_the_refresh_event(): void
     {
-        // Ez a Livewire 3 migráció szempontjából lényeges: a partials
-        // 'refresh' listenerén keresztül frissülnek (TODO 44).
+        // This matters for the Livewire 3 migration: the partials update via
+        // their 'refresh' listener (TODO 44).
         Livewire::actingAs($this->member)
             ->test(SideMenu::class)
             ->emit('refresh')
@@ -196,8 +197,8 @@ class PartialComponentsTest extends FeatureTestCase
 
     public function test_events_bar_ignores_calendars_outside_the_system_list(): void
     {
-        // Csak a config('events.calendars') listán szereplő naptárak
-        // engedélyezettek, tetszőleges kulcs nem generál linket.
+        // Only the calendars listed in config('events.calendars') are
+        // allowed; an arbitrary key does not generate a link.
         $this->member->update(['calendars' => ['valamiIsmeretlen' => true]]);
         $event = $this->createEvent(now()->addDay()->toDateString());
 

@@ -14,19 +14,21 @@ use Tests\Feature\FeatureTestCase;
 /**
  * TODO 19 / 19.1: the contract of the pending e-mail address flow.
  *
- * A csomagnak NULLA tesztje volt ebben a projektben. A 983-as szuitéből
- * egyetlen eset érintette közvetve (NotificationTriggerRegressionTest), plusz a
- * route-fixture egy sora. Emiatt a TODO 19 három opciójának (fork / in-house
- * csere / várakozás az upstreamre) nem volt elfogadási kritériuma - ez a fájl az.
+ * The package had ZERO tests in this project. Of the 983-case suite, a single
+ * case touched it indirectly (NotificationTriggerRegressionTest), plus one line
+ * of the route fixture. Because of this, none of TODO 19's three options (fork /
+ * in-house replacement / waiting on upstream) had an acceptance criterion - this
+ * file is that criterion.
  *
- * A tesztek a MAI viselkedést rögzítik, a csomaggal a helyén. Bármely opció
- * végrehajtása után ugyanezeknek zöldnek kell maradniuk; ami elmozdulhat, az a
- * PendingEmailKnownGapsTest-ben áll, külön, szándékosan.
+ * The tests pin TODAY's behaviour, with the package in place. After any of the
+ * options is carried out, these must stay green; what may shift lives in
+ * PendingEmailKnownGapsTest, separately, deliberately.
  *
- * Egy mérés, ami a fájl egészét meghatározza: mindkét Mailable ShouldQueue,
- * ezért Mail::fake() mellett NEM assertSent(), hanem assertQueued() fog rájuk.
- * A queue driver a tesztekben `sync`, tehát élesben ugyanabban a kérésben
- * mennek ki, de a fake már a sorbatételnél elkapja őket.
+ * One measurement that shapes the whole file: both Mailables are ShouldQueue,
+ * so alongside Mail::fake() they get asserted with assertQueued(), NOT
+ * assertSent(). The queue driver in the tests is `sync`, so in production they
+ * go out within the same request, but the fake already intercepts them at
+ * queueing time.
  */
 class PendingEmailFlowTest extends FeatureTestCase
 {
@@ -41,7 +43,7 @@ class PendingEmailFlowTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Amit a newEmail() ír
+    // 1. What newEmail() writes
     // =========================================================================
 
     public function test_new_email_creates_a_pending_row_and_leaves_the_user_email_untouched(): void
@@ -128,7 +130,7 @@ class PendingEmailFlowTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A profiloldali útvonal - ez az EGYETLEN newEmail() hívási hely
+    // 2. The profile-page route - this is the ONLY newEmail() call site
     // =========================================================================
 
     public function test_the_profile_update_creates_the_pending_row_and_notifies_the_old_address(): void
@@ -152,8 +154,8 @@ class PendingEmailFlowTest extends FeatureTestCase
         $this->assertCount(1, $rows);
         $this->assertSame('requested@example.test', $rows[0]->email);
 
-        // A figyelmeztetés a RÉGI címre megy, hogy egy eltulajdonított fiók
-        // tulajdonosa értesüljön róla. UpdateUserProfileInformation.php:53.
+        // The warning goes to the OLD address, so that the owner of a hijacked
+        // account gets notified. UpdateUserProfileInformation.php:53.
         Notification::assertSentTo($user->fresh(), UserEmailChangedNotification::class);
     }
 
@@ -178,13 +180,14 @@ class PendingEmailFlowTest extends FeatureTestCase
         $this->assertSame('stays@example.test', $fresh->email);
         $this->assertSame('Renamed User', $fresh->name, 'A többi mező viszont azonnal mentődik.');
 
-        // A kért cím nem tűnik el, csak várakozik - enélkül az állítás akkor is
-        // zöld lenne, ha a newEmail() hívás egyszerűen kikerülne a kódból.
+        // The requested address does not disappear, it just waits - without this
+        // the assertion would stay green even if the newEmail() call were simply
+        // removed from the code.
         $this->assertSame('not-yet@example.test', $fresh->getPendingEmail());
     }
 
     // =========================================================================
-    // 3. getPendingEmail() és a két nézet, ami használja
+    // 3. getPendingEmail() and the two views that use it
     // =========================================================================
 
     public function test_get_pending_email_returns_the_address_and_null_when_there_is_none(): void
@@ -220,8 +223,9 @@ class PendingEmailFlowTest extends FeatureTestCase
         $user = $this->createUser(['email' => 'banner@example.test']);
         $user->newEmail('banner-pending@example.test');
 
-        // layouts/app.blade.php:45 - a sávot a `!request()->routeIs('user.profile')`
-        // feltétel zárja ki a profiloldalon, ahol a badge áll helyette.
+        // layouts/app.blade.php:45 - the banner is excluded on the profile page by
+        // the `!request()->routeIs('user.profile')` condition, where the badge stands
+        // in its place.
         $this->actingAs($user)
             ->get(route('home.home'))
             ->assertStatus(200)
@@ -229,7 +233,7 @@ class PendingEmailFlowTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Újraküldés
+    // 4. Resend
     // =========================================================================
 
     public function test_resend_sends_a_fresh_mail_and_rotates_the_token(): void

@@ -10,16 +10,16 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.2: a csoportlétrehozás jogosultsági határai.
+ * TODO 07.2: the authorization boundaries of group creation.
  *
- * A LivewireComponentInteractionTest:114 lefedi a happy path-et (a
- * groupCreator létrehoz egy csoportot és admin lesz benne), a köré épülő
- * jogosultsági határok viszont fedetlenek: a createGroup() abort(403)-ja
- * sosem fut le tesztben, és a name validáció sincs mérve.
+ * LivewireComponentInteractionTest:114 covers the happy path (the
+ * groupCreator creates a group and becomes its admin), but the authorization
+ * boundaries built around it are uncovered: createGroup()'s abort(403)
+ * never runs in a test, and the name validation is not measured either.
  *
- * A requestGroupCreatorPrivilege() validációját a TODO 07 már lefedte
- * (tests/Feature/Livewire/ListGroupsTest.php:131-177); itt a levél
- * tartalmát rögzítjük, ami eddig kimaradt.
+ * TODO 07 already covered the validation of requestGroupCreatorPrivilege()
+ * (tests/Feature/Livewire/ListGroupsTest.php:131-177); here we record the
+ * content of the email, which was missing until now.
  */
 class GroupCreationTest extends FeatureTestCase
 {
@@ -32,15 +32,15 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A gate mint belépési feltétel
+    // 1. The gate as an entry condition
     // =========================================================================
 
     public function test_a_user_without_the_gate_cannot_create_a_group_even_by_calling_the_component_directly(): void
     {
-        // A nézet elrejti a gombot a @can('is-groupcreator') mögé, de a
-        // Livewire metódus a hálózatról közvetlenül is hívható - ezért van
-        // a createGroup()-ban saját Gate::allows ellenőrzés (:204-206).
-        // Ez az ág ma egyáltalán nem fut le tesztben.
+        // The view hides the button behind @can('is-groupcreator'), but the
+        // Livewire method can also be called directly over the network - that's
+        // why createGroup() has its own Gate::allows check (:204-206).
+        // This branch currently doesn't run in any test at all.
         $user = $this->createUser(['role' => 'activated', 'email' => 'gc-denied@example.test']);
 
         $this->createAs($user, 'Tiltott csoport')->assertForbidden();
@@ -49,9 +49,9 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     /**
-     * A groups.name oszlop encrypted cast alatt van, ezért az
-     * assertDatabaseHas(['name' => ...]) sosem talál egyezést - a táblában
-     * a titkosított sztring áll. A modellen keresztül kell olvasni.
+     * The groups.name column is under an encrypted cast, so
+     * assertDatabaseHas(['name' => ...]) never finds a match - the table
+     * holds the encrypted string. It must be read through the model.
      */
     private function lastGroupOf(User $user): Group
     {
@@ -67,8 +67,8 @@ class GroupCreationTest extends FeatureTestCase
 
     public function test_a_translator_can_create_a_group(): void
     {
-        // Az is-groupcreator gate harmadik ága (AuthServiceProvider.php:38).
-        // A szerep neve fordítási jogot sugall, mégis csoportot is létrehozhat.
+        // The third branch of the is-groupcreator gate (AuthServiceProvider.php:38).
+        // The role's name suggests a translation privilege, yet it can also create a group.
         $translator = $this->createUser(['role' => 'translator', 'email' => 'gc-translator@example.test']);
 
         $this->createAs($translator, 'Fordítói csoport')
@@ -88,7 +88,7 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A name validáció
+    // 2. The name validation
     // =========================================================================
 
     public function test_the_group_name_is_required(): void
@@ -120,10 +120,10 @@ class GroupCreationTest extends FeatureTestCase
 
     public function test_duplicate_group_names_are_allowed(): void
     {
-        // A validátor nem ír elő egyediséget (:208-210), és a name oszlop
-        // encrypted, tehát adatbázis-szintű unique index sem lehet rajta.
-        // Két azonos nevű csoport tehát megengedett - rögzítjük, mert ez
-        // könnyen tűnhet hibának egy későbbi olvasónak.
+        // The validator does not require uniqueness (:208-210), and the name
+        // column is encrypted, so a database-level unique index isn't possible
+        // on it either. Two identically named groups are therefore allowed - we
+        // record this because it can easily look like a bug to a later reader.
         $creator = $this->createUser(['role' => 'groupCreator', 'email' => 'gc-dup@example.test']);
 
         $this->createAs($creator, 'Azonos név')->assertHasNoErrors();
@@ -133,14 +133,14 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A létrehozás mellékhatásai
+    // 3. The side effects of creation
     // =========================================================================
 
     public function test_the_creator_becomes_an_accepted_admin_and_only_the_name_is_taken_from_the_state(): void
     {
-        // A validátor csak a name-et engedi át, tehát a state többi kulcsa
-        // (bármit is küld a kliens) nem kerül a groups táblába - a csoport
-        // a migrációk alapértékeivel jön létre.
+        // The validator only lets name through, so the rest of the state's
+        // keys (whatever the client sends) do not make it into the groups
+        // table - the group is created with the migrations' defaults.
         $creator = $this->createUser(['role' => 'groupCreator', 'email' => 'gc-defaults@example.test']);
 
         Livewire::actingAs($creator)
@@ -164,9 +164,9 @@ class GroupCreationTest extends FeatureTestCase
 
     public function test_the_new_group_makes_its_creator_a_group_servant_and_group_admin(): void
     {
-        // A létrehozás jogosultságot is termel: a friss admin tagságtól a
-        // felhasználó átmegy az is-groupservant és is-groupadmin gate-eken,
-        // amiken előtte nem ment át.
+        // Creation also produces authorization: with the fresh admin
+        // membership the user now passes the is-groupservant and
+        // is-groupadmin gates, which they did not pass before.
         $creator = $this->createUser(['role' => 'groupCreator', 'email' => 'gc-gates@example.test']);
 
         $this->assertFalse($creator->can('is-groupservant'));
@@ -180,19 +180,20 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A jogosultság-igénylő levél tartalma
+    // 4. The content of the privilege-request email
     // =========================================================================
 
     public function test_the_privilege_request_mail_goes_to_the_configured_address_and_replies_to_the_applicant(): void
     {
-        // A ListGroupsTest a validációt és a sikeres lefutást már fedi; itt a
-        // levél CÍMZÉSE a tárgy, mert az a Phase 4 (TODO 36) kockázata: a
-        // Symfony Mailer szigorúbban validálja a címeket, mint a SwiftMailer,
-        // és a replyTo felhasználói adatból jön.
+        // ListGroupsTest already covers the validation and the successful run;
+        // here the ADDRESSING of the email is the subject, because that is the
+        // Phase 4 (TODO 36) risk: Symfony Mailer validates addresses more
+        // strictly than SwiftMailer, and replyTo comes from user-supplied data.
         //
-        // Mail::fake() itt nem használható: a MailFake::send() csak Mailable
-        // példányt rögzít, a nyers Mail::send($view, $data, $closure) hívást
-        // csendben eldobja. Ezért a phpunit.xml array-transportját olvassuk.
+        // Mail::fake() cannot be used here: MailFake::send() only records
+        // Mailable instances, it silently drops the raw
+        // Mail::send($view, $data, $closure) call. So we read the phpunit.xml
+        // array transport instead.
         $applicant = $this->createUser([
             'role'         => 'activated',
             'email'        => 'applicant@example.test',
@@ -218,16 +219,16 @@ class GroupCreationTest extends FeatureTestCase
 
     public function test_the_privilege_request_mail_strips_tags_from_user_supplied_text(): void
     {
-        // A congregation és a reason strip_tags()-en megy át (:78-79), mielőtt
-        // a Blade-be kerül. A view {{ }}-t használ, tehát dupla védelem van;
-        // a mérhető különbség az, hogy a címke nem escape-elve jelenik meg,
-        // hanem el sem jut a Blade-ig.
+        // congregation and reason go through strip_tags() (:78-79) before
+        // reaching the Blade template. The view uses {{ }}, so there is double
+        // protection; the measurable difference is that the tag doesn't appear
+        // un-escaped, it never even reaches Blade.
         //
-        // FONTOS: a strip_tags csak a CÍMKÉKET távolítja el, a tartalmukat nem.
-        // Egy <script>alert(1)</script> beküldése után a levélben ott marad az
-        // "alert(1)" szöveg - futtatható kód nélkül, de a tartalom megmarad.
-        // Ez rögzítendő tény, nem hiba: aki erre később szanitizálást épít,
-        // annak tudnia kell, hogy a strip_tags nem az.
+        // IMPORTANT: strip_tags only removes the TAGS, not their content.
+        // After submitting <script>alert(1)</script>, the email still contains
+        // the "alert(1)" text - without executable code, but the content remains.
+        // This is a fact to record, not a bug: whoever later builds sanitization
+        // on top of this needs to know that strip_tags is not that.
         $applicant = $this->createUser([
             'role'         => 'activated',
             'email'        => 'applicant-xss@example.test',
@@ -250,13 +251,14 @@ class GroupCreationTest extends FeatureTestCase
     }
 
     /**
-     * A phpunit.xml MAIL_MAILER=array beállítású, így a kiment levelek az
-     * ArrayTransport memóriájában maradnak.
+     * phpunit.xml is configured with MAIL_MAILER=array, so sent emails
+     * remain in the ArrayTransport's memory.
      *
-     * FIGYELEM: a visszaadott üzenetek Swift_Message példányok. A Laravel 9
-     * Symfony Mailerre vált (TODO 36), ahol a getTo()/getReplyTo() Address
-     * objektumok tömbjét adja, nem cím => név térképet - ezt a két assertiont
-     * ott át kell írni. Ez a teszt épp ezért hasznos ott: jelezni fogja.
+     * ATTENTION: the returned messages are Swift_Message instances. Laravel 9
+     * switches to Symfony Mailer (TODO 36), where getTo()/getReplyTo() returns
+     * an array of Address objects, not an address => name map - the two
+     * assertions must be rewritten there. This test is useful there for
+     * exactly this reason: it will flag it.
      */
     private function sentMessages()
     {

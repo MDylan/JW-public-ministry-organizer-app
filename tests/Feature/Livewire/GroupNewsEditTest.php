@@ -38,7 +38,7 @@ class GroupNewsEditTest extends FeatureTestCase
         $this->actingAs($this->editor);
     }
 
-    // --- mount / állapotbetöltés ---
+    // --- mount / state loading ---
 
     public function test_mount_for_a_new_item_leaves_the_state_empty(): void
     {
@@ -66,9 +66,9 @@ class GroupNewsEditTest extends FeatureTestCase
         $otherGroup = $this->createGroup();
         $foreign = GroupNews::factory()->forGroup($otherGroup)->byUser($this->editor)->create();
 
-        // A Livewire a mount() kivételét saját view-kivételbe csomagolja, ezért
-        // az üzenetre assertálunk, ne a konkrét osztályra: az utóbbi
-        // framework-verziónként változik (Ignition -> Laravel 9+).
+        // Livewire wraps the mount() exception in its own view exception, so
+        // we assert on the message, not the concrete class: the latter
+        // changes per framework version (Ignition -> Laravel 9+).
         $this->expectException(\Throwable::class);
         $this->expectExceptionMessageMatches('/No query results for model/');
 
@@ -76,7 +76,7 @@ class GroupNewsEditTest extends FeatureTestCase
             ->test(NewsEdit::class, ['group' => $this->group->id, 'new' => $foreign->id]);
     }
 
-    // --- létrehozás és szerkesztés ---
+    // --- creation and editing ---
 
     public function test_creating_a_news_item_persists_it_with_translations(): void
     {
@@ -130,7 +130,7 @@ class GroupNewsEditTest extends FeatureTestCase
             ->assertHasErrors(['status']);
     }
 
-    // --- fájlfeltöltés ---
+    // --- file upload ---
 
     public function test_uploading_an_allowed_file_adds_it_to_the_attachment_list(): void
     {
@@ -150,9 +150,9 @@ class GroupNewsEditTest extends FeatureTestCase
 
     public function test_uploading_a_disallowed_file_type_is_rejected(): void
     {
-        // A file_types lista: jpg, jpeg, png, pdf, doc, docx, xls, xlsx.
-        // Nem .php kiterjesztést használunk: azt a futtatókörnyezet nem
-        // engedi ideiglenes fájlként létrehozni.
+        // The file_types list: jpg, jpeg, png, pdf, doc, docx, xls, xlsx.
+        // We do not use a .php extension: the runtime environment does not
+        // allow creating that as a temporary file.
         $file = UploadedFile::fake()->create('archivum.zip', 10, 'application/zip');
 
         Livewire::actingAs($this->editor)
@@ -163,7 +163,7 @@ class GroupNewsEditTest extends FeatureTestCase
 
     public function test_uploading_an_oversized_file_is_rejected(): void
     {
-        // A szabály max:2048 kilobájt.
+        // The rule is max:2048 kilobytes.
         $file = UploadedFile::fake()->create('nagy.pdf', 3000, 'application/pdf');
 
         Livewire::actingAs($this->editor)
@@ -193,7 +193,7 @@ class GroupNewsEditTest extends FeatureTestCase
         Storage::disk('news_files')->assertExists($stored->file);
     }
 
-    // --- fájl eltávolítása ---
+    // --- file removal ---
 
     public function test_removing_a_freshly_uploaded_file_drops_it_before_saving(): void
     {
@@ -211,7 +211,7 @@ class GroupNewsEditTest extends FeatureTestCase
             ->assertSet('file_beeingRemoved', null);
 
         $this->assertCount(0, $component->get('attached_files'));
-        // Új feltöltés még nem került a lemezre, ezért nincs mit takarítani.
+        // A freshly uploaded file has not reached disk yet, so there is nothing to clean up.
         $this->assertCount(0, $component->get('removed_files'));
     }
 
@@ -226,17 +226,17 @@ class GroupNewsEditTest extends FeatureTestCase
 
         $component->call('confirmFileDelete', 0, 'regi.pdf')->call('deleteFileConfirmed');
 
-        // A már mentett fájl a törlési sorba kerül...
+        // The already saved file is placed in the deletion queue...
         $this->assertCount(1, $component->get('removed_files'));
 
         $component->call('editNews')->assertHasNoErrors();
 
-        // ...és mentéskor eltűnik a DB-ből és a lemezről is.
+        // ...and on save it disappears from both the DB and disk.
         $this->assertNull(GroupNewsFile::find($stored->id));
         Storage::disk('news_files')->assertMissing('regi.pdf');
     }
 
-    // --- törlés ---
+    // --- deletion ---
 
     public function test_confirm_delete_dispatches_the_browser_event(): void
     {

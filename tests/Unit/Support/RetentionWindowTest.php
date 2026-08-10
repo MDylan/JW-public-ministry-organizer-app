@@ -7,12 +7,12 @@ use Carbon\Carbon;
 use Tests\TestCase;
 
 /**
- * v1-patch E1: a retenciós padlók egyetlen igazságforrása.
+ * v1-patch E1: the single source of truth for the retention floors.
  *
- * A két legfontosabb eset itt nem a boldog út, hanem a két csapda, amit az
- * osztály docblockja is kiemel: a whitelisten kívüli beállításérték (ami
- * castolva NULLA hónapos ablakot, azaz teljes táblatörlést adna) és a
- * hónap végi túlcsordulás.
+ * The two most important cases here are not the happy path, but the two
+ * traps that the class's own docblock also highlights: a setting value
+ * outside the whitelist (which, cast, would give a ZERO-month window, i.e. a
+ * full table wipe) and end-of-month overflow.
  */
 class RetentionWindowTest extends TestCase
 {
@@ -45,14 +45,14 @@ class RetentionWindowTest extends TestCase
         Carbon::setTestNow('2026-08-08 14:30:00');
         config(['gdpr.enabled' => true]);
 
-        // A day oszlopok DATE típusúak: egy 14:30-as padló a határnapi
-        // sorokat a futás órájától függően törölné vagy hagyná.
+        // The day columns are of type DATE: a floor at 14:30 would delete or
+        // keep the boundary-day rows depending on the hour of the run.
         $this->assertSame('00:00:00', RetentionWindow::eventsFloor()->format('H:i:s'));
     }
 
     public function test_the_events_floor_does_not_overflow_at_the_end_of_a_month(): void
     {
-        // A Carbon subMonths() alapból 2025-03-03-at adna.
+        // Carbon's subMonths() would by default give 2025-03-03.
         Carbon::setTestNow('2026-03-31 08:00:00');
         config(['gdpr.enabled' => true, 'retention.events_months' => 13]);
 
@@ -76,11 +76,11 @@ class RetentionWindowTest extends TestCase
     }
 
     /**
-     * Ez a legfontosabb eset az egész osztályban. A settings táblába a
-     * Livewire komponens validáció nélkül ír, tehát bármi bekerülhet. Ha az
-     * érték castolva lenne, a (int) nullát adna, a nulla hónapos ablak
-     * padlója a MAI nap lenne, és a parancs mind a 471 754 day_stats sort
-     * kitörölné.
+     * This is the single most important case in the whole class. The
+     * Livewire component writes to the settings table without validation, so
+     * anything can end up in there. If the value were cast, (int) would give
+     * zero, the zero-month window's floor would be TODAY, and the command
+     * would delete all 471,754 day_stats rows.
      *
      * @dataProvider garbageSettingValues
      */
@@ -94,13 +94,13 @@ class RetentionWindowTest extends TestCase
     public function garbageSettingValues(): array
     {
         return [
-            'betűk'          => ['abc'],
-            'üres string'    => [''],
-            'negatív'        => ['-5'],
-            'nulla hónap'    => ['0'],
-            'nem engedett'   => ['6'],
-            'igaz logikai'   => [true],
-            'tömb'           => [['12']],
+            'letters'        => ['abc'],
+            'empty string'   => [''],
+            'negative'       => ['-5'],
+            'zero months'    => ['0'],
+            'not allowed'    => ['6'],
+            'boolean true'   => [true],
+            'array'          => [['12']],
         ];
     }
 
@@ -125,8 +125,8 @@ class RetentionWindowTest extends TestCase
         Carbon::setTestNow('2026-08-08 14:30:00');
         config(['gdpr.enabled' => false, 'settings_group_data_retention' => '12']);
 
-        // Nincs benne személyes adat, a méret hajtja - a GDPR kapcsoló nem
-        // kapcsolhatja ki.
+        // It contains no personal data - it's driven by size, so the GDPR
+        // switch cannot turn it off.
         $this->assertSame('2025-08-08', RetentionWindow::groupDataFloor()->toDateString());
     }
 
@@ -155,13 +155,13 @@ class RetentionWindowTest extends TestCase
         Carbon::setTestNow('2026-08-08 14:30:00');
         config(['gdpr.enabled' => true, 'retention.events_months' => 13]);
 
-        // Az 1 éves csoportadat-ablak KÉSŐBBI padlót ad, mint a 13 hónapos
-        // eseményablak - egy naptár csak addig hiteles, ameddig mindkét
-        // forrása él.
+        // The 1-year group-data window gives a LATER floor than the
+        // 13-month event window - a calendar is only trustworthy for as long
+        // as both of its sources are alive.
         config(['settings_group_data_retention' => '12']);
         $this->assertSame('2025-08-08', RetentionWindow::displayFloor()->toDateString());
 
-        // A 2 éves ablak korábbi, tehát az események padlója nyer.
+        // The 2-year window is earlier, so the events floor wins.
         config(['settings_group_data_retention' => '24']);
         $this->assertSame('2025-07-08', RetentionWindow::displayFloor()->toDateString());
     }

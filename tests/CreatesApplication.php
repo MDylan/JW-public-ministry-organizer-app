@@ -27,21 +27,20 @@ trait CreatesApplication
     }
 
     /**
-     * Megállítja a suite-ot, ha van gyorsítótárazott konfiguráció vagy route-tábla.
+     * Stops the suite if a cached configuration or route table exists.
      *
-     * Gyorsítótárazott konfiguráció mellett a Laravel be sem tölti a .env-et,
-     * és a `phpunit.xml` <server> bejegyzései sem érnek el hozzá: a teszt
-     * futásidőben az ALKALMAZÁS beállításait kapja - köztük a `kozter_live`
-     * adatbázist, a valódi mail-drivert és a valódi cache-t.
+     * With a cached configuration, Laravel doesn't even load .env, and the
+     * `phpunit.xml` <server> entries don't reach it either: at test runtime it
+     * gets the APPLICATION's own settings - including the `kozter_live`
+     * database, the real mail driver, and the real cache.
      *
-     * A route-gyorsítótár ugyanígy hazudik: a `setup/*` csoport a
-     * `Storage::exists('installed.txt')` mögött regisztrálódik, és a
-     * gyorsítótár ezt a döntést befagyasztja. Egy bennfelejtett
-     * `bootstrap/cache/routes-v7.php` emiatt egyszer már 110 hamis bukást
-     * okozott ebben a suite-ban.
+     * The route cache lies in the same way: the `setup/*` group is registered
+     * behind `Storage::exists('installed.txt')`, and the cache freezes that
+     * decision. A forgotten `bootstrap/cache/routes-v7.php` once caused 110
+     * false failures in this suite because of exactly this.
      *
-     * A `composer test` mindkettőt kiüríti indulás előtt; ez az őr arra van,
-     * amikor valaki megkerüli.
+     * `composer test` clears both before starting; this guard is for when
+     * someone bypasses that.
      */
     private function refuseToRunWithCachedConfiguration(Application $app): void
     {
@@ -68,28 +67,28 @@ trait CreatesApplication
     }
 
     /**
-     * Megállítja a suite-ot, ha az alkalmazás SAJÁT adatbázisára futna.
+     * Stops the suite if it would run against the application's OWN database.
      *
-     * MIÉRT KELL EZ
+     * WHY THIS IS NEEDED
      *
-     * A `.env` a `kozter_live` adatbázist adja, a `.env.testing` és a
-     * `phpunit.xml` a `kozter_testing`-et. Ha a suite bármilyen okból az
-     * elsőt kapja, a RefreshDatabase migrációja LETAROLJA az éles adatokat -
-     * visszavonhatatlanul, mielőtt bármi hibaüzenetet adna.
+     * `.env` gives the `kozter_live` database, `.env.testing` and
+     * `phpunit.xml` give `kozter_testing`. If the suite gets the former for
+     * any reason, RefreshDatabase's migration WIPES OUT the live data -
+     * irreversibly, before it gives any error message.
      *
-     * Nem elmélet: ez az őr elsőre azonnal elsült, mert egy bennfelejtett
-     * `bootstrap/cache/config.php` miatt a teszt-futás a `kozter_live`-ot
-     * kapta volna. (Az `artisan test` ezen a gépen MÉRVE helyesen a
-     * `kozter_testing`-re fut; a szakirodalomban gyakran emlegetett
-     * "az artisan test a .env-re fut" eset itt nem áll fenn - az őr viszont
-     * attól függetlenül véd, hogy melyik út vezetett oda.)
+     * Not theoretical: this guard fired immediately the first time, because a
+     * forgotten `bootstrap/cache/config.php` would have made the test run get
+     * `kozter_live`. (`artisan test`, as MEASURED on this machine, correctly
+     * runs against `kozter_testing`; the "artisan test runs against .env"
+     * case often mentioned in the literature does not apply here - but the
+     * guard protects regardless of which path led there.)
      *
-     * Az őr a createApplication()-ben ül, mert ez fut le a legkorábban -
-     * még azelőtt, hogy a RefreshDatabase bármihez hozzányúlna.
+     * The guard sits in createApplication() because that runs the earliest -
+     * before RefreshDatabase touches anything at all.
      *
-     * Az összehasonlítás közvetlenül a `.env` FÁJLBÓL olvas, nem env()-ből:
-     * a teszt-futás alatt az env() már a `.env.testing` értékeit adja, tehát
-     * az alkalmazás igazi adatbázisnevét csak a fájl mondja meg.
+     * The comparison reads directly from the `.env` FILE, not from env():
+     * during the test run, env() already returns `.env.testing`'s values, so
+     * only the file can tell us the application's real database name.
      */
     private function refuseToRunAgainstTheApplicationDatabase(Application $app): void
     {

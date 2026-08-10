@@ -10,15 +10,16 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12.1: az Exceptions\Handler telepített ága.
+ * TODO 12.1: the installed branch of Exceptions\Handler.
  *
- * A párja az InstallerExceptionHandlerTest, ami a sentinel NÉLKÜLI ágat méri
- * (ott a telepítőbe irányít). Ez a fájl szándékosan a normál FeatureTestCase-re
- * épül, tehát a valódi storage van érvényben, benne az installed.txt-vel.
+ * Its counterpart is InstallerExceptionHandlerTest, which measures the branch
+ * WITHOUT the sentinel (there it redirects into the installer). This file
+ * deliberately builds on the normal FeatureTestCase, so the real storage is
+ * in effect, with installed.txt in it.
  *
- * Ez az ág korábban dd()-vel zárt, ami exit-tel megölte volna a PHPUnit
- * folyamatát - ezért volt lefedhetetlen. A dd() eltávolítása után a kivétel a
- * beépített kezelőre esik vissza.
+ * This branch previously ended with dd(), which would have killed the
+ * PHPUnit process via exit - which is why it was uncoverable. After removing
+ * the dd(), the exception falls back to the built-in handler.
  */
 class InstalledExceptionHandlerTest extends FeatureTestCase
 {
@@ -41,8 +42,8 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_the_sentinel_is_present_for_these_tests(): void
     {
-        // Előfeltétel: enélkül a handler a telepítő ágára menne, és ez a fájl
-        // mást mérne, mint amit a neve ígér.
+        // Prerequisite: without this, the handler would go to the installer
+        // branch, and this file would measure something other than what its name promises.
         $this->assertTrue(Storage::exists('installed.txt'));
     }
 
@@ -57,8 +58,8 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_it_does_not_redirect_to_the_installer(): void
     {
-        // A telepítő útvonalai telepített állapotban nem is léteznek, tehát egy
-        // ide irányított átirányítás sehová nem vinne.
+        // The installer's routes do not even exist in the installed state, so
+        // a redirect to there would lead nowhere.
         $response = $this->get('/__test/query-exception');
 
         $this->assertNull($response->headers->get('Location'));
@@ -66,11 +67,11 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_the_raw_database_message_does_not_reach_the_browser(): void
     {
-        // Ez méri a tényleges nyereséget. A dd() az APP_DEBUG értékétől
-        // FÜGGETLENÜL kiírta a nyers üzenetet; a normál kezelő debug nélkül az
-        // errors/500 nézetet rendereli. A tesztkörnyezet APP_DEBUG=true, ezért
-        // itt kapcsoljuk ki - éles telepítés a .env.example szerint eleve
-        // false-szal indul.
+        // This measures the actual gain. dd() printed the raw message
+        // REGARDLESS of the APP_DEBUG value; the normal handler renders the
+        // errors/500 view without debug. The test environment has
+        // APP_DEBUG=true, so we switch it off here - a production deployment,
+        // per .env.example, starts with false by default anyway.
         config(['app.debug' => false]);
 
         $response = $this->get('/__test/query-exception');
@@ -82,11 +83,11 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_the_exception_is_still_reported(): void
     {
-        // A roadmap eredeti megfogalmazása szerint a dd() miatt "no logging"
-        // volt - ez tévedés. A Pipeline::handleException() előbb hívja a
-        // report()-ot, csak utána a render()-t, az üres reportable() visszahívás
-        // pedig null-t ad vissza, nem false-ot, tehát a beépített naplózás fut.
-        // Ez a teszt rögzíti, hogy ez a javítás után is így marad.
+        // Per the roadmap's original wording, dd() supposedly meant "no
+        // logging" - this was a mistake. Pipeline::handleException() calls
+        // report() first, only then render(), and the empty reportable()
+        // callback returns null, not false, so the built-in logging runs.
+        // This test records that this stays true after the fix too.
         Log::spy();
 
         $this->get('/__test/query-exception');
@@ -100,10 +101,10 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_a_missing_app_key_does_not_touch_the_environment_file(): void
     {
-        // ELŐFELTÉTEL, nem dísz: a handler másoló ága csak akkor fut, ha a .env
-        // NEM létezik - olyankor létrehozná .env.example-ből és kulcsot
-        // generálna. Ha ez az állítás elbukik, a teszt megállt, mielőtt a
-        // fejlesztő környezetébe írna.
+        // PREREQUISITE, not decoration: the handler's copying branch only runs
+        // if .env does NOT exist - in that case it would create it from
+        // .env.example and generate a key. If this assertion fails, the test
+        // stopped before writing into the developer's environment.
         $this->assertFileExists(base_path('.env'));
 
         $before = file_get_contents(base_path('.env'));

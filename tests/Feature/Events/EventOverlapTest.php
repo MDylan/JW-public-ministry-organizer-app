@@ -10,17 +10,17 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.1: időpont-átfedések kezelése.
+ * TODO 07.1: handling time-slot overlaps.
  *
- * Két, egymástól független szabály él egymás mellett:
+ * Two independent rules coexist:
  *
- * 1. CSOPORTON BELÜL a foglalás sávonként történik. Egy 08:00-10:00-s esemény
- *    a 08:00-s ÉS a 09:00-s sávot is elfoglalja, ezért egy 09:00-12:00-s kérés
- *    a 09:00-s sávon ütközik - miközben a 10:00-12:00 még szabad. Ez a
- *    felhasználó eredeti példája, és önálló tesztet kap.
+ * 1. WITHIN A GROUP booking happens per slot. An 08:00-10:00 event
+ *    occupies BOTH the 08:00 AND the 09:00 slot, so a 09:00-12:00 request
+ *    conflicts on the 09:00 slot - while 10:00-12:00 is still free. This is the
+ *    user's original example, and gets its own test.
  *
- * 2. CSOPORTOK KÖZÖTT a saveEvent() (:583-601) egy nyers lekérdezéssel nézi,
- *    hogy a jelentkező nincs-e már szolgálatban máshol ugyanabban az időben.
+ * 2. BETWEEN GROUPS saveEvent() (:583-601) checks with a raw query whether
+ *    the applicant is not already serving elsewhere at the same time.
  */
 class EventOverlapTest extends FeatureTestCase
 {
@@ -63,13 +63,13 @@ class EventOverlapTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A felhasználó eredeti példája
+    // 1. The user's original example
     // =========================================================================
 
     public function test_an_eight_to_ten_booking_blocks_a_nine_to_twelve_application(): void
     {
-        // "Valaki 8:00-10:00-ig jelentkezik, másvalaki 9:00-12:00-ig - akkor a
-        // 9:00-10:00 időpontra már nem lehet jelentkezni, mert betelt."
+        // "Someone applies for 8:00-10:00, someone else for 9:00-12:00 - then the
+        // 9:00-10:00 time slot can no longer be applied for, because it's full."
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, [
             'date_max_publishers' => 1,
@@ -82,7 +82,7 @@ class EventOverlapTest extends FeatureTestCase
         $this->actingAs($first);
         $this->createEventInRange($group, $first, $this->date, '08:00', '10:00');
 
-        // A 09:00-12:00 kérés a 09:00-s sávon ütközik.
+        // The 09:00-12:00 request conflicts on the 09:00 slot.
         $this->book($group, $second, '09:00', '12:00')->assertHasErrors(['start', 'end']);
 
         $this->assertSame(1, Event::where('group_id', $group->id)->count());
@@ -90,7 +90,7 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_the_free_remainder_of_the_range_is_still_bookable(): void
     {
-        // Ugyanaz a kiindulás, de a 10:00-12:00 tartomány érintetlen.
+        // Same starting point, but the 10:00-12:00 range is untouched.
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, [
             'date_max_publishers' => 1,
@@ -114,8 +114,8 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_the_same_overlap_rule_holds_at_half_hour_granularity(): void
     {
-        // Ugyanaz a szabály 30 perces lépésközzel: a 08:00-10:00 esemény négy
-        // fél órás sávot foglal, tehát a 09:30 is ütközik - de a 10:00 nem.
+        // Same rule at 30-minute granularity: the 08:00-10:00 event occupies four
+        // half-hour slots, so 09:30 also conflicts - but 10:00 does not.
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, [
             'date_max_publishers' => 1,
@@ -134,7 +134,7 @@ class EventOverlapTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A betelt sávok eltűnnek a választható időpontok közül
+    // 2. Saturated slots disappear from the selectable time options
     // =========================================================================
 
     public function test_saturated_slots_are_marked_full_and_removed_from_the_selects(): void
@@ -158,12 +158,12 @@ class EventOverlapTest extends FeatureTestCase
         $this->assertSame('free', $dayData['table'][$this->slotKey('10:00')]['status']);
         $this->assertSame('free', $dayData['table'][$this->slotKey('11:00')]['status']);
 
-        // A betelt sávok kezdésként nem választhatók...
+        // Saturated slots cannot be selected as a start...
         $this->assertArrayNotHasKey($this->ts('08:00'), $dayData['selects']['start']);
         $this->assertArrayNotHasKey($this->ts('09:00'), $dayData['selects']['start']);
         $this->assertArrayHasKey($this->ts('10:00'), $dayData['selects']['start']);
 
-        // ...és a rájuk következő időpont befejezésként sem.
+        // ...nor can the time slot following them be selected as an end.
         $this->assertArrayNotHasKey($this->ts('09:00'), $dayData['selects']['end']);
         $this->assertArrayNotHasKey($this->ts('10:00'), $dayData['selects']['end']);
         $this->assertArrayHasKey($this->ts('11:00'), $dayData['selects']['end']);
@@ -172,8 +172,8 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_a_slot_becomes_ready_once_the_minimum_publisher_count_is_met(): void
     {
-        // A 'ready' státusz azt jelzi, hogy a sáv már működőképes, de még
-        // fér rá jelentkező. Csak a telítettség alatt érhető el (elseif ág).
+        // The 'ready' status indicates that the slot is already functional, but there
+        // is still room for an applicant. Only reachable below saturation (elseif branch).
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, [
             'date_min_publishers' => 1,
@@ -192,14 +192,14 @@ class EventOverlapTest extends FeatureTestCase
         $this->assertSame('ready', $dayData['table'][$this->slotKey('09:00')]['status']);
         $this->assertSame('free', $dayData['table'][$this->slotKey('10:00')]['status']);
 
-        // A 'ready' sáv továbbra is választható.
+        // The 'ready' slot remains selectable.
         $this->assertArrayHasKey($this->ts('09:00'), $dayData['selects']['start']);
     }
 
     public function test_a_pending_only_slot_does_not_become_ready(): void
     {
-        // A 'ready' az accepted számlálóra épül, ami csak elfogadott
-        // eseményekre nő - függő jelentkezés nem teszi működőképessé a sávot.
+        // 'ready' is based on the accepted counter, which only increases for accepted
+        // events - a pending application does not make the slot functional.
         $group = $this->createGroup(['need_approval' => 1]);
         $this->createEventDate($group, $this->date, [
             'date_min_publishers' => 1,
@@ -219,7 +219,7 @@ class EventOverlapTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Letiltott sávok
+    // 3. Disabled slots
     // =========================================================================
 
     public function test_disabled_slots_are_full_even_without_any_event(): void
@@ -261,11 +261,11 @@ class EventOverlapTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Csoportok közötti ütközés (busy)
+    // 4. Conflict between groups (busy)
     // =========================================================================
 
     /**
-     * @return array{0: Group, 1: Group, 2: User} [célcsoport, másik csoport, jelentkező]
+     * @return array{0: Group, 1: Group, 2: User} [target group, other group, applicant]
      */
     private function twoGroupSetup(string $emailPrefix): array
     {
@@ -296,8 +296,8 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_touching_ranges_in_another_group_are_allowed(): void
     {
-        // A feltétel szigorú egyenlőtlenség (start < end ÉS end > start), ezért
-        // a pontosan érintkező szolgálatok nem ütköznek.
+        // The condition is a strict inequality (start < end AND end > start), so
+        // exactly touching services do not conflict.
         [$target, $other, $user] = $this->twoGroupSetup('busy-touch');
 
         $this->createEventInRange($other, $user, $this->date, '08:00', '10:00');
@@ -309,8 +309,8 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_a_pending_event_in_another_group_does_not_block(): void
     {
-        // A lekérdezés status = 1-re szűr: a még el nem bírált jelentkezés
-        // nem foglalja le a jelentkezőt.
+        // The query filters for status = 1: an application not yet reviewed
+        // does not reserve the applicant.
         [$target, $other, $user] = $this->twoGroupSetup('busy-pending');
 
         $this->createEventInRange($other, $user, $this->date, '09:00', '11:00', false);
@@ -334,9 +334,9 @@ class EventOverlapTest extends FeatureTestCase
 
         $this->createEventInRange($other, $user, $this->date, '09:00', '11:00');
 
-        // Tömeges törlés, ahogy a Groups\DeleteGroup is teszi - vagyis
-        // modell-események nélkül. (Az Eloquent út a TODO 10 óta szintén
-        // működik, de itt az éles kódutat akarjuk utánozni.)
+        // Bulk delete, the same way Groups\DeleteGroup does it - meaning
+        // without model events. (The Eloquent path has also worked since TODO 10,
+        // but here we want to mimic the production code path.)
         Group::where('id', $other->id)->delete();
 
         $this->book($target, $user, '10:00', '12:00')->assertHasNoErrors();
@@ -355,9 +355,9 @@ class EventOverlapTest extends FeatureTestCase
 
     public function test_the_busy_check_ignores_events_in_the_target_group_itself(): void
     {
-        // A lekérdezés kizárja a célcsoportot (group_id != groupId), tehát a
-        // csoporton belüli ütközést NEM a busy fogja meg, hanem a sávonkénti
-        // kapacitás és a saját eseményekre tett disabled_slots jelölés.
+        // The query excludes the target group (group_id != groupId), so a conflict
+        // within the group is NOT caught by busy, but by the per-slot
+        // capacity and the disabled_slots marking on one's own events.
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, ['date_max_publishers' => 3]);
 

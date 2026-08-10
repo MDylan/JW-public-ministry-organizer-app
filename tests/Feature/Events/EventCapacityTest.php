@@ -10,20 +10,21 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.1: az Events\EventEdit::saveEvent() kapacitás-kapuja.
+ * TODO 07.1: the capacity gate of Events\EventEdit::saveEvent().
  *
- * Ez az alkalmazás központi üzleti szabálya, és eddig NULLA lefedettsége volt:
- * a CalendarEventEditTest beállít date_max_publishers => 3-at, de egyetlen
- * tesztje sem tölt meg egy sávot, így a kapacitás-ág soha nem futott le.
+ * This is the application's central business rule, and until now it had
+ * ZERO coverage: CalendarEventEditTest sets date_max_publishers => 3, but
+ * not a single one of its tests fills up a slot, so the capacity branch
+ * never ran.
  *
- * A kapacitás SÁVONKÉNT érvényes, nem eseményenként. A getInfo()
- * (EventEdit.php:228-326) felépíti a nap tábláját, végigjárja a meglévő
- * eseményeket, és minden érintett sávon számlálót növel; a saveEvent()
- * (:475-485) ugyanezzel a lépésközzel járja végig a kért tartományt.
+ * Capacity applies PER SLOT, not per event. getInfo() (EventEdit.php:228-326)
+ * builds the day's table, walks the existing events, and increments a
+ * counter on every slot they touch; saveEvent() (:475-485) walks the
+ * requested range with the same step size.
  *
- * FONTOS - a jóváhagyásos túljelentkezés a saveEvent()-ben NEM úgy működik,
- * ahogy a kód olvasata sugallja. Részletek a
- * test_pending_applications_do_not_consume_publisher_capacity tesztnél.
+ * IMPORTANT - the approval-based over-application in saveEvent() does NOT
+ * work the way reading the code suggests. Details in the
+ * test_pending_applications_do_not_consume_publisher_capacity test.
  */
 class EventCapacityTest extends FeatureTestCase
 {
@@ -42,7 +43,7 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     /**
-     * Új tag, aki a komponensen keresztül próbál jelentkezni.
+     * A new member trying to apply through the component.
      */
     private function newMember(Group $group, string $email): User
     {
@@ -53,8 +54,8 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     /**
-     * A tényleges jelentkezés a komponensen át - ugyanaz az útvonal, amit a
-     * böngésző is bejár.
+     * The actual application through the component - the same path the
+     * browser also takes.
      */
     private function book(Group $group, User $user, string $from, string $to)
     {
@@ -71,7 +72,7 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Sávonkénti maximum jóváhagyás nélküli csoportban
+    // 1. Per-slot maximum in a group without approval
     // =========================================================================
 
     public function test_bookings_are_accepted_up_to_the_per_slot_maximum(): void
@@ -82,7 +83,7 @@ class EventCapacityTest extends FeatureTestCase
         $actor = $this->newMember($group, 'cap-third@example.test');
         $this->actingAs($actor);
 
-        // Két hely már foglalt, a harmadik még szabad.
+        // Two spots are already taken, the third is still free.
         $this->fillSlotRange($group, $this->date, '09:00', '10:00', 2, true, 'cap-taken');
 
         $this->book($group, $actor, '09:00', '10:00')
@@ -111,7 +112,7 @@ class EventCapacityTest extends FeatureTestCase
             'A negyedik jelentkezésnek a maximális hírnökszámra kell hivatkoznia.'
         );
 
-        // A tábla nem változott.
+        // The table did not change.
         $this->assertSame(3, $this->eventCount($group));
     }
 
@@ -123,7 +124,7 @@ class EventCapacityTest extends FeatureTestCase
         $actor = $this->newMember($group, 'cap-next-slot@example.test');
         $this->actingAs($actor);
 
-        // A 09:00-s sáv betelt, de a 10:00-s érintetlen.
+        // The 09:00 slot is full, but the 10:00 one is untouched.
         $this->fillSlotRange($group, $this->date, '09:00', '10:00', 1, true, 'cap-slot');
 
         $this->book($group, $actor, '10:00', '11:00')->assertHasNoErrors();
@@ -132,13 +133,14 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Jóváhagyásos csoport: túljelentkezés
+    // 2. Approval group: over-application
     // =========================================================================
 
     public function test_approval_groups_accept_more_applications_than_the_maximum(): void
     {
-        // A felhasználó második szabálya: ha jóváhagyás kell, több jelentkező
-        // is lehet, mint a maximum - a fölösleget majd az elbírálás szűri.
+        // The user's second rule: if approval is required, there can be more
+        // applicants than the maximum - the excess is later filtered by the
+        // approval process.
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -147,7 +149,7 @@ class EventCapacityTest extends FeatureTestCase
         $actor = $this->newMember($group, 'cap-over-4th@example.test');
         $this->actingAs($actor);
 
-        // Három FÜGGŐ jelentkezés - pont a maximum, elfogadva még egy sem.
+        // Three PENDING applications - exactly the maximum, none accepted yet.
         $this->fillSlotRange($group, $this->date, '09:00', '10:00', 3, false, 'cap-over');
 
         $this->book($group, $actor, '09:00', '10:00')->assertHasNoErrors();
@@ -162,7 +164,7 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_approval_groups_stop_accepting_at_the_raised_ceiling(): void
     {
-        // A megemelt plafon max_publishers + events.max_columns = 3 + 4 = 7.
+        // The raised ceiling is max_publishers + events.max_columns = 3 + 4 = 7.
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -176,9 +178,10 @@ class EventCapacityTest extends FeatureTestCase
         $component = $this->book($group, $actor, '09:00', '10:00')
             ->assertHasErrors(['start', 'end']);
 
-        // KARAKTERIZÁLÓ: a plafont NEM a publishers-ellenőrzés tartja, hanem az
-        // érvényes időpontok szűrése - ezért a hibaüzenet invalid_value, nem
-        // reach_max_publisher. Lásd a lenti publishers-tesztet.
+        // CHARACTERIZATION: the ceiling is held NOT by the publishers check,
+        // but by the filtering of valid time points - hence the error
+        // message is invalid_value, not reach_max_publisher. See the
+        // publishers test below.
         $this->assertContains(__('event.invalid_value'), $component->lastErrorBag->get('start'));
         $this->assertNotContains(__('event.reach_max_publisher'), $component->lastErrorBag->get('start'));
 
@@ -187,9 +190,9 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_the_raised_ceiling_collapses_once_the_accepted_count_reaches_the_maximum(): void
     {
-        // Ugyanaz a csoport és sáv, mint a túljelentkezéses tesztben - az
-        // egyetlen különbség, hogy a három esemény ELFOGADOTT. Ettől a limit
-        // 7-ről visszaesik 3-ra, és a negyedik jelentkezés elbukik.
+        // Same group and slot as in the over-application test - the only
+        // difference is that the three events are ACCEPTED. This drops the
+        // limit back from 7 to 3, and the fourth application fails.
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -210,10 +213,11 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_a_group_without_approval_gets_no_extra_headroom(): void
     {
-        // Kontraszt: azonos maximum, azonos számú függő esemény - de
-        // need_approval nélkül nincs megemelt plafon. (Jóváhagyás nélküli
-        // csoportban a status=0 állapot csak adatimportból állhat elő, a
-        // komponens mindent azonnal elfogad - ezért gyártjuk factoryval.)
+        // Contrast: same maximum, same number of pending events - but
+        // without need_approval there is no raised ceiling. (In a group
+        // without approval, the status=0 state can only arise from data
+        // import, the component accepts everything immediately - which is
+        // why we produce it with a factory.)
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 0]);
@@ -231,8 +235,8 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_the_extra_headroom_follows_the_events_max_columns_config(): void
     {
-        // A 4-es szám nem lehet bedrótozva a szabályba: max_columns = 1
-        // mellett a plafon 1 + 1 = 2.
+        // The number 4 must not be hardwired into the rule: with
+        // max_columns = 1 the ceiling is 1 + 1 = 2.
         config(['events.max_columns' => 1]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -241,11 +245,11 @@ class EventCapacityTest extends FeatureTestCase
         $actor = $this->newMember($group, 'cap-cols@example.test');
         $this->actingAs($actor);
 
-        // Egy függő jelentkezés: a plafon alatt vagyunk, a második átmegy.
+        // One pending application: we are below the ceiling, the second one goes through.
         $this->fillSlotRange($group, $this->date, '09:00', '10:00', 1, false, 'cap-col1');
         $this->book($group, $actor, '09:00', '10:00')->assertHasNoErrors();
 
-        // Most már ketten vannak - a harmadik elbukik.
+        // Now there are two of them - the third one fails.
         $third = $this->newMember($group, 'cap-cols-third@example.test');
         $this->book($group, $third, '09:00', '10:00')->assertHasErrors(['start', 'end']);
 
@@ -253,30 +257,32 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A publishers/accepted számlálás - a felfedezett eltérés rögzítése
+    // 3. The publishers/accepted counting - recording the discovered discrepancy
     // =========================================================================
 
     public function test_pending_applications_do_not_consume_publisher_capacity(): void
     {
-        // KARAKTERIZÁLÓ TESZT egy látens hibáról.
+        // CHARACTERIZATION TEST for a latent bug.
         //
-        // Az EventEdit::getInfo() (:288-291) a publishers ÉS az accepted
-        // számlálót is CSAK status == 1 esetén növeli, mindig együtt. A két
-        // érték tehát ebben a komponensben mindig azonos.
+        // EventEdit::getInfo() (:288-291) increments both the publishers AND
+        // the accepted counter ONLY when status == 1, always together. So
+        // the two values are always identical in this component.
         //
-        // Ettől a saveEvent() (:477-482) jóváhagyásos ága algebrailag
-        // összeomlik: ha accepted >= max, a limit max, és publishers(= accepted)
-        // >= max igaz; ha accepted < max, a limit max + max_columns, de
-        // publishers(= accepted) < max < max + max_columns, tehát hamis. A
-        // "+ events.max_columns" ág SOHA nem érvényesül a mentés-ellenőrzésben.
+        // This causes the approval branch of saveEvent() (:477-482) to
+        // algebraically collapse: if accepted >= max, the limit is max, and
+        // publishers(= accepted) >= max is true; if accepted < max, the
+        // limit is max + max_columns, but publishers(= accepted) < max <
+        // max + max_columns, so it is false. The "+ events.max_columns"
+        // branch NEVER takes effect in the save-time check.
         //
-        // A túljelentkezési plafont valójában a $slots tömb (:286) tartja, ami
-        // MINDEN eseményt számol - ezért kap a felhasználó invalid_value hibát
-        // reach_max_publisher helyett, amikor a plafonba ütközik.
+        // The over-application ceiling is in fact held by the $slots array
+        // (:286), which counts EVERY event - that is why the user gets an
+        // invalid_value error instead of reach_max_publisher when they hit
+        // the ceiling.
         //
-        // A javítás a TODO 77-be tartozik (Events\Modal deduplikáció), ahol
-        // eldől, melyik számolás a helyes - a Modal ugyanis MINDEN eseményre
-        // növeli a publishers-t (Modal.php:352).
+        // The fix belongs to TODO 77 (Events\Modal deduplication), where it
+        // will be decided which count is correct - the Modal, after all,
+        // increments publishers for EVERY event (Modal.php:352).
         $group = $this->createGroup(['need_approval' => 1]);
         $this->createEventDate($group, $this->date, ['date_max_publishers' => 3]);
 
@@ -315,15 +321,15 @@ class EventCapacityTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Saját esemény és túlcsordulás
+    // 4. Own event and overflow
     // =========================================================================
 
     public function test_a_member_cannot_book_the_same_slot_twice_in_the_same_group(): void
     {
-        // A getInfo() (:292-294) a jelentkező SAJÁT eseményeinek sávjait
-        // disabled_slots-ba teszi, kapacitástól függetlenül. Ez a csoporton
-        // belüli dupla foglalás védelme - a cross-group busy vizsgálat
-        // (EventOverlapTest) ugyanezt más csoportokra végzi.
+        // getInfo() (:292-294) puts the applicant's OWN events' slots into
+        // disabled_slots, regardless of capacity. This is the protection
+        // against double booking within a group - the cross-group busy
+        // check (EventOverlapTest) does the same for other groups.
         $group = $this->createGroup(['need_approval' => 0]);
         $this->createEventDate($group, $this->date, ['date_max_publishers' => 3]);
 
@@ -339,20 +345,20 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_lowering_the_maximum_below_the_existing_event_count_still_opens_the_day(): void
     {
-        // MEGFORDÍTVA a v1-patch B11 javításával.
+        // REVERSED by the v1-patch B11 fix.
         //
-        // A getInfo() minden sávhoz (max_publishers + events.max_columns) cellát
-        // foglal, és eseményenként egyet elhasznál. Ha egy sávon több esemény
-        // van, mint ahány cella, a cellalista kiürül, és a korábbi feltétel
-        // nélküli min(array_keys([])) PHP 8 alatt ValueError-t dobott - amitől a
-        // nap MEGNYITHATATLANNÁ vált, nem csak hibásan rajzolttá.
+        // getInfo() reserves (max_publishers + events.max_columns) cells for
+        // every slot, and uses up one per event. If a slot has more events
+        // than cells, the cell list empties out, and the previous
+        // unconditional min(array_keys([])) threw a ValueError under PHP 8 -
+        // which made the day UNOPENABLE, not just incorrectly rendered.
         //
-        // Ez elérhető állapot, nem elméleti: az események a régi, magasabb
-        // maximum mellett jönnek létre, majd egy admin lejjebb viszi a
-        // date_max_publishers-t, vagy egy jövőbeli csoportmódosítás írja felül.
-        // A meglévő eseményeket ilyenkor senki nem törli.
+        // This is a reachable state, not theoretical: the events are
+        // created under the old, higher maximum, then an admin lowers
+        // date_max_publishers, or a future group edit overwrites it. Nobody
+        // deletes the existing events in that case.
         //
-        // A túlcsordult esemény most külön oszlopot kap; a nap megnyílik.
+        // The overflowing event now gets a separate column; the day opens.
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);
@@ -363,7 +369,7 @@ class EventCapacityTest extends FeatureTestCase
 
         $this->fillSlotRange($group, $this->date, '09:00', '10:00', 6, false, 'cap-ovf');
 
-        // Az admin visszaveszi a maximumot: 1 + 4 = 5 cella marad 6 eseményre.
+        // The admin lowers the maximum: 1 + 4 = 5 cells remain for 6 events.
         $date->update(['date_max_publishers' => 1]);
 
         Livewire::actingAs($actor)
@@ -373,13 +379,14 @@ class EventCapacityTest extends FeatureTestCase
 
     public function test_the_overflowing_slot_is_still_described_correctly(): void
     {
-        // A B11 érdemi fele: nem elég, hogy nem hasal el - a sávnak helyesen
-        // kell leírva lennie utána is. Öt cellára hat esemény jut, tehát az
-        // összes előre foglalt cella elfogy, és a sáv megtelik.
+        // The substantive half of B11: it is not enough that it does not
+        // fail - the slot must also be correctly described afterwards. Six
+        // events for five cells, so all the pre-reserved cells are used up
+        // and the slot becomes full.
         //
-        // (A `publishers` számláló szándékosan nem szerepel itt: azt a
-        // getInfo() csak ELFOGADOTT eseményekre növeli, a hat jelentkezés
-        // viszont függő.)
+        // (The `publishers` counter is deliberately not covered here:
+        // getInfo() only increments it for ACCEPTED events, while the six
+        // applications are pending.)
         config(['events.max_columns' => 4]);
 
         $group = $this->createGroup(['need_approval' => 1]);

@@ -44,7 +44,7 @@ class GroupDayJobsTest extends FeatureTestCase
         $this->actingAs($this->causer);
     }
 
-    /** Következő adott hétköznap (PHP date('w'): 0 = vasárnap). */
+    /** Next given weekday (PHP date('w'): 0 = Sunday). */
     private function nextWeekday(int $phpDayOfWeek): string
     {
         $date = now()->addDay();
@@ -92,7 +92,7 @@ class GroupDayJobsTest extends FeatureTestCase
             'date_start' => $day.' 08:00:00',
             'date_end' => $day.' 12:00:00',
         ]);
-        // 09:00-10:00 belefér a 08:00-12:00 ablakba.
+        // 09:00-10:00 fits within the 08:00-12:00 window.
         $event = $this->createEventOn($day);
 
         (new GroupDayUpdatedProcess(now()->toDateString(), $this->group->id, 3, '08:00', '12:00', $this->causer->id))

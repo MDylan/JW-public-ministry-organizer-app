@@ -13,20 +13,20 @@ use Tests\TestCase;
  */
 class SchedulerRegressionTest extends TestCase
 {
-    /** Parancsnév => cron kifejezés. */
+    /** Command name => cron expression. */
     private const EXPECTED_SCHEDULE = [
         'queue:work --name=kozteruletek-job-1' => '* * * * *',
         'users:purge-unverified' => '50 * * * *',
         'events:expire-pending' => '*/5 * * * *',
         'gdpr:anonymize-inactive' => '0 7 * * *',
         'gdpr:notify-anonymization' => '10 7 * * *',
-        // v1-patch E: a retenciós takarítás hajnali 3 után fut, hogy ne a
-        // 00:00-s torlódásba essen. Az események előbb, a belőlük
-        // származtatott csoportadatok utána.
+        // v1-patch E: the retention cleanup runs after 3am, so it does not fall
+        // into the 00:00 pile-up. Events first, the group data derived from them
+        // afterwards.
         //
-        // A --force a parancsnév RÉSZE, és annak is kell maradnia: nélküle a
-        // Spatie parancsa ütemezőből futva megerősítést kérne, TTY híján
-        // nemleges választ kapna, és némán nem törölne semmit.
+        // --force is PART of the command name, and must remain so: without it,
+        // Spatie's command running from the scheduler would ask for confirmation,
+        // get a negative answer for lack of a TTY, and silently delete nothing.
         'activitylog:clean --force' => '20 3 * * *',
         'gdpr:purge-old-events' => '30 3 * * *',
         'maintenance:purge-old-group-data' => '40 3 * * *',
@@ -37,9 +37,9 @@ class SchedulerRegressionTest extends TestCase
         'newsletters:send-due' => '* * * * *',
         'statistics:record-active-users' => '0 * * * *',
         'scheduler:heartbeat' => '* * * * *',
-        // v1-patch C: az időjárás-gyorsítótár frissítése. Az ingyenes
-        // OpenWeather keret (1000 hívás/nap) és a 3 óránkénti előrejelzés
-        // együtt indokolja ezt a gyakoriságot - lásd RefreshWeatherCache.
+        // v1-patch C: refreshing the weather cache. The free OpenWeather quota
+        // (1000 calls/day) together with the 3-hourly forecast justifies this
+        // frequency - see RefreshWeatherCache.
         'weather:refresh' => '0 */3 * * *',
         // TODO 33.2 removed an 18th entry: gdpr:anonymizeInactiveUsers at
         // 00:00, scheduled by the Dialect package's own service provider from
@@ -73,9 +73,9 @@ class SchedulerRegressionTest extends TestCase
 
     public function test_the_scheduler_contains_no_anonymous_closures(): void
     {
-        // Ez a TODO 06 lényege: minden ütemezett feladat nevesített parancs,
-        // így a `schedule:list` önmagában dokumentálja a rendszert, és minden
-        // feladat külön tesztelhető.
+        // This is the essence of TODO 06: every scheduled task is a named
+        // command, so `schedule:list` documents the system on its own, and every
+        // task can be tested individually.
         $closures = $this->scheduledEvents()->filter(static fn ($event) => $event->command === null);
 
         $this->assertCount(

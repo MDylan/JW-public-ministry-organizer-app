@@ -12,20 +12,20 @@ use Illuminate\Support\Facades\Http;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * A v1-patch C csomagja: az OpenWeather kliens sikeres és hibás ága.
+ * The v1-patch C package: the OpenWeather client's successful and failing branches.
  *
- * MIÉRT NEM LÉTEZHETETT EZ KORÁBBAN
+ * WHY THIS COULD NOT HAVE EXISTED BEFORE
  *
- * A `rakibdevs/openweather-laravel-api` WeatherClientje `new GuzzleHttp\Client(...)`-ot
- * példányosított a metódusa belsejében, konténer-kötés nélkül. A `Http::fake()`
- * ezért nem tudta elkapni, tehát a projekt EGYETLEN kifelé menő HTTP-hívásának a
- * sikeres ága egyáltalán nem volt tesztelhető - a TODO 20.1 készlete csak a
- * gyorsítótár- és hibaágakat tudta lefedni. Ez a fájl az, amiért a cserét
- * egyáltalán érdemes volt megcsinálni.
+ * `rakibdevs/openweather-laravel-api`'s WeatherClient instantiated
+ * `new GuzzleHttp\Client(...)` inside its method, with no container binding.
+ * `Http::fake()` therefore could not intercept it, so the successful branch
+ * of the project's ONLY outgoing HTTP call was not testable at all -
+ * TODO 20.1's suite could only cover the cache and failure branches. This
+ * file is the reason the swap was worth doing at all.
  *
- * A `Http::fake()` az egész suite-ban garantálja, hogy valódi hálózati kérés nem
- * indul; a `Http::assertSent()` pedig a KIMENŐ kérés alakját rögzíti, ami a
- * mérhető szerződés az API felé.
+ * `Http::fake()` guarantees throughout the whole suite that no real network
+ * request goes out; `Http::assertSent()` records the shape of the OUTGOING
+ * request, which is the measurable contract with the API.
  */
 class OpenWeatherClientTest extends FeatureTestCase
 {
@@ -74,7 +74,7 @@ class OpenWeatherClientTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A sikeres ág - eddig nem volt mérhető
+    // 1. The successful branch - not measurable until now
     // =========================================================================
 
     public function test_the_current_endpoint_returns_the_decoded_body(): void
@@ -98,11 +98,11 @@ class OpenWeatherClientTest extends FeatureTestCase
 
     public function test_both_endpoints_receive_the_country_code(): void
     {
-        // A MÉRT HIBA, amit ez a csomag javít: a csomag
-        // `get3HourlyByCity(string $city)` szignatúrája EGY paramétert fogadott,
-        // a hívó viszont kettőt adott át - az 5 napos előrejelzés tehát
-        // országkód NÉLKÜL oldódott fel, miközben a jelenlegi időjárás vele.
-        // Két különböző település is állhatott a kettő mögött.
+        // The MEASURED DEFECT that this package fixes: the package's
+        // `get3HourlyByCity(string $city)` signature accepted ONE parameter,
+        // but the caller passed two - the 5-day forecast therefore resolved
+        // WITHOUT the country code, while the current weather resolved with
+        // it. Two different towns could have ended up behind the two calls.
         $this->fakeSuccess();
 
         $client = new OpenWeatherClient();
@@ -134,8 +134,8 @@ class OpenWeatherClientTest extends FeatureTestCase
 
     public function test_the_language_follows_the_application_locale(): void
     {
-        // A csomag bedrótozott 'en'-t küldött, ezért a magyar és a német
-        // felületen is angol időjárás-leírások jelentek meg.
+        // The package sent a hardwired 'en', which is why English weather
+        // descriptions appeared in the Hungarian and German UI too.
         $this->fakeSuccess();
         $this->app->setLocale('de');
 
@@ -156,7 +156,7 @@ class OpenWeatherClientTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A hibaágak - mindegyik VALÓDI üzenettel
+    // 2. The failure branches - each with a REAL message
     // =========================================================================
 
     public function test_a_missing_key_never_reaches_the_network(): void
@@ -166,7 +166,7 @@ class OpenWeatherClientTest extends FeatureTestCase
 
         try {
             (new OpenWeatherClient())->currentByCity('Szeged', 'HU');
-            $this->fail('A hiányzó kulcsnak kivételt kell dobnia.');
+            $this->fail('A missing key must throw an exception.');
         } catch (WeatherException $e) {
             $this->assertStringContainsString('OPENWEATHER_API_KEY', $e->getMessage());
         }
@@ -183,9 +183,9 @@ class OpenWeatherClientTest extends FeatureTestCase
 
         try {
             (new OpenWeatherClient())->currentByCity('Szeged', 'HU');
-            $this->fail('A '.$status.' státusznak kivételt kell dobnia.');
+            $this->fail('Status '.$status.' must throw an exception.');
         } catch (WeatherException $e) {
-            $this->assertNotSame('', $e->getMessage(), 'Üres üzenet nem elfogadható.');
+            $this->assertNotSame('', $e->getMessage(), 'An empty message is not acceptable.');
             $this->assertStringContainsString($needle, $e->getMessage());
         }
     }
@@ -202,8 +202,8 @@ class OpenWeatherClientTest extends FeatureTestCase
 
     public function test_a_connection_failure_becomes_a_project_exception(): void
     {
-        // A Http fakad a hálózati hibát KIVÉTELKÉNT dobja, nem válaszként. A
-        // hívónak egyetlen típust kell kezelnie, ezért itt alakítjuk át.
+        // Http's fake throws the network error AS AN EXCEPTION, not as a
+        // response. The caller needs to handle a single type, so we convert it here.
         Http::fake(fn () => throw new ConnectionException('cURL error 28: timed out'));
 
         $this->expectException(WeatherException::class);
@@ -213,7 +213,7 @@ class OpenWeatherClientTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A gyorsítótár és a kliens együtt
+    // 3. The cache and the client together
     // =========================================================================
 
     public function test_a_successful_lookup_stores_plain_arrays(): void
@@ -224,12 +224,12 @@ class OpenWeatherClientTest extends FeatureTestCase
 
         $row = WeatherCity::firstOrFail();
 
-        $this->assertSame('Szeged', $row->city, 'A tárolt alak normalizált.');
+        $this->assertSame('Szeged', $row->city, 'The stored form is normalized.');
         $this->assertSame('HU', $row->country);
 
-        // Egyetlen kódolási pont: a `json` cast. Korábban a mentés ez MELLETT
-        // kézzel is json_encode-olt, ezért az oszlopban kétszer kódolt sztring
-        // állt, és minden olvasónak kézzel kellett dekódolnia.
+        // A single encoding point: the `json` cast. Previously the save also
+        // manually json_encoded ALONGSIDE this, so the column held a
+        // double-encoded string, and every reader had to decode it by hand.
         $this->assertIsArray($row->current_weather);
         $this->assertIsArray($row->forecast_weather);
         $this->assertSame(21.5, $row->current_weather['main']['temp']);
@@ -240,13 +240,13 @@ class OpenWeatherClientTest extends FeatureTestCase
 
     public function test_a_failed_refresh_does_not_make_stale_data_look_fresh(): void
     {
-        // Az `updated_at` a 59 perces frissesség-szabály bemenete. Ha a
-        // sikertelen kísérlet is felfrissítené, egy elérhetetlen API egy órára
-        // "frissnek" jelölné a régi adatot, és a következő próbálkozás is
-        // elmaradna.
-        // A meglévő sort közvetlenül állítjuk elő, nem egy sikeres hívásból: a
-        // Http::fake() ismételt hívása HOZZÁFŰZ a korábbi stubokhoz, tehát egy
-        // sikeres fake után nem lehet tiszta hibaágat felvenni.
+        // `updated_at` is the input to the 59-minute freshness rule. If a
+        // failed attempt also refreshed it, an unreachable API would mark
+        // the old data "fresh" for an hour, and the next attempt would be
+        // skipped too.
+        // We produce the existing row directly, not from a successful call:
+        // a repeated call to Http::fake() APPENDS to the previous stubs, so
+        // after a successful fake it's not possible to set up a clean failure branch.
         $row = WeatherCity::factory()->withWeatherData()->create([
             'city'    => 'Szeged',
             'country' => 'HU',
@@ -264,11 +264,11 @@ class OpenWeatherClientTest extends FeatureTestCase
         $fresh = $row->fresh();
 
         $this->assertArrayHasKey('error', $result);
-        $this->assertTrue($fresh->last_try->gt(now()->subMinute()), 'A last_try mozdul.');
-        $this->assertTrue($fresh->updated_at->lt(now()->subHour()), 'Az updated_at NEM mozdul.');
+        $this->assertTrue($fresh->last_try->gt(now()->subMinute()), 'last_try moves.');
+        $this->assertTrue($fresh->updated_at->lt(now()->subHour()), 'updated_at does NOT move.');
 
-        // A hibaág a legutóbbi ismert adatot is visszaadja: egy órás késésű
-        // előrejelzés használhatóbb, mint a semmi.
+        // The failure branch also returns the most recently known data: a
+        // forecast delayed by an hour is more usable than nothing.
         $this->assertSame(21.5, $result['current_weather']['main']['temp']);
     }
 

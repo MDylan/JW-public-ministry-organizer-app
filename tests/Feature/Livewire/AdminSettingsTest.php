@@ -85,7 +85,7 @@ class AdminSettingsTest extends FeatureTestCase
 
         $component = Livewire::actingAs($this->admin)->test(Settings::class);
 
-        // A weather alapértéke false a $others tömbben.
+        // The default for weather is false in the $others array.
         $this->assertFalse($component->get('state')['others']['weather']);
     }
 
@@ -100,7 +100,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->assertViewHas('failed_jobs');
     }
 
-    // --- csoportadatok megőrzése (v1-patch E5) ---
+    // --- group data retention (v1-patch E5) ---
 
     public function test_mount_loads_the_stored_group_data_retention(): void
     {
@@ -132,10 +132,10 @@ class AdminSettingsTest extends FeatureTestCase
     }
 
     /**
-     * A $state publikus Livewire property, tehát a böngészőből tetszőleges
-     * érték felküldhető. Enélkül a whitelist nélkül egy 'x' a settings táblába
-     * kerülne, a RetentionWindow-nak kellene egyedül védenie, és egy castoló
-     * olvasó nulla hónapos ablakot - azaz teljes táblatörlést - kapna.
+     * $state is a public Livewire property, so an arbitrary value can be posted
+     * from the browser. Without this whitelist, an 'x' would land in the settings
+     * table, RetentionWindow would have to guard alone, and a casting reader
+     * would get a zero-month window - i.e. a full table wipe.
      */
     public function test_saving_the_group_data_retention_refuses_a_value_outside_the_whitelist(): void
     {
@@ -154,10 +154,10 @@ class AdminSettingsTest extends FeatureTestCase
     }
 
     /**
-     * A $others tömböt a nézet bootstrap-switch ciklusa iterálja, a
-     * state['others'] ág pedig a saveOthers() hatókörébe esne - ami az egész
-     * .env fájlt újraírja, és a komponens egyetlen teszteletlen metódusa.
-     * Egy végleges törlést vezérlő beállítás egyikbe sem kerülhet.
+     * The $others array is iterated by the view's bootstrap-switch loop, and the
+     * state['others'] branch would fall into saveOthers()'s scope - which
+     * rewrites the entire .env file, and is the component's one untested method.
+     * A setting that controls a permanent deletion must not end up in either.
      */
     public function test_the_group_data_retention_is_not_one_of_the_checkbox_settings(): void
     {
@@ -167,7 +167,7 @@ class AdminSettingsTest extends FeatureTestCase
         $this->assertArrayNotHasKey('group_data_retention', $component->get('state')['others']);
     }
 
-    // --- nyelvkezelés ---
+    // --- language management ---
 
     public function test_adding_a_language_stores_it_as_visible(): void
     {
@@ -261,7 +261,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->assertSet('lang_beeing_deleted', 'de')
             ->assertDispatchedBrowserEvent('show-languageRemove-confirmation');
 
-        // Megerősítés előtt még megvan.
+        // Still present before confirmation.
         $this->assertArrayHasKey('de', $this->storedLanguages());
     }
 
@@ -319,13 +319,13 @@ class AdminSettingsTest extends FeatureTestCase
         $this->assertSame(['de' => ['name' => 'Deutsch', 'visible' => true]], $this->storedLanguages());
     }
 
-    // --- karbantartó parancsok ---
+    // --- maintenance commands ---
 
     public function test_run_maps_the_whitelist_key_to_the_right_artisan_command(): void
     {
-        // Az Artisan facade-ot mockoljuk, mert a valódi hívásoknak globális
-        // mellékhatásuk van: a view:clear kiüríti a lefordított Blade
-        // nézeteket, ami a suite hátralévő részét drámaian lelassítja.
+        // We mock the Artisan facade because real calls have global side effects:
+        // view:clear empties the compiled Blade views, which dramatically slows
+        // down the rest of the suite.
         Artisan::shouldReceive('call')->once()->with('view:clear')->andReturn(0);
 
         Livewire::actingAs($this->admin)
@@ -346,8 +346,8 @@ class AdminSettingsTest extends FeatureTestCase
 
     public function test_run_ignores_a_command_outside_the_whitelist(): void
     {
-        // Fontos biztonsági tulajdonság: csak a fix listán szereplő parancsok
-        // futhatnak, tetszőleges Artisan hívás nem.
+        // Important security property: only the commands on the fixed list may
+        // run, not an arbitrary Artisan call.
         Artisan::shouldReceive('call')->never();
 
         Livewire::actingAs($this->admin)
@@ -356,7 +356,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->assertNotDispatchedBrowserEvent('success');
     }
 
-    // --- levélteszt ---
+    // --- mail test ---
 
     public function test_test_mail_sends_a_notification_and_reports_success(): void
     {
@@ -393,7 +393,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->set('state.env.MAIL_FROM_ADDRESS', 'probauzenet@example.test')
             ->call('testMail');
 
-        // A metódus ideiglenesen átírja a mail configot, majd visszaállítja.
+        // The method temporarily rewrites the mail config, then restores it.
         $this->assertSame($originalMailer, config('mail.default'));
     }
 }

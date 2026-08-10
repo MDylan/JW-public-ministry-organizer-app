@@ -76,12 +76,12 @@ class NotificationRegressionTest extends TestCase
     }
 
     /**
-     * TODO 15: a provider-lista maga is állítás.
+     * TODO 15: the provider list is itself an assertion.
      *
-     * Ugyanaz a minta, mint a TODO 04 factory-listája és a TODO 13 cast-listája:
-     * ha valaki új notification osztályt vesz fel mail-kontraktus nélkül, ez a
-     * teszt bukik el. A provider KULCSAI pontosan a rövid osztálynevek - a
-     * kisbetűs deletePersonalDataNotification-t is beleértve.
+     * The same pattern as TODO 04's factory list and TODO 13's cast list: if
+     * someone adds a new notification class without a mail contract, this
+     * test fails. The provider's KEYS are exactly the short class names -
+     * including the lowercase deletePersonalDataNotification.
      */
     public function test_every_notification_class_has_a_mail_contract(): void
     {

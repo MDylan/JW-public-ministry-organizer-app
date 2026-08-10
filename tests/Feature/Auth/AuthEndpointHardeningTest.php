@@ -8,26 +8,26 @@ use Illuminate\Support\Facades\RateLimiter;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * v1-patch H: a biztonsági audit közepes és alacsony prioritású tételei, amiket
- * nem fed külön tesztfájl.
+ * v1-patch H: the medium- and low-priority items from the security audit that
+ * are not covered by a dedicated test file.
  */
 class AuthEndpointHardeningTest extends FeatureTestCase
 {
     // =========================================================================
-    // A második, throttle NÉLKÜLI jelszó-megerősítő végpont
+    // The second password-confirmation endpoint, WITHOUT throttling
     // =========================================================================
 
     public function test_the_unthrottled_fortify_confirm_password_endpoint_is_gone(): void
     {
-        // A routes/fortify.php-ban a Fortify saját `POST /user/confirm-password`
-        // definíciója élt, `auth:web`-bel és SEMMILYEN sebességkorláttal. Egy
-        // ellopott munkamenettel korlátlanul lehetett rajta a felhasználó
-        // jelszavát próbálgatni, miközben az alkalmazás saját ága (a
-        // `password.confirm.store`) `throttle:6,1`-et visel.
+        // Fortify's own `POST /user/confirm-password` definition lived in
+        // routes/fortify.php, with `auth:web` and NO rate limiting whatsoever.
+        // With a stolen session you could brute-force the user's password on
+        // it without limit, while the application's own branch
+        // (`password.confirm.store`) carries `throttle:6,1`.
         $user = $this->createUser(['email' => 'confirm-endpoint@example.test']);
 
-        // 404, nem 405: a hozzá tartozó GET pár már korábban ki volt
-        // kommentelve, tehát ezen az URI-n egyetlen definíció sem maradt.
+        // 404, not 405: the matching GET route had already been commented out
+        // earlier, so no definition at all remained on this URI.
         $this->actingAs($user)
             ->post('/user/confirm-password', ['password' => 'password'])
             ->assertNotFound();
@@ -42,16 +42,16 @@ class AuthEndpointHardeningTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A bejelentkezési sebességkorlát kulcsa
+    // The login rate-limiter's key
     // =========================================================================
 
     public function test_the_login_limiter_normalizes_the_email_address(): void
     {
-        // A kulcs KORÁBBAN a nyers `email . ip` összefűzés volt. A MySQL
-        // alapértelmezett collationje kis-/nagybetűre érzéketlen, tehát a
-        // `User@x.hu` és a `user@x.hu` UGYANAZT a fiókot találja meg - a
-        // limiter viszont két külön vödröt nyitott nekik, így az 5/perc korlát
-        // a betűváltozatokkal tetszőlegesen sokszorozható volt.
+        // The key USED TO BE the raw `email . ip` concatenation. MySQL's
+        // default collation is case-insensitive, so `User@x.hu` and
+        // `user@x.hu` find the SAME account - but the limiter opened two
+        // separate buckets for them, so the 5/minute limit could be
+        // multiplied arbitrarily using letter-case variants.
         $lower = $this->loginLimits('user@example.test');
         $mixed = $this->loginLimits('  User@Example.TEST  ');
 
@@ -60,16 +60,17 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_the_login_limiter_separates_the_email_from_the_ip(): void
     {
-        // Elválasztó nélkül a `bob@x.hu` + `1.2.3.41` és a `bob@x.hu1` +
-        // `.2.3.41` ugyanazt a kulcsot adta.
+        // Without a separator, `bob@x.hu` + `1.2.3.41` and `bob@x.hu1` +
+        // `.2.3.41` produced the same key.
         $this->assertStringContainsString('|', $this->loginLimits('bob@example.test')[0]->key);
     }
 
     public function test_the_login_limiter_also_caps_a_single_ip(): void
     {
-        // Az e-mail-forgatásos próbálkozás ellen: egy IP-ről percenként 20
-        // kísérlet mehet, akárhány különböző címmel. Korábban minden új cím új
-        // vödröt kapott, tehát az IP-nek nem volt felső határa.
+        // Against email-rotation attempts: 20 attempts per minute are allowed
+        // from a single IP, with any number of different addresses.
+        // Previously every new address got a new bucket, so the IP had no
+        // upper bound.
         $limits = $this->loginLimits('bob@example.test');
 
         $this->assertCount(2, $limits);
@@ -90,7 +91,7 @@ class AuthEndpointHardeningTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // CRLF a levelet küldő végpontok e-mail mezőjében
+    // CRLF in the email field of the mail-sending endpoints
     // =========================================================================
 
     /**
@@ -98,15 +99,16 @@ class AuthEndpointHardeningTest extends FeatureTestCase
      */
     public function test_a_crlf_payload_is_rejected_on_the_forgot_password_endpoint(string $payload): void
     {
-        // A Laravel 8 alapértelmezett `email` szabálya RFCValidation-t használ,
-        // ami ELFOGADJA a CR/LF-et a címben (GHSA-5vg9-5847-vvmq, high). Onnan a
-        // cím levélfejlécbe kerül, ahol a sortörés új fejlécet nyit: a támadó
-        // befolyásolhatja a levél tartalmát, más címzettnek kézbesíttetheti,
-        // vagy a levelezőt idegen üzenetek küldésére bírhatja. A javítás csak a
-        // 12.60.0-ban van meg, Laravel 8-ra nincs backport - ezért ül a
-        // `strictEmail` middleware a két vendor-controller előtt.
+        // Laravel 8's default `email` rule uses RFCValidation, which ACCEPTS
+        // CR/LF in the address (GHSA-5vg9-5847-vvmq, high). From there the
+        // address ends up in a mail header, where the line break opens a new
+        // header: the attacker can influence the mail's contents, have it
+        // delivered to a different recipient, or coerce the mailer into
+        // sending unrelated messages. The fix only exists in 12.60.0, there
+        // is no backport for Laravel 8 - that's why the `strictEmail`
+        // middleware sits in front of the two vendor controllers.
         //
-        // Ez a végpont ANONIM, és a megadott címre levelet küld.
+        // This endpoint is ANONYMOUS, and sends mail to the given address.
         $this->post(route('password.email'), ['email' => $payload])
             ->assertSessionHasErrors('email');
     }
@@ -135,8 +137,8 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_a_well_formed_address_still_gets_through_to_the_controller(): void
     {
-        // A middleware nem szigoríthat a kelleténél jobban: egy szabályos cím
-        // változatlanul eljut a Fortify controlleréig.
+        // The middleware must not be stricter than necessary: a well-formed
+        // address still reaches Fortify's controller unchanged.
         $user = $this->createUser(['email' => 'reset-me@example.test']);
 
         $this->post(route('password.email'), ['email' => $user->email])
@@ -145,10 +147,10 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_the_two_vendor_email_endpoints_declare_the_strict_rule(): void
     {
-        // Mindkét controller a vendorban él és `required|email`-t validál, tehát
-        // a szabály ott nem szerkeszthető maradandóan - a következő
-        // `composer update` felülírná. A védelem kizárólag addig áll, amíg ez a
-        // middleware a route-on van.
+        // Both controllers live in the vendor directory and validate
+        // `required|email`, so the rule cannot be edited there permanently -
+        // the next `composer update` would overwrite it. The protection holds
+        // only as long as this middleware remains on the route.
         foreach (['password.email', 'password.update'] as $name) {
             $route = app('router')->getRoutes()->getByName($name);
 
@@ -159,11 +161,11 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_the_registration_flows_reject_a_crlf_address(): void
     {
-        // Az alkalmazás saját validációi `email:filter`-t használnak, ami
-        // `filter_var(FILTER_VALIDATE_EMAIL)`-lel dolgozik és a CRLF-et eleve
-        // elutasítja. Ez a végponton keresztül igazolja, nem a forrás
-        // olvasásával - a `filter` és az alapértelmezett `rfc` közti különbség
-        // épp az, ami a kódot olvasva nem látszik.
+        // The application's own validations use `email:filter`, which works
+        // via `filter_var(FILTER_VALIDATE_EMAIL)` and rejects CRLF outright.
+        // This is proven through the endpoint, not by reading the source -
+        // the difference between `filter` and the default `rfc` is exactly
+        // what doesn't show when reading the code.
         $this->post(route('register'), [
             'name' => 'Teszt Elek',
             'email' => "valaki@example.test\r\nBcc: aldozat@example.test",
@@ -175,9 +177,9 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_the_mail_setup_request_uses_the_filter_variant(): void
     {
-        // A MAIL_FROM_ADDRESS a From FEJLÉCBE kerül. A telepítő a
-        // `setup/*` csoportban, installer-token mögött él, tehát a támadási
-        // felület szűk - de a mező akkor is fejlécérték.
+        // MAIL_FROM_ADDRESS ends up in the From HEADER. The installer lives in
+        // the `setup/*` group, behind an installer token, so the attack
+        // surface is narrow - but the field is still a header value.
         $rules = (new \App\Http\Requests\SetupMailRequest())->rules();
 
         $this->assertStringContainsString('email:filter', $rules['MAIL_FROM_ADDRESS']);
@@ -189,10 +191,10 @@ class AuthEndpointHardeningTest extends FeatureTestCase
 
     public function test_the_verification_notice_page_requires_authentication(): void
     {
-        // Az `auth` KORÁBBAN hiányzott. Jogosultságmegkerülés nem látszott
-        // belőle, de a nézet `<x-admin-layout>`-ot használ, ami vendégnél
-        // `auth()->user()`-t dereferál: minden kijelentkezett látogatás 500-at
-        // és egy stack trace-t adott a naplóba.
+        // `auth` was PREVIOUSLY missing. No authorization bypass resulted from
+        // it, but the view uses `<x-admin-layout>`, which dereferences
+        // `auth()->user()` for a guest: every logged-out visit produced a 500
+        // and a stack trace in the log.
         $this->get(route('verification.notice'))->assertRedirect(route('login'));
     }
 

@@ -48,7 +48,7 @@ class AnonymizationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A mezőleképzés
+    // 1. The field mapping
     // =========================================================================
 
     public function test_anonymize_maps_every_declared_field(): void
@@ -96,22 +96,22 @@ class AnonymizationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Az e-mail - a trait bare-érték ága
+    // 2. The e-mail - the trait's bare-value branch
     // =========================================================================
 
     public function test_the_anonymized_email_is_unique_per_user(): void
     {
-        // Az egyediséget EGYETLEN dolog biztosítja: a User::getAnonymizedEmail()
-        // (:247). A trait a kulcs nélküli 'email' elemnél előbb a
-        // getAnonymized+Str::studly($val) metódust keresi a modellen, és csak
-        // ha nincs, esik vissza a parseValue()-ra - ami stringre önmagát adja
-        // vissza, tehát MINDEN usernek a literál 'email' jutna. A users.email
-        // unique, így a második anonimizálás duplikált kulccsal elszállna.
+        // Uniqueness is guaranteed by EXACTLY ONE thing: User::getAnonymizedEmail()
+        // (:247). For the keyless 'email' entry the trait first looks for a
+        // getAnonymized+Str::studly($val) method on the model, and only falls back
+        // to parseValue() if there isn't one - which returns a string as itself, so
+        // EVERY user would get the literal string 'email'. users.email is unique,
+        // so the second anonymization would die with a duplicate key.
         //
-        // Mérve: a metódus eltávolításával ez a teszt pontosan azzal a
-        // SQLSTATE[23000] hibával bukik. A modell horgja tehát nem kényelmi
-        // elem, hanem a napi parancs működésének feltétele - fontos a TODO 16
-        // csomagcsere-döntéséhez.
+        // Measured: removing the method makes this test fail with exactly that
+        // SQLSTATE[23000] error. The model hook is therefore not a convenience, but
+        // a precondition for the nightly command working at all - relevant to the
+        // TODO 16 package-swap decision.
         $first = $this->inactiveUser('first@example.test');
         $second = $this->inactiveUser('second@example.test');
 
@@ -132,15 +132,15 @@ class AnonymizationTest extends FeatureTestCase
 
     public function test_the_anonymized_email_is_not_an_address_at_all(): void
     {
-        // KARAKTERIZÁLÁS: a getAnonymizedEmail() Str::random(10)-et ad, tehát a
-        // users.email egy 10 karakteres token lesz, @ jel nélkül - vagyis nem
-        // e-mail cím. Egyedi, de szintaktikailag érvénytelen.
+        // CHARACTERIZATION: getAnonymizedEmail() returns Str::random(10), so
+        // users.email becomes a 10-character token with no @ sign - i.e. not an
+        // e-mail address. Unique, but syntactically invalid.
         //
-        // Ez akkor számít, ha bármelyik küldési út el tud jutni egy anonimizált
-        // felhasználóig: a SwiftMailer RFC-hibát dob érvénytelen címre. A
-        // group-relációk (Group::groupUsers, ::users) szűrik az isAnonymized-et,
-        // a User::userGroupsEditable / ::userGroupsDeletable viszont NEM - és a
-        // newsletters:send-due pont ezeken válogat.
+        // This matters if any sending path can reach an anonymized user:
+        // SwiftMailer throws an RFC error on an invalid address. The group
+        // relations (Group::groupUsers, ::users) filter on isAnonymized, but
+        // User::userGroupsEditable / ::userGroupsDeletable do NOT - and
+        // newsletters:send-due selects precisely through those.
         $user = $this->inactiveUser('deliverable@example.test');
 
         $user->anonymize();
@@ -153,9 +153,9 @@ class AnonymizationTest extends FeatureTestCase
 
     public function test_a_whole_batch_of_users_can_be_anonymized(): void
     {
-        // Ez a teszt méri azt, amiért az egész javítás készült: a napi parancs
-        // ciklusban megy végig az inaktív felhasználókon. Ütköző e-maillel a
-        // MÁSODIK iterációnál elszállt, és onnantól minden nap ugyanott.
+        // This test measures exactly what the whole fix was made for: the nightly
+        // command loops over inactive users. With a colliding e-mail it died on the
+        // SECOND iteration, and from then on at the same place every day.
         $users = [];
         for ($i = 1; $i <= 5; $i++) {
             $users[] = $this->inactiveUser('batch-'.$i.'@example.test');
@@ -171,18 +171,18 @@ class AnonymizationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A rekurzió - csendben nem csinál semmit
+    // 3. The recursion - silently does nothing
     // =========================================================================
 
     public function test_the_recursion_into_events_and_groups_changes_nothing(): void
     {
-        // A trait a $gdprWith relációin (eventsOnly, groupsAccepted) végigmegy,
-        // és mindegyik elemre meghívja az anonymize()-t. Az Event és a Group
-        // használja is a traitet - de MINDKETTŐ $gdprAnonymizableFields-e üres
-        // tömb, tehát a rekurzió lefut és nem csinál semmit.
+        // The trait walks the $gdprWith relations (eventsOnly, groupsAccepted) and
+        // calls anonymize() on every element. Both Event and Group use the trait too
+        // - but BOTH have an empty array for $gdprAnonymizableFields, so the
+        // recursion runs and does nothing.
         //
-        // Ez azt jelenti, hogy az események és a csoportok adatai az
-        // anonimizálás után is a felhasználóhoz köthetők maradnak.
+        // This means that events' and groups' data can still be tied back to the
+        // user even after anonymization.
         $user = $this->inactiveUser('recursion@example.test');
         $this->actingAs($user);
 
@@ -207,8 +207,8 @@ class AnonymizationTest extends FeatureTestCase
 
     public function test_group_anonymize_is_a_no_op(): void
     {
-        // A Group is Anonymizable, de üres mezőlistával - a trait ilyenkor
-        // update()-et sem hív, tehát a modell-események sem sülnek el.
+        // Group is Anonymizable, but with an empty field list - in that case the
+        // trait does not even call update(), so no model events fire either.
         $group = $this->createGroup(['name' => 'Érintetlen']);
 
         $group->anonymize();

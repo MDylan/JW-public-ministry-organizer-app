@@ -9,7 +9,7 @@ use Livewire\Livewire;
 class GroupSpecialDateModalTest extends FeatureTestCase
 {
     // =========================================================================
-    // 1. Hozzáférés-vezérlés
+    // 1. Access control
     // =========================================================================
 
     public function test_editor_can_open_modal(): void
@@ -30,7 +30,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
         $group = $this->createGroup();
         $this->attachUserToGroup($member, $group, 'member', true);
 
-        // abort(403) a getGroupData()-ban fut le — a show-modal browser event nem dispatched
+        // abort(403) runs in getGroupData() — the show-modal browser event is not dispatched
         Livewire::actingAs($member)
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal')
@@ -38,7 +38,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Különleges dátum mentés
+    // 2. Saving a special date
     // =========================================================================
 
     public function test_editor_can_save_new_special_date(): void
@@ -115,8 +115,8 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             'note' => 'Előző különleges nap',
         ]);
 
-        // Szerkesztés -> "Mégsem" (csak data-dismiss, szerveren nem fut semmi)
-        // -> "Hozzáadás": a form itt üres kell legyen, nem az előző nap adataival.
+        // Edit -> "Cancel" (just data-dismiss, nothing runs on the server)
+        // -> "Add": the form here must be empty, not filled with the previous day's data.
         Livewire::actingAs($editor)
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal', $date)
@@ -131,7 +131,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Validáció
+    // 3. Validation
     // =========================================================================
 
     public function test_savedate_validation_fails_when_note_is_missing(): void
@@ -157,7 +157,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
         $group = $this->createGroup();
         $this->attachUserToGroup($editor, $group, 'roler', true);
 
-        // openModal nélkül közvetlenül state-t állítjuk: múltbeli dátum
+        // We set the state directly without openModal: a past date
         Livewire::actingAs($editor)
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal')
@@ -170,7 +170,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Különleges dátum törlés
+    // 4. Deleting a special date
     // =========================================================================
 
     public function test_editor_can_delete_future_date(): void
@@ -222,7 +222,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Törlés megerősítés
+    // 5. Deletion confirmation
     // =========================================================================
 
     public function test_delete_date_confirmation_dispatches_browser_event(): void

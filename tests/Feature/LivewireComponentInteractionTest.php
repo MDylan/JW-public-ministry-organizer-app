@@ -214,18 +214,18 @@ class LivewireComponentInteractionTest extends FeatureTestCase
 
     public function test_groups_edit_component_rejects_a_crlf_reply_to_address(): void
     {
-        // A `replyTo` a csoport leveleinek Reply-To FEJLÉCÉBE megy. A Laravel 8
-        // alapértelmezett `email` szabálya elfogadja a CR/LF-et a címben
-        // (GHSA-5vg9-5847-vvmq), amiből a sortörés új fejlécet nyit; a szabály
-        // ezért `email:filter` a v1-patch H2 óta.
+        // The `replyTo` goes into the group's mail Reply-To HEADER. Laravel 8's
+        // default `email` rule accepts CR/LF in the address
+        // (GHSA-5vg9-5847-vvmq), where the line break opens a new header; that's
+        // why the rule has been `email:filter` since v1-patch H2.
         $group = $this->createGroup();
         $editor = $this->createUser(['email' => 'lw-group-replyto@example.test']);
         $this->attachUserToGroup($editor, $group, 'roler', true);
 
         $payload = "csoport@example.test\r\nBcc: aldozat@example.test";
 
-        // Ugyanaz a teljes, érvényes űrlapállapot, mint a sikeres mentésnél -
-        // egyedül a replyTo tér el, tehát a hiba csakis onnan jöhet.
+        // Same full, valid form state as in the successful save -
+        // only replyTo differs, so the error can only come from there.
         Livewire::actingAs($editor)
             ->test(GroupEditComponent::class, ['group' => $group])
             ->set('state.name', 'CRLF Group')

@@ -7,27 +7,28 @@ use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * A v1-patch D2: a telepítő hozzáférés-védelme.
+ * v1-patch D2: the installer's access protection.
  *
- * A MÉRT HIBA
+ * THE MEASURED DEFECT
  *
- * A `setup/*` útvonalcsoport egyetlen jogosultsági ellenőrzést sem hordozott -
- * se `auth`, se gate, se aláírás. A telepítési ablakban tehát BÁRKI, aki
- * ismerte a címet, létrehozhatott `mainAdmin` fiókot, ráadásul ismételten, és
- * bárki lezárhatta a telepítőt, mert a `setup.complete` egyszerű GET-en írta ki
- * a sentinel fájlt - amitől a csoport többé nem regisztrálódik, vagyis a valódi
- * telepítés BEFEJEZHETETLENNÉ vált.
+ * The `setup/*` route group carried not a single authorization check -
+ * neither `auth`, nor a gate, nor a signature. So during the installation
+ * window, ANYONE who knew the address could create a `mainAdmin` account,
+ * repeatedly even, and anyone could close the installer, because
+ * `setup.complete` wrote the sentinel file on a plain GET - after which the
+ * group no longer registers, meaning the real installation became
+ * UNCOMPLETABLE.
  *
- * A VÁLASZTOTT VÉDELEM
+ * THE CHOSEN PROTECTION
  *
- * Bejelentkezéshez kötni nem lehet: a telepítés pontosan az a szakasz, amikor
- * még nincs felhasználó. A middleware ezért fájlrendszer-hozzáférést
- * bizonyíttat - a tokent a szerveren, a `storage/app/installer-token.txt`
- * fájlban kell elolvasni.
+ * It cannot be tied to login: the installation is exactly the phase where
+ * there is not yet a user. So the middleware proves filesystem access
+ * instead - the token must be read on the server, in the
+ * `storage/app/installer-token.txt` file.
  *
- * Ez az egyetlen fájl a `tests/Feature/Setup/` alatt, amelyik NEM oldja fel a
- * kaput a setUp()-ban - a többi leszármazott a SetupTestCase-ből örökli a
- * feloldást, hogy továbbra is azt mérje, amiért íródott.
+ * This is the only file under `tests/Feature/Setup/` that does NOT unlock the
+ * gate in setUp() - the other subclasses inherit the unlock from
+ * SetupTestCase, so they keep measuring what they were written for.
  */
 class InstallerAccessTest extends SetupTestCase
 {
@@ -35,12 +36,12 @@ class InstallerAccessTest extends SetupTestCase
     {
         parent::setUp();
 
-        // A SetupTestCase alapból felold; itt épp a zárt állapot a tárgy.
+        // SetupTestCase unlocks by default; here the locked state is exactly the subject.
         $this->flushSession();
     }
 
     // =========================================================================
-    // 1. A kapu
+    // 1. The gate
     // =========================================================================
 
     /**
@@ -65,8 +66,8 @@ class InstallerAccessTest extends SetupTestCase
 
     public function test_a_visitor_without_the_token_cannot_create_an_administrator(): void
     {
-        // EZ A LÉNYEG. A telepítési ablakban bárki, aki ismerte a címet,
-        // létrehozhatott magának mainAdmin fiókot.
+        // THIS IS THE POINT. During the installation window, anyone who knew
+        // the address could create themselves a mainAdmin account.
         $this->post(route('setup.save-account'), [
             'name'                  => 'Betolakodó',
             'email'                 => 'intruder@example.test',
@@ -79,9 +80,9 @@ class InstallerAccessTest extends SetupTestCase
 
     public function test_a_visitor_without_the_token_cannot_close_the_installer(): void
     {
-        // A sentinel kiírása lezárja a telepítőt: a route-csoport onnantól nem
-        // regisztrálódik. Ha ezt egy idegen kiválthatja, a valódi telepítés
-        // befejezhetetlenné válik.
+        // Writing the sentinel closes the installer: the route group no
+        // longer registers from that point on. If a stranger can trigger
+        // this, the real installation becomes uncompletable.
         $this->get(route('setup.complete'))->assertRedirect(route('setup.welcome'));
 
         $this->assertFileDoesNotExist($this->sentinelPath());
@@ -93,13 +94,13 @@ class InstallerAccessTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 2. A feloldás
+    // 2. The unlock
     // =========================================================================
 
     public function test_the_token_file_is_created_on_demand_and_is_not_guessable(): void
     {
-        // A SetupTestCase::setUp() feloldáskor már kikényszerítette a fájlt;
-        // itt épp a keletkezése a tárgy, ezért eldobjuk.
+        // SetupTestCase::setUp() already forced the file into existence when
+        // unlocking; here its creation is exactly the subject, so we discard it.
         EnsureInstallerToken::forget();
 
         $this->assertFalse(Storage::exists(EnsureInstallerToken::TOKEN_FILE));
@@ -109,7 +110,7 @@ class InstallerAccessTest extends SetupTestCase
         $this->assertTrue(Storage::exists(EnsureInstallerToken::TOKEN_FILE));
         $this->assertSame(32, strlen($token));
 
-        // Ismételt olvasás ugyanazt adja - nem generálunk újat minden kérésre.
+        // Repeated reads give the same value - we do not generate a new one on every request.
         $this->assertSame($token, EnsureInstallerToken::currentToken());
     }
 
@@ -135,8 +136,8 @@ class InstallerAccessTest extends SetupTestCase
 
     public function test_the_token_is_accepted_with_surrounding_whitespace(): void
     {
-        // Fájlból másolva könnyen jön vele sortörés vagy szóköz; ezen ne
-        // bukjon el egy telepítés.
+        // When copied from a file, a line break or space easily comes along
+        // with it; an installation should not fail because of that.
         $token = EnsureInstallerToken::currentToken();
 
         $this->post(route('setup.unlock'), ['token' => "  \n".$token."  \n"])
@@ -144,14 +145,14 @@ class InstallerAccessTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 3. A lezárás feltétele
+    // 3. The precondition for closing
     // =========================================================================
 
     public function test_the_installer_cannot_be_closed_before_an_administrator_exists(): void
     {
-        // A sentinel jelentése "a telepítés befejeződött", és az pontosan azt
-        // jelenti, hogy van adminisztrátori fiók. Korábban a GET feltétel
-        // nélkül kiírta.
+        // The sentinel's meaning is "the installation has completed", and
+        // that means precisely that an administrator account exists.
+        // Previously the GET wrote it unconditionally.
         $this->unlockInstaller();
 
         $this->get(route('setup.complete'))->assertRedirect(route('setup.account'));
@@ -172,8 +173,8 @@ class InstallerAccessTest extends SetupTestCase
 
     public function test_closing_the_installer_removes_the_token_file(): void
     {
-        // A token elveszti a jelentését; ne maradjon a lemezen egy olyan fájl,
-        // ami egyszer hozzáférést adott.
+        // The token loses its meaning; a file that once granted access
+        // should not stay behind on disk.
         $this->unlockInstaller();
         EnsureInstallerToken::currentToken();
 

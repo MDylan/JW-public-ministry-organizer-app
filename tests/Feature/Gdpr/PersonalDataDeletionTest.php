@@ -8,12 +8,13 @@ use Illuminate\Support\Facades\Notification;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12: a felhasználó által kezdeményezett adattörlés (GDPR 17. cikk).
+ * TODO 12: user-initiated data deletion (GDPR Article 17).
  *
- * A deletePersonalDataController két lépésből áll: az asktodelete aláírt
- * linket küld e-mailben (ennek a kiváltását a NotificationTriggerRegressionTest
- * már fedte), a link mögötti deletePersonalData pedig ténylegesen anonimizál és
- * kilépteti a felhasználót minden csoportból. Ez utóbbi eddig fedetlen volt.
+ * The deletePersonalDataController consists of two steps: asktodelete sends a
+ * signed link by email (triggering this was already covered by
+ * NotificationTriggerRegressionTest), while deletePersonalData behind the link
+ * actually anonymizes the user and logs them out of every group. The latter was
+ * uncovered until now.
  */
 class PersonalDataDeletionTest extends FeatureTestCase
 {
@@ -67,13 +68,13 @@ class PersonalDataDeletionTest extends FeatureTestCase
 
     public function test_the_farewell_notification_is_suppressed_by_the_ordering(): void
     {
-        // A sorrend számít: a kontroller ELŐBB anonimizál, csak utána bontja a
-        // tagságokat. A GroupUserMoves::detach() (:131) viszont csak akkor
-        // értesíti a felhasználót a kiléptetésről, ha nem anonimizált - így ez
-        // az értesítés soha nem megy ki ezen az úton.
+        // Order matters: the controller anonymizes FIRST, only afterwards does it detach
+        // the memberships. GroupUserMoves::detach() (:131), however, only notifies the
+        // user about being removed if they are not anonymized - so this notification
+        // never goes out via this path.
         //
-        // Ez helyes is: az e-mail ekkor már token, nem cím. De a viselkedés
-        // egy sorrendi véletlenen múlik, nem kimondott döntésen.
+        // This is actually correct: at this point the email is already a token, not an
+        // address. But the behavior hinges on an accident of ordering, not an explicit decision.
         Notification::fake();
 
         $user = $this->createUser(['email' => 'farewell@example.test']);
@@ -86,7 +87,7 @@ class PersonalDataDeletionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A jogosultság
+    // Authorization
     // =========================================================================
 
     public function test_another_users_id_is_rejected(): void
@@ -107,8 +108,8 @@ class PersonalDataDeletionTest extends FeatureTestCase
 
     public function test_an_unsigned_link_is_rejected(): void
     {
-        // A route-on signed middleware van, tehát a nyers URL nem elég - a
-        // levélben kiküldött aláírás nélkül 403 jár.
+        // The route has signed middleware, so the raw URL is not enough - without
+        // the signature sent in the email, a 403 is returned.
         $user = $this->createUser(['email' => 'unsigned@example.test']);
 
         $this->actingAs($user)

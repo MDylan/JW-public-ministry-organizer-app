@@ -44,7 +44,7 @@ class PendingEmailVerificationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Az aktiválás
+    // 1. The activation
     // =========================================================================
 
     public function test_a_valid_signed_link_moves_the_address_onto_the_user_and_marks_it_verified(): void
@@ -97,9 +97,9 @@ class PendingEmailVerificationTest extends FeatureTestCase
     {
         [, $token] = $this->userWithPendingEmail('guest@example.test', 'guest-new@example.test');
 
-        // login_after_verification => false. A linket tipikusan MÁS eszközön
-        // nyitják meg, mint ahol a kérés indult - ezért is nincs `auth` az
-        // útvonalon (lásd lentebb).
+        // login_after_verification => false. The link is typically opened on a
+        // DIFFERENT device than the one where the request started - which is
+        // also why there is no `auth` on the route (see below).
         $this->get($this->signedRoute('pendingEmail.verify', ['token' => $token]))
             ->assertStatus(302);
 
@@ -116,7 +116,7 @@ class PendingEmailVerificationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A három elutasítási ág
+    // 2. The three rejection paths
     // =========================================================================
 
     public function test_an_unsigned_link_is_rejected_with_403(): void
@@ -146,8 +146,8 @@ class PendingEmailVerificationTest extends FeatureTestCase
 
         $url = $this->signedRoute('pendingEmail.verify', ['token' => $token], 60);
 
-        // A lejárat forrása az auth.verification.expire, ami ma nincs
-        // definiálva a config/auth.php-ban, tehát a 60 perces alapérték él.
+        // The expiry comes from auth.verification.expire, which is not
+        // currently defined in config/auth.php, so the 60-minute default applies.
         $this->assertSame(60, (int) config('auth.verification.expire', 60));
 
         $this->travel(61)->minutes();
@@ -211,7 +211,7 @@ class PendingEmailVerificationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A route szerződése
+    // 3. The route contract
     // =========================================================================
 
     /** REVERSED by TODO 33.5. */
@@ -246,8 +246,9 @@ class PendingEmailVerificationTest extends FeatureTestCase
     {
         $middleware = Route::getRoutes()->getByName('pendingEmail.verify')->gatherMiddleware();
 
-        // Szándékos: a linket más eszközön (vagy kijelentkezve) is meg kell
-        // tudni nyitni. A védelmet az aláírás és a token adja, nem a session.
+        // Deliberate: the link must be openable on a different device (or while
+        // logged out) too. The protection comes from the signature and the token,
+        // not from the session.
         $this->assertContains('web', $middleware);
         $this->assertContains('signed', $middleware);
         $this->assertContains('throttle:6,1', $middleware);
@@ -298,7 +299,7 @@ class PendingEmailVerificationTest extends FeatureTestCase
         $this->assertStringContainsString('signature=', $url);
         $this->assertStringContainsString('expires=', $url);
 
-        // A generált URL-nek működnie kell - ez köti össze a Mailable-t a route-tal.
+        // The generated URL must actually work - this is what ties the Mailable to the route.
         $this->get($url)->assertRedirect(config('verify-new-email.redirect_to'));
         $this->assertSame('url-new@example.test', $user->fresh()->email);
     }

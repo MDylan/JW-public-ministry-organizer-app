@@ -6,16 +6,16 @@ use App\Models\StaticPage;
 use App\Models\User;
 
 /**
- * TODO 11.2: a StaticPageController::render() státuszmátrixa.
+ * TODO 11.2: the status matrix of StaticPageController::render().
  *
- * A controller négy státuszt ismer, és mindegyikhez más láthatóságot rendel -
- * de a route (routes/web.php:62) teljesen nyilvános, tehát mind a négy ág
- * elérhető vendégként is. Fedettség eddig egyetlen ágra volt: a seedelt
- * 'home' oldalra a saját státuszával.
+ * The controller recognizes four statuses and assigns different visibility to
+ * each - but the route (routes/web.php:62) is completely public, so all four
+ * branches are reachable as a guest too. Coverage so far existed for only one
+ * branch: the seeded 'home' page, with its own status.
  *
- * A piszkozat (status 0) ága olvasta az Auth::user()->can()-t null-ellenőrzés
- * nélkül, vagyis vendégként fatalt dobott 403 helyett. Ugyanaz a hibacsalád,
- * mint a TODO 10 getRole()-ja és a TODO 11.1 detachParentGroup()-ja.
+ * The draft (status 0) branch read Auth::user()->can() without a null check,
+ * i.e. it threw a fatal error as a guest instead of a 403. Same defect family
+ * as TODO 10's getRole() and TODO 11.1's detachParentGroup().
  */
 class StaticPageAccessTest extends FeatureTestCase
 {
@@ -25,8 +25,8 @@ class StaticPageAccessTest extends FeatureTestCase
     {
         parent::setUp();
 
-        // A FeatureTestCase már létrehozta a 'home' oldalt status 1-gyel,
-        // ennek a tulajdonosa a mainAdmin.
+        // FeatureTestCase has already created the 'home' page with status 1;
+        // its owner is the mainAdmin.
         $this->owner = User::where('email', 'owner@example.test')->firstOrFail();
     }
 
@@ -54,15 +54,15 @@ class StaticPageAccessTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A piszkozat ága - ezért készült ez a fájl
+    // 1. The draft branch - this is why this file was created
     // =========================================================================
 
     public function test_a_draft_page_returns_403_for_a_guest_instead_of_a_fatal_error(): void
     {
-        // TODO 11.2: a :15 sor Auth::user()->can('is-admin')-t olvasott
-        // null-ellenőrzés nélkül. Vendégként az Auth::user() null, tehát ez
-        // "Call to a member function can() on null" fatal volt - 500 ott, ahol
-        // 403 jár. A route-on (web.php:62) SEMMILYEN auth middleware nincs.
+        // TODO 11.2: line :15 read Auth::user()->can('is-admin') without a
+        // null check. As a guest, Auth::user() is null, so this was a
+        // "Call to a member function can() on null" fatal - a 500 where a
+        // 403 is due. The route (web.php:62) has NO auth middleware at all.
         $this->makePage(0);
 
         $this->get($this->pageUrl())->assertForbidden();
@@ -70,11 +70,11 @@ class StaticPageAccessTest extends FeatureTestCase
 
     public function test_a_draft_home_page_does_not_break_the_site_root(): void
     {
-        // A legélesebb változat: a '/' route (web.php:57-59) guest
-        // middleware-rel fut, tehát ott az Auth::user() GARANTÁLTAN null. Ha a
-        // home oldal piszkozatra kerül, a site gyökere szállt el minden
-        // látogatónak. A 'home' slug az else ágon nem 403-at ad, hanem a
-        // home-404 nézetet.
+        // The sharpest variant: the '/' route (web.php:57-59) runs with guest
+        // middleware, so Auth::user() there is GUARANTEED to be null. If the
+        // home page becomes a draft, the site root crashed for every
+        // visitor. On the else branch, the 'home' slug does not give a 403,
+        // but the home-404 view.
         StaticPage::where('slug', 'home')->firstOrFail()->update(['status' => 0]);
 
         $this->get('/')
@@ -95,8 +95,9 @@ class StaticPageAccessTest extends FeatureTestCase
 
     public function test_a_draft_page_is_forbidden_for_an_authenticated_non_admin(): void
     {
-        // A nem-admin nem a can() ágon bukik el, hanem végigesik az
-        // elseif-láncon az else-ig: a 0 egyik későbbi ágnak sem felel meg.
+        // The non-admin doesn't fail on the can() branch, but falls all the
+        // way through the elseif chain to the else: 0 does not match any of
+        // the later branches either.
         $this->makePage(0);
 
         $this->actingAs($this->activatedUser())
@@ -105,14 +106,14 @@ class StaticPageAccessTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A többi státusz - a mátrix eddig sehol nem volt rögzítve
+    // 2. The other statuses - the matrix was not recorded anywhere until now
     // =========================================================================
 
     public function test_a_public_page_is_open_to_everyone(): void
     {
         $this->makePage(1);
 
-        // A vendég a 'main' layoutot kapja, a bejelentkezett a belsőt.
+        // The guest gets the 'main' layout, the logged-in user gets the inner one.
         $this->get($this->pageUrl())
             ->assertStatus(200)
             ->assertViewIs('main');
@@ -125,8 +126,8 @@ class StaticPageAccessTest extends FeatureTestCase
 
     public function test_a_guest_only_page_is_hidden_from_logged_in_users(): void
     {
-        // Status 2: kizárólag a kijelentkezett látogatóé. Ez az egyetlen
-        // státusz, ahol a bejelentkezés ELVESZI a hozzáférést.
+        // Status 2: exclusively for the logged-out visitor. This is the only
+        // status where logging in TAKES AWAY access.
         $this->makePage(2);
 
         $this->get($this->pageUrl())
@@ -151,7 +152,7 @@ class StaticPageAccessTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A hiányzó oldal - a 'home' slug itt is kivétel
+    // 3. The missing page - the 'home' slug is an exception here too
     // =========================================================================
 
     public function test_a_missing_page_is_a_404(): void

@@ -10,22 +10,22 @@ use Illuminate\Support\Facades\File;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 18 / 33.4: a laraupdater önfrissítő szerződése.
+ * TODO 18 / 33.4: laraupdater's self-update contract.
  *
- * A csomagnak eddig NULLA tesztje volt, miközben a vendor fájljai kézzel
- * módosítva vannak - vagyis bármelyik `composer update` némán visszaállította
- * volna az upstream 1.0.2-t, és semmi nem szólt volna. Ez a fájl rögzíti azt a
- * viselkedést, amit a saját fork (mdylan/laraupdater v2) átvenni köteles.
+ * The package had ZERO tests so far, while its vendor files are manually
+ * modified - meaning any `composer update` would have silently reverted them
+ * to upstream 1.0.2, and nothing would have said a word. This file records
+ * the behavior that our own fork (mdylan/laraupdater v2) is obligated to carry over.
  *
- * A távoli csatorna seamje maga a konfiguráció: az `update_baseurl` egy sima
- * könyvtárútvonal is lehet, mert a kontroller `file_get_contents()`-tel olvas.
- * Ezért nincs szükség Http::fake()-re, és ezért írható meg ez a fájl EGYSZER,
- * a fork-váltás előtt és után is ugyanúgy.
+ * The remote channel's seam is the configuration itself: `update_baseurl`
+ * can be a plain directory path too, because the controller reads with
+ * `file_get_contents()`. That's why there's no need for Http::fake(), and
+ * why this file can be written ONCE, the same both before and after the fork switch.
  *
- * Amit NEM lehet tesztelni: az `update()` metódust. Nyers `echo`-val ír a
- * kimenetre és `exit`-tel zár, ami megölné a PHPUnit folyamatot - ugyanaz az
- * érv, ami a TODO 12.1-ben a `dd()`-re vonatkozott. Az `update()` korai
- * kilépési ága (version_compare) így közvetve, a `check()`-en át van pinelve.
+ * What CANNOT be tested: the `update()` method. It writes to output with a
+ * raw `echo` and closes with `exit`, which would kill the PHPUnit process -
+ * the same argument that applied to `dd()` in TODO 12.1. `update()`'s early
+ * exit branch (version_compare) is thus pinned indirectly, through `check()`.
  */
 class UpdaterContractTest extends FeatureTestCase
 {
@@ -41,8 +41,8 @@ class UpdaterContractTest extends FeatureTestCase
 
         config(['laraupdater.update_baseurl' => $this->channel]);
 
-        // A getLastVersion() Cache::remember-be van csomagolva, tehát a
-        // teszteknek tiszta lappal kell indulniuk.
+        // getLastVersion() is wrapped in Cache::remember, so the tests need
+        // to start with a clean slate.
         Cache::forget('laraupdater_lastversion');
     }
 
@@ -59,22 +59,23 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     /**
-     * Az updater egy példánya megadott TELEPÍTETT verzióval.
+     * An instance of the updater with a given INSTALLED version.
      *
-     * A version.txt a kiadási folyamat része: minden kiadás átírja. Az alábbi
-     * forgatókönyvek viszont a telepített és a hirdetett verzió VISZONYÁRÓL
-     * szólnak, nem egy konkrét számról - ha a valódi fájlra támaszkodnak, egy
-     * verzióemelés csendben elmozdítja a premisszájukat. Pontosan ez történt:
-     * az 1.1.5 -> 1.2.0 emelés négy tesztet buktatott meg úgy, hogy a vizsgált
-     * viselkedésben semmi nem változott.
+     * version.txt is part of the release process: every release rewrites
+     * it. The scenarios below, however, are about the RELATIONSHIP between
+     * the installed and the advertised version, not about a specific
+     * number - if they relied on the real file, a version bump would
+     * silently shift their premise. That is exactly what happened: the
+     * 1.1.5 -> 1.2.0 bump broke four tests without anything changing in the
+     * behavior under test.
      *
-     * A getCurrentVersion() publikus, és a check(), a getDescription() és a
-     * getLastVersion() is $this->getCurrentVersion()-t hív, tehát a
-     * felüldefiniálás mellékhatás nélkül vezérli a telepített verziót - nem kell
-     * a repóban lévő version.txt-t írogatni hozzá.
+     * getCurrentVersion() is public, and check(), getDescription() and
+     * getLastVersion() all call $this->getCurrentVersion(), so overriding it
+     * controls the installed version without side effects - there's no need
+     * to keep rewriting version.txt in the repo for it.
      *
-     * Amit ez NEM bizonyít - hogy az érték a version.txt-ből, trimmelve jön -,
-     * azt az 1. szakasz két tesztje fedi, azok a valódi fájlt olvassák.
+     * What this does NOT prove - that the value comes from version.txt,
+     * trimmed - is covered by section 1's two tests, which read the real file.
      */
     private function updaterInstalledAt(string $version)
     {
@@ -95,7 +96,7 @@ class UpdaterContractTest extends FeatureTestCase
         };
     }
 
-    /** Kiírja a csatorna egy manifesztjét. */
+    /** Writes out a manifest for the channel. */
     private function publishManifest(array $payload, string $file = 'laraupdater.json'): void
     {
         File::put($this->channel.'/'.$file, json_encode($payload));
@@ -112,7 +113,7 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A helyi verzió forrása
+    // 1. The source of the local version
     // =========================================================================
 
     public function test_get_current_version_returns_the_trimmed_contents_of_version_txt(): void
@@ -122,25 +123,26 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_the_current_version_never_carries_surrounding_whitespace(): void
     {
-        // Ez nem kozmetika. A check() a version_compare() JOBB oldalára teszi
-        // ezt az értéket, és egy sortörés ott hamis pozitívot szül:
+        // This is not cosmetic. check() puts this value on the RIGHT side of
+        // version_compare(), and a line break there produces a false positive:
         //
         //   version_compare("1.1.5", "1.1.5\n", ">")  ===  true
         //
-        // Vagyis trim() nélkül a rendszer ÖRÖKKÉ elérhető frissítést jelezne,
-        // akkor is, ha a csatorna pontosan a telepített verziót hirdeti.
-        // Ezért teherviselő a vendorban a `return trim($version);`.
+        // In other words, without trim() the system would report an update
+        // as ALWAYS available, even when the channel advertises exactly the
+        // installed version. That is why `return trim($version);` in the
+        // vendor is load-bearing.
         $version = $this->updater()->getCurrentVersion();
 
         $this->assertSame(trim($version), $version);
         $this->assertTrue(
             version_compare($version, $version."\n", '>'),
-            'A hamis pozitív mechanizmusa, amit a trim() zár ki.'
+            'The false-positive mechanism that trim() rules out.'
         );
     }
 
     // =========================================================================
-    // 2. check(): van-e frissítés
+    // 2. check(): is there an update
     // =========================================================================
 
     public function test_check_returns_an_empty_string_when_the_channel_advertises_the_installed_version(): void
@@ -163,10 +165,10 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_check_returns_the_remote_version_string_when_the_channel_is_ahead(): void
     {
-        // A visszatérési típus STRING, nem tömb. A fork master ága (EgyptianM
-        // 5e6dcb22 PR-je) itt tömbre váltott; az App\View\Components\
-        // UpdateNotification stringet vár és a leírást külön kéri le, ezért a
-        // v2 a vendor viselkedését viszi tovább.
+        // The return type is a STRING, not an array. The fork's master
+        // branch (EgyptianM's PR 5e6dcb22) switched to an array here;
+        // App\View\Components\UpdateNotification expects a string and fetches the
+        // description separately, so v2 carries forward the vendor's original behavior.
         $this->publishManifest(['version' => '9.9.9', 'archive' => 'RELEASE-9.9.9.zip', 'description' => 'uj']);
 
         $this->assertSame('9.9.9', $this->updater()->check());
@@ -174,17 +176,17 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_check_compares_versions_numerically_not_as_strings(): void
     {
-        // Telepítve 1.1.5. Stringként "1.1.10" <= "1.1.5" IGAZ (a negyedik
-        // karakternél '1' < '5'), tehát a naiv összehasonlítás elrejtené a
-        // frissítést. Ez a pontos oka annak, hogy a vendor az update() korai
-        // kilépési ágába is version_compare()-t tett - a fork mastere ott még
-        // sima `<=`-t használ.
+        // Installed at 1.1.5. As strings, "1.1.10" <= "1.1.5" is TRUE (at the
+        // fourth character, '1' < '5'), so a naive comparison would hide the
+        // update. This is the exact reason the vendor also put
+        // version_compare() into update()'s early-exit branch - the fork's
+        // master still uses a plain `<=` there.
         //
-        // A verziópár rögzített, mert a csapda csak bizonyos számoknál áll elő:
-        // a telepített javítószám első jegyénél nagyobbnak kell lennie, mint a
-        // hirdetetté. A telepített verziót ezért itt megadjuk, nem a
-        // version.txt-ből vesszük.
-        $this->assertTrue('1.1.10' <= '1.1.5', 'A stringes összehasonlítás tévedésének demonstrációja.');
+        // The version pair is fixed, because the trap only occurs for
+        // certain numbers: the installed patch number's first digit must be
+        // greater than the advertised one's. That's why we give the
+        // installed version explicitly here, rather than taking it from version.txt.
+        $this->assertTrue('1.1.10' <= '1.1.5', 'Demonstration of the string comparison\'s mistake.');
 
         $this->publishManifest(['version' => '1.1.10', 'archive' => 'RELEASE-1.1.10.zip', 'description' => 'uj']);
 
@@ -193,17 +195,18 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_check_survives_an_unreachable_update_channel(): void
     {
-        // Nincs manifeszt a csatornán. A file_get_contents E_WARNING-ot dob,
-        // amit a Laravel HandleExceptions ErrorException-né alakít - ezt a
-        // Cache::remember closure-jébe tett try/catch nyeli el. A catch ág
-        // tehát teherviselő: nélküle MINDEN admin oldalrenderelés 500-at adna,
-        // amikor az update-szerver néma (UpdateNotification::render() és a
-        // settings.blade.php is hívja).
+        // There is no manifest on the channel. file_get_contents throws an
+        // E_WARNING, which Laravel's HandleExceptions turns into an
+        // ErrorException - the try/catch placed in Cache::remember's closure
+        // swallows this. The catch branch is therefore load-bearing: without
+        // it EVERY admin page render would give a 500 when the update server
+        // is silent (both UpdateNotification::render() and
+        // settings.blade.php call this).
         $this->assertSame('', $this->updater()->check());
     }
 
     // =========================================================================
-    // 3. getDescription() és a gyorsítótár
+    // 3. getDescription() and the cache
     // =========================================================================
 
     public function test_get_description_returns_the_changelog_of_the_available_update(): void
@@ -219,10 +222,10 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_check_and_get_description_read_the_channel_only_once(): void
     {
-        // Az UpdateNotification::render() egymás után hívja a kettőt. Ha nem
-        // lenne a Cache::remember, az két hálózati kérés lenne MINDEN admin
-        // oldalrendereléskor. A bizonyíték: a manifeszt törlése a két hívás
-        // között nem változtat a második eredményén.
+        // UpdateNotification::render() calls the two of them one after the
+        // other. Without Cache::remember, that would be two network requests
+        // on EVERY admin page render. The proof: deleting the manifest
+        // between the two calls does not change the second one's result.
         $this->publishManifest([
             'version'     => '9.9.9',
             'archive'     => 'RELEASE-9.9.9.zip',
@@ -238,15 +241,16 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A previous_version lánc (többlépcsős frissítés)
+    // 4. The previous_version chain (multi-step update)
     // =========================================================================
 
     public function test_the_previous_version_chain_hands_back_the_intermediate_release(): void
     {
-        // Ha a legfrissebb kiadás egy köztes verziót jelöl meg előfeltételként,
-        // és az is újabb a telepítettnél, akkor ELŐSZÖR azt kell telepíteni -
-        // különben a köztes migrációk kimaradnának. Ez a vendor 5. kézi
-        // módosítása, és a fork masterében egyáltalán nincs meg.
+        // If the latest release names an intermediate version as a
+        // prerequisite, and that version is also newer than the installed
+        // one, then it must be installed FIRST - otherwise the intermediate
+        // migrations would be skipped. This is the vendor's 5th manual
+        // modification, and it's entirely absent from the fork's master.
         $this->publishManifest([
             'version'          => '9.9.9',
             'archive'          => 'RELEASE-9.9.9.zip',
@@ -264,10 +268,11 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_the_previous_version_chain_walks_back_more_than_one_step(): void
     {
-        // A valós eset többlépcsős: 1.1.5 telepítve, a csatorna 1.2.0-t hirdet,
-        // ami 1.1.7-et követel, ami 1.1.6-ot. A rekurziónak a LEGKORÁBBI még
-        // függőben lévő lépcsőt kell visszaadnia, nem a legfrissebbet - egy
-        // update() futás egy lépcsőt telepít, és a következő futás megy tovább.
+        // The real case is multi-step: 1.1.5 installed, the channel
+        // advertises 1.2.0, which requires 1.1.7, which requires 1.1.6. The
+        // recursion must return the EARLIEST still-pending step, not the
+        // latest one - a single update() run installs one step, and the
+        // next run carries on from there.
         $this->publishManifest([
             'version'          => '1.2.0',
             'archive'          => 'RELEASE-1.2.0.zip',
@@ -292,9 +297,9 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_the_chain_stops_at_the_first_step_that_is_already_installed(): void
     {
-        // Ugyanaz a lánc, de a köztes 1.1.6 lépcsőt már feltettük - a telepített
-        // verzió 1.1.5-nél a 1.1.7 az elsö függőben lévő, ha az ő
-        // previous_version-je már nem újabb a telepítettnél.
+        // The same chain, but the intermediate 1.1.6 step has already been
+        // installed - with the installed version at 1.1.5, 1.1.7 is the
+        // first pending step once its own previous_version is no longer newer than the installed one.
         $this->publishManifest([
             'version'          => '1.2.0',
             'archive'          => 'RELEASE-1.2.0.zip',
@@ -313,7 +318,7 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_an_already_installed_previous_version_does_not_divert_the_chain(): void
     {
-        // Ha a köztes kiadás már fent van, a lánc nem lép hátra.
+        // If the intermediate release is already installed, the chain does not step backward.
         $this->publishManifest([
             'version'          => '9.9.9',
             'archive'          => 'RELEASE-9.9.9.zip',
@@ -325,7 +330,7 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. A frissítő végpontok
+    // 5. The updater endpoints
     // =========================================================================
 
     public function test_the_three_updater_routes_are_registered(): void
@@ -346,13 +351,13 @@ class UpdaterContractTest extends FeatureTestCase
      */
     public function test_every_updater_endpoint_rejects_a_guest(string $uri): void
     {
-        // SZÁNDÉKOSAN a KÍVÁNT állapotot állítja, nem a mait. A csomag
-        // vendor-beli routes.php-ja a check és a currentVersion végpontra
-        // SEMMILYEN middleware-t nem tesz - még `web`-et sem -, tehát ma bárki
-        // lekérdezheti a telepített verziót (upgrade-notes/baseline-routes.txt:250-252),
-        // miközben az `allow_users_id => false` a kontrollerbeli ID-ellenőrzést
-        // is kikapcsolja. Ez a két eset a fork-váltás előtt pirosan indul: ez a
-        // kontroll-lépés.
+        // DELIBERATELY asserts the DESIRED state, not today's. The
+        // package's vendor routes.php puts NO middleware at all on the check
+        // and currentVersion endpoints - not even `web` - so today anyone
+        // can query the installed version
+        // (upgrade-notes/baseline-routes.txt:250-252), while
+        // `allow_users_id => false` also disables the controller's ID check.
+        // These two cases start red before the fork switch: this is the control step.
         $this->get('/'.$uri)->assertRedirect(route('login'));
     }
 
@@ -361,7 +366,7 @@ class UpdaterContractTest extends FeatureTestCase
      */
     public function test_every_updater_endpoint_rejects_a_non_admin(string $uri): void
     {
-        $this->actingAs($this->createUser(['email' => 'nem-admin@example.test']));
+        $this->actingAs($this->createUser(['email' => 'non-admin@example.test']));
 
         $this->get('/'.$uri)->assertForbidden();
     }
@@ -385,7 +390,7 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. Az UpdateNotification Blade komponens
+    // 6. The UpdateNotification Blade component
     // =========================================================================
 
     public function test_the_notification_component_renders_nothing_when_the_system_is_current(): void
@@ -400,16 +405,17 @@ class UpdaterContractTest extends FeatureTestCase
     }
 
     /*
-     * A hármas blokk verziószáma SZÁNDÉKOSAN 1.9.9, nem 9.9.9, mint fentebb.
+     * The version number in this block of three is DELIBERATELY 1.9.9, not
+     * 9.9.9 like above.
      *
-     * A frissítési ág plafonja óta (App\Support\Updates\UpdateBranch) a 9.9.9
-     * már nem egyszerűen "újabb kiadás", hanem MAGASABB MAJOR - vagyis a
-     * komponens a kézi frissítés kártyáját adná rá, nem ezt. Ezek a tesztek a
-     * szokásos, gombos kártyáról szólnak, tehát ágon belüli verzió kell hozzá.
-     * A fenti check()/getDescription() blokkok maradhatnak 9.9.9-en: azok a
-     * vendort pinelik, amit a plafon nem érint.
+     * Since the update-branch ceiling (App\Support\Updates\UpdateBranch),
+     * 9.9.9 is no longer simply "a newer release" but a HIGHER MAJOR - i.e.
+     * the component would render the manual-update card for it, not this
+     * one. These tests are about the usual, button-bearing card, so they
+     * need an in-branch version. The check()/getDescription() blocks above
+     * can stay at 9.9.9: those pin the vendor, which the ceiling does not affect.
      *
-     * A plafon saját szerződése a UpdateBranchCeilingTestben van.
+     * The ceiling's own contract is in UpdateBranchCeilingTest.
      */
 
     public function test_the_notification_component_renders_the_card_when_an_update_exists(): void
@@ -436,10 +442,10 @@ class UpdaterContractTest extends FeatureTestCase
 
     public function test_the_update_button_points_at_a_generated_url_not_a_hardcoded_path(): void
     {
-        // A vendor-korszakban a gomb href-je a hardkódolt "/updater.update"
-        // volt, ami minden alkönyvtáras telepítésen eltörik. A v2 nevesíti a
-        // route-ot, így route() generálhatja. Az APP_URL a phpunit.xml szerint
-        // http://kozter.test, tehát az abszolút alak csak generálásból jöhet.
+        // In the vendor era, the button's href was the hardcoded
+        // "/updater.update", which breaks on any subdirectory install. v2
+        // names the route, so route() can generate it. Per phpunit.xml,
+        // APP_URL is http://kozter.test, so the absolute form can only come from generation.
         $this->publishManifest(['version' => '1.9.9', 'archive' => 'RELEASE-1.9.9.zip', 'description' => 'x']);
 
         $html = (new UpdateNotification())->render()->render();

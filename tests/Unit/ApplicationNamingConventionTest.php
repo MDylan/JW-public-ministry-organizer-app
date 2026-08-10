@@ -8,18 +8,19 @@ use SplFileInfo;
 use Tests\TestCase;
 
 /**
- * TODO 15: alkalmazás-szintű névészeti őrök.
+ * TODO 15: application-level naming-convention guards.
  *
- * Az app/Notifications/GroupPriorityMessageNotificationTest.php egy véletlenül
- * kétszer lefuttatott `make:notification` maradványa volt: érintetlen sablon,
- * dispatch site nélkül, produkciós namespace-ben, `Test` utótaggal. Törölve.
+ * app/Notifications/GroupPriorityMessageNotificationTest.php was the leftover
+ * of a `make:notification` accidentally run twice: an untouched template,
+ * with no dispatch site, in the production namespace, with a `Test` suffix.
+ * Deleted.
  *
- * Ma ez a név még ártalmatlan: a phpunit.xml testsuite-jai kizárólag a
- * ./tests/Unit és ./tests/Feature könyvtárat pásztázzák, tehát az app/ alatti
- * fájl nem kerül felfedezésre. A TODO 40 viszont átírja a phpunit.xml-t a
- * PHPUnit 10 sémára - és a PHPUnit 10+ hibára fut egy olyan osztályon, amit a
- * suite felvesz, de nem örököl TestCase-ből. Ez az őr addig is a helyén tartja
- * a szabályt.
+ * Today this name is still harmless: the phpunit.xml testsuites scan
+ * exclusively the ./tests/Unit and ./tests/Feature directories, so a file
+ * under app/ is never discovered. TODO 40, however, rewrites phpunit.xml to
+ * the PHPUnit 10 schema - and PHPUnit 10+ errors out on a class that the
+ * suite picks up but that does not extend TestCase. This guard keeps the
+ * rule in place until then.
  */
 class ApplicationNamingConventionTest extends TestCase
 {

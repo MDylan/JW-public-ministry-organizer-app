@@ -34,12 +34,12 @@ class ListGroupsTest extends FeatureTestCase
         $this->actingAs($this->admin);
     }
 
-    // --- kilépés a csoportból ---
+    // --- leaving the group ---
 
     public function test_leaving_is_refused_when_no_other_admin_remains(): void
     {
-        // A pwbs_check_group_other_admins védelme: az utolsó adminisztrátor
-        // nem hagyhatja magára a csoportot.
+        // The pwbs_check_group_other_admins guard: the last administrator
+        // cannot leave the group on its own.
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id)
@@ -78,8 +78,8 @@ class ListGroupsTest extends FeatureTestCase
 
     public function test_confirming_the_exit_is_re_checked_and_refused_without_another_admin(): void
     {
-        // A védelem a megerősítéskor is lefut, nem csak a modal nyitásakor -
-        // így egy közben eltávolított társadmin sem nyit rést.
+        // The guard also runs on confirmation, not only when the modal opens -
+        // so a co-admin removed in the meantime cannot open a loophole either.
         $secondAdmin = $this->createUser(['email' => 'lg-admin4@example.test']);
         $this->attachUserToGroup($secondAdmin, $this->group, 'admin');
 
@@ -87,7 +87,7 @@ class ListGroupsTest extends FeatureTestCase
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id);
 
-        // A másik admin időközben kilép.
+        // The other admin leaves in the meantime.
         GroupUser::where('group_id', $this->group->id)->where('user_id', $secondAdmin->id)->delete();
 
         $component->call('logoutConfirmed')->assertDispatchedBrowserEvent('sweet-error');
@@ -98,17 +98,17 @@ class ListGroupsTest extends FeatureTestCase
         );
     }
 
-    // --- csoport törlése ---
+    // --- deleting the group ---
 
     public function test_group_deletion_is_not_available_from_this_component(): void
     {
-        // A confirmGroupRemoval() és deleteGroup() metódusok ki vannak
-        // kommentelve (ListGroups.php:26-49), a $listeners tömbben a
-        // 'deleteGroup' bejegyzés szintén. A törlés a Groups\DeleteGroup
-        // komponensen keresztül történik, amit a GroupComponentsTest fed.
+        // The confirmGroupRemoval() and deleteGroup() methods are
+        // commented out (ListGroups.php:26-49), as is the 'deleteGroup'
+        // entry in the $listeners array. Deletion happens through the
+        // Groups\DeleteGroup component, which GroupComponentsTest covers.
         //
-        // Ez a teszt rögzíti a jelenlegi állapotot: ha valaki visszakapcsolja
-        // a metódusokat, itt derül ki, hogy a viselkedést újra kell gondolni.
+        // This test pins down the current state: if someone re-enables
+        // the methods, this is where it will surface that the behavior needs rethinking.
         $this->expectException(\Livewire\Exceptions\MethodNotFoundException::class);
 
         Livewire::actingAs($this->admin)
@@ -116,7 +116,7 @@ class ListGroupsTest extends FeatureTestCase
             ->call('confirmGroupRemoval', $this->group->id);
     }
 
-    // --- csoportlétrehozói jogosultság igénylése ---
+    // --- requesting the group-creator privilege ---
 
     public function test_requesting_the_creator_privilege_opens_an_empty_form(): void
     {
@@ -147,11 +147,11 @@ class ListGroupsTest extends FeatureTestCase
     {
         $this->admin->update(['phone_number' => '36301234567']);
 
-        // Nem Mail::fake(): a metódus nyers Mail::send()-et hív egy view-val,
-        // nem Mailable osztályt, ezért a MailFake assertSent() nem tudja
-        // elkapni. A phpunit.xml MAIL_MAILER=array beállítású, tehát a levél
-        // sehova nem megy ki - itt azt igazoljuk, hogy a küldés hiba nélkül
-        // lefut és a modal bezárul.
+        // Not Mail::fake(): the method calls raw Mail::send() with a view,
+        // not a Mailable class, so MailFake's assertSent() cannot
+        // catch it. phpunit.xml has MAIL_MAILER=array set, so the email
+        // does not go out anywhere - here we verify that sending
+        // completes without error and the modal closes.
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->set('state.congregation', 'Példa Gyülekezet')
@@ -164,8 +164,8 @@ class ListGroupsTest extends FeatureTestCase
     public function test_the_privilege_request_requires_a_numeric_phone_number(): void
     {
         Mail::fake();
-        // A telefonszám nem a formból jön, hanem a profilból - üres profil
-        // esetén a kérés elbukik a validáción.
+        // The phone number does not come from the form but from the profile -
+        // with an empty profile, the request fails validation.
         $this->admin->update(['phone_number' => null]);
 
         Livewire::actingAs($this->admin)
@@ -176,7 +176,7 @@ class ListGroupsTest extends FeatureTestCase
             ->assertHasErrors(['phone']);
     }
 
-    // --- modal segéd ---
+    // --- modal helper ---
 
     public function test_open_modal_dispatches_the_browser_event(): void
     {

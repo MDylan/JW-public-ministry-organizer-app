@@ -36,11 +36,11 @@ class GenerateStatProcessTest extends FeatureTestCase
         $this->member = $this->createUser(['email' => 'stat-member@example.test']);
         $this->attachUserToGroup($this->member, $this->group);
 
-        // Az EventObserver feltétel nélkül auth()->user()->id-t olvas, ezért
-        // esemény írásához bejelentkezett kontextus kell. Lásd: roadmap TODO 10.
+        // EventObserver unconditionally reads auth()->user()->id, so writing
+        // an event needs a logged-in context. See: roadmap TODO 10.
         $this->actingAs($this->member);
 
-        // 08:00-12:00, óránkénti slotok => 4 slot.
+        // 08:00-12:00, hourly slots => 4 slots.
         GroupDate::factory()->create([
             'group_id' => $this->group->id,
             'date' => $this->date,
@@ -87,7 +87,7 @@ class GenerateStatProcessTest extends FeatureTestCase
 
     public function test_handle_counts_an_accepted_event_on_every_slot_it_spans(): void
     {
-        // 09:00-11:00 két slotot fed le: 09:00 és 10:00.
+        // 09:00-11:00 spans two slots: 09:00 and 10:00.
         $this->createEvent('09:00:00', '11:00:00');
 
         (new GenerateStatProcess($this->group->id, $this->date, false))->handle();
@@ -100,7 +100,7 @@ class GenerateStatProcessTest extends FeatureTestCase
 
     public function test_handle_ignores_pending_events(): void
     {
-        // Csak az elfogadott események számítanak (day_events_accepted).
+        // Only accepted events count (day_events_accepted).
         $this->createEvent('09:00:00', '10:00:00', 0);
 
         (new GenerateStatProcess($this->group->id, $this->date, false))->handle();
@@ -113,8 +113,8 @@ class GenerateStatProcessTest extends FeatureTestCase
 
     public function test_handle_sums_overlapping_events_on_the_shared_slot(): void
     {
-        // Ez a TODO 07.1 átfedés-szabályának statisztikai párja:
-        // 08:00-10:00 és 09:00-12:00 a 09:00-s sloton fed át.
+        // This is the statistical counterpart of the TODO 07.1 overlap rule:
+        // 08:00-10:00 and 09:00-12:00 overlap on the 09:00 slot.
         $other = $this->createUser(['email' => 'stat-member2@example.test']);
         $this->attachUserToGroup($other, $this->group);
 
@@ -169,12 +169,13 @@ class GenerateStatProcessTest extends FeatureTestCase
     }
 
     /**
-     * v1-patch E6. A GroupDateHelper::generateDate() múltvédelme hibás: a
-     * $date_info ágon kiértékeli a toArray()-t, eldobja, majd átesik az
-     * updateOrCreate-re. Egy csoportsablon-szerkesztés emiatt a retenciós
-     * padló alatti napokra is dispatch-eli ezt a jobot - és mivel a
-     * forrásesemények ott már törölve vannak, egy vadonatúj, csupa nullás
-     * day_stats sor keletkezne arról, hogy ott senki nem szolgált.
+     * v1-patch E6. GroupDateHelper::generateDate()'s past-date protection is
+     * broken: on the $date_info branch it evaluates the toArray(), discards
+     * it, then falls through to the updateOrCreate. A group-template edit
+     * therefore also dispatches this job for days below the retention floor
+     * - and since the source events there are already deleted, a brand-new,
+     * all-zero day_stats row would be created claiming that nobody served
+     * there.
      */
     public function test_handle_writes_nothing_below_the_group_data_retention_floor(): void
     {
@@ -220,21 +221,23 @@ class GenerateStatProcessTest extends FeatureTestCase
     {
         (new GenerateStatProcess($this->group->id, $this->date, true))->handle();
 
-        // A forceReset ág eldobja a GroupDate sort, mielőtt újraszámolna.
+        // The forceReset branch drops the GroupDate row before recalculating.
         $this->assertSame(0, GroupDate::where('group_id', $this->group->id)->where('date', $this->date)->count());
     }
 
     public function test_handle_with_force_reset_survives_a_missing_group_date(): void
     {
-        // MEGFORDÍTVA a v1-patch A6 javításával.
+        // REVERSED by the v1-patch A6 fix.
         //
-        // Korábban a forceReset ág feltétel nélkül hívta a ->first()->delete()-et,
-        // így hiányzó GroupDate esetén null-on hívott metódust. A queue a jobot
-        // akkor is lefuttatja, ha a sor a dispatch óta eltűnt (párhuzamos törlés,
-        // csoport-törlés, kézi adatjavítás) - ilyenkor a job fatallal halt meg,
-        // holott a reset célja épp az, hogy a sor NE legyen ott.
+        // Previously the forceReset branch unconditionally called
+        // ->first()->delete(), so for a missing GroupDate it called a method
+        // on null. The queue runs the job even if the row has disappeared
+        // since the dispatch (concurrent deletion, group deletion, manual
+        // data fix) - in that case the job died with a fatal, even though
+        // the whole point of the reset is that the row should NOT be there.
         //
-        // Most a hiányzó sor a kívánt végállapot, nem hiba: a job végigfut.
+        // Now the missing row is the desired end state, not an error: the
+        // job runs to completion.
         GroupDate::where('group_id', $this->group->id)->delete();
 
         (new GenerateStatProcess($this->group->id, $this->date, true))->handle();

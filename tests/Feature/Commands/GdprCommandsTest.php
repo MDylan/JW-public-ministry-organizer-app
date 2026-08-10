@@ -28,7 +28,7 @@ class GdprCommandsTest extends FeatureTestCase
     {
         parent::setUp();
 
-        $this->ttl = (int) config('gdpr.settings.ttl'); // alapból 6 hónap
+        $this->ttl = (int) config('gdpr.settings.ttl'); // defaults to 6 months
     }
 
     private function enableGdpr(): void
@@ -37,11 +37,11 @@ class GdprCommandsTest extends FeatureTestCase
     }
 
     /**
-     * A szerkesztői értesítés ablaka szűk és dátum-szintű: a parancs
-     * whereBetween-t használ Y-m-d formátumú határokkal, ahol az alsó határ
-     * (ttl - 6 nap) és a felső (ttl - 7 nap) is éjfélre kerekedik. Egy
-     * napon belüli időpont a felső határon már kiesik, ezért a nap közepét
-     * célozzuk meg.
+     * The editor notification window is narrow and date-level: the command uses
+     * whereBetween with Y-m-d formatted bounds, where both the lower bound
+     * (ttl - 6 days) and the upper bound (ttl - 7 days) round to midnight. A
+     * time within the same day already falls outside the upper bound, so we
+     * target the middle of the day.
      */
     private function editorWarningWindowDate(): \Carbon\Carbon
     {
@@ -109,21 +109,21 @@ class GdprCommandsTest extends FeatureTestCase
     }
 
     /**
-     * TODO 12.2 óta a szerep önmagában NEM véd - az utódlás dönt.
+     * Since TODO 12.2 the role alone does NOT protect - succession decides.
      *
-     * Ez a teszt korábban azt rögzítette, hogy a parancs kihagyja a mainAdmin
-     * és a groupCreator szerepet. Az a szabály két irányban tévedett: védte azt
-     * a groupCreator-t, akinek minden csoportját ellátja más, és nem védte azt
-     * a csoportadmint, aki az egyetlen a csoportjában. A részletes utódlási
-     * eseteket a tests/Feature/Gdpr/AnonymizationSuccessionTest.php méri; itt
-     * csak azt rögzítjük, hogy a parancs a szereplistát tényleg elengedte.
+     * This test previously recorded that the command skips the mainAdmin
+     * and groupCreator roles. That rule was wrong in two directions: it protected
+     * a groupCreator whose every group is covered by someone else, and it did not
+     * protect a group admin who is the only one in their group. The detailed
+     * succession cases are measured by tests/Feature/Gdpr/AnonymizationSuccessionTest.php;
+     * here we only record that the command really did let go of the role list.
      */
     public function test_anonymize_no_longer_protects_by_role_alone(): void
     {
         $this->enableGdpr();
-        // A FeatureTestCase::setUp() owner@example.test főadminja marad
-        // utódnak, a groupCreator-nak pedig nincs csoportja - mindkettő
-        // anonimizálható.
+        // FeatureTestCase::setUp()'s owner@example.test main admin remains
+        // as successor, and the groupCreator has no group - both are
+        // anonymizable.
         $admin = $this->inactiveUser(['email' => 'admin@example.test', 'role' => 'mainAdmin']);
         $creator = $this->inactiveUser(['email' => 'creator@example.test', 'role' => 'groupCreator']);
 
@@ -155,7 +155,7 @@ class GdprCommandsTest extends FeatureTestCase
 
         $this->artisan('gdpr:anonymize-inactive');
 
-        // Változatlanul marad, nem esik át újabb anonimizáláson.
+        // Stays unchanged, does not undergo another round of anonymization.
         $this->assertSame('already@example.test', User::find($already->id)->email);
     }
 
@@ -177,7 +177,7 @@ class GdprCommandsTest extends FeatureTestCase
         Notification::fake();
         $this->enableGdpr();
 
-        // A parancs a ttl - 15 nap küszöbnél régebbi utolsó aktivitást keresi.
+        // The command looks for a last activity older than the ttl - 15 days threshold.
         $user = $this->inactiveUser(['last_activity' => now()->subMonths($this->ttl)->addDays(10)]);
 
         $this->artisan('gdpr:notify-anonymization')->assertExitCode(0);
@@ -198,15 +198,15 @@ class GdprCommandsTest extends FeatureTestCase
     }
 
     /**
-     * TODO 12.2: a figyelmeztetés ugyanazt az alkalmassági feltételt követi,
-     * mint az anonimizálás.
+     * TODO 12.2: the warning follows the same eligibility condition
+     * as anonymization.
      *
-     * Ez fontos mindkét irányban. Aki anonimizálható lesz, annak MEG KELL
-     * kapnia az előzetes értesítést - a régi szereplista mellett egy
-     * groupCreator figyelmeztetés nélkül tűnt volna el. Akit viszont az
-     * utódlás blokkol, annak nem szabad kapnia: a lekérdezés nem ablak, hanem
-     * küszöb (last_activity <= ttl - 15 nap), tehát a blokkolt felhasználó
-     * NAPONTA kapna levelet egy soha be nem következő törlésről.
+     * This matters in both directions. Whoever becomes eligible for anonymization
+     * MUST receive the advance notification - under the old role list a
+     * groupCreator would have disappeared without warning. But whoever is
+     * blocked by succession must not receive it: the query is not a window but a
+     * threshold (last_activity <= ttl - 15 days), so the blocked user would
+     * receive an email DAILY about a deletion that will never happen.
      */
     public function test_notify_warns_a_group_creator_who_will_be_anonymized(): void
     {
@@ -239,8 +239,8 @@ class GdprCommandsTest extends FeatureTestCase
         Notification::fake();
         $this->enableGdpr();
 
-        // A szerkesztői értesítés szűk, 6-7 napos ablakot használ a
-        // megőrzési idő letelte előtt.
+        // The editor notification uses a narrow, 6-7 day window before
+        // the retention period expires.
         $group = Group::factory()->create(['parent_group_id' => null]);
         $member = $this->inactiveUser([
             'last_activity' => $this->editorWarningWindowDate(),
@@ -260,9 +260,9 @@ class GdprCommandsTest extends FeatureTestCase
         Notification::fake();
         $this->enableGdpr();
 
-        // A szerkesztői ág nyers DB lekérdezést használ, ezért a titkosított
-        // User.name és Group.name oszlopokat kézzel fejti vissza. Ha ez
-        // elromlik, a parancs DecryptException-nel bukik, nem csendben.
+        // The editor branch uses a raw DB query, so it manually decrypts the
+        // encrypted User.name and Group.name columns. If this
+        // breaks, the command fails with a DecryptException, not silently.
         $group = Group::factory()->create(['parent_group_id' => null, 'name' => 'Titkos Csoport']);
         $member = $this->inactiveUser([
             'name' => 'Titkos Tag',
@@ -291,8 +291,8 @@ class GdprCommandsTest extends FeatureTestCase
         Notification::fake();
         $this->enableGdpr();
 
-        // A join whereNull('G.parent_group_id') feltétellel szűr: az
-        // alcsoportok szerkesztői nem kapnak értesítést.
+        // The join filters with a whereNull('G.parent_group_id') condition: the
+        // editors of subgroups do not receive a notification.
         $parent = Group::factory()->create(['parent_group_id' => null]);
         $child = Group::factory()->asChildOf($parent)->create();
 

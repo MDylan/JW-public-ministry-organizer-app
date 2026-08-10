@@ -8,22 +8,24 @@ use App\Models\User;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12.2: az anonimizálás feltétele az UTÓDLÁS, nem a szerep.
+ * TODO 12.2: the condition for anonymization is SUCCESSION, not role.
  *
- * Korábban a gdpr:anonymize-inactive egy szerepliszttel dolgozott
- * (whereNotIn('role', ['mainAdmin','groupCreator'])). Ez két irányban tévedett:
- * védte azt a groupCreator-t, akinek minden csoportját ellátja más, és nem
- * védte azt a csoportadmint, aki az egyetlen a csoportjában.
+ * Previously gdpr:anonymize-inactive worked with a role list
+ * (whereNotIn('role', ['mainAdmin','groupCreator'])). This was wrong in two
+ * directions: it protected a groupCreator whose every group is covered by
+ * someone else, and it did not protect a group admin who is the only one in
+ * their group.
  *
- * Az új szabály:
- *   1. mainAdmin csak akkor anonimizálható, ha marad másik, nem anonimizált
- *      mainAdmin.
- *   2. csoportadmin csak akkor, ha MINDEN csoportjára igaz a
- *      pwbs_check_group_other_admins() - ugyanaz a feltétel, amit a
- *      csoportelhagyás is kikényszerít.
+ * The new rule:
+ *   1. mainAdmin can only be anonymized if another, non-anonymized mainAdmin
+ *      remains.
+ *   2. a group admin only if pwbs_check_group_other_admins() holds true for
+ *      EVERY one of their groups - the same condition that leaving a group
+ *      also enforces.
  *
- * A szabály a User::anonymize()-ban él, ezért mindhárom úton érvényes: a
- * projekt parancsán, a csomag 00:00-s parancsán és a profiloldali GDPR-kérésen.
+ * The rule lives in User::anonymize(), so it applies on all three paths: the
+ * project's command, the package's 00:00 command, and the profile-page GDPR
+ * request.
  */
 class AnonymizationSuccessionTest extends FeatureTestCase
 {
@@ -48,9 +50,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     /**
-     * A FeatureTestCase::setUp() létrehoz egy owner@example.test mainAdmin-t,
-     * tehát alapból MINDIG van egy második főadmin. Az 1. szabály blokkolt
-     * eseteihez ezt előbb el kell tüntetni.
+     * FeatureTestCase::setUp() creates an owner@example.test mainAdmin, so by
+     * default there is ALWAYS a second main admin. For the cases rule 1 blocks,
+     * this has to be removed first.
      */
     private function removeTheDefaultMainAdmin(): void
     {
@@ -72,14 +74,15 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. szabály - a főadmin utódlása
+    // Rule 1 - main admin succession
     // =========================================================================
 
     public function test_the_last_main_admin_is_not_anonymized(): void
     {
-        // Ez az eset ma átmegy a szerepszűrőn (a mainAdmin ki van zárva), de
-        // rossz okból: nem azért, mert ő az utolsó, hanem mert főadmin. Az új
-        // szabálynak akkor is zárnia kell, ha a szerepszűrő már nincs ott.
+        // Today this case passes through the role filter (mainAdmin is excluded),
+        // but for the wrong reason: not because they are the last one, but because
+        // they are a main admin. The new rule must still block it even if the role
+        // filter is no longer there.
         $this->removeTheDefaultMainAdmin();
 
         $sole = $this->inactiveUser('sole-main-admin@example.test', ['role' => 'mainAdmin']);
@@ -93,8 +96,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_main_admin_with_an_active_successor_is_anonymized(): void
     {
-        // A setUp() owner@example.test főadminja marad utódnak - és ez a
-        // viselkedésváltozás lényege: a szerep önmagában nem véd többé.
+        // setUp()'s owner@example.test main admin remains as the successor - and
+        // this is the essence of the behaviour change: the role alone no longer
+        // protects.
         $inactive = $this->inactiveUser('replaceable-admin@example.test', ['role' => 'mainAdmin']);
 
         $inactive->anonymize();
@@ -105,9 +109,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_an_already_anonymized_main_admin_is_not_a_successor(): void
     {
-        // A csomag 00:00-s parancsa pont ilyet gyárt: anonimizál, de a sort
-        // meghagyja. Ha ez utódnak számítana, a láncreakció a főadmin szinten
-        // is működne.
+        // The package's 00:00 command produces exactly this: it anonymizes but
+        // leaves the row in place. If this counted as a successor, the chain
+        // reaction would also work at the main-admin level.
         $this->removeTheDefaultMainAdmin();
 
         $this->createUser([
@@ -125,10 +129,11 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_batch_of_inactive_main_admins_keeps_exactly_one(): void
     {
-        // A napi parancs ciklusban megy végig a felhasználókon. Két inaktív
-        // főadminnál az elsőnél még van utód (a másik), tehát anonimizálódik -
-        // a másodiknál viszont már nincs, tehát megmarad. Sorrendfüggő, de a
-        // kimenet garantált: nem marad a rendszer főadmin nélkül.
+        // The nightly command loops over users. With two inactive main admins,
+        // the first one still has a successor (the other one), so it gets
+        // anonymized - but the second one no longer has one, so it stays. Order-
+        // dependent, but the outcome is guaranteed: the system never ends up
+        // without a main admin.
         $this->removeTheDefaultMainAdmin();
 
         $first = $this->inactiveUser('batch-admin-1@example.test', ['role' => 'mainAdmin']);
@@ -149,14 +154,14 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. szabály - a csoportadmin utódlása
+    // Rule 2 - group admin succession
     // =========================================================================
 
     public function test_the_only_admin_of_a_group_is_not_anonymized(): void
     {
-        // A mai szerepszűrő ezt az esetet ÁTENGEDI: a felhasználó szerepe
-        // 'registered', a csoportbeli admin volta nem érdekli a szűrőt. A
-        // csoport gazdátlanul marad.
+        // Today's role filter LETS THIS CASE THROUGH: the user's role is
+        // 'registered', the filter does not care about their admin status within
+        // the group. The group is left without an owner.
         $user = $this->inactiveUser('sole-group-admin@example.test');
         $group = $this->createGroup(['name' => 'Gazdátlan csoport']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -182,10 +187,10 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_an_anonymized_second_admin_is_not_a_successor(): void
     {
-        // EZ A LÁNCREAKCIÓ. A Group::groupAdmins() nem szűrte az isAnonymized-et,
-        // így egy már anonimizált admin utódnak számított - és mivel a csomag
-        // parancsa a tagságot meghagyja, a csoport összes valódi adminja
-        // egymás után kiüríthető lett volna.
+        // THIS IS THE CHAIN REACTION. Group::groupAdmins() did not filter on
+        // isAnonymized, so an already anonymized admin counted as a successor -
+        // and since the package's command leaves the membership in place, all of
+        // the group's real admins could have been emptied one after another.
         $user = $this->inactiveUser('next-in-line@example.test');
         $group = $this->createGroup(['name' => 'Láncreakció']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -200,8 +205,8 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_pending_second_admin_is_not_a_successor(): void
     {
-        // Az el nem fogadott meghívás még nem tagság: a meghívott sosem lépett
-        // be a csoportba, tehát nem lehet átadni neki.
+        // An unaccepted invitation is not membership yet: the invitee never
+        // actually joined the group, so it cannot be handed over to them.
         $user = $this->inactiveUser('pending-handover@example.test');
         $group = $this->createGroup(['name' => 'Függő meghívás']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -216,10 +221,10 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_an_admin_present_only_in_the_parent_group_does_not_unblock(): void
     {
-        // A pwbs_check_group_other_admins() ismert tulajdonsága (TODO 07.2):
-        // a gyermekcsoportokat is átnézi, és olyan admint követel, aki MINDEN
-        // csoportot lefed. Szándékosan marad így - a csoportelhagyás is ezt
-        // kényszeríti, a kettő nem sodródhat el.
+        // A known property of pwbs_check_group_other_admins() (TODO 07.2): it
+        // also looks through child groups, and requires an admin who covers EVERY
+        // group. This deliberately stays as is - leaving a group also enforces
+        // this, and the two must not drift apart.
         $user = $this->inactiveUser('parent-and-child@example.test');
         $parent = $this->createGroup(['name' => 'Szülő csoport']);
         $child = $this->createChildGroup($parent, ['name' => 'Gyermek csoport']);
@@ -248,9 +253,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_roler_is_never_blocked(): void
     {
-        // A roler szerkesztheti a csoportot, de nem ő a felelőse - az
-        // utódlási szabály csak az admin szerepre vonatkozik, ahogy a
-        // csoportelhagyásnál is.
+        // A roler can edit the group, but they are not its responsible party -
+        // the succession rule only applies to the admin role, just as it does for
+        // leaving a group.
         $user = $this->inactiveUser('roler@example.test');
         $group = $this->createGroup(['name' => 'Roler csoportja']);
         $this->attachUserToGroup($user, $group, 'roler');
@@ -265,10 +270,10 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_group_creator_without_groups_is_now_anonymizable(): void
     {
-        // SZÁNDÉKOS VISELKEDÉSVÁLTOZÁS. A groupCreator szerep korábban
-        // önmagában védett; mostantól csak az számít, van-e csoport, amit át
-        // kell adni. Aki csoportot hoz létre, admin lesz benne
-        // (ListGroups::createGroup()), tehát a 2. szabály úgyis fedi.
+        // DELIBERATE BEHAVIOUR CHANGE. The groupCreator role used to protect on
+        // its own; from now on only whether there is a group to hand over matters.
+        // Whoever creates a group becomes an admin in it
+        // (ListGroups::createGroup()), so rule 2 covers it anyway.
         $creator = $this->inactiveUser('idle-creator@example.test', ['role' => 'groupCreator']);
 
         $creator->anonymize();
@@ -291,8 +296,8 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_every_group_must_have_a_successor_not_just_one(): void
     {
-        // Két különálló csoport: az egyikben van utód, a másikban nincs. A
-        // szabály minden csoportra vonatkozik, tehát ez blokkolt eset.
+        // Two separate groups: one has a successor, the other does not. The
+        // rule applies to every group, so this is a blocked case.
         $user = $this->inactiveUser('two-groups@example.test');
 
         $covered = $this->createGroup(['name' => 'Ellátott csoport']);
@@ -309,7 +314,7 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // Mindhárom útvonal ugyanazt a szabályt látja
+    // All three paths see the same rule
     // =========================================================================
 
     public function test_the_project_command_respects_the_rule(): void
@@ -343,10 +348,10 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_the_project_command_does_not_detach_a_blocked_user(): void
     {
-        // SORRENDI KÖVETELMÉNY. A parancs eredetileg ELŐBB bontotta a
-        // tagságokat, és csak utána anonimizált. Ha az őr utólag zárna, a
-        // felhasználó tagság nélkül, de anonimizálatlanul maradna - és épp az
-        // utódlás bizonyítéka veszne el.
+        // ORDERING REQUIREMENT. The command originally detached memberships
+        // FIRST, and only anonymized afterwards. If the guard blocked after the
+        // fact, the user would be left without membership but not anonymized -
+        // and precisely the proof of succession would be lost.
         $user = $this->inactiveUser('keep-membership@example.test');
         $group = $this->createGroup(['name' => 'Megmaradó tagság']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -379,13 +384,13 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A profiloldali GDPR-kérés
+    // The profile-page GDPR request
     // =========================================================================
 
     public function test_the_profile_request_is_blocked_with_an_explanation(): void
     {
-        // A GDPR-kérés nem tűnhet el csendben: a felhasználónak meg kell tudnia,
-        // mit kell tennie (adja át a csoportját).
+        // The GDPR request must not silently disappear: the user has to know
+        // what they need to do (hand over their group).
         $user = $this->createUser(['email' => 'blocked-request@example.test']);
         $group = $this->createGroup(['name' => 'Átadandó csoport']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -396,9 +401,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
         $response->assertRedirect(route('user.profile'));
 
-        // Nem elég a puszta jelenlétre nézni: a profileFull middleware is
-        // ugyanezt a kulcsot használja ugyanerre az átirányításra. A csoport
-        // neve teszi egyértelművé, hogy az utódlási szabály szólalt meg.
+        // Checking for mere presence is not enough: the profileFull middleware
+        // also uses the same key for the same redirect. The group's name makes it
+        // unambiguous that it was the succession rule that spoke up.
         $this->assertStringContainsString(
             'Átadandó csoport',
             (string) session('profile_message')
@@ -409,8 +414,8 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_the_signed_deletion_link_is_blocked_too(): void
     {
-        // Az aláírt link 60 órán át érvényes, közben változhat az állapot -
-        // ezért a második lépésnek is ellenőriznie kell.
+        // The signed link is valid for 60 hours, during which state can change -
+        // which is why the second step must also verify.
         $user = $this->createUser(['email' => 'blocked-link@example.test']);
         $group = $this->createGroup(['name' => 'Link ág']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -445,14 +450,14 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // A szabály forrása: ugyanaz, amit a csoportelhagyás használ
+    // The rule's source: the same one leaving a group uses
     // =========================================================================
 
     public function test_the_rule_uses_the_same_helper_as_leaving_a_group(): void
     {
-        // Ha a kettő elsodródik, a felhasználó azt kapja, hogy kilépni nem tud
-        // a csoportból, de az adatait törölni igen (vagy fordítva). Ezért
-        // ugyanaz a helper dönt mindkét helyen.
+        // If the two drift apart, the user ends up in a state where they cannot
+        // leave the group but can delete their data (or the other way around).
+        // That is why the same helper decides in both places.
         $user = $this->inactiveUser('same-rule@example.test');
         $group = $this->createGroup(['name' => 'Közös szabály']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -479,8 +484,8 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_a_withdrawn_membership_no_longer_blocks(): void
     {
-        // A soft-deletelt tagság nem tagság: aki már kilépett a csoportból,
-        // annak nincs mit átadnia.
+        // A soft-deleted membership is not membership: someone who has already
+        // left the group has nothing to hand over.
         $user = $this->inactiveUser('withdrawn@example.test');
         $group = $this->createGroup(['name' => 'Elhagyott csoport']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -494,9 +499,9 @@ class AnonymizationSuccessionTest extends FeatureTestCase
 
     public function test_the_blocked_user_stays_in_the_batch_for_the_next_run(): void
     {
-        // A blokkolás nem véglegesít semmit: amint megérkezik az utód, a
-        // következő futás elvégzi az anonimizálást. Fontos, mert a GDPR-igény
-        // nem szűnik meg attól, hogy ma nem teljesíthető.
+        // Blocking does not finalize anything: as soon as a successor arrives,
+        // the next run performs the anonymization. This matters because a GDPR
+        // request does not go away just because it cannot be fulfilled today.
         $user = $this->inactiveUser('deferred@example.test');
         $group = $this->createGroup(['name' => 'Halasztott']);
         $this->attachUserToGroup($user, $group, 'admin');
@@ -524,7 +529,7 @@ class AnonymizationSuccessionTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // Az utódlási feltétel a Group-relációból
+    // The succession condition from the Group relation
     // =========================================================================
 
     public function test_the_active_admins_relation_filters_anonymized_and_pending(): void
@@ -546,8 +551,8 @@ class AnonymizationSuccessionTest extends FeatureTestCase
         $this->assertNotContains($anonymized->id, $ids, 'Anonimizált admin nem aktív admin.');
         $this->assertNotContains($pending->id, $ids, 'Függő meghívás nem aktív admin.');
 
-        // A groupAdmins() maga NEM változik: tíz további hívási helye a saját
-        // jogosultságot ellenőrzi (wherePivot('user_id', Auth::id())).
+        // groupAdmins() itself does NOT change: its ten other call sites check
+        // the caller's own permission (wherePivot('user_id', Auth::id())).
         $this->assertCount(3, Group::find($group->id)->groupAdmins()->get());
     }
 }

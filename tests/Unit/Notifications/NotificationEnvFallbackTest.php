@@ -12,25 +12,25 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Tests\TestCase;
 
 /**
- * TODO 11 -> TODO 28: a riasztóhuzalból bizonyíték lett.
+ * TODO 11 -> TODO 28: from a tripwire to proof.
  *
- * Hat értesítés olvasott FUTÁSIDŐBEN env()-et. A Laravel a .env fájlt csak
- * akkor tölti be, ha nincs gyorsítótárazott konfiguráció - config:cache után
- * tehát az env() a config-fájlokon KÍVÜL null-t ad. Ez a fájl eredetileg azt
- * rögzítette, mi történik olyankor; a v1-patch TODO 28 óta azt rögzíti, hogy
- * MÁR NEM TÖRTÉNIK SEMMI.
+ * Six notifications read env() AT RUNTIME. Laravel only loads the .env file
+ * when there is no cached configuration - so after config:cache, env()
+ * returns null outside the config files. This file originally recorded what
+ * happens in that case; since v1-patch TODO 28 it records that NOTHING
+ * HAPPENS ANY MORE.
  *
- * Két súlyossági osztály volt, és a tesztek nevei is ezt választják szét:
- *  - a négy Event*Notification ->replyTo()-ja és az
- *    UserRoleIsGroupCreatorNotification ->bcc()-je magát a CÍMET olvasta
- *    env()-ből, tehát a küldés MEGHIÚSULT (Swift_RfcComplianceException),
- *  - az UserWillBeAnonymizeNotification csak a levél SZÖVEGÉBE tette az
- *    APP_NAME-et, tehát a levél kiment, üres névvel.
+ * There were two severity classes, and the tests' names split them apart too:
+ *  - the four Event*Notification classes' ->replyTo() and
+ *    UserRoleIsGroupCreatorNotification's ->bcc() read the ADDRESS itself
+ *    from env(), so sending FAILED (Swift_RfcComplianceException),
+ *  - UserWillBeAnonymizeNotification only put APP_NAME into the mail's BODY,
+ *    so the mail went out, with an empty name.
  *
- * A javítás mindkét esetben egysoros volt - config('mail.from.address'),
- * illetve config('app.name') -, de csak azért volt látható, mert volt rá
- * teszt. Az itteni esetek most a fordítottját bizonyítják: a környezeti
- * változó eltüntetése a levélen többé nem változtat semmit.
+ * The fix was a one-liner in both cases - config('mail.from.address') and
+ * config('app.name') respectively - but it was only visible because there
+ * was a test for it. The cases here now prove the opposite: removing the
+ * environment variable no longer changes anything about the mail.
  */
 class NotificationEnvFallbackTest extends TestCase
 {
@@ -71,18 +71,18 @@ class NotificationEnvFallbackTest extends TestCase
     }
 
     /**
-     * A config:cache állapot SZIMULÁLÁSA egyetlen kulcsra.
+     * SIMULATION of the config:cache state, for a single key.
      *
-     * A meglévő BuildsDomainFixtures::withEnvValue() csak a $_SERVER tömböt
-     * írja, ami elég a phpunit.xml <server> bejegyzéseihez (USE_RECAPTCHA),
-     * de nem elég azokhoz, amik a .env fájlból jönnek - a Dotenv azokat
-     * mindhárom helyre kiírja. Az Env::getRepository()->clear() nem
-     * használható: a repository immutable, és a már betöltött kulcsokra
-     * a clear() no-op.
+     * The existing BuildsDomainFixtures::withEnvValue() only writes the
+     * $_SERVER array, which is enough for the phpunit.xml <server> entries
+     * (USE_RECAPTCHA), but not enough for the ones that come from the .env
+     * file - Dotenv writes those into all three places. Env::getRepository()
+     * ->clear() cannot be used: the repository is immutable, and clear() is
+     * a no-op for already-loaded keys.
      *
-     * FONTOS, hogy ez szimuláció: valódi config:cache mellett MINDEN kulcsra
-     * null jön vissza, nem csak erre az egyre. A konfigurációhoz viszont nem
-     * nyúl - és pontosan ez teszi a 2. szakasz eseteit bizonyítékká.
+     * IMPORTANT: this is a simulation. Under a real config:cache, EVERY key
+     * comes back null, not just this one. It does not, however, touch the
+     * configuration - and that is exactly what turns section 2's cases into proof.
      */
     private function withoutEnv(string $key, callable $callback)
     {
@@ -111,7 +111,7 @@ class NotificationEnvFallbackTest extends TestCase
     }
 
     // =========================================================================
-    // 1. A mai viselkedés
+    // 1. Today's behavior
     // =========================================================================
 
     public function test_an_explicit_reply_to_address_wins_over_the_environment(): void
@@ -124,8 +124,8 @@ class NotificationEnvFallbackTest extends TestCase
 
     public function test_a_whitespace_only_reply_to_falls_back_to_the_configured_address(): void
     {
-        // A strlen(trim(...)) > 0 vizsgálat miatt a csupa szóköz is
-        // "üresnek" számít - a csoport replyTo mezője pontosan így viselkedik.
+        // Because of the strlen(trim(...)) > 0 check, whitespace-only also
+        // counts as "empty" - this is exactly how the group's replyTo field behaves.
         $mail = (new EventDeletedNotification($this->payload(['replyTo' => '   '])))
             ->toMail($this->notifiable());
 
@@ -160,19 +160,19 @@ class NotificationEnvFallbackTest extends TestCase
     }
 
     // =========================================================================
-    // 2. Amit a config:cache OKOZOTT - és amit ma már nem
+    // 2. What config:cache USED TO CAUSE - and no longer does
     // =========================================================================
 
     public function test_the_reply_to_address_survives_a_missing_environment_variable(): void
     {
-        // MEGFORDÍTVA a v1-patch TODO 28 javításával.
+        // FLIPPED by the v1-patch TODO 28 fix.
         //
-        // Korábban ez a cím null lett, mert az értesítés env()-ből olvasta.
-        // A konfiguráció a betöltéskor rögzítette az értéket, tehát a
-        // környezeti változó eltüntetése már nem ér el hozzá - és pont ez az,
-        // amit egy config:cache csinál.
+        // Previously this address became null, because the notification read
+        // it from env(). The configuration captured the value at load time,
+        // so removing the environment variable no longer reaches it - and
+        // that is exactly what a config:cache does.
         $mail = $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
-            $this->assertNull(env('MAIL_FROM_ADDRESS'), 'A szimuláció valóban kiüríti a kulcsot.');
+            $this->assertNull(env('MAIL_FROM_ADDRESS'), 'The simulation really does clear the key.');
 
             return (new EventDeletedNotification($this->payload()))->toMail($this->notifiable());
         });
@@ -191,30 +191,32 @@ class NotificationEnvFallbackTest extends TestCase
     }
 
     /**
-     * A "kemény hiba" nem volt feltételezés, és a megszűnése sem az: itt
-     * tényleg elküldjük a levelet.
+     * The "hard failure" was not an assumption, and neither is its
+     * disappearance: here we actually send the mail.
      *
-     * A MAIL_MAILER a phpunit.xml-ben 'array', de a levél borítékja akkor is
-     * felépül, és a címzett-ellenőrzés ott csap le. A KIMÉRT hiba korábban:
+     * MAIL_MAILER is 'array' in phpunit.xml, but the mail's envelope is
+     * still built, and the recipient check strikes there. The MEASURED
+     * failure previously was:
      *
      *   Swift_RfcComplianceException
      *   "Address in mailbox given [] does not comply with RFC 2822, 3.6.2."
      *
-     * A Phase 5 (Laravel 9) a SwiftMailert Symfony Mailerre cseréli, ahol
-     * ugyanez a hiba Symfony\Component\Mime\Exception\RfcComplianceException
-     * néven jönne - vagyis a javítás nélkül a Phase 5 után is ugyanígy
-     * meghiúsulna a küldés, csak más kivételnévvel.
+     * Phase 5 (Laravel 9) replaces SwiftMailer with Symfony Mailer, where the
+     * same error would come as
+     * Symfony\Component\Mime\Exception\RfcComplianceException - meaning
+     * that without the fix, sending would fail the same way after Phase 5
+     * too, just under a different exception name.
      */
     public function test_sending_without_the_environment_variable_no_longer_fails(): void
     {
-        // MEGFORDÍTVA a v1-patch TODO 28 javításával: ez az eset korábban
-        // KIVÉTELT VÁRT, és azt is kapott.
+        // FLIPPED by the v1-patch TODO 28 fix: this case previously EXPECTED
+        // AN EXCEPTION, and got one.
         $this->withoutEnv('MAIL_FROM_ADDRESS', function () {
             NotificationFacade::route('mail', 'probe@example.test')
                 ->notify(new EventDeletedNotification($this->payload()));
         });
 
-        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
+        $this->assertTrue(true, 'Sending completed without an exception.');
     }
 
     public function test_the_group_creator_notification_sends_the_same_way(): void
@@ -224,26 +226,26 @@ class NotificationEnvFallbackTest extends TestCase
                 ->notify(new UserRoleIsGroupCreatorNotification());
         });
 
-        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
+        $this->assertTrue(true, 'Sending completed without an exception.');
     }
 
     public function test_the_missing_app_name_still_sends(): void
     {
-        // A súlyossági határ másik oldala: az APP_NAME hiánya korábban sem
-        // akadályozta meg a küldést, csak a levél szövegét rontotta el.
+        // The other side of the severity boundary: the absence of APP_NAME
+        // never prevented sending either, it only spoiled the mail's text.
         $this->withoutEnv('APP_NAME', function () {
             NotificationFacade::route('mail', 'probe@example.test')
                 ->notify(new UserWillBeAnonymizeNotification($this->payload()));
         });
 
-        $this->assertTrue(true, 'A küldés kivétel nélkül lefutott.');
+        $this->assertTrue(true, 'Sending completed without an exception.');
     }
 
     public function test_the_message_body_keeps_the_application_name(): void
     {
-        // MEGFORDÍTVA a v1-patch TODO 28 javításával. Korábban a két szöveg
-        // ELTÉRT: a környezeti változó nélkül a levélből kiesett az
-        // alkalmazás neve. Most a konfigurációból jön, tehát ugyanaz.
+        // FLIPPED by the v1-patch TODO 28 fix. Previously the two texts
+        // DIFFERED: without the environment variable, the application name
+        // dropped out of the mail. Now it comes from the configuration, so it's the same.
         $withName = (new UserWillBeAnonymizeNotification($this->payload()))
             ->toMail($this->notifiable());
 

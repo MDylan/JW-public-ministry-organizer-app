@@ -35,7 +35,7 @@ class GroupMessagesTest extends FeatureTestCase
         $this->actingAs($this->member);
     }
 
-    /** Aktív esemény adja a "van jogosultsága" alapesetet. */
+    /** An active event provides the "has privilege" base case. */
     private function giveMemberAnActiveEvent(?User $user = null): Event
     {
         $user ??= $this->member;
@@ -296,7 +296,7 @@ class GroupMessagesTest extends FeatureTestCase
             ->test(Messages::class, ['group' => $this->group])
             ->call('deleteMessage', $message->id);
 
-        // A törlés valójában a szöveg nullázása, a sor megmarad.
+        // Deletion actually just nulls out the text; the row remains.
         $this->assertNull(GroupMessage::find($message->id)->message);
     }
 
@@ -336,7 +336,7 @@ class GroupMessagesTest extends FeatureTestCase
         $this->assertNull(GroupMessage::find($message->id)->message);
     }
 
-    // --- egyéb interakciók ---
+    // --- other interactions ---
 
     public function test_change_priority_toggles_the_flag(): void
     {

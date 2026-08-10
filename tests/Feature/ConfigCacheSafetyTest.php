@@ -10,38 +10,39 @@ use SplFileInfo;
 use Tests\TestCase;
 
 /**
- * TODO 28: a `config:cache` biztonságos-e.
+ * TODO 28: is `config:cache` safe.
  *
- * A PROBLÉMA, AMIT EZ AZ ŐR VÉD
+ * THE PROBLEM THIS GUARD PROTECTS AGAINST
  *
- * A Laravel a `.env` fájlt CSAK akkor tölti be, ha nincs gyorsítótárazott
- * konfiguráció. Egy `php artisan config:cache` - és vele az `artisan optimize`
- * - után tehát a config-fájlokon KÍVÜLI minden `env()` hívás `null`-t ad.
- * Némán: nincs hibaüzenet, nincs kivétel, csak más viselkedés.
+ * Laravel only loads the `.env` file if there is no cached configuration. So
+ * after a `php artisan config:cache` - and with it `artisan optimize` -
+ * every `env()` call OUTSIDE the config files returns `null`. Silently: no
+ * error message, no exception, just different behaviour.
  *
- * Ezen a kódbázison ez 24 helyet érintett, és a következményük nem volt
- * egyforma:
+ * In this codebase this affected 24 locations, and their consequences were
+ * not uniform:
  *
- *  - `USE_HTTPS` -> a HTTPS-re kényszerítés kikapcsol;
- *  - `USE_RECAPTCHA` -> a botvédelem kikapcsol, és a hat Blade nézet a
- *    captcha mezőt sem teszi ki, tehát semmi nem árulkodik;
- *  - `MAIL_FROM_ADDRESS` -> öt értesítés küldése MEGHIÚSUL
- *    (`Swift_RfcComplianceException` az üres címen);
- *  - `APP_NAME` -> a levél kimegy, üres alkalmazásnévvel;
- *  - az admin `.env`-szerkesztője üres mezőket mutat, és mentéskor az
- *    üreseket írja vissza a fájlba.
+ *  - `USE_HTTPS` -> forcing HTTPS turns off;
+ *  - `USE_RECAPTCHA` -> bot protection turns off, and the six Blade views
+ *    do not even render the captcha field, so nothing gives it away;
+ *  - `MAIL_FROM_ADDRESS` -> sending five notifications FAILS
+ *    (`Swift_RfcComplianceException` on the empty address);
+ *  - `APP_NAME` -> the mail goes out with an empty application name;
+ *  - the admin's `.env` editor shows empty fields, and on save writes the
+ *    empty values back to the file.
  *
- * Az `optimize` ráadásul évekig el sem jutott a `config:cache`-ig, mert a
- * duplikált `password.confirm` route-név megbuktatta a `route:cache`-t
- * (v1-patch A7). Ahogy az elhárult, ez a csapda élessé vált - ezért kellett
- * ugyanabban a kiadásban rendezni.
+ * On top of that, `optimize` did not even reach `config:cache` for years,
+ * because the duplicated `password.confirm` route name broke `route:cache`
+ * (v1-patch A7). Once that was cleared, this trap became live - which is
+ * why it had to be fixed in the same release.
  */
 class ConfigCacheSafetyTest extends TestCase
 {
     /**
-     * A pásztázott könyvtárak. A `config/` szándékosan NINCS köztük: ott az
-     * `env()` a helyén van, az az egyetlen réteg, amit a gyorsítótár rögzít.
-     * A `tests/` sem: a tesztek épp azt vizsgálják, mi történik a változóval.
+     * The scanned directories. `config/` is deliberately NOT among them:
+     * that is where `env()` belongs, it is the one layer the cache
+     * captures. Neither is `tests/`: the tests are precisely what examine
+     * what happens with the variable.
      */
     private const SCANNED = [
         'app',
@@ -79,17 +80,18 @@ class ConfigCacheSafetyTest extends TestCase
 
     public function test_the_two_security_flags_exist_as_configuration(): void
     {
-        // Ha ezek a kulcsok eltűnnek, a middleware-ek némán hamisat kapnak -
-        // ugyanaz a hiba, csak más okból.
+        // If these keys disappear, the middlewares silently get false -
+        // the same bug, just for a different reason.
         $this->assertIsBool(config('security.use_https'));
         $this->assertIsBool(config('security.use_recaptcha'));
     }
 
     public function test_the_env_file_reader_reads_the_file_and_not_the_environment(): void
     {
-        // A .env-szerkesztő képernyők ezen keresztül olvasnak. A kulcs a
-        // fájlban van, de a $_SERVER/$_ENV/putenv hármasból kivéve is meg kell
-        // kapnunk - ez a különbség env() és e között.
+        // The .env editor screens read through this. The key is in the
+        // file, but we must still get it even with it removed from the
+        // $_SERVER/$_ENV/putenv trio - this is the difference between
+        // env() and this.
         $expected = setEnvironment::value('APP_NAME');
 
         $this->assertNotNull($expected, 'Az APP_NAME-nek benne kell lennie a teszt .env fájljában.');
@@ -139,18 +141,18 @@ class ConfigCacheSafetyTest extends TestCase
     }
 
     /**
-     * Hív-e a fájl `env()`-et vagy `getenv()`-et.
+     * Does the file call `env()` or `getenv()`.
      *
-     * Tokenizálva, nem regexszel: a javítások MAGYARÁZATA több helyen leírja
-     * a régi `env('USE_HTTPS')` alakot, és egy szöveges keresés azokra a
-     * kommentekre is rácsapna. A `->env(` alakú metódushívásokat is ki kell
-     * zárni, mert azok nem a segédfüggvényt jelentik.
+     * Tokenized, not with a regex: the EXPLANATION of the fixes describes
+     * the old `env('USE_HTTPS')` form in several places, and a text search
+     * would also catch those comments. Method calls of the form `->env(`
+     * must also be excluded, because those are not the helper function.
      *
-     * A Blade nézeteket ELŐBB LEFORDÍTJUK. Fordítatlanul a `{{ ... }}` és a
-     * `@if (...)` egyaránt T_INLINE_HTML, tehát a tokenizáló nem lát bennük
-     * semmit - egy kontroll-kísérlet ezt meg is mutatta: a nézetbe tett
-     * `@if (env('PROBE'))` átcsúszott az őrön. A lefordított alak viszont
-     * pontosan az, ami futni fog.
+     * The Blade views are compiled FIRST. Uncompiled, both `{{ ... }}` and
+     * `@if (...)` are T_INLINE_HTML, so the tokenizer sees nothing in them -
+     * a control experiment demonstrated exactly this: an `@if
+     * (env('PROBE'))` placed in a view slipped past the guard. The compiled
+     * form, however, is exactly what will run.
      */
     private function readsTheEnvironment(string $path): bool
     {
@@ -171,13 +173,13 @@ class ConfigCacheSafetyTest extends TestCase
                 continue;
             }
 
-            // Metódus- vagy statikus hívás: nem a segédfüggvény.
+            // A method or static call: not the helper function.
             $previous = $this->significantToken($tokens, $index, -1);
             if (is_array($previous) && in_array($previous[0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION], true)) {
                 continue;
             }
 
-            // Csak a ténylegesen meghívott alak számít.
+            // Only the form that is actually called counts.
             $next = $this->significantToken($tokens, $index, 1);
             if ($next !== '(') {
                 continue;
@@ -190,11 +192,11 @@ class ConfigCacheSafetyTest extends TestCase
     }
 
     /**
-     * A hívás valószínű sorai az EREDETI fájlban.
+     * The call's likely lines in the ORIGINAL file.
      *
-     * A Blade fordítása elmozdítja a sorszámokat, ezért a hibaüzenethez a
-     * nyers forrásban keressük meg a helyet. Ez csak jelentés, nem detektálás
-     * - a döntést a readsTheEnvironment() hozza.
+     * Compiling Blade shifts the line numbers, so for the error message we
+     * look up the location in the raw source. This is only reporting, not
+     * detection - the decision is made by readsTheEnvironment().
      *
      * @return int[]
      */
@@ -212,7 +214,7 @@ class ConfigCacheSafetyTest extends TestCase
     }
 
     /**
-     * A szomszédos token, a térközöket átugorva.
+     * The neighbouring token, skipping over whitespace.
      *
      * @param  array<int, mixed>  $tokens
      * @return mixed

@@ -10,18 +10,18 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 07.1: az Events\Modal sáv-táblája.
+ * TODO 07.1: the Events\Modal slot table.
  *
- * A Modal a naptár olvasó oldala, és eddig NEM volt közvetlen tesztje - a
- * CalendarEventsComponentTest az Events\Events komponenst fedi. Közben a
- * Modal::getInfo() (:71-393) az EventEdit::getInfo() közel szó szerinti
- * másolata, ugyanazzal a kapacitás-képlettel. A duplikáció megszüntetése a
- * TODO 77, és ezek a tesztek az előfeltételei: ezek mondják meg, hogy a
- * kivont szolgáltatásnak MELYIK viselkedést kell reprodukálnia.
+ * The Modal is the reading side of the calendar, and until now it had NO
+ * direct test - CalendarEventsComponentTest covers the Events\Events component.
+ * Meanwhile Modal::getInfo() (:71-393) is a near-literal copy of
+ * EventEdit::getInfo(), with the same capacity formula. Removing the
+ * duplication is TODO 77, and these tests are its prerequisites: they specify
+ * WHICH behavior the extracted service must reproduce.
  *
- * A komponens állapota privát ($day_data, $date_data, $day_events), ezért
- * assertSet() nem használható rá - a render() viszont átadja a nézetnek
- * (:551-558), így a viewData() a helyes eszköz.
+ * The component's state is private ($day_data, $date_data, $day_events), so
+ * assertSet() cannot be used on it - render(), however, passes it to the view
+ * (:551-558), so viewData() is the correct tool.
  */
 class EventModalSlotTableTest extends FeatureTestCase
 {
@@ -63,7 +63,7 @@ class EventModalSlotTableTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. A két komponens azonos sávokat épít
+    // 1. The two components build identical slots
     // =========================================================================
 
     public function test_the_modal_builds_the_same_slots_as_the_editor(): void
@@ -101,22 +101,22 @@ class EventModalSlotTableTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A publishers számlálás eltérése - a TODO 77 legfontosabb döntési pontja
+    // 2. The discrepancy in publishers counting - the most important decision point for TODO 77
     // =========================================================================
 
     public function test_the_modal_counts_pending_events_as_publishers_but_the_editor_does_not(): void
     {
-        // KARAKTERIZÁLÓ TESZT a két másolat eltéréséről.
+        // CHARACTERIZATION TEST of the discrepancy between the two copies.
         //
-        // Modal.php:352 minden eseményre növeli a publishers-t, és csak az
-        // accepted-et köti status == 1-hez. Az EventEdit.php:288-291 viszont
-        // MINDKETTŐT a status == 1-hez köti, ezért ott a két számláló mindig
-        // azonos - és emiatt hal el a jóváhagyásos túljelentkezési ág a
-        // saveEvent()-ben (lásd EventCapacityTest).
+        // Modal.php:352 increments publishers for every event, and only ties
+        // accepted to status == 1. EventEdit.php:288-291, however,
+        // ties BOTH to status == 1, so there the two counters are always
+        // identical - and this is why the approval-based over-application branch
+        // dies in saveEvent() (see EventCapacityTest).
         //
-        // Ugyanaz az adat tehát két különböző számot ad a naptárban és a
-        // mentés-ellenőrzésben. A TODO 77 kivonásakor el kell dönteni, melyik
-        // a helyes - ez a teszt teszi a döntést mérhetővé.
+        // The same data thus yields two different numbers in the calendar and in
+        // the save-time validation. When extracting TODO 77, it must be decided which
+        // one is correct - this test makes that decision measurable.
         $group = $this->createGroup(['need_approval' => 1]);
         $this->createEventDate($group, $this->date, ['date_max_publishers' => 3]);
 
@@ -140,8 +140,8 @@ class EventModalSlotTableTest extends FeatureTestCase
 
     public function test_both_components_agree_on_accepted_events(): void
     {
-        // Elfogadott eseményekre a két számolás egybeesik - az eltérés kizárólag
-        // a függő jelentkezéseknél jelentkezik.
+        // For accepted events the two calculations coincide - the discrepancy
+        // only shows up for pending applications.
         $group = $this->createGroup(['need_approval' => 1]);
         $this->createEventDate($group, $this->date, ['date_max_publishers' => 3]);
 
@@ -162,7 +162,7 @@ class EventModalSlotTableTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Sáv-státuszok a Modalban
+    // 3. Slot statuses in the Modal
     // =========================================================================
 
     public function test_a_saturated_slot_is_marked_full_in_the_modal(): void
@@ -223,7 +223,7 @@ class EventModalSlotTableTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A nap eseményei
+    // 4. The day's events
     // =========================================================================
 
     public function test_the_modal_exposes_the_events_of_the_day_keyed_by_start_slot(): void
@@ -247,9 +247,9 @@ class EventModalSlotTableTest extends FeatureTestCase
         $rendered = $dayEvents[$this->slotKey('09:00')][$event->id];
 
         $this->assertSame('09:00 - 11:00', $rendered['time']);
-        // A magasság a lefedett sávok száma, a lépésközzel számolva. Az érték
-        // FLOAT, mert ceil() lebegőpontosat ad vissza (Modal.php:321) - és így
-        // kerül a nézet rowspan attribútumába is.
+        // The height is the number of covered slots, calculated with the step size.
+        // The value is a FLOAT, because ceil() returns a float (Modal.php:321) - and it
+        // ends up in the view's rowspan attribute this way too.
         $this->assertSame(2.0, $rendered['height']);
     }
 

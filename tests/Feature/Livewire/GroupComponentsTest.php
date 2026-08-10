@@ -57,7 +57,7 @@ class GroupComponentsTest extends FeatureTestCase
             ->test(DeleteGroup::class, ['group' => $this->group])
             ->call('deleteGroup');
 
-        // A csoport soft-delete-elődik, és a hívó tagsága megszűnik.
+        // The group gets soft-deleted, and the caller's membership ends.
         $this->assertNull(Group::find($this->group->id));
         $this->assertSame(
             0,
@@ -67,8 +67,8 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_delete_group_does_nothing_for_a_plain_member(): void
     {
-        // A GroupDelete controller a userGroupsDeletable reláción keresztül
-        // dolgozik, így egy sima tag hívása nem töröl semmit.
+        // The GroupDelete controller works through the userGroupsDeletable
+        // relation, so a plain member's call deletes nothing.
         Livewire::actingAs($this->member)
             ->test(DeleteGroup::class, ['group' => $this->group])
             ->call('deleteGroup');
@@ -100,10 +100,11 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_history_set_month_switches_the_selected_period(): void
     {
-        // A hónaplista a csoport létrehozásától indul, ezért a csoportot
-        // visszadátumozzuk, hogy legyen választható korábbi hónap.
-        // A created_at nincs a fillable listán, ezért query builderrel írjuk:
-        // a hónapválasztó a csoport létrehozásától a mai napig épül fel.
+        // The month list starts from the group's creation date, so we
+        // backdate the group so that there is an earlier month to select.
+        // created_at is not on the fillable list, so we write it with the
+        // query builder: the month picker is built from the group's creation
+        // date up to today.
         Group::where('id', $this->group->id)->update(['created_at' => now()->subMonths(3)]);
         $target = now()->subMonth()->format('Y-m-01');
 
@@ -121,7 +122,7 @@ class GroupComponentsTest extends FeatureTestCase
             ->test(History::class, ['group' => $this->group->id])
             ->set('state.month', '1999-01-01')
             ->call('setMonth')
-            // Változatlan marad, mert az érték nincs a months tömbben.
+            // Stays unchanged because the value is not in the months array.
             ->assertSet('year', date('Y'))
             ->assertSet('month', date('m'));
     }
@@ -139,7 +140,7 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_news_list_records_that_the_user_has_seen_the_news(): void
     {
-        // A render mellékhatása: frissíti a felhasználó olvasási naplóját.
+        // A side effect of the render: it updates the user's reading log.
         Livewire::actingAs($this->member)
             ->test(NewsList::class, ['group' => $this->group])
             ->assertOk();
@@ -188,9 +189,9 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_statistics_mount_defaults_to_the_current_month(): void
     {
-        // A v1-patch B3 után a komponens nem $year/$month párban gondolkodik,
-        // hanem dátumtartományban - ez az, amit a nézet is kínál. Az alapérték
-        // változatlanul az aktuális hónap.
+        // After v1-patch B3, the component no longer thinks in a $year/$month
+        // pair, but in a date range - which is what the view offers too. The
+        // default value is still the current month.
         Livewire::actingAs($this->admin)
             ->test(Statistics::class, ['group' => $this->group->id])
             ->assertSet('startDate', date('Y-m-').'01')
@@ -200,21 +201,22 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_statistics_applies_the_submitted_date_range(): void
     {
-        // MEGFORDÍTVA a v1-patch B3 javításával.
+        // REVERSED by the v1-patch B3 fix.
         //
-        // A Groups\Statistics-ban a `public $months` deklaráció ki volt
-        // kommentelve, miközben a getMonthListFromDate() és a setMonth()
-        // továbbra is használta. $this->months így dinamikus property lett,
-        // amit a Livewire nem perzisztál a kérések között, tehát az isset()
-        // mindig hamisra futott és a setMonth() semmit nem csinált. A gomb
-        // mégis "működött", mert BÁRMELY Livewire-akció újraküldi a
-        // wire:model.defer mezőket - a hatás a metódustól független volt.
+        // In Groups\Statistics, the `public $months` declaration was
+        // commented out, while getMonthListFromDate() and setMonth() kept
+        // using it. $this->months thus became a dynamic property, which
+        // Livewire does not persist across requests, so isset() always
+        // evaluated to false and setMonth() did nothing. The button still
+        // "worked" nonetheless, because ANY Livewire action resubmits the
+        // wire:model.defer fields - the effect was independent of the method.
         //
-        // A hónapválasztót a nézetben már régen date-range páros váltotta fel,
-        // ezért a maradékok (getMonthListFromDate, setMonth törzse, $months,
-        // $year, $month, $current_month) törölve lettek, az akció pedig a
-        // szerepét megnevező applyDateRange() nevet kapta. A dinamikus property
-        // PHP 8.2-es deprecationje ezzel a Phase 8 elől is eltűnt.
+        // The month picker in the view had long since been replaced by a
+        // date-range pair, so the leftovers (getMonthListFromDate,
+        // setMonth's body, $months, $year, $month, $current_month) were
+        // deleted, and the action was given the name applyDateRange(),
+        // naming its role. The dynamic property's PHP 8.2 deprecation
+        // disappeared along with it, ahead of Phase 8 too.
         $target = now()->subMonth();
 
         Livewire::actingAs($this->admin)
@@ -229,10 +231,10 @@ class GroupComponentsTest extends FeatureTestCase
 
     public function test_the_statistics_month_selector_leftovers_are_gone(): void
     {
-        // A B3 lényege a holt kód eltávolítása; ha bármelyik darab visszatér,
-        // a dinamikus property csapdája is vele jön.
-        // Csak a KÓDRA állítunk, nem a magyarázó kommentre - az szándékosan
-        // leírja, mi volt itt korábban.
+        // B3's essence is removing the dead code; if any piece comes back,
+        // the dynamic property trap comes back with it.
+        // We assert only on the CODE, not on the explanatory comment - that
+        // deliberately describes what used to be here.
         $this->assertFalse(
             method_exists(Statistics::class, 'setMonth'),
             'A setMonth() nem térhet vissza.'

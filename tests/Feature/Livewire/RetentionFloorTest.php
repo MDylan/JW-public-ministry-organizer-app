@@ -58,9 +58,9 @@ class RetentionFloorTest extends FeatureTestCase
 
     public function test_statistics_offers_the_retention_floor_as_the_pickers_minimum(): void
     {
-        // A csoportot öregíteni kell: a padló csak akkor korlátoz, ha KÉSŐBBI,
-        // mint a csoport létrehozása. Egy ma létrehozott csoportnál a
-        // létrehozás dátuma a szigorúbb, és annak is kell maradnia.
+        // The group must be aged: the floor only constrains when it is LATER
+        // than the group's creation. For a group created today, the creation
+        // date is the stricter bound, and it must remain so.
         $this->group->forceFill(['created_at' => now()->subYears(4)])->saveQuietly();
         $this->enableGroupDataRetention();
         $floor = RetentionWindow::displayFloor()->toDateString();
@@ -72,8 +72,8 @@ class RetentionFloorTest extends FeatureTestCase
 
     public function test_statistics_keeps_the_group_creation_date_when_it_is_later_than_the_floor(): void
     {
-        // Friss csoport: nincs értelme a retenciós padlóig visszaengedni,
-        // amikor a csoport akkor még nem is létezett.
+        // Fresh group: there is no point letting it back to the retention
+        // floor when the group did not even exist at that time.
         $this->enableGroupDataRetention();
         $created = $this->group->created_at->format('Y-m-d');
 
@@ -109,8 +109,8 @@ class RetentionFloorTest extends FeatureTestCase
 
     public function test_the_statistics_view_carries_the_minimum_on_both_date_inputs(): void
     {
-        // A picker.minDate-et a render() korábban is átadta, de EGYETLEN nézet
-        // sem használta - a korlát így csak a szerveren létezett volna.
+        // render() already passed picker.minDate before, but NOT A SINGLE view
+        // used it - the constraint would thus have existed only on the server.
         $view = file_get_contents(resource_path('views/livewire/groups/statistics.blade.php'));
 
         $this->assertSame(
@@ -140,10 +140,10 @@ class RetentionFloorTest extends FeatureTestCase
     }
 
     /**
-     * A LastEvents csak eseményt kérdez, day_stats-ot nem. Egy 12 hónapos
-     * csoportadat-beállítás mellett a displayFloor() KÉSŐBBI, mint a 13
-     * hónapos eseményablak - azzal korlátozva egy hónapnyi létező,
-     * szerkeszthető esemény tűnne el a választóból.
+     * LastEvents only queries events, not day_stats. With a 12-month group
+     * data setting, displayFloor() is LATER than the 13-month events window -
+     * constraining to it would make a month's worth of existing, editable
+     * events disappear from the picker.
      */
     public function test_last_events_uses_the_events_floor_not_the_display_floor(): void
     {

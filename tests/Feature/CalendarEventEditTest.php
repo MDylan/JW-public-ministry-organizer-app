@@ -8,12 +8,12 @@ use Livewire\Livewire;
 
 class CalendarEventEditTest extends FeatureTestCase
 {
-    // A korábbi privát makeGroupDate() helyett a közös
-    // BuildsDomainFixtures::createEventDate() segédet használjuk - ugyanazokkal
-    // az alapértékekkel, de az összes eseményteszt számára elérhetően.
+    // Instead of the former private makeGroupDate(), we use the shared
+    // BuildsDomainFixtures::createEventDate() helper - with the same
+    // default values, but accessible to all event tests.
 
     // =========================================================================
-    // 1. Esemény létrehozás
+    // 1. Event creation
     // =========================================================================
 
     public function test_create_event_is_accepted_when_group_needs_no_approval(): void
@@ -72,7 +72,7 @@ class CalendarEventEditTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. Esemény szerkesztés
+    // 2. Event editing
     // =========================================================================
 
     public function test_edit_event_updates_existing_event(): void
@@ -112,7 +112,7 @@ class CalendarEventEditTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Esemény törlés
+    // 3. Event deletion
     // =========================================================================
 
     public function test_delete_event_soft_deletes_record(): void
@@ -197,7 +197,7 @@ class CalendarEventEditTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. Jogosultság: status és user_id beállítása
+    // 4. Authorization: setting status and user_id
     // =========================================================================
 
     public function test_admin_can_force_accepted_status_on_create_with_approval_group(): void
@@ -249,7 +249,7 @@ class CalendarEventEditTest extends FeatureTestCase
             ->call('saveEvent')
             ->assertHasNoErrors();
 
-        // Member nem tud status=1-et kényszeríteni
+        // Member cannot force status=1
         $this->assertDatabaseHas('events', [
             'group_id' => $group->id,
             'user_id'  => $user->id,
@@ -288,7 +288,7 @@ class CalendarEventEditTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. Validáció
+    // 5. Validation
     // =========================================================================
 
     public function test_validation_fails_when_start_and_end_are_missing(): void
@@ -315,7 +315,7 @@ class CalendarEventEditTest extends FeatureTestCase
         $date = now()->addDay()->toDateString();
         $this->createEventDate($group, $date);
         $startTs = strtotime($date.' 10:00:00');
-        $endTs   = strtotime($date.' 09:00:00'); // vége < kezdet
+        $endTs   = strtotime($date.' 09:00:00'); // end < start
 
         Livewire::actingAs($user)
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
@@ -368,7 +368,7 @@ class CalendarEventEditTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. Törlés megerősítés browser event
+    // 6. Delete confirmation browser event
     // =========================================================================
 
     public function test_confirm_delete_dispatches_browser_event(): void

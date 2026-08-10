@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * TODO 12: az első felhasználó létrehozása.
+ * TODO 12: creating the first user.
  *
- * Az AccountController::register() a Fortify CreateNewUser akcióját használja,
- * majd mainAdmin-ra emeli az így születő fiókot. Ez az egyetlen út, amin
- * mainAdmin keletkezhet emberi beavatkozás nélkül - és teljesen nyilvános,
- * amíg a telepítő nyitva van.
+ * AccountController::register() uses Fortify's CreateNewUser action, then
+ * promotes the resulting account to mainAdmin. This is the only path through
+ * which a mainAdmin can come into being without human intervention - and it
+ * is completely public while the installer is open.
  */
 class SetupAccountTest extends SetupTestCase
 {
@@ -31,7 +31,7 @@ class SetupAccountTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 1. A sikeres regisztráció
+    // 1. Successful registration
     // =========================================================================
 
     public function test_the_first_user_becomes_a_verified_main_admin(): void
@@ -81,9 +81,9 @@ class SetupAccountTest extends SetupTestCase
 
     public function test_the_side_menu_cache_is_cleared_for_the_new_pages(): void
     {
-        // A TODO 09 lelete szerint a SetLocale rememberForever-rel gyorsítótárazza
-        // a menüt, és mindössze két hely üríti. Ez az egyik: enélkül a
-        // telepítéskor létrehozott oldalak nem jelennének meg a menüben.
+        // Per the TODO 09 finding, SetLocale caches the menu with rememberForever,
+        // and only two places clear it. This is one of them: without it, the
+        // pages created during setup would not show up in the menu.
         Notification::fake();
 
         Cache::forever('sidemenu_guest', ['elavult']);
@@ -108,7 +108,7 @@ class SetupAccountTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 2. Validáció
+    // 2. Validation
     // =========================================================================
 
     public function test_the_password_rules_apply_to_the_first_account_too(): void
@@ -137,9 +137,9 @@ class SetupAccountTest extends SetupTestCase
 
     public function test_a_second_run_creates_a_second_main_admin(): void
     {
-        // KARAKTERIZÁLÁS: a lépés nem egyszer futtatható. Amíg a telepítő
-        // nyitva van (nincs installed.txt), a save-account újra és újra
-        // meghívható, és minden hívás új mainAdmin-t hoz létre.
+        // CHARACTERIZATION: the step is not one-shot. As long as the installer
+        // is open (no installed.txt), save-account can be called over and
+        // over, and every call creates a new mainAdmin.
         Notification::fake();
 
         $this->post(route('setup.save-account'), $this->payload());

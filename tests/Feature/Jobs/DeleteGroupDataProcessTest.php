@@ -45,12 +45,13 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
     }
 
     /**
-     * A GroupDelete controller tömeges törlést használ
-     * ($user->userGroupsDeletable()->where(...)->delete()), ami query builderen
-     * fut, ezért NEM indít modell-eseményt. Ez itt lényeges: a
-     * GroupObserver::deleted() a nem létező $group->group_id mezőt olvassa
-     * (helyesen $group->id lenne), így Eloquent-törléskor a LogHistory.group_id
-     * null lenne és az egész művelet elszállna. Lásd a lenti jellemzés-tesztet.
+     * The GroupDelete controller uses a mass delete
+     * ($user->userGroupsDeletable()->where(...)->delete()), which runs on the
+     * query builder and therefore does NOT fire a model event. This matters
+     * here: GroupObserver::deleted() reads the non-existent $group->group_id
+     * field (it should be $group->id), so on an Eloquent delete
+     * LogHistory.group_id would be null and the whole operation would fail.
+     * See the characterization test below.
      */
     private function softDeleteGroupLikeTheController(Group $group): void
     {
@@ -132,12 +133,12 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
 
     public function test_handle_anonymizes_a_member_who_has_no_other_group(): void
     {
-        // A v1-patch B10 előtt ez a teszt csak azért volt zöld, mert a
-        // csoportot előtte soft-deleteltük: az anonimizálás feltétele
-        // (count($user->user->userGroups) == 0) a groups táblához joinoló
-        // reláción múlt. Most a job maga zárja ki a saját csoportját, tehát a
-        // sorrend már nem számít - a soft-delete itt csak az éles
-        // GroupDelete útvonalat utánozza.
+        // Before v1-patch B10 this test was only green because we
+        // soft-deleted the group beforehand: the anonymization condition
+        // (count($user->user->userGroups) == 0) depended on the relation
+        // that joins the groups table. Now the job itself excludes its own
+        // group, so the order no longer matters - the soft-delete here just
+        // mimics the live GroupDelete path.
         $this->softDeleteGroupLikeTheController($this->group);
 
         (new DeleteGroupDataProcess($this->group->id, true))->handle();
@@ -160,16 +161,18 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
 
     public function test_handle_anonymizes_even_while_the_group_is_still_live(): void
     {
-        // MEGFORDÍTVA a v1-patch B10 javításával.
+        // REVERSED by the v1-patch B10 fix.
         //
-        // A job némán sorrendfüggő volt: csak akkor anonimizált, ha a csoport a
-        // futásakor MÁR soft-deleted volt, mert a userGroups reláció a groups
-        // táblához joinol, és a törölt csoport kiesett belőle. Az éles
-        // GroupDelete útvonal előbb töröl, aztán dispatch-el, ezért működött -
-        // de a jobot élő csoportra hívva (kézi futtatás, más hívó, megváltozott
-        // sorrend) az anonimizálás teljesen kimaradt, hibaüzenet nélkül.
+        // The job was silently order-dependent: it only anonymized if the
+        // group was ALREADY soft-deleted by the time it ran, because the
+        // userGroups relation joins the groups table, and the deleted group
+        // dropped out of it. The live GroupDelete path deletes first, then
+        // dispatches, so it worked - but calling the job on a live group
+        // (manual run, a different caller, changed order) made the
+        // anonymization silently no-op, with no error message.
         //
-        // A feltétel most explicit: a saját csoportot zárjuk ki a számlálásból.
+        // The condition is now explicit: we exclude the job's own group from
+        // the count.
         (new DeleteGroupDataProcess($this->group->id, true))->handle();
 
         $fresh = User::find($this->member->id);
@@ -180,9 +183,9 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
 
     public function test_handle_still_spares_a_member_of_another_live_group(): void
     {
-        // A B10 kontroll-kísérlete: a tágabb feltétel nem anonimizálhat olyat,
-        // akinek van másik csoportja - függetlenül attól, hogy az éppen
-        // törlendő csoport él-e még.
+        // B10's control experiment: the broadened condition must not
+        // anonymize someone who has another group - regardless of whether
+        // the group currently being deleted is still live.
         $this->attachUserToGroup($this->member, $this->otherGroup);
 
         (new DeleteGroupDataProcess($this->group->id, true))->handle();
@@ -201,13 +204,14 @@ class DeleteGroupDataProcessTest extends FeatureTestCase
 
     public function test_deleting_a_group_through_eloquent_writes_a_history_record(): void
     {
-        // TODO 10 javította a GroupObserver::deleted()-et: korábban a Group
-        // modellen nem létező $group->group_id mezőt olvasta, így mindig null
-        // került a NOT NULL log_histories.group_id oszlopba, és MINDEN
-        // Eloquent-törlés elszállt. Élesben csak azért nem látszott, mert a
-        // GroupDelete tömeges törlést használ, ami nem indít eseményt.
+        // TODO 10 fixed GroupObserver::deleted(): previously it read the
+        // non-existent $group->group_id field on the Group model, so null
+        // always went into the NOT NULL log_histories.group_id column, and
+        // EVERY Eloquent delete failed. It was not visible in production
+        // only because GroupDelete uses a mass delete, which does not fire
+        // an event.
         //
-        // Ez a teszt most a javított viselkedés regressziós védelme.
+        // This test is now the regression guard for the fixed behaviour.
         $group = $this->createGroup();
 
         $group->delete();

@@ -154,8 +154,8 @@ class AdminComponentsTest extends FeatureTestCase
 
     public function test_newsletter_validation_rejects_an_unknown_recipient_group(): void
     {
-        // Ez a validáció az egyetlen védelem a newsletters:send-due parancs
-        // "ismeretlen send_to megakasztja a sort" hibája ellen (TODO 06).
+        // This validation is the only defense against the newsletters:send-due command's
+        // "unknown send_to jams the queue" defect (TODO 06).
         Livewire::actingAs($this->admin)
             ->test(NewsletterEdit::class)
             ->set('state.date', today()->toDateString())
@@ -197,7 +197,7 @@ class AdminComponentsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(StaticPages::class)
             ->assertOk()
-            // A FeatureTestCase setUp-ja létrehoz egy 'home' oldalt.
+            // FeatureTestCase's setUp creates a 'home' page.
             ->assertSee('home');
     }
 
@@ -227,7 +227,7 @@ class AdminComponentsTest extends FeatureTestCase
 
     public function test_static_page_slug_must_be_unique(): void
     {
-        // A setUp már létrehozott egy 'home' oldalt.
+        // setUp already created a 'home' page.
         Livewire::actingAs($this->admin)
             ->test(StaticPageEdit::class)
             ->set('state.slug', 'home')
@@ -254,7 +254,7 @@ class AdminComponentsTest extends FeatureTestCase
     {
         Livewire::actingAs($this->admin)
             ->test(StaticPageEdit::class)
-            // Ékezetes bemenet: a Str::slug transzliterál és kötőjelez.
+            // Accented input: Str::slug transliterates and hyphenates.
             ->set('state.slug', 'Árvíztűrő Tükörfúrógép')
             ->call('checkSlug')
             ->assertSet('state.slug', 'arvizturo-tukorfurogep');

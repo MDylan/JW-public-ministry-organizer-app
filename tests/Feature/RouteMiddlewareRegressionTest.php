@@ -131,12 +131,12 @@ class RouteMiddlewareRegressionTest extends FeatureTestCase
 
     public function test_group_servant_gate_route_accepts_membership_instead_of_a_global_role(): void
     {
-        // TODO 07.2: a can:is-groupservant az egyetlen route-szintű használata
-        // a három csoport-gate-nek (routes/web.php:160). Az is-admin és az
-        // is-translator gate-tel szemben ez NEM a users.role oszlopból
-        // dolgozik, hanem az elfogadott admin/roler tagságok számából -
-        // vagyis egy sima 'activated' felhasználó is átmehet rajta.
-        // A closure-ök teljes mátrixa: tests/Feature/Auth/AuthorizationGateTest.
+        // TODO 07.2: can:is-groupservant is the only route-level use of the
+        // three group gates (routes/web.php:160). Unlike the is-admin and
+        // is-translator gates, this one does NOT work off the users.role
+        // column, but off the count of accepted admin/roler memberships -
+        // meaning a plain 'activated' user can also pass through it.
+        // The full matrix of the closures: tests/Feature/Auth/AuthorizationGateTest.
         $group = $this->createGroup();
         $user = $this->createUser([
             'email' => 'newsletter-gate@example.test',

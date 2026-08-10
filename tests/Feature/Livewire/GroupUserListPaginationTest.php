@@ -10,30 +10,30 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 08: a Groups\ListUsers lapozása - és a TODO 48 legkockázatosabb pontja.
+ * TODO 08: Groups\ListUsers's pagination - and TODO 48's riskiest point.
  *
- * Ez a komponens NEM a keretrendszer paginate()-jét használja, hanem kézzel
- * épít egy LengthAwarePaginator-t (:915-921):
+ * This component does NOT use the framework's paginate(); instead it
+ * manually builds a LengthAwarePaginator (:915-921):
  *
  *     $current_page = $this->page;
  *     if($current_page < 1) $current_page = 1;
  *     $users = new LengthAwarePaginator($itemsForCurrentPage, $total, 10, $current_page, [...]);
  *
- * A $this->page a Livewire 2 WithPagination trait public $page property-je,
- * amit a setPage() a $paginators tömbbel EGYÜTT ír:
+ * $this->page is the Livewire 2 WithPagination trait's public $page
+ * property, which setPage() writes TOGETHER WITH the $paginators array:
  *
  *     $this->paginators[$pageName] = $page;
- *     $this->{$pageName} = $page;      // <-- ez a sor tűnik el a v3-ban
+ *     $this->{$pageName} = $page;      // <-- this line disappears in v3
  *
- * Livewire 3-ban a trait $page property-je megszűnik, és a setPage() már
- * csak a $paginators-t írja. A komponens ugyan saját public $page = 1-et is
- * deklarál (:36), így a property nem szűnik meg - de senki nem fogja
- * frissíteni. A lapozó gombok gotoPage()-et hívnak, az a paginators-t
- * állítja, a render() viszont a $page-et olvassa: a lista HIBAÜZENET NÉLKÜL
- * az 1. oldalon ragadna.
+ * In Livewire 3, the trait's $page property is removed, and setPage() only
+ * writes $paginators from then on. The component does also declare its own
+ * public $page = 1 (:36), so the property does not disappear - but nobody
+ * will update it. The pagination buttons call gotoPage(), which sets
+ * paginators, while render() reads $page instead: the list would get stuck
+ * on page 1 WITHOUT AN ERROR MESSAGE.
  *
- * Az itteni tesztek épp ezt a kapcsolatot mérik, hogy a TODO 48 alatt
- * elbukjanak, ha a szinkron elvész.
+ * The tests here measure exactly this coupling, so that they fail under
+ * TODO 48 if the sync is lost.
  */
 class GroupUserListPaginationTest extends FeatureTestCase
 {
@@ -46,14 +46,14 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
         $this->group = $this->createGroup();
 
-        // Az aktor is tagja a csoportnak, tehát benne van a listában.
+        // The actor is also a member of the group, so it is included in the list.
         //
-        // A rendezés name_index, majd email szerint megy, és a name_index-et
-        // a UserObserver által minden íráskor elindított
-        // CalulcateUserNameIndexProcess számolja: NÉV szerint rendezi és
-        // újraszámozza az összes felhasználót. Az attachManyUsersToGroup()
-        // ezért ad egyedi "Page NNN" neveket - a 'Zzz Aktor' pedig a lista
-        // végére kerül, így a lapok tartalma kiszámítható.
+        // The sort order goes by name_index, then email, and name_index is
+        // computed by CalulcateUserNameIndexProcess, which UserObserver
+        // triggers on every write: it sorts all users BY NAME and
+        // renumbers them. That is why attachManyUsersToGroup() gives unique
+        // "Page NNN" names - and 'Zzz Aktor' ends up at the end of the list,
+        // making the pages' contents predictable.
         $this->actor = $this->createUser([
             'name'  => 'Zzz Aktor',
             'email' => 'zzz-actor@example.test',
@@ -83,12 +83,12 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Lapméret
+    // 1. Page size
     // =========================================================================
 
     public function test_the_member_list_breaks_at_ten_per_page(): void
     {
-        // A per_page itt bedrótozott 10 (:914), nem a paginate() 20-a.
+        // per_page is hardwired to 10 here (:914), not paginate()'s 20.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $paginator = $this->list()->viewData('users');
@@ -101,16 +101,16 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A $this->page és a lap tartalmának összekötése - a v3 kockázat
+    // 2. The coupling between $this->page and the page's contents - the v3 risk
     // =========================================================================
 
     public function test_going_to_the_second_page_actually_shows_the_second_ten(): void
     {
-        // EZ A TESZT BUKIK EL A LIVEWIRE 3 ALATT, ha a $this->page
-        // szinkronizálása elvész: a lista az 1. lap tartalmát adná vissza.
+        // THIS TEST FAILS UNDER LIVEWIRE 3 if $this->page's synchronization
+        // is lost: the list would return page 1's contents.
         //
-        // A rendezés determinisztikus (name_index = 0 mindenhol, utána
-        // email), ezért itt konkrét sorrendre is assertálhatunk.
+        // The sort order is deterministic (name_index = 0 everywhere, then
+        // email), so we can also assert on a specific order here.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $this->assertSame(
@@ -136,13 +136,13 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
     public function test_goto_page_writes_both_the_page_property_and_the_paginators_array(): void
     {
-        // KARAKTERIZÁLÓ TESZT a rejtett előfeltételről.
+        // CHARACTERIZATION TEST for the hidden precondition.
         //
-        // A WithPagination::setPage() a v2-ben KÉTFELÉ ír, és a komponens
-        // működése ezen a kettősségen áll: a render() a $page-et olvassa, a
-        // lapozó nézet viszont a $paginators-ból dolgozik. A v3 setPage()-e
-        // már csak a $paginators-t írja - ez a teszt teszi a különbséget
-        // mérhetővé.
+        // WithPagination::setPage() writes to TWO PLACES in v2, and the
+        // component's behavior rests on this duality: render() reads $page,
+        // while the pagination view works off $paginators. v3's setPage()
+        // only writes $paginators from then on - this test makes that
+        // difference measurable.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 2);
@@ -167,9 +167,10 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
     public function test_a_page_number_below_one_is_clamped_to_the_first_page(): void
     {
-        // Két védelem fut egymás után: a setPage() a nem pozitív értéket
-        // 1-re emeli, a render() (:916) pedig még egyszer ellenőrzi. A
-        // második ma holt kód, de a kézi paginátor miatt indokolt maradnia.
+        // Two safeguards run one after another: setPage() raises a
+        // non-positive value to 1, and render() (:916) checks it again. The
+        // second one is dead code today, but it is justified to remain
+        // because of the manual paginator.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 0);
@@ -180,10 +181,10 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
     public function test_a_page_number_beyond_the_last_page_yields_an_empty_slice(): void
     {
-        // A kézi paginátor nem korrigál felfelé: a slice() üres tömböt ad,
-        // a total() viszont a teljes elemszámot mutatja. A keretrendszer
-        // paginate()-je ugyanígy viselkedik, tehát ez nem eltérés - de a
-        // felhasználó üres listát lát a lapozó alatt.
+        // The manual paginator does not correct upward: slice() returns an
+        // empty array, while total() still shows the full element count. The
+        // framework's paginate() behaves the same way, so this is not a
+        // deviation - but the user sees an empty list under the pagination control.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $paginator = $this->list()->call('gotoPage', 9)->viewData('users');
@@ -193,7 +194,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. A resetPage() hívói - és akik nem hívják
+    // 3. Callers of resetPage() - and those who do not call it
     // =========================================================================
 
     public function test_searching_resets_the_cursor(): void
@@ -230,14 +231,14 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
     public function test_the_online_filter_resets_the_cursor_like_every_other_filter(): void
     {
-        // MEGFORDÍTVA a v1-patch B2 javításával.
+        // REVERSED by the v1-patch B2 fix.
         //
-        // Négy metódus hívott resetPage()-et - updatedSearchTerm(),
-        // filterMyself(), filterIcon() és filterOff() -, a filterOnline() és a
-        // filterInactive() viszont NEM, pedig ugyanúgy szűkíti a találati
-        // halmazt. A 3. oldalon állva az "online" szűrőre kattintva a lista
-        // ezért üresen maradt, holott volt találat: a felhasználó számára úgy
-        // nézett ki, mintha senki nem lenne online.
+        // Four methods called resetPage() - updatedSearchTerm(),
+        // filterMyself(), filterIcon(), and filterOff() - while
+        // filterOnline() and filterInactive() did NOT, even though they
+        // narrow the result set just the same way. So while standing on page
+        // 3, clicking the "online" filter left the list empty even though
+        // there were hits: to the user, it looked as if nobody was online.
         $this->attachManyUsersToGroup($this->group, 25);
 
         User::where('email', 'page-001@example.test')->update(['last_activity' => now()]);
@@ -253,8 +254,8 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
     public function test_the_inactive_filter_resets_the_cursor_too(): void
     {
-        // A filterInactive() ugyanannak a hibának a másik fele volt; a
-        // filterOnline() mellett ez is a v1-patch B2 hatálya alá tartozik.
+        // filterInactive() was the other half of the same defect; alongside
+        // filterOnline(), this too falls under the scope of v1-patch B2.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 3)->call('filterInactive');
@@ -263,21 +264,21 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 4. A szerep és a lapszám összefüggése
+    // 4. The relationship between role and page count
     // =========================================================================
 
     public function test_a_non_editor_sees_fewer_pages_because_pending_members_are_hidden(): void
     {
-        // A render() (:878-881) csak szerkesztőnek (admin/roler) mutatja a
-        // még el nem fogadott tagságokat. A lapszám tehát szerepfüggő -
-        // ugyanaz a csoport két felhasználónak más terjedelmű.
+        // render() (:878-881) only shows not-yet-accepted memberships to an
+        // editor (admin/roler). So the page count is role-dependent - the
+        // same group has a different extent for two different users.
         $this->attachManyUsersToGroup($this->group, 12, 'member', true);
         $this->attachManyUsersToGroup($this->group, 8, 'member', false, 'pending');
 
         $viewer = $this->createUser(['email' => 'zzy-viewer@example.test']);
         $this->attachUserToGroup($viewer, $this->group, 'member');
 
-        // Az aktor admin: mindenkit lát (12 + 8 + aktor + viewer = 22).
+        // The actor is admin: sees everyone (12 + 8 + actor + viewer = 22).
         $this->assertSame(22, $this->list()->viewData('users')->total());
 
         $asViewer = Livewire::actingAs($viewer->fresh())
@@ -288,15 +289,15 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 5. A keresés a lapozott halmazon
+    // 5. Search over the paginated set
     // =========================================================================
 
     public function test_the_search_filters_in_memory_after_the_query(): void
     {
-        // A keresés NEM az adatbázisban fut: a render() (:902-911) a már
-        // lekérdezett kollekciót szűri, mert a név titkosítva van tárolva.
-        // A lapozás tehát a szűrt kollekción történik, és a total() a
-        // találatok számát mutatja - nem a csoport méretét.
+        // Search does NOT run in the database: render() (:902-911) filters
+        // the already-queried collection, because the name is stored
+        // encrypted. So pagination happens over the filtered collection, and
+        // total() shows the number of hits - not the group's size.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $paginator = $this->list()->set('searchTerm', 'page-01')->viewData('users');
@@ -316,15 +317,15 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 6. A renderelt lapozó
+    // 6. The rendered pagination control
     // =========================================================================
 
     public function test_the_pagination_control_renders_every_page_link_in_a_small_list(): void
     {
-        // A nézet az EGYETLEN hely, ahol a links() argumentumot kap:
+        // The view is the ONLY place where links() gets an argument:
         // {{$users->onEachSide(1)->links()}} (list-users.blade.php:312).
-        // Kis oldalszámnál a Laravel ablakolása minden lapot megmutat,
-        // elválasztó nélkül.
+        // With a small page count, Laravel's windowing shows every page,
+        // without a separator.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $this->list()

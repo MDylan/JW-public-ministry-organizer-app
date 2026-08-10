@@ -227,8 +227,8 @@ class MaintenanceCommandsTest extends FeatureTestCase
 
         $this->artisan('statistics:record-daily-users')->assertExitCode(0);
 
-        // A 'dialy_users' elgépelés szándékosan megmarad: az Admin\Statistics
-        // komponens és a meglévő adatsorok is erre a stringre épülnek.
+        // The 'dialy_users' typo is deliberately kept: the Admin\Statistics
+        // component and the existing data rows are both built on this string.
         $row = Statistics::where('type', 'dialy_users')->first();
 
         $this->assertNotNull($row);

@@ -10,12 +10,12 @@ use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 08: a Groups\ListGroups lapozása.
+ * TODO 08: pagination of Groups\ListGroups.
  *
- * A render() a userGroups() RELÁCIÓN paginál (:229), nem egy önálló
- * lekérdezésen - a lapszám tehát a reláció pivot-szűrőivel együtt alakul ki.
- * Ez a metszéspont a lapozás és a jogosultsági szűrés között, és ma semmi
- * nem védi.
+ * render() paginates over the userGroups() RELATION (:229), not a standalone
+ * query - so the page count forms together with the relation's pivot filters.
+ * This is the intersection point between pagination and privilege filtering, and
+ * today nothing protects it.
  */
 class GroupListPaginationTest extends FeatureTestCase
 {
@@ -39,7 +39,7 @@ class GroupListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 1. Lapméret és lapszámok
+    // 1. Page size and page counts
     // =========================================================================
 
     public function test_the_group_list_breaks_at_twenty_per_page(): void
@@ -72,8 +72,8 @@ class GroupListPaginationTest extends FeatureTestCase
 
     public function test_only_the_users_own_groups_are_paginated(): void
     {
-        // Egy másik felhasználó csoportjai nem tolják el a lapszámot: a
-        // relációs szűrés a lapozás előtt hat.
+        // Another user's groups do not shift the page count: the
+        // relation filter takes effect before pagination.
         $this->attachUserToManyGroups($this->user, 5);
 
         $stranger = $this->createUser(['email' => 'glp-stranger@example.test']);
@@ -86,14 +86,14 @@ class GroupListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. A reláció szűrői a lapozáson át
+    // 2. The relation's filters across pagination
     // =========================================================================
 
     public function test_a_withdrawn_membership_is_excluded_from_the_total(): void
     {
-        // A userGroups() wherePivot('deleted_at', null) szűrője a lapozás
-        // ELŐTT hat, tehát egy kilépett tagság nem növeli a lapszámot -
-        // különben az utolsó lapon üres helyek jelennének meg.
+        // The userGroups() wherePivot('deleted_at', null) filter takes effect
+        // BEFORE pagination, so a withdrawn membership does not increase the page count -
+        // otherwise empty slots would appear on the last page.
         $this->attachUserToManyGroups($this->user, 21);
 
         $this->assertSame(2, $this->list()->viewData('groups')->lastPage());
@@ -114,10 +114,10 @@ class GroupListPaginationTest extends FeatureTestCase
 
     public function test_pending_invitations_are_counted_on_the_same_pages(): void
     {
-        // A userGroups() - a groupsAccepted()-tel ellentétben - NEM szűri az
-        // el nem fogadott tagságokat. A meghívások tehát ugyanazon a lapon
-        // jelennek meg, mint a valódi csoportok, és beleszámítanak a
-        // lapszámba. Rögzítjük, mert a nézet külön dobozban mutatja őket.
+        // userGroups() - unlike groupsAccepted() - does NOT filter out
+        // unaccepted memberships. Invitations therefore appear on the same page
+        // as real groups, and count toward the
+        // page total. We pin this down because the view displays them in a separate box.
         $this->attachUserToManyGroups($this->user, 18, 'member', true);
         $pending = $this->attachUserToManyGroups($this->user, 4, 'member', false);
 
@@ -143,8 +143,8 @@ class GroupListPaginationTest extends FeatureTestCase
         $this->assertSame(21, $this->list()->viewData('groups')->total());
         $this->assertSame(2, $this->list()->viewData('groups')->lastPage());
 
-        // Tömeges törlés, ahogy az éles kód is teszi - modell-események
-        // nélkül. (Az Eloquent út a TODO 10 óta szintén működik.)
+        // Bulk deletion, the way production code does it too - without
+        // model events. (The Eloquent path has also worked since TODO 10.)
         Group::where('id', $groups[0]->id)->delete();
 
         $paginator = $this->list()->viewData('groups');
@@ -155,7 +155,7 @@ class GroupListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 3. Navigáció és megjelenés
+    // 3. Navigation and display
     // =========================================================================
 
     public function test_next_and_previous_page_move_the_cursor(): void

@@ -8,46 +8,49 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * TODO 25: a `require-dev` csomagok nem szivároghatnak a production bootba.
+ * TODO 25: `require-dev` packages must not leak into the production boot.
  *
- * A PROBLÉMA, AMIT EZ AZ ŐR VÉD
+ * THE PROBLEM THIS GUARD PROTECTS AGAINST
  *
- * A `config/app.php` kézzel regisztrálta a `Barryvdh\Debugbar\ServiceProvider`-t,
- * ami `require-dev` csomag. Egy `composer install --no-dev` telepítésen az
- * osztály nincs meg, a provider-lista feloldása pedig `Error`-t dob - tehát az
- * alkalmazás el sem indul. A csomagnak van auto-discovery bejegyzése
- * (`extra.laravel.providers`), úgyhogy a kézi regisztráció fejlesztés alatt sem
- * adott semmit; csak a `--no-dev` telepítést törte el.
+ * `config/app.php` manually registered `Barryvdh\Debugbar\ServiceProvider`,
+ * which is a `require-dev` package. On a `composer install --no-dev` install
+ * the class does not exist, and resolving the provider list throws an
+ * `Error` - so the application does not even start. The package has an
+ * auto-discovery entry (`extra.laravel.providers`), so the manual
+ * registration gave nothing even during development; it only broke the
+ * `--no-dev` install.
  *
- * A provider törlésével viszont a `\Debugbar` alias is eltűnik ugyanott, és
- * `AppServiceProvider::boot()` meghívta rajta az `enable()`-t, ha az adatbázis
- * `debugbar` beállítása 1. Ez a hívás egy `catch (\Exception)` blokkon belül
- * ül - ami NEM fogja el a hiányzó osztály `Error`-ját -, tehát a beállítás
- * bekapcsolva minden kérést megölt volna azon a hoston, ahol a csomag nincs.
- * A javítás egyik fele a törlés, a másik az őr; külön-külön egyik sem elég.
+ * Deleting the provider, however, also removes the `\Debugbar` alias in the
+ * same place, and `AppServiceProvider::boot()` called `enable()` on it if
+ * the database's `debugbar` setting was 1. This call sits inside a
+ * `catch (\Exception)` block - which does NOT catch the missing class's
+ * `Error` - so the setting being turned on would have killed every request
+ * on a host where the package is absent. One half of the fix is the
+ * deletion, the other is the guard; neither is enough on its own.
  *
- * MIÉRT NINCS ITT FUTÁSIDEJŰ SZIMULÁCIÓ A HIÁNYZÓ CSOMAGRA
+ * WHY THERE IS NO RUNTIME SIMULATION HERE FOR THE MISSING PACKAGE
  *
- * Mert nem lehet, és ezt mérés mondja ki, nem feltételezés. Három kísérlet
- * futott, mindegyik zöld maradt akkor is, amikor az őrt kivettem a bootból -
- * vagyis egyik sem mért semmit:
+ * Because it cannot be done, and this is stated by measurement, not
+ * assumption. Three experiments were run, and each stayed green even when I
+ * removed the guard from the boot - meaning none of them measured anything:
  *
- *  1. a konténer `debugbar` kulcsának törlése: a facade a saját
- *     `$resolvedInstance` gyorsítótárából szolgált ki, a konténerhez el sem
- *     jutott;
- *  2. `Facade::clearResolvedInstance()` mellé véve: a `Debugbar` facade
- *     accessora nem a `debugbar` alias, hanem `LaravelDebugbar::class`, amit
- *     a törlés nem érintett;
- *  3. azt a kulcsot is törölve: az **osztály ott van a vendor fában**, tehát a
- *     konténer egyszerűen példányosítja - a `__construct($app = null)`
- *     feloldható. Márpedig pontosan ez az osztály hiányozna `--no-dev` alatt.
+ *  1. deleting the container's `debugbar` key: the facade was served from
+ *     its own `$resolvedInstance` cache, never reaching the container;
+ *  2. adding `Facade::clearResolvedInstance()`: the `Debugbar` facade's
+ *     accessor is not the `debugbar` alias but `LaravelDebugbar::class`,
+ *     which the deletion did not touch;
+ *  3. deleting that key too: the **class is present in the vendor tree**, so
+ *     the container simply instantiates it - `__construct($app = null)` can
+ *     be resolved. And that is exactly the class that would be missing
+ *     under `--no-dev`.
  *
- * A hibamód tehát a vendor fa jelenlétén múlik, azt pedig egy futó folyamatban
- * nem lehet elvenni. Ami marad, az két valóban mérhető dolog: hogy a
- * provider-listába nem kerül vissza dev-csomag (dinamikus, erős), és hogy a
- * debugbar-ág nem hívja közvetlenül a facade-ot (forrásalapú, gyenge, de a
- * regressziót elkapja). A `--no-dev` boot igazi próbája a
- * `composer install --no-dev --dry-run`, ami a TODO 25 verifikációja.
+ * The failure mode thus hinges on the vendor tree's presence, and that
+ * cannot be taken away in a running process. What remains are two things
+ * that really can be measured: that a dev package doesn't get put back into
+ * the provider list (dynamic, strong), and that the debugbar branch doesn't
+ * call the facade directly (source-based, weak, but catches the
+ * regression). The true test of the `--no-dev` boot is
+ * `composer install --no-dev --dry-run`, which is TODO 25's verification.
  */
 class DevDependencyIsolationTest extends TestCase
 {
@@ -57,7 +60,7 @@ class DevDependencyIsolationTest extends TestCase
     {
         $composer = json_decode(file_get_contents(base_path('composer.json')), true);
         $devPackages = array_keys($composer['require-dev'] ?? []);
-        $this->assertNotEmpty($devPackages, 'A require-dev blokk üres - az őr így semmit nem mérne.');
+        $this->assertNotEmpty($devPackages, 'The require-dev block is empty - the guard would measure nothing this way.');
 
         $registered = config('app.providers');
         $checked = 0;
@@ -74,19 +77,19 @@ class DevDependencyIsolationTest extends TestCase
             foreach ($providers as $provider) {
                 $checked++;
 
-                // A lista sztringet és `::class`-t is tartalmazhat (a packer
-                // sora ma is sztring), ezért nyers összehasonlítás kell.
+                // The list can contain both a string and `::class` (the
+                // packer's line is still a string today), so a raw comparison is needed.
                 if (in_array($provider, $registered, true)) {
                     $leaked[] = $package.' -> '.$provider;
                 }
             }
         }
 
-        // Enélkül az őr elnémulna attól, hogy egy csomag elveszti az
-        // auto-discovery bejegyzését vagy a vendor fa hiányos.
-        $this->assertGreaterThan(0, $checked, 'Egyetlen dev-csomag providere sem került ellenőrzésre.');
+        // Without this, the guard would go silent if a package lost its
+        // auto-discovery entry or the vendor tree were incomplete.
+        $this->assertGreaterThan(0, $checked, 'Not a single dev package provider was checked.');
 
-        $this->assertSame([], $leaked, 'require-dev csomag providere a config/app.php listájában: '.implode(', ', $leaked));
+        $this->assertSame([], $leaked, 'require-dev package provider present in config/app.php\'s list: '.implode(', ', $leaked));
     }
 
     public function test_the_debugbar_branch_never_calls_the_facade_directly(): void
@@ -96,13 +99,13 @@ class DevDependencyIsolationTest extends TestCase
         $this->assertStringNotContainsString(
             '\Debugbar::',
             $source,
-            'A `\Debugbar` facade hívása feltétel nélkül fatalt ad ott, ahol a dev-csomag nincs telepítve.'
+            'Calling the `\Debugbar` facade unconditionally fatals where the dev package is not installed.'
         );
 
         $this->assertStringContainsString(
             "bound('debugbar')",
             $source,
-            'A debugbar-ág elé konténer-ellenőrzés kell: hiányzó osztálynál `Error` jön, amit a boot `catch (\Exception)` ága nem fog el.'
+            'The debugbar branch needs a container check in front of it: a missing class throws an `Error`, which the boot\'s `catch (\Exception)` branch does not catch.'
         );
     }
 
@@ -110,7 +113,7 @@ class DevDependencyIsolationTest extends TestCase
     {
         Settings::updateOrCreate(['name' => 'debugbar'], ['value' => '1']);
 
-        $this->assertTrue($this->app->bound('debugbar'), 'A dev-környezetben az auto-discovery-nek regisztrálnia kell a Debugbart.');
+        $this->assertTrue($this->app->bound('debugbar'), 'In the dev environment, auto-discovery must register the Debugbar.');
         $this->app['debugbar']->disable();
         $this->assertFalse($this->app['debugbar']->isEnabled());
 
@@ -118,7 +121,7 @@ class DevDependencyIsolationTest extends TestCase
 
         $this->assertTrue(
             $this->app['debugbar']->isEnabled(),
-            'A `debugbar` beállítás bekapcsolva továbbra is be kell kapcsolja a sávot - az őr nem szűkíthet a kelleténél többet.'
+            'The `debugbar` setting, when on, must still enable the bar - the guard must not restrict more than necessary.'
         );
     }
 
@@ -126,17 +129,18 @@ class DevDependencyIsolationTest extends TestCase
     {
         Settings::updateOrCreate(['name' => 'debugbar'], ['value' => '1']);
 
-        // A jelzőt üríteni kell, különben a teszt semmit nem mér: az app
-        // felépítésekor a boot már egyszer lefutott, és a `settings_*` kulcsok
-        // ott beálltak.
+        // The flag must be cleared, otherwise the test measures nothing: the
+        // boot already ran once when the app was built, and the `settings_*`
+        // keys were set at that point.
         config(['settings_debugbar' => null]);
 
         (new AppServiceProvider($this->app))->boot();
 
-        // A debugbar-ág UTÁN következik a `$defaults` visszaírása a configba
-        // (`AppServiceProvider.php:95-97`), és a köré vont `catch (\Exception)`
-        // némán nyeli, ami odáig eljut. Ez a jelző tehát azt méri, hogy a boot
-        // maradéka lefutott-e - nem csak azt, hogy a teszt nem szállt el.
-        $this->assertSame('1', config('settings_debugbar'), 'A boot a debugbar-ág után is végig kell fusson.');
+        // Writing `$defaults` back into the config follows AFTER the
+        // debugbar branch (`AppServiceProvider.php:95-97`), and the
+        // `catch (\Exception)` wrapped around it silently swallows whatever
+        // reaches it. This flag therefore measures whether the rest of the
+        // boot ran - not just that the test did not blow up.
+        $this->assertSame('1', config('settings_debugbar'), 'The boot must run to completion past the debugbar branch too.');
     }
 }
