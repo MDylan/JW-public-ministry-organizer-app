@@ -972,11 +972,21 @@ follow-up also sits here unclaimed: converting
 `resources/views/public.blade.php` to `pwbs_asset()`, recorded at the end of
 TODO 33.8.
 
-**TODO 33.9** is open as well and belongs in a category of its own: translating
-the 4569 Hungarian comment lines across 208 files into English, now that
-`AGENTS.md` states the rule. It carries no runtime risk at all - and therefore
-no test will ever catch a mistake in it - so it is sliceable, but it must never
-share a commit with a behaviour change.
+**TODO 33.9 shipped on 2026-08-11**, sliced into three commits exactly the way
+the entry recommended - by tree, smallest first: `database/` + `routes/` +
+`config/` + `resources/views/` (33 files) first, then `app/` (75 files), then
+`tests/` (97 files) last, since that tree's comments carry the measurements
+and control experiments earlier phases recorded and needed the most careful
+read-through. `composer test` stayed at **1361 tests, 3790 assertions, green**
+across all three commits - the entry's zero-behaviour-change requirement held.
+A handful of Hungarian-accented spots were deliberately left untranslated
+because they are data, not comment prose, the same distinction the entry
+itself drew: exception message strings actually shown to users
+(`WeatherException`), the environment guard messages a developer sees when
+`composer test` catches a misconfigured `.env` (`CreatesApplication`), test
+fixture values and assertion-failure messages throughout `tests/`, and
+commented-out `Log::debug()` calls in `GroupDateHelper` whose string argument
+is dead-code data rather than prose.
 
 > **TODO 33.8 was on that list, and it should not have been.** It shipped on
 > 2026-08-09 in two commits, in one sitting. The estimate was wrong because the
@@ -1787,8 +1797,8 @@ and is not covered by a general test.
   - **Acceptance:** the nine `AssetPipelineKnownGapsTest` assertions fail - that is the point - and `AssetPipelineTest` is rewritten to the new emission (versioned URLs instead of packed filenames, individual tags instead of the two concatenated bundles), keeping its control-experiment property. The toastr icons render in a non-`local` environment, which finding 1 says they do not today.
   - Expected changes: `app/Helpers/helpers.php`, three blade files, `config/app.php`, `config/packer.php` deleted, `composer.json` / `composer.lock`, `.gitignore`, `release/upgrade.php`, both test files rewritten, and `.docs/assets.md`.
 
-- [ ] **TODO 33.9: Convert the Hungarian code comments to English**
-  - **The rule is now written down** (`AGENTS.md`, "Maintenance Rules For Contributors"): code comments are English, the same as the documentation. Every change set from TODO 31 onwards follows it. This item is about the existing tree, which does not.
+- [x] **TODO 33.9: Convert the Hungarian code comments to English**
+  - **The rule is now written down** (`AGENTS.md`, "Maintenance Rules For Contributors"): code comments are English, the same as the documentation. Every change set from TODO 31 onwards follows it. This item was about the existing tree, which did not.
   - **Measured on 2026-08-10**, counting comment lines that carry at least one Hungarian accented character:
 
     | Tree | Files | Comment lines |
@@ -1801,14 +1811,14 @@ and is not covered by a general test.
     | `resources/views/` | 1 | 6 |
     | **Total** | **208** | **4569** |
 
-    **This is a lower bound, and knowingly so.** The detector keys on accented characters, so a Hungarian sentence that happens to contain none is invisible to it. Whoever executes this must read the files, not trust the count.
-  - **Why the tests dominate, and why that is the hard half.** Roughly 70% of the volume is in `tests/`, and those are not incidental comments - Phases 1 and 2 deliberately wrote the *measurement* into the test files: what was found, what the control experiment was, what would break if the assertion were removed. Translating them is a real editorial job, not a mechanical pass, and a careless run would destroy the most valuable prose in the repository. A machine translation followed by no review is the failure mode to avoid.
-  - **Zero runtime risk, which is the one thing in its favour.** Nothing here is executable. That makes it safe to do in slices and safe to interleave with anything else - but it also means no test will ever tell you it went wrong. `composer test` staying green proves only that no code was touched by accident.
-  - Needed:
-    - Decide the slicing. The obvious cut is by tree (`app/` first, `tests/` last) or by roadmap phase (the files a phase touches, translated as that phase runs). **Do not** interleave it with unrelated work in the same commit - a translation diff and a behaviour diff in one change set are unreviewable together.
-    - Keep the *content*. These comments carry measurements, defect numbers, TODO cross-references and control experiments; the translation must preserve every fact, including the ones that read oddly. Where a comment names a Hungarian-language UI string or a translation key, that string stays as it is.
-    - Watch for comments that are load-bearing for a test's meaning. `DevDependencyIsolationTest` greps *source text* today; if any future guard does the same for a comment, the translation moves that guard too.
-  - Expected changes: comments only, across ~208 files. No behaviour, no test outcome, no route table, no schema.
+    **This was a lower bound, and knowingly so.** The detector keyed on accented characters, so a Hungarian sentence that happened to contain none was invisible to it. The delivery read every flagged file rather than trusting the count, which is also why the file counts actually touched per tree (below) differ from this table: some flagged files turned out to carry no comment at all (only Hungarian *data* - fixture strings, exception messages), and file-count differences in `config/` and `resources/views/` came from the detector matching UI text and translation strings that were correctly left alone.
+  - **Shipped on 2026-08-11, in three commits, sliced by tree exactly as this entry recommended** - smallest and lowest-risk first:
+    1. `database/` + `routes/` + `config/` + `resources/views/` together (33 files).
+    2. `app/` (75 files).
+    3. `tests/` (97 files) - last, because roughly 70% of the original volume sat here and these are not incidental comments: Phases 1 and 2 deliberately wrote the *measurement* into the test files - what was found, what the control experiment was, what would break if the assertion were removed. Translating them was a real editorial job, not a mechanical pass: every fact, TODO/patch cross-reference, defect description and control experiment was preserved verbatim in meaning, never summarized or shortened.
+  - **`composer test` stayed green across all three commits: 1361 tests, 3790 assertions, unchanged.** Zero behaviour was touched, as the entry required - no assertion, fixture value, route table entry, or schema changed in any of the three commits.
+  - **What stayed Hungarian on purpose, in every slice.** The distinction this entry drew between comment prose and comment-adjacent *data* held throughout: exception message strings actually shown to users (`WeatherException`), the environment guard messages a developer sees when `composer test` catches a misconfigured `.env` (`CreatesApplication`), test fixture values and assertion-failure messages throughout `tests/`, commented-out `Log::debug()` calls in `GroupDateHelper` whose string argument is dead-code data rather than prose, and quoted Hungarian UI labels/translation keys named inside an otherwise-translated comment (e.g. "Mégsem", "Hozzáadás", "Módosítások mentése").
+  - `DevDependencyIsolationTest`, which greps *source text*, stayed green through all three commits - no future guard yet depends on comment text, so nothing needed to move with the translation.
 
 ---
 
