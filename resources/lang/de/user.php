@@ -72,11 +72,13 @@ return array (
   'name' => 'Name',
   'newEmail' => 
   array (
+    'invalid_link' => 'Dieser Bestätigungslink ist nicht mehr gültig. Möglicherweise ist er abgelaufen oder wurde bereits verwendet. Auf deiner Profilseite kannst du einen neuen anfordern.',
     'not_pending' => 'Du hast keine E-Mail-Adresse zur Bestätigung.',
     'pending' => 'Deine neue E-Mail-Adresse (:email) wartet auf Bestätigung.',
     'please_use_it' => 'Bitte verwende diese beim Einloggen von nun an.',
     'please_verify' => 'Bitte bestätige deine neue E-Mail Adresse.',
     'success' => 'Deine neue E-Mail-Adresse ist bestätigt.',
+    'taken' => 'Die Bestätigung ist fehlgeschlagen: Die Adresse :email wurde inzwischen von einem anderen Benutzer übernommen. Bitte gib auf deiner Profilseite eine andere Adresse an.',
     'verify_sent_again' => 'Wir haben den Brief noch einmal an deine neue Adresse geschickt, bitte überprüfe deine Mailbox.',
   ),
   'notifications' => 

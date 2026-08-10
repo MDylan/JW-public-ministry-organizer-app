@@ -2,30 +2,37 @@
 
 namespace Tests\Feature\NewEmail;
 
+use App\Mail\VerifyFirstEmail;
 use App\Models\User;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 19 / 19.1: a `pending_user_emails` mért hiányosságai.
+ * TODO 19 / 19.1: the measured gaps of `pending_user_emails` - ALL CLOSED.
  *
- * FIGYELEM - EZ A FÁJL SZÁNDÉKOSAN A HIBÁS VISELKEDÉST RÖGZÍTI. Ugyanaz a
- * fegyelem, amit a TODO 14 alkalmazott a duplikált route-nevekre, és amit a
- * TODO 26 szándékosan átír: az állítás a MAI állapot, és a javítás pillanatában
- * ezeknek BUKNIUK KELL. Az a bukás a reviewálható diff, nem regresszió.
+ * This file DELIBERATELY pinned the broken behaviour to begin with, with the
+ * same discipline TODO 14 applied to the duplicated route names: the assertion
+ * described the state of the day, and it had to fail the moment the defect was
+ * fixed. That failure is the reviewable diff, not a regression.
  *
- * A `pending_user_emails` táblát senki nem takarítja: nincs idegen kulcs, nincs
- * observer (az app/Observers/ nyolc observere közül egyik sem érinti), és a
- * User::anonymize() sem hívja a trait clearPendingEmail() metódusát.
+ * Today the file pins the FIXED behaviour and guards it as a tripwire. Where
+ * each gap was closed:
  *
- * A javítás helye:
- *   1-3. TODO 33.2 (a GDPR-csomag in-house cseréje, Phase 3) - ott már úgyis
- *        a User::anonymize()-hoz nyúlunk, és a javítás független attól, mi lesz
- *        a protonemedia csomag sorsa.
- *   4-5. A TODO 19 döntésének végrehajtása.
+ *   1-2. Anonymization and the live link - `v1-patch` B12/B13.
+ *        `User::anonymize()` calls `clearPendingEmail()`, and
+ *        `PendingUserEmail::activate()` guards as well. TODO 33.2 carried this
+ *        over to the in-house GDPR code, TODO 33.5 to the in-house model.
+ *     3. The row orphaned by a deleted user - TODO 33.5,
+ *        `UserObserver::deleted()`.
+ *     4. The collision that produced a 500 during a signed-link GET -
+ *        TODO 33.5, `PendingUserEmail::activate()`.
+ *     5. The untranslated first confirmation mail - TODO 33.5,
+ *        `resources/views/emails/verifyFirstEmail.blade.php`.
+ *
+ * Every reversed case keeps a description of the original defect: that is what
+ * explains WHY the assertion is here.
  */
 class PendingEmailKnownGapsTest extends FeatureTestCase
 {
@@ -133,8 +140,14 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
         // A sor "visszatér", ahogy egy versenyhelyzetben is tenné.
         DB::table('pending_user_emails')->insert((array) $row);
 
+        // REVERSED by TODO 33.5. The vendor activate() returned silently and
+        // the controller went to the SUCCESS page regardless: an anonymized
+        // user's link produced a "confirmed" screen although nothing had
+        // happened. The in-house code distinguishes three outcomes, so this
+        // path now lands where an expired link lands.
         $this->get($this->signedRoute('pendingEmail.verify', ['token' => $token]))
-            ->assertRedirect(config('verify-new-email.redirect_to'));
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('profile_message');
 
         $fresh = $user->fresh();
 
@@ -147,9 +160,14 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
         );
     }
 
-    /** HIBA - a javítás után ennek buknia kell. Javítás: TODO 33.2. */
-    public function test_defect_deleting_a_user_orphans_the_pending_row(): void
+    /** REVERSED by TODO 33.5 (defect 3). */
+    public function test_deleting_a_user_clears_the_pending_row(): void
     {
+        // The row is attached through `morphs()`, so there is NO foreign key,
+        // and until TODO 33.5 none of the observers touched it: a deleted
+        // user's pending address - a real, never-confirmed e-mail address -
+        // stayed in the table indefinitely. The cleanup now happens in
+        // UserObserver::deleted().
         [$user] = $this->userWithPendingEmail('deleted@example.test', 'deleted-wanted@example.test');
 
         $userId = $user->getKey();
@@ -157,50 +175,135 @@ class PendingEmailKnownGapsTest extends FeatureTestCase
 
         $this->assertNull(User::find($userId));
         $this->assertSame(
-            1,
+            0,
             DB::table('pending_user_emails')->where('user_id', $userId)->count(),
-            'A morphs() nem hoz létre idegen kulcsot, és nincs observer sem - a sor árván marad.'
+            'The delete takes the pending address with it.'
+        );
+    }
+
+    public function test_deleting_a_user_leaves_another_users_pending_row_alone(): void
+    {
+        // Control experiment: the cleanup hangs off a single predicate
+        // (forUser), and without this the sibling assertion would stay green
+        // even if the delete emptied the WHOLE table. Same discipline the
+        // TODO 33.2 backfill migration followed.
+        [$doomed] = $this->userWithPendingEmail('doomed@example.test', 'doomed-wanted@example.test');
+        [$bystander] = $this->userWithPendingEmail('bystander@example.test', 'bystander-wanted@example.test');
+
+        $doomed->delete();
+
+        $this->assertSame(
+            'bystander-wanted@example.test',
+            DB::table('pending_user_emails')->where('user_id', $bystander->getKey())->value('email')
         );
     }
 
     // =========================================================================
-    // 2. Az ütközés, amit senki nem kezel
+    // 2. The collision
     // =========================================================================
 
-    /** HIBA - a csere során kezelendő. */
-    public function test_defect_activation_fatals_when_the_address_was_taken_in_the_meantime(): void
+    /** REVERSED by TODO 33.5 (defect 4). */
+    public function test_activation_reports_the_collision_instead_of_fataling(): void
     {
-        [, $token] = $this->userWithPendingEmail('race-old@example.test', 'race-target@example.test');
+        // Validation runs only at the MOMENT of the request (Rule::unique in
+        // UpdateUserProfileInformation). If somebody else registers the same
+        // address while the mail is in flight, the vendor activate() simply
+        // wrote and saved: SQLSTATE[23000] during a signed-link GET, i.e. a 500
+        // page with no way out.
+        [$user, $token] = $this->userWithPendingEmail('race-old@example.test', 'race-target@example.test');
 
-        // Amíg a link kézbesítés alatt volt, valaki más regisztrált a címmel.
         $this->createUser(['email' => 'race-target@example.test']);
 
-        // A validáció csak a kérés PILLANATÁBAN fut (Rule::unique a
-        // UpdateUserProfileInformation-ben); az activate() csak beír és ment.
-        $this->withoutExceptionHandling();
-        $this->expectException(QueryException::class);
+        $this->get($this->signedRoute('pendingEmail.verify', ['token' => $token]))
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('profile_message');
+
+        $this->assertSame(
+            'race-old@example.test',
+            $user->fresh()->email,
+            'A failed activation must not change the user address.'
+        );
+    }
+
+    public function test_a_logged_in_visitor_is_sent_back_to_the_profile_on_a_collision(): void
+    {
+        // The link is usually opened on another device, but not always.
+        // Somebody logged in goes back to the profile - that is where the
+        // pending address is shown and where a different one can be entered.
+        [$user, $token] = $this->userWithPendingEmail('race-in@example.test', 'race-in-target@example.test');
+
+        $this->createUser(['email' => 'race-in-target@example.test']);
+
+        $this->actingAs($user)
+            ->get($this->signedRoute('pendingEmail.verify', ['token' => $token]))
+            ->assertRedirect(route('user.profile'))
+            ->assertSessionHas('profile_message');
+    }
+
+    public function test_the_collision_leaves_the_pending_row_in_place_so_the_user_can_retry(): void
+    {
+        // The collision is neither the user's fault nor final: the row stays,
+        // so the profile page still shows the pending address and a resend is
+        // possible. A successful activation, by contrast, deletes it.
+        [$user, $token] = $this->userWithPendingEmail('race-keep@example.test', 'race-keep-target@example.test');
+
+        $this->createUser(['email' => 'race-keep-target@example.test']);
 
         $this->get($this->signedRoute('pendingEmail.verify', ['token' => $token]));
+
+        $this->assertSame('race-keep-target@example.test', $user->fresh()->getPendingEmail());
     }
 
     // =========================================================================
     // 3. Lokalizáció
     // =========================================================================
 
-    /** HIBA - a csere során pótolandó. */
-    public function test_defect_the_first_verification_mail_view_is_not_localised(): void
+    /** REVERSED by TODO 33.5 (defect 5). */
+    public function test_both_verification_mail_views_are_localised(): void
     {
-        $first = File::get(resource_path('views/vendor/verify-new-email/verifyFirstEmail.blade.php'));
-        $new = File::get(resource_path('views/vendor/verify-new-email/verifyNewEmail.blade.php'));
+        // `verifyFirstEmail` was the package's ENGLISH stub in a 22-locale
+        // application, while its sibling had been translated all along. A
+        // reachable path, not a theoretical one:
+        // sendPendingEmailVerificationMail() picks exactly this one whenever
+        // hasVerifiedEmail() is false.
+        //
+        // The views moved from the vendor path into the project's own emails/
+        // directory, because the release hook deletes the old location from
+        // deployed hosts.
+        $first = File::get(resource_path('views/emails/verifyFirstEmail.blade.php'));
+        $new = File::get(resource_path('views/emails/verifyNewEmail.blade.php'));
 
-        // A "másik" nézet a projekt saját fordítási kulcsait használja...
         $this->assertStringContainsString('@lang(', $new);
         $this->assertStringContainsString('email.verifyNewEmail.line_1', $new);
 
-        // ...ez viszont a csomag angol stubja maradt, egy 22 lokálos alkalmazásban.
-        // Elérhető ág: sendPendingEmailVerificationMail() ezt választja, ha a
-        // felhasználó hasVerifiedEmail() hamis.
-        $this->assertStringNotContainsString('@lang(', $first);
-        $this->assertStringContainsString('Please click the button below', $first);
+        $this->assertStringContainsString('@lang(', $first);
+        $this->assertStringContainsString('email.verifyFirstEmail.line_1', $first);
+
+        $this->assertDirectoryDoesNotExist(
+            resource_path('views/vendor/verify-new-email'),
+            'The published vendor views go away with the package.'
+        );
+    }
+
+    public function test_the_first_verification_mail_body_carries_no_untranslated_stub_text(): void
+    {
+        // Having the keys is not enough: the stub's English sentences must not
+        // leak into the rendered mail. Checked on the Hungarian locale, where
+        // every key really is translated.
+        //
+        // Mail::fake() is DELIBERATELY absent: MailFake cannot render(). The row
+        // is therefore created through the non-sending half of the flow.
+        $this->app->setLocale('hu');
+
+        $user = $this->createUser([
+            'email' => 'first-verify@example.test',
+            'email_verified_at' => null,
+        ]);
+        $pending = $user->createPendingUserEmailModel('first-verify-new@example.test');
+
+        $body = (new VerifyFirstEmail($pending))->render();
+
+        $this->assertStringNotContainsString('Please click the button below', $body);
+        $this->assertStringContainsString(__('email.verifyFirstEmail.line_1'), $body);
     }
 }

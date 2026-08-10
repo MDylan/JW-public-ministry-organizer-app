@@ -2,17 +2,17 @@
 
 namespace Tests\Feature\NewEmail;
 
+use App\Mail\VerifyFirstEmail;
+use App\Mail\VerifyNewEmail;
 use App\Models\User;
 use App\Notifications\UserEmailChangedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
-use ProtoneMedia\LaravelVerifyNewEmail\Mail\VerifyFirstEmail;
-use ProtoneMedia\LaravelVerifyNewEmail\Mail\VerifyNewEmail;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 19 / 19.1: a protonemedia/laravel-verify-new-email folyamat szerződése.
+ * TODO 19 / 19.1: the contract of the pending e-mail address flow.
  *
  * A csomagnak NULLA tesztje volt ebben a projektben. A 983-as szuitéből
  * egyetlen eset érintette közvetve (NotificationTriggerRegressionTest), plusz a

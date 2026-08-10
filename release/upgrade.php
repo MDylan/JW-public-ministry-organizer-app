@@ -28,10 +28,11 @@
 | WHEN TO REMOVE IT
 |
 | The laraupdater rename half is a one-off for the release that carries it, and
-| so is the vendor/rakibdevs removal added with the v1-patch C group and the
-| packer removal added with TODO 33.8. The hook is idempotent and safe to run
-| twice, but once the release has reached every install, empty the body of main()
-| or drop this file so later archives stop carrying it.
+| so is the vendor/rakibdevs removal added with the v1-patch C group, the
+| packer removal added with TODO 33.8 and the vendor/protonemedia removal added
+| with TODO 33.5. The hook is idempotent and safe to run twice, but once the
+| release has reached every install, empty the body of main() or drop this file
+| so later archives stop carrying it.
 |
 | The public/storage repair is the exception: it is per-INSTALL state, not
 | per-release, so it stays useful for as long as any host might still carry the
@@ -122,6 +123,24 @@ if (! function_exists('main')) {
         $ok = laraupdater_upgrade_remove(base_path('resources/views/vendor/translation')) && $ok;
         $ok = laraupdater_upgrade_remove(base_path('resources/lang/vendor/translation')) && $ok;
         $ok = laraupdater_upgrade_remove(base_path('config/translation.php')) && $ok;
+
+        // 5d) The pending-email package removed by TODO 33.5. Its trait, model,
+        //     controller and two Mailables now live in app/Support/Email,
+        //     app/Models, app/Http/Controllers/User and app/Mail, and the two
+        //     published Blade views moved to resources/views/emails - the first
+        //     of which was the package's untranslated English stub in a
+        //     22-locale application.
+        //
+        //     config/verify-new-email.php STAYS: it is project-owned now and
+        //     still read for the redirect target, the model and the two mailable
+        //     classes. The `pending_user_emails` table and its migration stay
+        //     too, unchanged in shape - there is no data migration here.
+        //
+        //     The ProtoneMedia service provider FQCN is in the two
+        //     bootstrap/cache manifests removed above, so an install that fails
+        //     its Artisan call still boots.
+        $ok = laraupdater_upgrade_remove(base_path('vendor/protonemedia')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('resources/views/vendor/verify-new-email')) && $ok;
 
         // 6) Everything the packer generated inside the web root while rendering
         //    pages. None of it is tracked by git, so the release diff cannot

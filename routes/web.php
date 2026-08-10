@@ -20,6 +20,7 @@ use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
 use App\Http\Controllers\User\TwoFactorSettings;
+use App\Http\Controllers\User\VerifyNewEmailController;
 use App\Http\Livewire\Admin\AdminNewsletters;
 use App\Http\Livewire\Admin\NewsletterEdit;
 use App\Http\Livewire\Admin\Settings;
@@ -82,6 +83,22 @@ Route::middleware(['signed'])->group(function () {
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')
     ->name('verification.notice')->middleware(['auth']);
 Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVerification'])->name('user.new-email-verified');
+
+// Confirmation of a pending e-mail address.
+//
+// TODO 33.5: until `protonemedia/laravel-verify-new-email` was replaced, this
+// route came from the package's OWN route file, and it loaded only because the
+// `route` key in the published `config/verify-new-email.php` was `null`. The
+// name and the URI are unchanged to the letter, so links already in flight keep
+// working.
+//
+// It DELIBERATELY carries no `auth`: the link is normally opened on a different
+// device. `throttle` sat in the vendor controller's constructor - here it is on
+// the route, because constructor middleware disappears with the Laravel 11
+// skeleton.
+Route::get('pendingEmail/verify/{token}', [VerifyNewEmailController::class, 'verify'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('pendingEmail.verify');
 
 //installer available only if file not exists
 if (!Storage::exists('installed.txt')) {

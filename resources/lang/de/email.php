@@ -206,6 +206,11 @@ Wo es möglich ist, gibt es auch Beschreibungen, die dir bei der Einstellungen h
     'line_1' => 'Dies ist eine Benachrichtigung, dass :adminName die Speicherung der persönlichen Daten von :userName erweitert hat. Der Verkündiger wurde ebenfalls per E-Mail benachrichtigt. Sie brauchen nichts weiter zu tun.',
     'subject' => 'Die Daten des Benutzers wurden verlängert',
   ),
+  'verifyFirstEmail' => 
+  array (
+    'line_1' => 'Bitte bestätige deine E-Mail-Adresse, damit du dein Konto nutzen kannst. Klicke dazu unten auf den Button.',
+    'line_2' => 'Wenn du dich nicht auf dieser Seite registriert hast, ignoriere dieses Schreiben.',
+  ),
   'verifyNewEmail' => 
   array (
     'line_1' => 'Du hast uns gebeten, deine E-mail Adresse zu ändern. Die Änderung wird wirksam, wenn du auf die neue E-Mail Adresse bestätigst, indem du unten auf den Button klickst.',

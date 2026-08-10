@@ -943,10 +943,21 @@ have corrupted roughly one key in five of every root JSON file the first time
 somebody pressed save. The instruction had been written from reading the vendor
 driver, not from measuring the data.
 
-Still open in this phase, in rough order of size:
-**TODO 33.5** (pending-email in-house) and **TODO 32** (migration squash). Both
-deserve their own plan - though the last two items priced as multi-day both
-turned out to be one sitting, so read that estimate with suspicion. One small, well-specified follow-up also sits here unclaimed: converting
+**TODO 33.5 shipped on 2026-08-10 too**, again in one sitting, suite
+**1340 -> 1348 tests**. Its lesson is not about the package at all: the plan
+said "fail into a flash message", and the obvious key for that - `error` - is
+rendered by **no view in this project**. Writing it would have reproduced, in the
+fix, the exact defect TODO 19 recorded as its sixth finding: the package's own
+error message never reached a user either. Before adding a flash, grep for what
+the layouts actually render. The other measurement worth carrying forward: all
+three numbers this item was specified with (30 tests, 5 known-gap cases, 2
+language files) were stale by the time it ran - 32, 7 and 3. Re-measure before
+executing a Phase 2 specification, however precise it looks.
+
+Still open in this phase: **TODO 32** (migration squash), which deserves its own
+plan - though every item priced as multi-day so far has turned out to be one
+sitting, so read that estimate with suspicion. One small, well-specified
+follow-up also sits here unclaimed: converting
 `resources/views/public.blade.php` to `pwbs_asset()`, recorded at the end of
 TODO 33.8.
 
@@ -1664,20 +1675,44 @@ and is not covered by a general test.
   - **Follow-up, same branch: the ceiling on top of it.** The fork inherited the package's one and only update condition - "the channel advertises something newer" - and nothing else. `v1-patch F` adds the major-version limit *above* the package, in project code, and leaves `vendor/mdylan/laraupdater` untouched (no new tag, no `composer.lock` change). See "Update branch ceiling (v1-patch F)" in the branch section above; the ops constraint it introduces - two manifests, chained by `previous_version`, when the new major ships - is written down in `release/README.md`.
   - Expected changes: as delivered.
 
-- [ ] **TODO 33.5: Replace `protonemedia/laravel-verify-new-email` with in-house code**
-  - **This is the execution of the TODO 19 decision.** It sits in Phase 3 rather than Phase 10 for a reason that differs from 33.2/33.3/33.4: this package's constraint really **is** bounded (`illuminate/support ^8.67||^9.0` in the installed 1.6.0), so Composer really does fail on it - at **Phase 5**, not Phase 10. But that half is a lock bump, not a decision, and the replacement code is framework-neutral, so writing it here removes the package from the Phase 5, 8, 9 and 10 resolutions in one move. Read TODO 19 first; it carries the measurements and the five defects.
-  - **Acceptance criteria already exist: the 30 tests in `tests/Feature/NewEmail/` (TODO 19.1).** They were written against the vendor code, so they are the before-and-after comparison. Twenty-five must stay green untouched; the five in `PendingEmailKnownGapsTest` are the ones the replacement is allowed - and for two of them, required - to break.
-  - Needed:
-    - **New code in `app/`**: `App\Models\PendingUserEmail` (the `forUser` scope, `activate()`, `verificationUrl()`), a `MustVerifyNewEmail` equivalent under `App\Support\Email\`, a thin controller with `throttle:6,1`, and two Mailables. Register `pendingEmail.verify` in `routes/web.php` with `web, signed` - keeping the name and URI so deployed links in flight keep working.
-    - **Keep `config/verify-new-email.php`** and its keys (`redirect_to`, `login_after_verification`, `model`, the two mailable classes), re-pointed at the new classes. The `route` key loses its meaning once the route is app-owned; drop it and delete the branch that read it.
-    - Fix defect 4 while rewriting: `activate()` must check that the address is still free and fail into a flash message instead of a `SQLSTATE[23000]` 500.
-    - Fix defect 5: give `verifyFirstEmail` the same `@lang()` treatment `verifyNewEmail` already has, and add the missing `email.verifyFirstEmail.*` keys to `hu` and `en`.
-    - Fix defect 3: give `pending_user_emails.user_id` a cleanup path - the simplest is the same `UserObserver` that already exists.
-    - Drop `protonemedia/laravel-verify-new-email` from `composer.json`. The `pending_user_emails` table and its migration **stay** - no data migration, same shape.
-    - Update the import at `app/Models/User.php:18,22`. The four call sites keep their names, so `UpdateUserProfileInformation`, `User\Profile` and both Blade views need no edit - **verify that, do not assume it**.
-  - ~~**Defects 1 and 2 are NOT fixed here - they belong to TODO 33.2**, where `User::anonymize()` is rewritten.~~ **Both shipped earlier, on `v1-patch`, and TODO 33.2 carried them through its rewrite unchanged.** `User::anonymize()` calls `clearPendingEmail()` after `anonymizeAttributes()`, and `App\Models\PendingUserEmail::activate()` refuses an anonymized user. **What this change set must do instead: re-point `clearPendingEmail()` at the new in-house trait, and keep `App\Models\PendingUserEmail`'s guard - the 32 tests in `tests/Feature/NewEmail/` are what prove it.**
-  - **The release note that must not be lost**, the same shape as TODO 33.4: `install()` never deletes, so the release carrying this must extend `release/upgrade.php` to remove `vendor/protonemedia/` and `resources/views/vendor/verify-new-email/` from deployed hosts.
-  - Expected changes: ~250-300 lines under `app/`, one route registration, `config/verify-new-email.php` re-pointed, `composer.json`, two language files, `release/upgrade.php`, and the `.docs` entries added by TODO 19.
+- [x] **TODO 33.5: Replace `protonemedia/laravel-verify-new-email` with in-house code** - DONE
+  - Delivered on 2026-08-10, in one sitting. Suite **1340 -> 1348 tests, 3728 -> 3753 assertions, green.** This is the execution of the TODO 19 decision. It sat in Phase 3 rather than Phase 10 for a reason that differs from 33.2/33.3/33.4: this package's constraint really **is** bounded (`illuminate/support ^8.67||^9.0` in the installed 1.6.0), so Composer really would have failed on it - at **Phase 5**, not Phase 10. But that half was a lock bump, not a decision, and the replacement code is framework-neutral, so writing it here removed the package from the Phase 5, 8, 9 and 10 resolutions in one move. Read TODO 19 first; it carries the measurements and the five defects.
+
+  - **CORRECTION to this entry's own numbers, all three measured before starting.** They had gone stale between TODO 19 and the execution:
+    1. **The suite is 32 tests, not 30.** `PendingEmailFlowTest` 12, `PendingEmailVerificationTest` 13, `PendingEmailKnownGapsTest` **7** - the v1-patch B12/B13 work added two and reversed four.
+    2. **Therefore "the five in `PendingEmailKnownGapsTest`" is 7**, of which **3** had to break here (defects 3, 4, 5), not two.
+    3. **"Two language files" is three, and there is no fourth to write.** An application-level `email.php` / `user.php` exists in **`hu`, `en` and `de` only** - 21, 20 and 16 files respectively. The other 19 locale directories are installer stubs carrying `installer_messages.php` and at most the framework's own `auth/validation/passwords`; they hold no application key at all. Adding a one-block `email.php` to each would have gone against the whole layout - the translation editor built in TODO 33.3 is what fills them.
+
+  - **What shipped, as delivered:**
+    - **New code, 467 lines under `app/`** (the estimate said 250-300; the difference is documentation comments, not logic): `App\Support\Email\MustVerifyNewEmail` (the trait, same public API - four call sites depend on the names), `App\Models\PendingUserEmail` rewritten from a vendor subclass into a standalone model, `App\Http\Controllers\User\VerifyNewEmailController`, and `App\Mail\VerifyNewEmail` / `VerifyFirstEmail` in a new `app/Mail/` directory.
+    - **`pendingEmail.verify` moved into `routes/web.php:97`**, name and URI byte-identical so links in flight keep working. `throttle:6,1` moved from the vendor controller's constructor onto the route definition - the constructor form disappears with the Laravel 11 skeleton. `tests/Fixtures/route-contracts.json` needed **no** edit: the snapshot aggregates by name and sorts the middleware, so `["signed","throttle:6,1","web"]` is the same string list from either source.
+    - **The two published Blade views moved** from `resources/views/vendor/verify-new-email/` to `resources/views/emails/`, next to the two views already there. They had to move: the release hook deletes the vendor directory from deployed hosts.
+    - **`config/verify-new-email.php` kept and rewritten**, `route` key dropped, everything else re-pointed and re-commented.
+    - **Defect 3** fixed in `UserObserver::deleted()`, with a control test proving it does not touch another user's row.
+    - **Defect 4** fixed in `activate()`, which now reports three outcomes through class constants instead of returning void.
+    - **Defect 5** fixed with `email.verifyFirstEmail.line_1` / `line_2` in `hu`, `en` and `de`.
+    - `composer.json` / `composer.lock` / `vendor/protonemedia/` gone; `release/upgrade.php` extended with block 5d.
+
+  - **The finding that changed the design, and it is the same defect the item was meant to fix.** The plan said the collision and the invalid link should "fail into a flash message", and the natural key for that is `error`. **Nothing in this project renders a flash named `error`.** The only three that reach a user are `message` (a toastr call in `layouts/app.blade.php:111`), `success` and `profile_message` (`user/profile.blade.php:39,44`, the second as a red alert) - plus `verified` on the login page. An `error` flash would therefore have been invisible, which is **exactly** the sixth TODO 19 finding: the package's own "The verification link is not valid anymore." never reached anyone either, because it travelled inside an exception that the redirect discarded. The messages ride `profile_message`, and `auth/login.blade.php` gained the one render site it was missing. Two tests assert the rendering itself, not just the session key.
+
+  - **A behaviour change beyond the five defects, worth naming.** The vendor `activate()` returned void, so the controller could not tell "activated" from "refused", and an **anonymized** user's link produced the *success* page - a "confirmed" screen after nothing had happened. With three distinct outcomes that branch now lands where the expired link lands. `PendingEmailKnownGapsTest::test_the_model_guard_holds_even_if_the_pending_row_survives` is the test that moved for it.
+
+  - **Test churn, as delivered: 32 -> 40.** Four cases were rewritten and their old text kept as the explanation - the reviewable diff, the TODO 14 discipline:
+    | Test | Why it moved |
+    | --- | --- |
+    | `PendingEmailVerificationTest::test_the_verification_route_is_registered_only_because_the_config_route_key_is_null` | The `route` config key is gone. **The plan's "25 must stay green untouched" missed this one** - a config key that only ever meant "should the package load its own routes?" cannot survive the package |
+    | `KnownGaps::test_defect_deleting_a_user_orphans_the_pending_row` | Reversed: the delete now clears the row |
+    | `KnownGaps::test_defect_activation_fatals_when_the_address_was_taken_in_the_meantime` | Reversed: redirect plus message, `users.email` untouched, and the pending row **stays** so the user can retry |
+    | `KnownGaps::test_defect_the_first_verification_mail_view_is_not_localised` | Reversed, and it now also renders the mail body on the `hu` locale - the keys existing is not the same as the stub text being gone |
+    Plus one mechanical edit with no assertion change: `PendingEmailFlowTest`'s two Mailable imports.
+
+  - **Control experiment, as run** (TODO 14 / 15 / 19.1 discipline): `$user->newEmail(...)` commented out at `UpdateUserProfileInformation.php:51`, suite re-run - **exactly two tests failed**, both profile-path cases, which is what TODO 19.1 rebuilt them to do after its own control run found one of them blind. Line restored, `git diff` clean, suite green.
+
+  - **One test-writing note worth keeping:** `Mail::fake()` and `Mailable::render()` are mutually exclusive - `MailFake` has no `render()`. The test that proves the first-verification body carries no untranslated stub text therefore creates its row through `createPendingUserEmailModel()`, the non-sending half of `newEmail()`, and skips the fake entirely.
+
+  - ~~**Defects 1 and 2 are NOT fixed here - they belong to TODO 33.2**, where `User::anonymize()` is rewritten.~~ **Both shipped earlier, on `v1-patch`, and TODO 33.2 carried them through its rewrite unchanged.** This change set re-pointed `clearPendingEmail()` at the in-house trait and kept the model guard, with its full explanatory comment.
+  - **The release note, as executed**, the same shape as TODO 33.4: `install()` never deletes, so `release/upgrade.php` block 5d removes `vendor/protonemedia/` and `resources/views/vendor/verify-new-email/` from deployed hosts. `config/verify-new-email.php`, the `pending_user_emails` table and its migration all **stay** - no data migration, same shape.
+  - Expected changes: as delivered - five new files under `app/`, two new Blade views, one route registration, `config/verify-new-email.php`, `composer.json` / `composer.lock`, six language files, `auth/login.blade.php`, `release/upgrade.php`, three test files, and `.docs/models.md` / `notifications.md` / `routes.md`.
 
 - [x] **TODO 33.6: Replace `rakibdevs/openweather-laravel-api` with a direct `Http::` client** - DONE on `v1-patch`
   - Delivered as described, plus the coverage that was the real reason for the swap: `tests/Feature/Weather/OpenWeatherClientTest.php` (15 cases) finally exercises the SUCCESS path with `Http::fake()`, which the package's inline Guzzle client made impossible. One extra defect found while doing it: a failed refresh used to bump `updated_at`, so an unreachable API marked stale data fresh for an hour.
@@ -1802,7 +1837,7 @@ This is where the interpreter switches. Laravel 10.x supports PHP 8.1 through 8.
   - Needed:
     - `laravel/framework` to `^10.0`, `nunomaduro/collision` to `^7.0`, PHPUnit to `^10.0`.
     - Reconcile Monolog 3 logging changes against `config/logging.php`.
-    - **`protonemedia/laravel-verify-new-email` fails the resolution here if TODO 33.5 has slipped**, and this is the only place in the roadmap where it does so before Phase 10. Measured in TODO 19: the installed 1.6.0 requires `illuminate/support ^8.67||^9.0`. It is a lock bump, not a decision - `composer.json` already declares `^1.6`, so 1.13.0 resolves once `config.platform.php` stops pinning 8.0.9 (TODO 24). If TODO 33.5 shipped, the package is gone and this line is moot.
+    - ~~**`protonemedia/laravel-verify-new-email` fails the resolution here if TODO 33.5 has slipped**, and this is the only place in the roadmap where it does so before Phase 10.~~ **Moot: TODO 33.5 shipped on 2026-08-10** and the package is gone from `composer.json` and `composer.lock`. Kept for the record, because it was the only genuine upper bound of the Phase 2 four: the installed 1.6.0 required `illuminate/support ^8.67||^9.0`, and the fallback would have been a lock bump to 1.13.0 rather than a decision.
     - **`rakibdevs/openweather-laravel-api` does NOT fail here - corrected by TODO 22.** This line used to say it did, on PHP. It does not: the installed 1.9.0 declares no framework constraint and its `php ^7.2|^7.3|^7.4|^8.0` admits 8.1 through 8.4, because `^8.0` is a range and not a version. If TODO 33.6 has slipped, the package installs cleanly here and at every later hop, and stays broken at runtime instead - which is worse, not better, since nothing announces it. Do 33.6; do not rely on this phase to force it.
     - **`laravolt/avatar` fails the resolution here too, and unlike the two above it cannot be waved through.** Measured in TODO 22: the installed 4.1.7 declares `illuminate/support ^6.0|^7.0|^8.0|^9.0`, so Composer stops here - and `composer.json` declares `^4.1`, which admits **no** release supporting Laravel 10 or later. So this is neither a lock bump nor a one-line constraint edit: every Laravel-12/13-capable line of the package requires `intervention/image ^3.4` or `^4.0`, where the API the project calls no longer exists. **TODO 39.1 is the work**; do it in the same PR as this item, because the framework bump does not resolve without it.
   - Expected changes: composer updates plus the PHPUnit work in TODO 40.
@@ -2038,13 +2073,12 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
   - Expected changes: composer updates, test-layer adjustments.
 
 - [ ] **TODO 65: Resolve the Laravel 13 package blockers**
-  - **`protonemedia/laravel-verify-new-email` is no longer part of this item.** TODO 19 decided to replace it in-house, and the replacement is done earlier, in **TODO 33.5** (Phase 3), because the code is framework-neutral and Laravel 8 compatible. If TODO 33.5 has slipped, do it before touching the framework rather than here. Note the fallback if it slipped *and* the schedule is tight: the package installs fine through Laravel 12 by bumping the lock to 1.13.0, so only the Laravel 13 hop actually forces it.
+  - **`protonemedia/laravel-verify-new-email` is no longer part of this item - and no longer part of the project.** TODO 19 decided to replace it in-house; **TODO 33.5 executed that on 2026-08-10**, so the package is out of `composer.json`, out of the lock, and out of `vendor/`. Nothing to resolve here.
   - **`rakibdevs/openweather-laravel-api` is no longer part of this item either.** TODO 20 decided to replace it with a direct `Http::` client, and the replacement is done earlier, in **TODO 33.6** (Phase 3), for the same reason: the code is framework-neutral and Laravel 8 compatible. The roadmap's original "Blocks Laravel 13" was wrong, and so was TODO 20's own replacement for it: **the installed 1.9.0 blocks at no hop at all** - no framework constraint, and `php ^8.0` admits 8.1 through 8.4 (measured in TODO 22). The Laravel 13 wall belongs to v2.0.0, which the declared `^1.9` does not admit - but nothing forces anyone there, so if 33.6 slipped the package is simply still here, still broken.
   - **With both packages moved forward, this item has no blockers left.** It reduces to verification.
   - Needed:
-    - Confirm that neither `protonemedia/laravel-verify-new-email` nor `rakibdevs/openweather-laravel-api` is still in `composer.json`, and that `vendor/protonemedia/` and `vendor/rakibdevs/` are gone from deployed hosts (the `release/upgrade.php` lines added by TODO 33.5 and 33.6).
-    - If either replacement slipped, do it before touching the framework rather than here. The fallbacks, both measured: `protonemedia` installs fine through Laravel 12 by bumping the lock to 1.13.0; `rakibdevs` needs **no** composer change at all to resolve here (TODO 22 correction) - which is exactly why it has to be checked deliberately rather than waited for.
-  - Expected changes: verification only, if TODO 33.5 and 33.6 both shipped.
+    - Confirm that neither `protonemedia/laravel-verify-new-email` nor `rakibdevs/openweather-laravel-api` is still in `composer.json` - **both were removed in Phase 3, 33.6 and 33.5 respectively** - and that `vendor/protonemedia/` and `vendor/rakibdevs/` are gone from deployed hosts (the `release/upgrade.php` lines added by TODO 33.5 and 33.6).
+  - Expected changes: verification only. Both replacements shipped.
 
 - [ ] **TODO 66: Bump the remaining packages to their Laravel 13 lines**
   - **Rewritten from the TODO 22 measurement.** `laravolt/avatar` is no longer part of this item - it fails at Phase 5, not here, and its migration is TODO 39.1. What is left is mostly lock bumps plus **two one-line constraint edits** that the previous wording hid.
@@ -2174,7 +2208,7 @@ Two columns carry most of the information. **"Installed fails at"** is the first
 | ~~`dialect/laravel-gdpr-compliance`~~ | 1.4.7 (exact pin) | - | never | - | **REMOVED in TODO 33.2** (2026-08-10), executing the TODO 16 decision. The two traits live in `app/Support/Gdpr/`, the form request in `app/Http/Requests/`, the one surviving route in `routes/web.php`; the consent half was dropped. `illuminate/support >=5.5` was unbounded, so Composer never failed on it - the earlier "Blocks Phase 8" reading was wrong |
 | ~~`joedixon/laravel-translation`~~ | 1.1.2 | - | never | - | **REMOVED in TODO 33.3** (2026-08-10), executing the TODO 17 decision. The editor is `App\Http\Livewire\Admin\Translation` + `App\Support\Translation\LangFiles`; `elegantly/laravel-translator` may still arrive as the engine in **Phase 10, TODO 66.1**. Its `require` block was literally `{}`, so it never blocked anything |
 | `mdylan/laraupdater` (was `pcinaglia/laraupdater` 1.0.2) | v2.0.0, own fork | `^2.0` | never | already declares `^13.0` | **Decided (TODO 18): keep the self-updater, move it onto the project's own fork.** Executed in **Phase 3, TODO 33.4**. The old pin blocked nothing either - 1.0.2 required only `php >=5.4.0` |
-| `protonemedia/laravel-verify-new-email` | 1.6.0 | `^1.6` | **L10** | none - no 1.x supports L13 | **Decided (TODO 19): replace in-house and remove.** Executed in **Phase 3, TODO 33.5**. The only package in the table that fails a hop *and* has no L13 line. The Phase 5 half is a lock bump (`^1.6` admits 1.13.0); the Phase 10 wall is real |
+| ~~`protonemedia/laravel-verify-new-email`~~ | 1.6.0 | - | never | - | **REMOVED in TODO 33.5** (2026-08-10), executing the TODO 19 decision. The trait is `App\Support\Email\MustVerifyNewEmail`, the model `App\Models\PendingUserEmail`, the route app-owned in `routes/web.php`, the two Mailables in `App\Mail`. It was the only package in the table that failed a hop (**L10**, `illuminate/support ^8.67||^9.0`) *and* had no L13 line - the one place the Phase 2 preamble's "read both ends of the constraint" rule cut the other way |
 | `rakibdevs/openweather-laravel-api` | 1.9.0 | `^1.9` | **never** | - | **Decided (TODO 20): replace with a direct `Http::` client and remove.** Executed in **Phase 3, TODO 33.6**, feature finished in 33.7. **Corrected by TODO 22:** the roadmap said this blocks at Phase 5 on PHP; it does not - `^8.0` is `>=8.0 <9.0` and admits 8.1-8.4. No framework constraint either, so **nothing forces it at any hop**. Replaced because the feature does not work, not because it blocks |
 | `eusonlito/laravel-packer` | 2.2.6 | `^2.2` | never | - | **REMOVED on 2026-08-09 (TODO 33.8), replaced with a `pwbs_asset()` helper.** TODO 54 is now verification only. Requires only `php >=5.5` and `imagecow/imagecow ^2.4`. Removed for runtime reasons: it writes into the web root during a request (which left `public/storage` a real directory instead of a symlink), corrupts `data:` URIs while rewriting CSS, and never minifies. `imagecow` leaves with it |
 | `livewire/livewire` | 2.10.4 | `^2.10.4` | L10 | v3 and v4 both cover L10-L13 | **Target v3** in Phase 6; v4 is optional (Appendix B) |

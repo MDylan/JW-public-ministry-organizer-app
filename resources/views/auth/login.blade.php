@@ -17,6 +17,15 @@
                     @lang('user.newEmail.success') @lang('user.newEmail.please_use_it')
                 </div>                
             @endif
+            {{-- TODO 33.5: the rejection paths of the confirmation link can land
+                 here too, because the link is usually opened logged out, on
+                 another device. The profile page renders the same key in red. --}}
+            @if (session('profile_message'))
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    {{ session('profile_message') }}
+                </div>
+            @endif
             <form action="{{route('login')}}" method="POST" id="loginForm">
                 @csrf
                 @if (config('security.use_recaptcha'))

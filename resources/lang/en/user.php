@@ -79,11 +79,13 @@ return array (
   'name' => 'Name',
   'newEmail' => 
   array (
+    'invalid_link' => 'This confirmation link is no longer valid. It may have expired, or it has already been used. You can request a new one on your profile page.',
     'not_pending' => 'There is no pending email address waiting for confirmation.',
     'pending' => 'Your new email address (:email) is waiting for confirmation.',
     'please_use_it' => 'From now on, please use this email address for login.',
     'please_verify' => 'Please confirm your new email address.',
     'success' => 'Your new email address had been successfully confirmed.',
+    'taken' => 'The confirmation failed: the address :email has been taken by another user in the meantime. Please enter a different address on your profile page.',
     'verify_sent_again' => 'The message has been resent to your new email address, please check your inbox.',
   ),
   'notifications' => 

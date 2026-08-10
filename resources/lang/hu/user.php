@@ -130,5 +130,7 @@ return [
         'not_pending' => 'Nincs megerősítésre váró email címed.',
         'success' => 'Az új email címed megerősítve.',
         'please_use_it' => 'Kérjük ezentúl ezt használd belépéskor.',
+        'taken' => 'A megerősítés nem sikerült: a(z) :email címet időközben egy másik felhasználó vette használatba. Kérjük adj meg egy másik címet a profilodban.',
+        'invalid_link' => 'Ez a megerősítő link már nem érvényes. Lehet, hogy lejárt, vagy már felhasználtad. A profilodban kérhetsz újat.',
     ],
 ];

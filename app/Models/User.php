@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use App\Support\Email\MustVerifyNewEmail;
 use App\Support\Gdpr\AnonymizationPolicy;
 use App\Support\Gdpr\Portable;
 use App\Support\Gdpr\Anonymizable;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {

@@ -61,27 +61,31 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   and the job now refuses to try below the floor, because it would write all-zero
   rows. And `User::$gdprWith` exports `eventsOnly` with no date filter, so the
   Article 20 export naturally shrinks to the retained window.
-- **Pending e-mail changes** use `ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail` on `User`.
-  A requested address is parked in `pending_user_emails` (a vendor model, `PendingUserEmail`, related
+- **Pending e-mail changes** use `App\Support\Email\MustVerifyNewEmail` on `User`.
+  A requested address is parked in `pending_user_emails` (`App\Models\PendingUserEmail`, related
   through `morphs('user')`) and only reaches `users.email` when the signed link is opened. The trait
   supplies `newEmail()`, `getPendingEmail()`, `clearPendingEmail()` and
   `resendPendingEmailVerificationMail()`; see `.docs/routes.md` for the route side.
 
-  **Nothing cleans that table up, and it collides with anonymization.** There is no foreign key, no
-  observer touches it, and `User::anonymize()` never calls `clearPendingEmail()` — even though
-  `email` is in `$gdprAnonymizableFields`. Two measured consequences:
+  Both the trait and the model were `protonemedia/laravel-verify-new-email` until roadmap TODO 33.5
+  replaced the package in-house. The table, its migration and the four call sites are unchanged.
 
-  1. After anonymization the user's **real** requested address stays in `pending_user_emails`
-     indefinitely.
-  2. Until the signed link expires, opening it writes that real address back onto the anonymized
-     user **and marks it verified**, leaving a row that reads as anonymized while carrying real data.
+  **That table used to have no cleanup path at all, and it collided with anonymization.** There is
+  still no foreign key — `morphs()` does not create one — so three defects were measured and all
+  three are now closed:
 
-  Deleting a user leaves the row orphaned for the same reason. All three are pinned as known defects
-  by `tests/Feature/NewEmail/PendingEmailKnownGapsTest.php`. **The first two are fixed** - they
-  shipped on the `v1-patch` line and TODO 33.2 carried them through the GDPR rewrite:
-  `User::anonymize()` calls `clearPendingEmail()`, and `App\Models\PendingUserEmail` is a project
-  subclass whose `activate()` refuses an anonymized user. The third - the row orphaned by a delete -
-  waits for the package replacement (TODO 33.5).
+  1. After anonymization the user's **real** requested address stayed in `pending_user_emails`
+     indefinitely. Fixed on `v1-patch`, carried through TODO 33.2: `User::anonymize()` calls
+     `clearPendingEmail()`.
+  2. Until the signed link expired, opening it wrote that real address back onto the anonymized
+     user **and marked it verified**. Fixed by the guard in `PendingUserEmail::activate()`, which
+     refuses an anonymized (or missing) user and drops the row.
+  3. Deleting a user left the row orphaned. Fixed by TODO 33.5 in `UserObserver::deleted()`, which
+     calls `clearPendingEmail()`. `User` has no `SoftDeletes`, so that event is a real delete.
+
+  `activate()` carries a second guard from the same change set: if another user took the address
+  while the mail was in flight, it reports the collision instead of throwing `SQLSTATE[23000]`
+  inside a signed-link GET. All of it is pinned by `tests/Feature/NewEmail/` (40 tests).
 
 - **The `settings.languages` blob has one shape, and it was not always written that way.**
   It is the registry of the locales the deployment offers, read everywhere through

@@ -205,6 +205,11 @@ The authors of the Help Service Organizer page',
     'line_1' => 'We are informing you that :adminName has extended the preservation period of the personal data of :userName. The publisher has also been informed about this in email. You do not need to take any actions.',
     'subject' => 'The preservation period of the user\'s data has been extended.',
   ),
+  'verifyFirstEmail' => 
+  array (
+    'line_1' => 'Please confirm your email address so that you can start using your account. To do so, click on the button below.',
+    'line_2' => 'If you are not the one who registered on this site, please ignore this message.',
+  ),
   'verifyNewEmail' => 
   array (
     'line_1' => 'You have requested the modification of your email address. It will be changed only after you have confirmed your new email address by clicking on the link below.',

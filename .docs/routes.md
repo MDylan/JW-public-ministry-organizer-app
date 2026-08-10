@@ -36,7 +36,7 @@ From `app/Http/Kernel.php`:
 | GET | `/page/{slug}` | `static_page` | `StaticPageController::render` | Static page rendering with status-based access logic. |
 | GET | `/email/verify` | `verification.notice` | `Admin\DashboardController@verify` | Verification notice page. Carries `auth` since v1-patch H - it had none, and the view renders `<x-admin-layout>`, which dereferences `auth()->user()`, so every logged-out hit was a 500 plus a stack trace. |
 | GET | `/user/new-email-verified` | `user.new-email-verified` | `User\Profile::redirectAfterNewEmailVerification` | Redirect helper after pending-email verification. Target of `config('verify-new-email.redirect_to')`; sends a `verified` guest to `login`, everyone else to `home.home`. |
-| GET | `/pendingEmail/verify/{token}` | `pendingEmail.verify` | `ProtoneMedia\LaravelVerifyNewEmail\Http\VerifyNewEmailController::verify` | **Vendor route**, registered from the package's own route file — and only because `config('verify-new-email.route')` is `null`. Middleware `web, signed, throttle:6,1`. See the pending-email section below. |
+| GET | `/pendingEmail/verify/{token}` | `pendingEmail.verify` | `User\VerifyNewEmailController::verify` | Middleware `web, signed, throttle:6,1`. Was a **vendor route** until roadmap TODO 33.5 — registered from the package's own route file, and only because `config('verify-new-email.route')` was `null`. Name and URI preserved through the move. See the pending-email section below. |
 
 #### Static page status matrix (`StaticPageController::render`)
 
@@ -308,7 +308,7 @@ Notes that matter:
 |---|---|
 | `App.Models.User.{id}` | Allows listen only if authenticated user ID equals `{id}` |
 
-### Pending e-mail address change (`protonemedia/laravel-verify-new-email`)
+### Pending e-mail address change
 
 Changing an e-mail address on the profile page does **not** write `users.email`. The requested
 address is parked in `pending_user_emails` and only moves onto the user when the signed link is
@@ -317,7 +317,7 @@ opened. Three routes make up the flow, and they sit in three different places:
 | Route | Owner | Role |
 |---|---|---|
 | `user-profile-information.update` (Fortify) | `Actions\Fortify\UpdateUserProfileInformation:51` | Calls `$user->newEmail(...)` — the **only** dispatch site in the application |
-| `pendingEmail.verify` | vendor package | Activates the pending address, marks it verified, fires `Verified`, deletes the row |
+| `pendingEmail.verify` | `routes/web.php:97`, `User\VerifyNewEmailController` | Activates the pending address, marks it verified, fires `Verified`, deletes the row |
 | `user.new-email-verified` | `routes/web.php:75` | Where the activation redirects afterwards |
 
 **`pendingEmail.verify` deliberately carries no `auth` middleware.** The link is normally opened on
@@ -327,13 +327,19 @@ activating does not log the visitor in either.
 
 Three rejection paths, from three different layers: an unsigned or tampered link is **403**
 (`ValidateSignature`), an expired one is also **403** (60 minutes, from the `auth.verification.expire`
-default), and a validly signed link carrying an unknown token is a **302 to `login`** — because
-`InvalidVerificationLinkException` extends `Illuminate\Auth\AuthenticationException`, so the
-package's own message never reaches the user.
+default), and a validly signed link carrying an unknown token is a **302** — to `login` for a guest,
+to `user.profile` for someone logged in. Under the package that last one was a side effect:
+`InvalidVerificationLinkException` extended `Illuminate\Auth\AuthenticationException`, so the
+framework redirected and the package's own message never reached anyone. Roadmap TODO 33.5 kept the
+direction and added the message.
 
-Behaviour is pinned by `tests/Feature/NewEmail/` (30 tests, roadmap TODO 19.1). The package itself is
-scheduled for in-house replacement in roadmap TODO 33.5; the route name and URI are to be preserved
-so links already in flight keep working.
+Two further outcomes leave `users.email` untouched and land on the same pages with a
+`profile_message` flash: the user was anonymized since the link went out, and the address was taken
+by someone else while the mail was in flight. **The flash key is `profile_message` on purpose** —
+`user/profile.blade.php` and `auth/login.blade.php` are the two views that render it as a red alert,
+and nothing in the project renders one named `error`.
+
+Behaviour is pinned by `tests/Feature/NewEmail/` (40 tests, roadmap TODO 19.1 and 33.5).
 
 ## Route Observations
 

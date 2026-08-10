@@ -81,26 +81,30 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 
 ## Mailables (not Notifications)
 
-Two mail classes reach users without going through the notification system at all. They belong to
-`protonemedia/laravel-verify-new-email` and are dispatched from `MustVerifyNewEmail::sendPendingEmailVerificationMail()`,
-which picks between them on `hasVerifiedEmail()`. Both are addressed to the **new** address, both
-are configurable in `config/verify-new-email.php`, and both are `ShouldQueue`.
+Two mail classes reach users without going through the notification system at all. They are
+dispatched from `App\Support\Email\MustVerifyNewEmail::sendPendingEmailVerificationMail()`, which
+picks between them on `hasVerifiedEmail()`. Both are addressed to the **new** address, both are
+configurable in `config/verify-new-email.php`, and both are `ShouldQueue`. They were
+`protonemedia/laravel-verify-new-email` classes until roadmap TODO 33.5 replaced the package.
 
 | Mailable | View | Sent when | Covered by |
 |---|---|---|---|
-| `...\Mail\VerifyNewEmail` | `resources/views/vendor/verify-new-email/verifyNewEmail.blade.php` | The user's current address is already verified | `NewEmail\PendingEmailFlowTest` |
-| `...\Mail\VerifyFirstEmail` | `resources/views/vendor/verify-new-email/verifyFirstEmail.blade.php` | The user's current address is **not** verified | `NewEmail\PendingEmailFlowTest` |
+| `App\Mail\VerifyNewEmail` | `resources/views/emails/verifyNewEmail.blade.php` | The user's current address is already verified | `NewEmail\PendingEmailFlowTest` |
+| `App\Mail\VerifyFirstEmail` | `resources/views/emails/verifyFirstEmail.blade.php` | The user's current address is **not** verified | `NewEmail\PendingEmailFlowTest` |
 
 Two consequences worth knowing:
 
 - **They are `ShouldQueue`, so under `Mail::fake()` they must be asserted with `assertQueued()`,
   not `assertSent()`** — `MailFake::send()` diverts a queueable mailable before recording it. The
   queue connection is `sync`, so in production they still go out in the same request.
-- **`verifyFirstEmail.blade.php` is the package's untranslated English stub**, while its sibling is
-  fully `@lang()`-ed against `email.verifyNewEmail.*`. In a 22-locale application that is a real gap,
-  and it is reachable — any user who never verified their original address gets the English mail.
-  Pinned as a known defect by `NewEmail\PendingEmailKnownGapsTest`; scheduled for repair with the
-  in-house replacement in roadmap TODO 33.5.
+- **`verifyFirstEmail.blade.php` used to be the package's untranslated English stub**, while its
+  sibling was fully `@lang()`-ed. In a 22-locale application that was a real gap, and it was
+  reachable — any user who never verified their original address got the English mail. **Fixed by
+  roadmap TODO 33.5**: it now renders `email.verifyFirstEmail.line_1` / `line_2`, translated in
+  `hu`, `en` and `de` — the only three locales that carry an application-level `email.php` at all.
+  The remaining 19 locale directories are installer stubs; the translation editor
+  (`admin.translate`) is how they get filled. Pinned by `NewEmail\PendingEmailKnownGapsTest`, both
+  as a source assertion and as a rendered-body assertion.
 
 ## Environment dependencies
 

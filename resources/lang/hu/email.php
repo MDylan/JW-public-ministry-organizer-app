@@ -170,6 +170,10 @@ return [
         'line_2' => 'Az üzenet tartalma:',
         'line_3' => 'Vagy az üzenőfalon vagy a megadott elérhetőségein tudsz neki válaszolni. Kérjük erre az emailre NE válaszolj, mert nem neki lesz továbbítva.',
     ],
+    'verifyFirstEmail' => [
+        'line_1' => 'Kérjük erősítsd meg az email címedet, hogy használni tudd a fiókodat. Ehhez kattints a lenti gombra.',
+        'line_2' => 'Ha nem te regisztráltál az oldalon, akkor kérjük hagyd figyelmen kívül ezt a levelet.',
+    ],
     'verifyNewEmail' => [
         'subject' => 'Új email cím megerősítése',
         'line_1' => 'Kérted, hogy változtassuk meg az email címedet. A változtatás akkor lép életbe, ha a lenti gombra kattintva megerősíted új email címedet.',

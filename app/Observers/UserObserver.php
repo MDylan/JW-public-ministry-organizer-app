@@ -63,6 +63,16 @@ class UserObserver
      */
     public function deleted(User $user)
     {
+        // TODO 33.5, defect 3: the pending_user_emails row is attached through
+        // `morphs()`, so there is NO foreign key - a deleted user's pending
+        // address stayed orphaned in the table indefinitely. And that row holds
+        // a REAL, never-confirmed e-mail address of that user.
+        //
+        // User has no SoftDeletes (every `deleted_at` reference in the model is
+        // a pivot column), so this event means an actual delete and no separate
+        // forceDeleted branch is needed.
+        $user->clearPendingEmail();
+
         CalulcateUserNameIndexProcess::dispatch();
     }
 

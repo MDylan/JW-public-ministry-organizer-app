@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\NewEmail;
 
+use App\Mail\VerifyNewEmail;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\DB;
@@ -11,19 +12,20 @@ use Illuminate\Support\Facades\Route;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 19 / 19.1: az aláírt aktiváló link szerződése.
+ * TODO 19 / 19.1: the contract of the signed activation link.
  *
- * A `pendingEmail.verify` útvonal a csomag saját route-fájljából jön
- * (vendor/.../src/routes.php), és CSAK azért töltődik be, mert a publikált
- * `config/verify-new-email.php`-ban a `route` kulcs értéke `null`. Ez a fájl
- * ezt a betöltési feltételt is rögzíti, nem csak a viselkedést.
+ * Until TODO 33.5 the `pendingEmail.verify` route came from the package's own
+ * route file, and it loaded ONLY because the `route` key in the published
+ * `config/verify-new-email.php` was `null`. It belongs to the application today
+ * (routes/web.php), under an unchanged name and URI.
  *
- * A három elutasítási ág külön-külön áll, mert három KÜLÖNBÖZŐ réteg adja
- * őket: az aláírás-ellenőrzés (403), a lejárat (szintén 403, de más okból), és
- * az ismeretlen token (302). Az utolsó a legmeglepőbb: az
- * InvalidVerificationLinkException az Illuminate AuthenticationException
- * leszármazottja, ezért a keretrendszer a login oldalra tereli - a felhasználó
- * hibaüzenet nélkül köt ki ott.
+ * The three rejection paths are asserted separately because THREE DIFFERENT
+ * layers produce them: signature validation (403), expiry (also 403, but for a
+ * different reason), and an unknown token (302). The last one was the
+ * surprising one: InvalidVerificationLinkException extended Illuminate's
+ * AuthenticationException, so the framework redirected to the login page and
+ * the user arrived there with NO message. The direction stayed; since TODO 33.5
+ * the message arrives too.
  */
 class PendingEmailVerificationTest extends FeatureTestCase
 {
@@ -157,33 +159,86 @@ class PendingEmailVerificationTest extends FeatureTestCase
         $this->travelBack();
     }
 
-    public function test_a_signed_link_with_an_unknown_token_redirects_to_login_instead_of_showing_an_error(): void
+    /** PARTLY REVERSED by TODO 33.5. */
+    public function test_a_signed_link_with_an_unknown_token_redirects_to_login_with_a_message(): void
     {
         $this->userWithPendingEmail('unknown@example.test', 'unknown-new@example.test');
 
-        // InvalidVerificationLinkException extends AuthenticationException,
-        // ezért a keretrendszer kezelője a login oldalra tereli. A csomag
-        // fordítási kulcsa ("The verification link is not valid anymore.")
-        // így SOSEM jut el a felhasználóhoz.
+        // BEFORE: InvalidVerificationLinkException extended
+        // AuthenticationException, so the framework's handler did the
+        // redirecting - and the package's own translation key ("The
+        // verification link is not valid anymore.") NEVER reached anyone,
+        // because an exception message does not travel across a redirect.
+        //
+        // The direction is deliberately unchanged, but the message now arrives
+        // and the login view renders it - see auth/login.blade.php.
         $this->get($this->signedRoute('pendingEmail.verify', ['token' => 'no-such-token']))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('profile_message', __('user.newEmail.invalid_link'));
+    }
+
+    public function test_a_logged_in_visitor_with_an_unknown_token_lands_on_the_profile(): void
+    {
+        $user = $this->createUser(['email' => 'known-visitor@example.test']);
+
+        $this->actingAs($user)
+            ->get($this->signedRoute('pendingEmail.verify', ['token' => 'no-such-token']))
+            ->assertRedirect(route('user.profile'))
+            ->assertSessionHas('profile_message', __('user.newEmail.invalid_link'));
+    }
+
+    public function test_the_profile_page_renders_the_failure_message(): void
+    {
+        // The message must also be SHOWN - no view in this project renders a
+        // flash called `error`, which is why it rides `profile_message`.
+        // Without that the whole feedback would stay silent, which is exactly
+        // the defect this change set fixes.
+        $user = $this->createUser(['email' => 'renders@example.test']);
+
+        $this->actingAs($user)
+            ->withSession(['profile_message' => 'Ez a hibaüzenet látszik.'])
+            ->get(route('user.profile'))
+            ->assertStatus(200)
+            ->assertSee('Ez a hibaüzenet látszik.', false);
+    }
+
+    public function test_the_login_page_renders_the_failure_message(): void
+    {
+        $this->withSession(['profile_message' => 'Ez a hibaüzenet is látszik.'])
+            ->get(route('login'))
+            ->assertStatus(200)
+            ->assertSee('Ez a hibaüzenet is látszik.', false);
     }
 
     // =========================================================================
     // 3. A route szerződése
     // =========================================================================
 
-    public function test_the_verification_route_is_registered_only_because_the_config_route_key_is_null(): void
+    /** REVERSED by TODO 33.5. */
+    public function test_the_verification_route_is_registered_by_the_application_itself(): void
     {
-        $this->assertNull(
-            config('verify-new-email.route'),
-            'Ha ez nem null, a csomag ServiceProvider-e NEM tölti be a saját route-fájlját.'
+        // BEFORE: the route came from the package's own route file, and it
+        // loaded only because the `route` key in the published config was
+        // `null` - an empty configuration value was what kept the whole
+        // endpoint alive. The key went away with the package.
+        //
+        // The name and URI are unchanged to the letter: no link already in
+        // flight may be invalidated by this change set.
+        $this->assertNull(config('verify-new-email.route'), 'Not a trace of the key may remain.');
+
+        $route = Route::getRoutes()->getByName('pendingEmail.verify');
+
+        $this->assertNotNull($route);
+        $this->assertSame('pendingEmail/verify/{token}', $route->uri());
+        $this->assertSame(
+            'App\\Http\\Controllers\\User\\VerifyNewEmailController@verify',
+            $route->getActionName()
         );
 
-        $this->assertNotNull(Route::getRoutes()->getByName('pendingEmail.verify'));
-        $this->assertSame(
-            'pendingEmail/verify/{token}',
-            Route::getRoutes()->getByName('pendingEmail.verify')->uri()
+        $this->assertStringContainsString(
+            "name('pendingEmail.verify')",
+            file_get_contents(base_path('routes/web.php')),
+            'The route lives in the application route file, not in vendor code.'
         );
     }
 
@@ -208,6 +263,27 @@ class PendingEmailVerificationTest extends FeatureTestCase
         }
 
         $this->get($url)->assertStatus(429);
+    }
+
+    public function test_the_new_email_mail_body_carries_the_working_signed_link(): void
+    {
+        // This is what ties the Mailable to the route. The other tests measure
+        // either the queueing (Mail::fake) or the link on its own - none of
+        // them checks that the button URL is actually inside the rendered mail.
+        //
+        // Mail::fake() is DELIBERATELY absent: MailFake cannot render(), so the
+        // row is created through the non-sending half of the flow.
+        $user = $this->createUser([
+            'email' => 'render@example.test',
+            'email_verified_at' => now(),
+        ]);
+        $pending = $user->createPendingUserEmailModel('render-new@example.test');
+
+        $body = html_entity_decode((new VerifyNewEmail($pending))->render());
+
+        $this->assertStringContainsString('/pendingEmail/verify/'.$pending->token, $body);
+        $this->assertStringContainsString('signature=', $body);
+        $this->assertStringContainsString(__('email.verifyNewEmail.line_1'), $body);
     }
 
     public function test_the_model_builds_its_url_from_the_named_route(): void

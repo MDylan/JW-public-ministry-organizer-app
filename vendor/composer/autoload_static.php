@@ -104,7 +104,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
             'Psr\\Container\\' => 14,
             'Psr\\Clock\\' => 10,
             'Psr\\Cache\\' => 10,
-            'ProtoneMedia\\LaravelVerifyNewEmail\\' => 35,
             'PragmaRX\\Google2FA\\' => 19,
             'PhpParser\\' => 10,
             'PhpOption\\' => 10,
@@ -382,10 +381,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Psr\\Cache\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/cache/src',
-        ),
-        'ProtoneMedia\\LaravelVerifyNewEmail\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src',
         ),
         'PragmaRX\\Google2FA\\' =>
         array (
@@ -672,6 +667,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Http\\Controllers\\StaticPageController' => __DIR__ . '/../..' . '/app/Http/Controllers/StaticPageController.php',
         'App\\Http\\Controllers\\User\\Profile' => __DIR__ . '/../..' . '/app/Http/Controllers/User/Profile.php',
         'App\\Http\\Controllers\\User\\TwoFactorSettings' => __DIR__ . '/../..' . '/app/Http/Controllers/User/TwoFactorSettings.php',
+        'App\\Http\\Controllers\\User\\VerifyNewEmailController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/VerifyNewEmailController.php',
         'App\\Http\\Controllers\\deletePersonalDataController' => __DIR__ . '/../..' . '/app/Http/Controllers/deletePersonalDataController.php',
         'App\\Http\\Controllers\\jumpToCalendarController' => __DIR__ . '/../..' . '/app/Http/Controllers/jumpToCalendarController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
@@ -736,6 +732,8 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Jobs\\UserLogoutFromGroupProcess' => __DIR__ . '/../..' . '/app/Jobs/UserLogoutFromGroupProcess.php',
         'App\\Listeners\\LoginListener' => __DIR__ . '/../..' . '/app/Listeners/LoginListener.php',
         'App\\Listeners\\UserVerified' => __DIR__ . '/../..' . '/app/Listeners/UserVerified.php',
+        'App\\Mail\\VerifyFirstEmail' => __DIR__ . '/../..' . '/app/Mail/VerifyFirstEmail.php',
+        'App\\Mail\\VerifyNewEmail' => __DIR__ . '/../..' . '/app/Mail/VerifyNewEmail.php',
         'App\\Models\\AdminNewsletter' => __DIR__ . '/../..' . '/app/Models/AdminNewsletter.php',
         'App\\Models\\AdminNewsletterRead' => __DIR__ . '/../..' . '/app/Models/AdminNewsletterRead.php',
         'App\\Models\\AdminNewsletterTranslation' => __DIR__ . '/../..' . '/app/Models/AdminNewsletterTranslation.php',
@@ -812,6 +810,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Rules\\Throttle' => __DIR__ . '/../..' . '/app/Rules/Throttle.php',
         'App\\Rules\\TimeCheck' => __DIR__ . '/../..' . '/app/Rules/TimeCheck.php',
         'App\\Support\\Concerns\\ResolvesCauser' => __DIR__ . '/../..' . '/app/Support/Concerns/ResolvesCauser.php',
+        'App\\Support\\Email\\MustVerifyNewEmail' => __DIR__ . '/../..' . '/app/Support/Email/MustVerifyNewEmail.php',
         'App\\Support\\Gdpr\\Anonymizable' => __DIR__ . '/../..' . '/app/Support/Gdpr/Anonymizable.php',
         'App\\Support\\Gdpr\\AnonymizationPolicy' => __DIR__ . '/../..' . '/app/Support/Gdpr/AnonymizationPolicy.php',
         'App\\Support\\Gdpr\\Portable' => __DIR__ . '/../..' . '/app/Support/Gdpr/Portable.php',
@@ -5327,15 +5326,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'PragmaRX\\Google2FA\\Support\\Base32' => __DIR__ . '/..' . '/pragmarx/google2fa/src/Support/Base32.php',
         'PragmaRX\\Google2FA\\Support\\Constants' => __DIR__ . '/..' . '/pragmarx/google2fa/src/Support/Constants.php',
         'PragmaRX\\Google2FA\\Support\\QRCode' => __DIR__ . '/..' . '/pragmarx/google2fa/src/Support/QRCode.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\InvalidVerificationLinkException' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/InvalidVerificationLinkException.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\VerifiesPendingEmails' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/VerifiesPendingEmails.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\Http\\VerifyNewEmailController' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Http/VerifyNewEmailController.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\InvalidEmailVerificationModelException' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/InvalidEmailVerificationModelException.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\Mail\\VerifyFirstEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Mail/VerifyFirstEmail.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\Mail\\VerifyNewEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/Mail/VerifyNewEmail.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\MustVerifyNewEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/MustVerifyNewEmail.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\PendingUserEmail' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/PendingUserEmail.php',
-        'ProtoneMedia\\LaravelVerifyNewEmail\\ServiceProvider' => __DIR__ . '/..' . '/protonemedia/laravel-verify-new-email/src/ServiceProvider.php',
         'Psr\\Cache\\CacheException' => __DIR__ . '/..' . '/psr/cache/src/CacheException.php',
         'Psr\\Cache\\CacheItemInterface' => __DIR__ . '/..' . '/psr/cache/src/CacheItemInterface.php',
         'Psr\\Cache\\CacheItemPoolInterface' => __DIR__ . '/..' . '/psr/cache/src/CacheItemPoolInterface.php',
