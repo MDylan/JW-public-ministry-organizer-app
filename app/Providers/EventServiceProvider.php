@@ -14,9 +14,11 @@ use App\Observers\EventObserver;
 use App\Observers\GroupLiteratureObserver;
 use App\Observers\GroupNewsObserver;
 use App\Observers\GroupNewsTranslationObserver;
+use App\Models\Settings;
 use App\Models\StaticPage;
 use App\Models\StaticPageTranslation;
 use App\Observers\GroupObserver;
+use App\Observers\SettingsObserver;
 use App\Observers\StaticPageObserver;
 use App\Observers\GroupUserObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -60,5 +62,10 @@ class EventServiceProvider extends ServiceProvider
         // osztály magyarázatát.
         StaticPage::observe(StaticPageObserver::class);
         StaticPageTranslation::observe(StaticPageObserver::class);
+
+        // TODO 31: the application settings cache has no expiry either
+        // (ApplicationSettings::rows). Every write from the admin screen is an
+        // updateOrCreate, so this single observer covers all of them.
+        Settings::observe(SettingsObserver::class);
     }
 }

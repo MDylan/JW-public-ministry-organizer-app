@@ -3,10 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Models\StaticPage;
+use App\Support\Settings\ApplicationSettings;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Cache;
 
@@ -56,12 +58,20 @@ class SetLocale
         }
 
         //If maintenance mod active and user is not admin, logout and redirect
+        //
+        // TODO 31: the maintenance switch is read from ApplicationSettings, not
+        // from the config('settings_maintenance') key. In production the two
+        // values are the same - the Config is filled by this very class during
+        // boot - the difference is that this read is LAZY: it sees the setting
+        // as of this moment, not as of boot. That is what made the mode
+        // switchable at runtime, and what let the Config::set() workaround
+        // disappear from the TODO 09 tests.
         if(Auth::check()) {
-            if(Config::get('settings_maintenance') == 1 && $user->role !== "mainAdmin") {
+            if(app(ApplicationSettings::class)->get('maintenance') == 1 && $user->role !== "mainAdmin") {
                 return redirect('login')->with(Auth::logout());
             }
         }
-        
+
         try {
             //share menus content to views
             if(Auth()->check()) {
@@ -75,7 +85,19 @@ class SetLocale
             }
             View::share('sidemenu', $staticpages);
         } catch (\Throwable $th) {
-            //throw $th;
+            // TODO 31: this block used to be empty, and it caused two failures
+            // at once. First, the original exception vanished without a trace.
+            // Second, View::share never ran either - while FOUR Blade files
+            // @foreach over the $sidemenu variable (components/footer,
+            // components/side-static-pages, layouts/partials/footer,
+            // public.blade.php), so a second, misleading error showed up in
+            // place of the real one. Hence the log, and hence the empty
+            // collection: the menu disappears, the page survives.
+            Log::error('Loading the side menu failed, continuing with an empty menu.', [
+                'exception' => $th,
+            ]);
+
+            View::share('sidemenu', collect());
         }
 
 

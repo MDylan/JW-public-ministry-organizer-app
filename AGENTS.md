@@ -28,6 +28,13 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 ## Maintenance Rules For Contributors
 
 - Keep documentation in English.
+- **Keep code comments in English too** - PHPDoc blocks, inline `//` comments and
+  test explanations alike, in `app/`, `tests/`, `database/`, `routes/`, `config/`
+  and Blade files. This applies to every new or edited comment, with no
+  exception for "the surrounding comments are Hungarian".
+  A large part of the existing tree still carries Hungarian comments; converting
+  them is tracked as roadmap TODO 33.9 and is deliberately *not* something to do
+  opportunistically inside an unrelated change set.
 - When changing models/routes/jobs/auth flow, update the corresponding file under `.docs/` in the same change set.
 - Prefer documenting behavior and integration points (what triggers what), not just file names.
 - If behavior is disabled/commented in code, mark it clearly as inactive in docs.

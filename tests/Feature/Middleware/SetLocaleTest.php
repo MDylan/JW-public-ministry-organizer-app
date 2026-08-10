@@ -2,10 +2,14 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Models\Settings;
 use App\Models\StaticPage;
 use App\Models\User;
+use App\Support\Settings\ApplicationSettings;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -39,7 +43,10 @@ class SetLocaleTest extends FeatureTestCase
             'de' => ['name' => 'Deutsch', 'visible' => false],
         ]);
         Config::set('settings_default_language', 'hu');
-        Config::set('settings_maintenance', 0);
+
+        // Since TODO 31 the maintenance switch no longer has to be forced off:
+        // 'maintenance' => false is among the ApplicationSettings defaults, so
+        // it resolves even without a row.
 
         app()->setLocale('hu');
     }
@@ -184,17 +191,26 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_maintenance_mode_logs_out_an_ordinary_user_and_redirects_to_login(): void
     {
-        // FIGYELEM: a settings_maintenance config-kulcsot az
-        // AppServiceProvider::boot() tölti a Settings táblából, KÉRÉS ELŐTT.
-        // Egy teszten belüli Settings::updateOrCreate() ezért nem hatna az
-        // aktuális kérésre - a karbantartási mód futás közben nem
-        // kapcsolható be. Ez maga a TODO 31 tárgya.
+        // REVERSED by TODO 31.
         //
-        // A middleware sora: redirect('login')->with(Auth::logout()).
-        // Az Auth::logout() void, tehát a with() null kulcsot kap és egy
-        // üres kulcsú flash bejegyzés keletkezik. Ma ártalmatlan, de a
-        // with() szignatúrája a későbbi Laravel-verziókban tipizálódhat.
-        Config::set('settings_maintenance', 1);
+        // These four cases used to work with Config::set('settings_maintenance',
+        // 1), and not out of whim: the key was filled by
+        // AppServiceProvider::boot() from the Settings table BEFORE the request,
+        // so a Settings::updateOrCreate() inside a test had no effect on the
+        // current request - maintenance mode could not be switched on at
+        // runtime.
+        //
+        // Since then the middleware asks ApplicationSettings, which is lazy and
+        // cached, and SettingsObserver invalidates the write. The four cases
+        // therefore write a REAL settings row now - and that is precisely the
+        // acceptance criterion: were the workaround to come back, these would
+        // fail.
+        //
+        // The middleware's line: redirect('login')->with(Auth::logout()).
+        // Auth::logout() returns void, so with() receives a null key and an
+        // empty-keyed flash entry is created. Harmless today, but the signature
+        // of with() may become typed in a later Laravel version.
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $user = $this->createUser(['email' => 'maintenance-user@example.test', 'role' => 'activated']);
 
@@ -207,7 +223,7 @@ class SetLocaleTest extends FeatureTestCase
 
     public function test_maintenance_mode_lets_the_main_admin_through(): void
     {
-        Config::set('settings_maintenance', 1);
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $admin = $this->createUser(['email' => 'maintenance-admin@example.test', 'role' => 'mainAdmin']);
 
@@ -221,7 +237,7 @@ class SetLocaleTest extends FeatureTestCase
         // A teljes ág Auth::check() mögött van (:59), tehát a karbantartási
         // mód a kijelentkezett látogatókat egyáltalán nem érinti - a
         // nyilvános oldalak elérhetők maradnak.
-        Config::set('settings_maintenance', 1);
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $this->get($this->homeUrl())->assertStatus(200);
     }
@@ -231,7 +247,7 @@ class SetLocaleTest extends FeatureTestCase
         // A kivétel KIZÁRÓLAG a mainAdmin (:60) - a translator, aki egyébként
         // az is-translator és is-groupservant gate-eken átmegy, itt nem
         // kivételezett.
-        Config::set('settings_maintenance', 1);
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
 
         $translator = $this->createUser(['email' => 'maintenance-tr@example.test', 'role' => 'translator']);
 
@@ -240,6 +256,23 @@ class SetLocaleTest extends FeatureTestCase
             ->assertRedirect('login');
 
         $this->assertGuest();
+    }
+
+    public function test_maintenance_mode_can_be_switched_on_and_off_between_requests(): void
+    {
+        // The acceptance criterion of TODO 31, stated in one case. The switch
+        // takes effect immediately in BOTH directions, because SettingsObserver
+        // binds the cache flush to the source of the setting - no application
+        // reboot and no manual Cache::forget are needed.
+        $user = $this->createUser(['email' => 'maintenance-toggle@example.test', 'role' => 'activated']);
+
+        $this->actingAs($user)->get($this->homeUrl())->assertStatus(200);
+
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '1']);
+        $this->actingAs($user)->get($this->homeUrl())->assertRedirect('login');
+
+        Settings::updateOrCreate(['name' => 'maintenance'], ['value' => '0']);
+        $this->actingAs($user)->get($this->homeUrl())->assertStatus(200);
     }
 
     // =========================================================================
@@ -348,5 +381,47 @@ class SetLocaleTest extends FeatureTestCase
             Cache::has('sidemenu_guest'),
             'A fordítás mentése is üríti a gyorsítótárat.'
         );
+    }
+
+    // =========================================================================
+    // 4. The menu's failure branch (TODO 31)
+    // =========================================================================
+
+    public function test_a_failing_menu_lookup_is_logged_and_leaves_an_empty_menu(): void
+    {
+        // The block used to be an EMPTY catch (\Throwable), and it caused two
+        // failures at once: the original exception vanished without a trace, and
+        // View::share never ran - while four Blade files @foreach over the
+        // $sidemenu variable. So instead of the real error we saw a second one.
+        //
+        // The exception is injected at the cache boundary, because that is where
+        // the query lives: StaticPage::whereIn() runs inside the rememberForever
+        // closure. The settings key branch MUST be let through, otherwise this
+        // would not measure one single thing - SetLocale's maintenance check
+        // goes through the very same facade.
+        Log::spy();
+        Cache::spy();
+        Cache::shouldReceive('rememberForever')
+            ->with(ApplicationSettings::CACHE_KEY, \Mockery::any())
+            ->andReturnUsing(fn ($key, $callback) => $callback());
+        Cache::shouldReceive('rememberForever')
+            ->with('sidemenu_guest', \Mockery::any())
+            ->andThrow(new QueryException('select * from `static_pages`', [], new \Exception('Table not found')));
+
+        $this->get($this->homeUrl())->assertStatus(200);
+
+        $this->assertSame([], $this->sharedMenuSlugs(), 'The menu is empty but present - the views do not fail.');
+        Log::shouldHaveReceived('error')->once();
+    }
+
+    public function test_a_successful_menu_lookup_logs_nothing(): void
+    {
+        // Control experiment: the log assertion above only measures anything if
+        // the successful path is silent.
+        Log::spy();
+
+        $this->get($this->homeUrl())->assertStatus(200);
+
+        Log::shouldNotHaveReceived('error');
     }
 }

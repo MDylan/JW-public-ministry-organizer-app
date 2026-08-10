@@ -67,7 +67,8 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
 - **The weather cache** is `WeatherCity` plus two columns on `groups`: `weather_enabled` and
   `city_id`. `Group::weather()` is a `belongsTo(WeatherCity::class, 'city_id')`, and the whole
   feature is additionally gated on `config('weather')`, which is not a config file - it is injected
-  at boot from the `settings` table (`AppServiceProvider.php:45,72`) and ships **off**.
+  at boot from the `settings` table (`App\Support\Settings\ApplicationSettings::applyToConfig()`,
+  called by `AppServiceProvider::boot()`) and ships **off**.
 
   Four measured traps live here, all pinned by `tests/Feature/Weather/`:
 

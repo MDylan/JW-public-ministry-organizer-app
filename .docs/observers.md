@@ -21,6 +21,10 @@ From `app/Providers/EventServiceProvider.php`.
 - `GroupLiteratureObserver` for `GroupLiterature`
 - `GroupNewsObserver` for `GroupNews`
 - `GroupNewsTranslationObserver` for `GroupNewsTranslation`
+- `StaticPageObserver` for `StaticPage` **and** `StaticPageTranslation`
+- `SettingsObserver` for `Settings`
+
+The last two are cache invalidators rather than audit or notification hooks — see "Cache-invalidating observers" at the end of this file.
 
 ### Present but not registered
 
@@ -62,6 +66,8 @@ Model events do not only fire from HTTP requests: a scheduled command, a queue w
 | `GroupNewsObserver` | `GroupNews` | `updated`, `deleted` | Stores news change/deletion history records. |
 | `GroupNewsTranslationObserver` | `GroupNewsTranslation` | `created`, `updated`, `deleted` | Stores localized news content change history. |
 | `GroupDayObserver` (inactive) | `GroupDay` | `created`, `updated`, `deleted`, `forceDeleted` | Would record day-template history and dispatch `GroupDayUpdatedProcess` if registered. |
+| `StaticPageObserver` | `StaticPage`, `StaticPageTranslation` | `saved`, `deleted` | Clears the `sidemenu_auth` / `sidemenu_guest` cache entries. No audit trail, no notification — cache invalidation only. |
+| `SettingsObserver` | `Settings` | `saved`, `deleted` | Clears the `application_settings` cache entry behind `App\Support\Settings\ApplicationSettings`. Cache invalidation only. |
 
 ## Detailed Behavior Notes
 
@@ -118,3 +124,26 @@ Groups\UpdateGroupForm::updateGroup()
 `tests/Feature/Groups/GroupDayTemplateCleanupTest.php` pins this: narrowing a day deletes the events outside the new window and pulls partially overlapping ones inside; removing a day deletes its events, its `group_dates` row and its `day_stats`; past dates and widened days are left alone. Removing the `recalculateDates()` call makes six of its ten tests fail, which is how we know they measure this chain and not something else.
 
 One difference was worth knowing while the decision was open: `GroupDayDeletedProcess` used a `LEFT JOIN`, so it would also have seen events with no `group_dates` row, while the helper chain starts from the `group_dates` rows. In practice such events do not occur — a booking can only be made on a generated date — which is why TODO 10.2 could delete the job rather than merge the difference.
+
+## Cache-invalidating observers
+
+Two observers do no auditing at all - they exist only to keep a `rememberForever`
+cache entry from outliving its source. Both follow the same rule: **the
+invalidation is bound to the data, not to the call sites that write it.**
+
+- `StaticPageObserver` (v1-patch B4) clears `sidemenu_auth` and `sidemenu_guest`,
+  which `SetLocale` fills. Before it, only `Admin\StaticPageEdit` and the
+  installer's `AccountController` cleared them by hand, so a page created by a
+  seeder, a console command or a direct model write never reached the menu -
+  and never expired out of it either. It watches the translation model too,
+  because the menu renders titles and those live in `static_page_translations`.
+- `SettingsObserver` (TODO 31) clears `application_settings`, which
+  `App\Support\Settings\ApplicationSettings` fills. Every setting write in the
+  application goes through `Settings::updateOrCreate()` - `Admin\Settings` in
+  seven places, `CoreSettingsSeeder`, the installer - so one `saved`/`deleted`
+  hook covers all of them.
+
+**What neither covers: a write that bypasses Eloquent.** There is no such write
+in the application today; if one is added, it has to flush by hand. A mass
+delete through the query builder (`Settings::query()->delete()`) is the same
+case - it fires no model events.

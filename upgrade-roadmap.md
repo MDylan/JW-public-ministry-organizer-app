@@ -917,11 +917,27 @@ differences against the TODO 03 baseline all come from the v1-patch line (the
 moved GET -> POST by the security audit). `artisan optimize` completes, `composer
 audit` still reports exactly the 3 known Laravel 8 advisories.
 
-Still open in this phase, in rough order of size: **TODO 31** (boot-time database
-access and the two silent catches), **TODO 33.2** (GDPR in-house), **TODO 33.3**
-(translation editor in-house), **TODO 33.5** (pending-email in-house) and
-**TODO 32** (migration squash). Each is multi-day work that deserves its own plan -
-unlike the five above, none of them is a one-sitting edit.
+**TODO 31 shipped on 2026-08-10**, also in one sitting: the boot-time settings
+read moved behind a cached repository with observer invalidation, and both silent
+catches now log. Suite **1273 -> 1295 tests, 3564 -> 3622 assertions**. Two
+findings the entry carries: emptying the `SetLocale` catch reproduces a **500**
+on every guest page, so the swallowed exception was a live defect rather than a
+tidiness issue; and a single malformed `settings.languages` row used to disable
+the *entire* Config population through the same catch.
+
+Still open in this phase, in rough order of size: **TODO 33.2** (GDPR in-house),
+**TODO 33.3** (translation editor in-house), **TODO 33.5** (pending-email
+in-house) and **TODO 32** (migration squash). Each is multi-day work that
+deserves its own plan - unlike the items above, none of them is a one-sitting
+edit. One small, well-specified follow-up also sits here unclaimed: converting
+`resources/views/public.blade.php` to `pwbs_asset()`, recorded at the end of
+TODO 33.8.
+
+**TODO 33.9** is open as well and belongs in a category of its own: translating
+the 4569 Hungarian comment lines across 208 files into English, now that
+`AGENTS.md` states the rule. It carries no runtime risk at all - and therefore
+no test will ever catch a mistake in it - so it is sliceable, but it must never
+share a commit with a behaviour change.
 
 > **TODO 33.8 was on that list, and it should not have been.** It shipped on
 > 2026-08-09 in two commits, in one sitting. The estimate was wrong because the
@@ -1471,7 +1487,16 @@ and is not covered by a general test.
     - Review the `news_files` disk (private visibility, explicit permission maps) used in 8 places.
   - Expected changes: `config/filesystems.php`, possibly the `exists()`-then-`delete()` guards in `GroupNewsDelete.php` and `NewsEdit.php`.
 
-- [ ] **TODO 31: Fix boot-time database access and silent exception swallowing**
+- [x] **TODO 31: Fix boot-time database access and silent exception swallowing** - DONE
+  - Delivered on 2026-08-10, one commit. Suite: **1273 -> 1295 tests, 3564 -> 3622 assertions, 2m22s, green.** `artisan optimize` still completes.
+  - **The replacement, in full:** `App\Support\Settings\ApplicationSettings`, a container singleton that owns the one and only read of the `settings` table. It caches the `name => value` map under `application_settings` with `rememberForever`, memoizes it for the request, and `App\Observers\SettingsObserver` invalidates both on every `saved`/`deleted`. That observer is the `StaticPageObserver` pattern applied a second time - and it fits even better here, because **every** setting write in the application already goes through `Settings::updateOrCreate()` (`Admin\Settings` in seven places, `CoreSettingsSeeder`, the installer), so one hook covers all of them. `AppServiceProvider::boot()` shrank from ~70 lines to two calls.
+  - **The maintenance workaround is gone, which was the point.** `SetLocale` asks the repository instead of `config('settings_maintenance')`, so the switch is effective on the next request rather than the next boot, and the four TODO 09 tests now write a real `Settings` row. A fifth was added that toggles it **on and then off** in one test - the invalidation has to work in both directions or the "off" half hangs. Control experiment: putting `Config::get('settings_maintenance')` back fails exactly the three cases that assert a redirect, and commenting out the observer registration fails 12 tests across the two files.
+  - **The strongest single result.** Emptying the `SetLocale` catch again - the state the code shipped in - makes the guest page answer **500**, not 200. That is the second, misleading error the TODO predicted: the `View::share('sidemenu', ...)` never ran, and four Blade files `@foreach` over that variable. So this was not a hypothetical logging improvement; the swallowed exception was converting every menu-query failure into an unexplainable white page. The middleware now logs the original and shares an empty collection.
+  - **What the delivery found that the plan had not.** A broken `settings.languages` blob took *everything* with it: `json_decode` returned null, `count(null)` threw a `TypeError`, and the same silent catch ate it - so one bad JSON string in one row disabled the entire Config population, registration flag and all. `languages()` now falls back to the default locale and logs a warning; `test_a_broken_languages_blob_no_longer_takes_the_other_settings_with_it` pins it.
+  - **Two decisions worth keeping.** (1) The debugbar branch deliberately stayed in `AppServiceProvider::boot()` rather than moving into the repository: it must sit *outside* the repository's `\Throwable` catch, or a missing class on a `--no-dev` host would fail silently again - exactly the TODO 25 trap. `DevDependencyIsolationTest` greps that file for `bound('debugbar')` and is unchanged. (2) Only the *maintenance* read moved to the repository. `settings_default_language` and `available_languages` stay on `Config`, because `FeatureTestCase` boots before it seeds, so the whole test base is written against the boot-time values - moving those is a separate, much larger job.
+  - `'maintenance' => false` joined the defaults. It was never there, so `config('settings_maintenance')` silently resolved to `null` on any install without the row.
+  - The failure is **not** cached - only a successful read is - so a transient database error cannot freeze the defaults behind a `rememberForever` entry. `Cache::shouldNotReceive('put')` pins that.
+  - Expected changes: as delivered - 2 new files under `app/`, `AppServiceProvider`, `EventServiceProvider`, `SetLocale`, 1 new test file (18 cases), `SetLocaleTest` (+4 cases), and `.docs/middleware.md`, `.docs/observers.md`, `.docs/models.md`.
   - Needed:
     - `app/Providers/AppServiceProvider.php::boot()` runs `ModelsSettings::all()` on every request inside a bare `catch (\Exception $e) {}`, then `Config::set()`s ~10 runtime keys. The silent catch will hide upgrade failures for the rest of this roadmap.
     - At minimum: log the exception instead of swallowing it. Preferably: defer the lookup or cache it.
@@ -1640,6 +1665,29 @@ and is not covered by a general test.
     - **Repair `public/storage` on each host.** The stray real directory must be removed so `php artisan storage:link` can finally create the symlink. This is per-install state, not repository state, so the release hook has to handle it: remove the directory only when it is not a link **and** contains nothing but the `cache/` subtree Packer created, then create the link. Refusing to act on a directory with other contents is the safe default.
   - **Acceptance:** the nine `AssetPipelineKnownGapsTest` assertions fail - that is the point - and `AssetPipelineTest` is rewritten to the new emission (versioned URLs instead of packed filenames, individual tags instead of the two concatenated bundles), keeping its control-experiment property. The toastr icons render in a non-`local` environment, which finding 1 says they do not today.
   - Expected changes: `app/Helpers/helpers.php`, three blade files, `config/app.php`, `config/packer.php` deleted, `composer.json` / `composer.lock`, `.gitignore`, `release/upgrade.php`, both test files rewritten, and `.docs/assets.md`.
+
+- [ ] **TODO 33.9: Convert the Hungarian code comments to English**
+  - **The rule is now written down** (`AGENTS.md`, "Maintenance Rules For Contributors"): code comments are English, the same as the documentation. Every change set from TODO 31 onwards follows it. This item is about the existing tree, which does not.
+  - **Measured on 2026-08-10**, counting comment lines that carry at least one Hungarian accented character:
+
+    | Tree | Files | Comment lines |
+    |---|---|---|
+    | `tests/` | 101 | 3195 |
+    | `app/` | 82 | 1196 |
+    | `database/` | 17 | 76 |
+    | `routes/` | 2 | 60 |
+    | `config/` | 5 | 36 |
+    | `resources/views/` | 1 | 6 |
+    | **Total** | **208** | **4569** |
+
+    **This is a lower bound, and knowingly so.** The detector keys on accented characters, so a Hungarian sentence that happens to contain none is invisible to it. Whoever executes this must read the files, not trust the count.
+  - **Why the tests dominate, and why that is the hard half.** Roughly 70% of the volume is in `tests/`, and those are not incidental comments - Phases 1 and 2 deliberately wrote the *measurement* into the test files: what was found, what the control experiment was, what would break if the assertion were removed. Translating them is a real editorial job, not a mechanical pass, and a careless run would destroy the most valuable prose in the repository. A machine translation followed by no review is the failure mode to avoid.
+  - **Zero runtime risk, which is the one thing in its favour.** Nothing here is executable. That makes it safe to do in slices and safe to interleave with anything else - but it also means no test will ever tell you it went wrong. `composer test` staying green proves only that no code was touched by accident.
+  - Needed:
+    - Decide the slicing. The obvious cut is by tree (`app/` first, `tests/` last) or by roadmap phase (the files a phase touches, translated as that phase runs). **Do not** interleave it with unrelated work in the same commit - a translation diff and a behaviour diff in one change set are unreviewable together.
+    - Keep the *content*. These comments carry measurements, defect numbers, TODO cross-references and control experiments; the translation must preserve every fact, including the ones that read oddly. Where a comment names a Hungarian-language UI string or a translation key, that string stays as it is.
+    - Watch for comments that are load-bearing for a test's meaning. `DevDependencyIsolationTest` greps *source text* today; if any future guard does the same for a comment, the translation moves that guard too.
+  - Expected changes: comments only, across ~208 files. No behaviour, no test outcome, no route table, no schema.
 
 ---
 
