@@ -14,14 +14,14 @@ class GroupPostersFactory extends Factory
     {
         return [
             'group_id' => Group::factory(),
-            // Az info mező 'encrypted' cast alatt van, itt sima szöveget adunk.
+            // The info field is under an 'encrypted' cast, plain text here.
             'info' => $this->faker->sentence(),
             'show_date' => now()->toDateString(),
             'hide_date' => null,
         ];
     }
 
-    // --- Láthatóság state-ek ---
+    // --- Visibility states ---
 
     public function visible(): static
     {
@@ -47,7 +47,7 @@ class GroupPostersFactory extends Factory
         ]);
     }
 
-    // --- Kötési segéd ---
+    // --- Binding helper ---
 
     public function forGroup(Group $group): static
     {

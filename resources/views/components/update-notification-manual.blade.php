@@ -1,14 +1,16 @@
 {{--
-    Új FŐVERZIÓ érhető el, amit a rendszer szándékosan nem telepít magától.
+    A new MAJOR VERSION is available, which the system deliberately does not
+    install on its own.
 
-    Ez nem a szokásos frissítési kártya gomb nélkül: itt a teendő is más. A
-    magasabb major eltérő PHP- és Laravel-környezetet feltételez, ezért a
-    lépéseket a kiadás leírása (a csatorna `description` mezője) mondja meg -
-    így az utasítás a szerverről szerkeszthető, kódmódosítás nélkül.
+    This isn't just the usual update card without a button: what to do here
+    is different too. A higher major version assumes a different PHP and
+    Laravel environment, so the steps are given by the release's description
+    (the channel's `description` field) - this way the instructions can be
+    edited from the server, without a code change.
 
-    A tiltást nem ez a nézet tartja: az /updater.update címet az
-    App\Http\Middleware\EnsureUpdateWithinBranch zárja le. Itt CSAK azért nincs
-    Frissítés gomb, mert nem vinne sehova.
+    This view does not hold the restriction: the /updater.update URL is
+    locked down by App\Http\Middleware\EnsureUpdateWithinBranch. There is
+    ONLY no Update button here because it would not lead anywhere.
 --}}
 <div class="row m-2">
     <div class="col-12">

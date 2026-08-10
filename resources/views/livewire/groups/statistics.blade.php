@@ -33,18 +33,19 @@
                 </div>
                 <div class="col-md-8 d-flex justify-content-end">
                     <div class="form-inline float-right">
-                        {{-- A hónapválasztót a lenti dátumtartomány váltotta fel; a
-                             hozzá tartozó komponens-oldali maradékok a v1-patch
-                             B3-ban törölve lettek. --}}
+                        {{-- The month picker was replaced by the date range
+                             below; the component-side leftovers belonging to
+                             it were removed in v1-patch B3. --}}
                         <div class="input-group mb-2 mr-sm-2">
                             <div class="input-group-prepend">
                                 <div class="input-group-text">@lang('statistics.period')</div>
                             </div>
-                        {{-- A picker.minDate-et a render() régóta átadta, de egyetlen
-                             nézet sem használta. A v1-patch E óta van értelme: a
-                             retenciós padló alatt már nincs mit mutatni. A `min` csak
-                             tanácsadó, a valódi korlát a komponens
-                             clampToRetentionFloor() metódusa. --}}
+                        {{-- render() has passed picker.minDate for a long time,
+                             but no view used it. It has had a purpose since
+                             v1-patch E: below the retention floor there is
+                             nothing left to show. The `min` is only
+                             advisory, the real limit is the component's
+                             clampToRetentionFloor() method. --}}
                             <input wire:model.defer="startDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_from')" />
                             <div class="input-group-prepend">
                                 <div class="input-group-text">-</div>

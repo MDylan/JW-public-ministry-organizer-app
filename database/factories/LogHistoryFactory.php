@@ -14,30 +14,31 @@ class LogHistoryFactory extends Factory
 
     public function definition()
     {
-        // A morph cél alapból maga a csoport, nem egy GroupLiterature:
-        // a GroupLiteratureObserver a created eseményre saját LogHistory
-        // sort ír, ami minden factory-hívást megduplázna. A GroupObserver
-        // csak updated-re logol, ezért a Group biztonságos alapértelmezés.
+        // The morph target defaults to the group itself, not a
+        // GroupLiterature: GroupLiteratureObserver writes its own
+        // LogHistory row on the created event, which would duplicate every
+        // factory call. GroupObserver only logs on updated, so Group is a
+        // safe default.
         return [
             'event' => 'updated',
             'group_id' => Group::factory(),
             'causer_id' => User::factory(),
             'model_type' => Group::class,
             'model_id' => fn (array $attributes) => $attributes['group_id'],
-            // A changes mezőt a modell nyers JSON stringként olvassa
-            // vissza a getChangesArrayAttribute()-ban.
+            // The changes field is read back by the model as a raw JSON
+            // string in getChangesArrayAttribute().
             'changes' => json_encode(['name' => ['old' => 'A', 'new' => 'B']]),
         ];
     }
 
-    // --- Esemény state-ek ---
+    // --- Event states ---
 
     public function event(string $event): static
     {
         return $this->state(['event' => $event]);
     }
 
-    // --- Morph kötés ---
+    // --- Morph binding ---
 
     public function forModel(Model $model): static
     {

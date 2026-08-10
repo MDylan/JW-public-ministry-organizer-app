@@ -6,29 +6,29 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * A groups.city_id idegen kulcsa a weather_cities táblára.
+ * The groups.city_id foreign key to the weather_cities table.
  *
- * MIÉRT KELL KÜLÖN MIGRÁCIÓ
+ * WHY A SEPARATE MIGRATION IS NEEDED
  *
- * A 2024_12_04_194500 migráció így írta le a mezőt:
+ * The 2024_12_04_194500 migration declared the column like this:
  *
  *     $table->unsignedBigInteger('city_id')->nullable()
  *           ->constrained('weather_cities')->onDelete('set null');
  *
- * A `constrained()` viszont a `foreignId()` metódus párja - `unsignedBigInteger()`
- * után NÉMA no-op. Idegen kulcs tehát soha nem jött létre: egy törölt
- * weather_cities sor árva city_id-t hagyott maga után, amit a naptár
- * dereferálása fatallal talált meg.
+ * But `constrained()` is the counterpart of the `foreignId()` method - after
+ * `unsignedBigInteger()` it is a SILENT no-op. The foreign key was therefore
+ * never created: a deleted weather_cities row left an orphaned city_id
+ * behind, which the calendar's dereference then found via a fatal error.
  *
- * Az eredeti migrációt szándékosan NEM írjuk át: telepített helyeken már
- * lefutott, tehát nem futna újra.
+ * The original migration is deliberately NOT rewritten: it has already run
+ * on installed sites, so it would not run again.
  */
 class AddCityIdForeignKeyToGroupsTable extends Migration
 {
     public function up()
     {
-        // Az árva hivatkozásokat előbb ki kell takarítani, különben a
-        // kényszer felvétele elhasal a meglévő adatokon.
+        // Orphaned references must be cleaned up first, otherwise adding
+        // the constraint fails on the existing data.
         DB::table('groups')
             ->whereNotNull('city_id')
             ->whereNotIn('city_id', function ($query) {

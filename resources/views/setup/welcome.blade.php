@@ -50,11 +50,11 @@
                             <i class="fas fa-arrow-right ml-1"></i>
                         </a>
                     @else
-                        {{-- A telepítő feloldása. A kód a szerveren, a
-                             storage/app/installer-token.txt fájlban áll, tehát
-                             megadni csak az tudja, aki a fájlrendszerhez
-                             hozzáfér. Ez az egyetlen ellenőrzés, ami ebben a
-                             szakaszban értelmezhető: felhasználó még nincs. --}}
+                        {{-- Unlocking the installer. The code lives on the
+                             server, in the storage/app/installer-token.txt
+                             file, so only someone with filesystem access can
+                             enter it. This is the only check that makes
+                             sense at this stage: there is no user yet. --}}
                         <hr>
                         <h6>@lang('setup.token.title')</h6>
                         <p class="text-muted">{!! __('setup.token.help') !!}</p>

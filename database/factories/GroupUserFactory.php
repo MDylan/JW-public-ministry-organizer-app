@@ -22,16 +22,16 @@ class GroupUserFactory extends Factory
             'hidden'                => 0,
             'signs'                 => null,
             'list_order'            => 0,
-            // A message_use a csoportüzenetek egyéni szabálya, a DB
-            // alapértéke 0. Jelentése a Groups\Messages::checkPrivilege()
-            // szerint: 0 = alapeset (a tag közelgő eseménye dönt),
-            // 1 = nem írhat, 2 = eseménytől függetlenül írhat.
+            // message_use is the per-member override for group messages,
+            // the DB default is 0. Per Groups\Messages::checkPrivilege():
+            // 0 = base case (the member's upcoming event decides),
+            // 1 = cannot write, 2 = can write regardless of any event.
             'message_use'           => 0,
             'message_send_priority' => 0,
         ];
     }
 
-    // --- Csoportszerep state-ek ---
+    // --- Group role states ---
 
     public function asMember(): static
     {
@@ -53,7 +53,7 @@ class GroupUserFactory extends Factory
         return $this->state(['group_role' => 'admin']);
     }
 
-    // --- Tagság elfogadási státusz ---
+    // --- Membership acceptance status ---
 
     public function accepted(): static
     {
@@ -70,16 +70,16 @@ class GroupUserFactory extends Factory
         return $this->state(['deleted_at' => now()]);
     }
 
-    // --- Láthatóság ---
+    // --- Visibility ---
 
     public function hidden(): static
     {
         return $this->state(['hidden' => 1]);
     }
 
-    // --- Üzenetkezelés ---
+    // --- Messaging ---
 
-    /** Írhat akkor is, ha nincs közelgő eseménye, és kap prioritásos értesítést. */
+    /** Can write even without an upcoming event, and gets priority notification. */
     public function withMessaging(): static
     {
         return $this->state([
@@ -88,7 +88,7 @@ class GroupUserFactory extends Factory
         ]);
     }
 
-    /** Egyáltalán nem írhat, közelgő eseménytől függetlenül. */
+    /** Cannot write at all, regardless of any upcoming event. */
     public function withoutMessaging(): static
     {
         return $this->state([
@@ -97,7 +97,7 @@ class GroupUserFactory extends Factory
         ]);
     }
 
-    // --- Kötési segédek ---
+    // --- Binding helpers ---
 
     public function forUser(User $user): static
     {

@@ -12,8 +12,8 @@ class AdminNewsletterFactory extends Factory
 
     public function definition()
     {
-        // Translatable modell: a locale kulcs alatti mezőket az astrotomic
-        // Translatable::fill() irányítja a fordítástáblába.
+        // Translatable model: astrotomic Translatable::fill() routes the
+        // fields under the locale key into the translation table.
         $locale = config('app.locale', 'hu');
 
         return [
@@ -30,7 +30,7 @@ class AdminNewsletterFactory extends Factory
         ];
     }
 
-    // --- Állapot state-ek ---
+    // --- Status states ---
 
     public function published(): static
     {

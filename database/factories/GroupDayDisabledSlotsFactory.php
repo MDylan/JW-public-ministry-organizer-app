@@ -14,7 +14,7 @@ class GroupDayDisabledSlotsFactory extends Factory
     {
         return [
             'group_id' => Group::factory(),
-            // day_number: a hét napja, a group_days táblával összhangban.
+            // day_number: the day of the week, consistent with the group_days table.
             'day_number' => 1,
             'slot' => '09:00',
         ];

@@ -16,7 +16,7 @@ class GroupMessageFactory extends Factory
         return [
             'group_id' => Group::factory(),
             'user_id' => User::factory(),
-            // A message mező 'encrypted' cast alatt van.
+            // The message field is under an 'encrypted' cast.
             'message' => $this->faker->sentence(),
             'priority' => 0,
         ];

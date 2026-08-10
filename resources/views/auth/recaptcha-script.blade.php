@@ -1,8 +1,8 @@
 @section('footer_scripts')
-{{-- Az `action` KORÁBBAN mindhárom űrlapon a hardkódolt `register` volt, a
-     szerver pedig meg sem nézte a visszakapott mezőt. Innentől űrlaponként a
-     valódi művelet megy ki, és az App\Http\Middleware\CheckRecaptcha ugyanazt
-     az értéket várja vissza a Google válaszában. --}}
+{{-- `action` was PREVIOUSLY hardcoded to `register` on all three forms, and
+     the server did not even look at the returned field. From now on the
+     real action goes out per form, and App\Http\Middleware\CheckRecaptcha
+     expects that same value back in Google's response. --}}
 <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
     <script>
         grecaptcha.ready(function () {

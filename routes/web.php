@@ -67,19 +67,19 @@ Route::middleware(['signed'])->group(function () {
         ->middleware('setGuestLanguage');
     Route::post('/finish-registration/{id}', [FinishRegistration::class, 'register'])
         ->name('finish_registration_register');
-    // KORÁBBAN GET volt. Az aláírás azt igazolja, hogy a linket mi adtuk ki -
-    // azt nem, hogy a felhasználó SZÁNDÉKOSAN nyitotta meg. Egy adatot törlő
-    // GET-et a böngésző előtöltése, a levelezőrendszer linkellenőrzője vagy egy
-    // véletlen navigáció is elsütheti. POST + CSRF mellett ez nem fordulhat elő.
+    // PREVIOUSLY a GET. The signature proves that we issued the link - not
+    // that the user opened it DELIBERATELY. A data-deleting GET can be
+    // fired by the browser's prefetch, a mail client's link scanner, or an
+    // accidental navigation. With POST + CSRF this cannot happen.
     Route::post('/finish-registration/{id}/cancel', [FinishRegistration::class, 'cancel'])
         ->name('finish_registration_cancel');
 });
 
 
-// Az `auth` KORÁBBAN hiányzott. Jogosultságmegkerülés nem látszott belőle - a
-// levélküldő POST külön védett -, de a nézet `<x-admin-layout>`-ot használ, ami
-// vendégnél `auth()->user()`-t dereferál: minden kijelentkezett látogatás 500-at
-// és egy stack trace-t adott a naplóba.
+// `auth` was PREVIOUSLY missing. No authorization bypass was visible from
+// it - the mail-sending POST is separately protected - but the view uses
+// `<x-admin-layout>`, which dereferences `auth()->user()` for a guest:
+// every logged-out visit produced a 500 and a stack trace in the log.
 Route::get('/email/verify', 'App\Http\Controllers\Admin\DashboardController@verify')
     ->name('verification.notice')->middleware(['auth']);
 Route::get('/user/new-email-verified', [Profile::class, 'redirectAfterNewEmailVerification'])->name('user.new-email-verified');
@@ -104,17 +104,17 @@ Route::get('pendingEmail/verify/{token}', [VerifyNewEmailController::class, 'ver
 if (!Storage::exists('installed.txt')) {
     // Setup routes
     //
-    // A csoport KORÁBBAN egyetlen jogosultsági ellenőrzést sem hordozott: se
-    // auth, se gate, se aláírás. A telepítési ablakban tehát bárki, aki ismerte
-    // a címet, létrehozhatott mainAdmin fiókot - ismételten -, és bárki
-    // lezárhatta a telepítőt. Bejelentkezéshez kötni nem lehet, mert a
-    // telepítés pontosan az a szakasz, amikor még nincs felhasználó; ezért az
-    // `installer` middleware fájlrendszer-hozzáférést bizonyíttat egy tokennel.
-    // Lásd App\Http\Middleware\EnsureInstallerToken.
+    // The group PREVIOUSLY carried no authorization check at all: no auth,
+    // no gate, no signature. During the install window, therefore, anyone
+    // who knew the URL could create a mainAdmin account - repeatedly - and
+    // anyone could lock the installer. It cannot be tied to login, because
+    // installation is exactly the phase when there is no user yet; so the
+    // `installer` middleware proves filesystem access with a token instead.
+    // See App\Http\Middleware\EnsureInstallerToken.
     Route::prefix('setup')->group(function () {
-        // A nyitóképernyő és a token beküldése SZÁNDÉKOSAN a kapun kívül van:
-        // ide kell beírni a tokent, tehát nem lehet mögötte. Érdemi műveletet
-        // egyik sem végez.
+        // The welcome screen and the token submission are DELIBERATELY
+        // outside the gate: this is where the token has to be entered, so
+        // it cannot sit behind it. Neither one performs any real action.
         Route::get('/start', [MetaController::class, 'welcome'])
             ->name('setup.welcome');
         Route::post('/start', [MetaController::class, 'unlock'])
@@ -154,36 +154,40 @@ if (!Storage::exists('installed.txt')) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', Home::class)->name('home.home');
 
-    // Visszalépés a megszemélyesítésből.
+    // Stepping back out of impersonation.
     //
-    // KORÁBBAN `GET /loginback/{id}` volt, `signed` middleware-rel: az aláírt
-    // URL 12 óráig érvényes maradt, tetszőleges felhasználói azonosítót
-    // hordozott, és a controller nem kötötte a munkamenethez - vagyis a link
-    // maga volt a jogosultság. Az azonosító innentől szerveroldali sessionben
-    // van (App\Http\Controllers\Admin\LoginToUserController::SESSION_KEY), az
-    // URL üres, a védelmet pedig a `web` csoport CSRF-tokenje adja.
+    // PREVIOUSLY this was `GET /loginback/{id}` with `signed` middleware:
+    // the signed URL stayed valid for 12 hours, carried an arbitrary user
+    // id, and the controller did not bind it to the session - i.e. the
+    // link itself was the authorization. The id now lives in a server-side
+    // session (App\Http\Controllers\Admin\LoginToUserController::SESSION_KEY),
+    // the URL is empty, and the CSRF token of the `web` group provides the
+    // protection.
     Route::post('/loginback', [LoginToUserController::class, 'loginBack'])
             ->name('admin.loginback');
 
-    // A `verification.verify` NEVET a routes/fortify.php:87-89 regisztrálja
+    // The `verification.verify` NAME is registered by routes/fortify.php:87-89
     // (Laravel\Fortify\Http\Controllers\VerifyEmailController@__invoke,
     // middleware: web, Authenticate:web, ValidateSignature, ThrottleRequests:6,1).
     //
-    // Itt korábban egy MÁSODIK definíció állt ugyanerre a metódus+URI párra egy
-    // closure-rel. A Route::get() metódus+domain+URI szerint felülír, a Fortify
-    // pedig a routes/web.php UTÁN töltődik be (config/app.php provider-sorrend),
-    // ezért a closure soha nem került be a routing táblába - a TODO 03 ezt
-    // empirikusan igazolta. Törölve, nulla futásidejű hatással. A boot-sorrendet
-    // a RouteContractSnapshotTest::test_the_winner_depends_on_the_service_provider_boot_order
-    // őrzi, mert egy provider-sorrendcsere némán visszabillentené a halott ágra.
+    // A SECOND definition previously sat here on the same method+URI pair,
+    // with a closure. Route::get() overwrites by method+domain+URI, and
+    // Fortify loads AFTER routes/web.php (config/app.php provider order),
+    // so the closure never made it into the routing table - TODO 03
+    // verified this empirically. Removed, with zero runtime effect. The
+    // boot order is guarded by
+    // RouteContractSnapshotTest::test_the_winner_depends_on_the_service_provider_boot_order,
+    // because a provider-order swap would silently tip it back onto the
+    // dead branch.
 
     Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
 
-    // A két definíció URI-ja azonos, a nevet viszont NEM oszthatják meg: a
-    // route:cache (és vele az `artisan optimize`) LogicExceptionnel elhasal a
-    // második azonos nevű route-on. A `password.confirm` a Laravel konvenciója
-    // szerint az űrlapot mutató GET ág - ide mutat a `password.confirm`
-    // middleware-alias (app/Http/Kernel.php:68) átirányítása is.
+    // The two definitions share the same URI, but they CANNOT share the
+    // name: route:cache (and with it `artisan optimize`) fails with a
+    // LogicException on the second route of the same name. By Laravel
+    // convention, `password.confirm` is the GET branch that shows the
+    // form - the redirect from the `password.confirm` middleware alias
+    // (app/Http/Kernel.php:68) also points here.
     Route::get('/confirm-password', function () {
         return view('auth.confirm-password');
     })->name('password.confirm');
@@ -233,10 +237,10 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware(['can:is-admin'])->group(function () {
                 Route::get('/admin/statistics', AdminStatistics::class)->name('admin.statistics');
 
-                // A külön middleware közvetlenül ezt a POST végpontot is védi.
-                // Lejárt megerősítésnél az intended URL az adminlista, nem ez a
-                // POST-only route, így a megerősítés után nincs hibás GET-es
-                // újrajátszás és 405.
+                // The dedicated middleware directly protects this POST
+                // endpoint too. On an expired confirmation the intended URL
+                // is the admin list, not this POST-only route, so there is
+                // no broken GET replay and 405 after confirming.
                 Route::post('/admin/users/login/{user}', [LoginToUserController::class, 'login'])
                     ->middleware('password.confirm.impersonation')
                     ->name('admin.users.login');

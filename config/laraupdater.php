@@ -20,17 +20,17 @@
 		* Set a middleware for the route: updater.update
 		* Only 'auth' NOT works (manage security using 'allow_users_id' configuration)
 		*
-		* Az EnsureUpdateWithinBranch a sor VÉGÉN áll, és ez szándékos: a
-		* major-korlát ellenőrzése a csatornát kérdezi meg, ami csak azután
-		* fusson le, hogy az auth és a can:is-admin már átengedte a kérést.
-		* Ez a guard tartja meg a "major verziót automatikusan nem lépünk át"
-		* szabályt akkor is, ha valaki közvetlenül nyitja meg az /updater.update
-		* címet - lásd App\Support\Updates\UpdateBranch.
+		* EnsureUpdateWithinBranch sits at the END of the list, and this is
+		* deliberate: the major-version-limit check queries the channel,
+		* which should only run after auth and can:is-admin have already let
+		* the request through. This guard keeps the "never auto-cross a
+		* major version" rule even if someone opens /updater.update directly -
+		* see App\Support\Updates\UpdateBranch.
 		*
-		* FIGYELEM: egy `vendor:publish --force --tag=laraupdater` ezt a fájlt
-		* felülírja, és ezzel némán visszakapcsolja az automatikus major-ugrást
-		* (ahogy az update_baseurl testreszabását is elveszítené). Ha publikálni
-		* kell, kézzel kell összefésülni.
+		* WARNING: a `vendor:publish --force --tag=laraupdater` overwrites
+		* this file, silently turning automatic major-version jumps back on
+		* (and it would also lose the update_baseurl customization). If
+		* publishing is needed, it has to be merged by hand.
 		*/
 		'middleware' => ['web', 'auth', 'can:is-admin', \App\Http\Middleware\EnsureUpdateWithinBranch::class],
 

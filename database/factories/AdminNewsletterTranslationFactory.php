@@ -12,8 +12,8 @@ class AdminNewsletterTranslationFactory extends Factory
 
     public function definition()
     {
-        // Az AdminNewsletter factory már létrehoz egy fordítást a fő
-        // locale-on, ezért itt a fallback locale az alapértelmezés.
+        // The AdminNewsletter factory already creates a translation in
+        // the main locale, so the fallback locale is the default here.
         return [
             'admin_newsletter_id' => AdminNewsletter::factory(),
             'locale' => config('app.fallback_locale', 'en'),

@@ -13,8 +13,9 @@ class GroupNewsFactory extends Factory
 
     public function definition()
     {
-        // A modell translatable: a locale kulcs alatt átadott mezőket
-        // az astrotomic Translatable::fill() szedi ki és a fordítástáblába írja.
+        // The model is translatable: astrotomic Translatable::fill() picks
+        // up the fields passed under the locale key and writes them into
+        // the translation table.
         $locale = config('app.locale', 'hu');
 
         return [
@@ -29,7 +30,7 @@ class GroupNewsFactory extends Factory
         ];
     }
 
-    // --- Státusz state-ek ---
+    // --- Status states ---
 
     public function draft(): static
     {
@@ -41,7 +42,7 @@ class GroupNewsFactory extends Factory
         return $this->state(['status' => 1]);
     }
 
-    // --- Kötési segédek ---
+    // --- Binding helpers ---
 
     public function forGroup(Group $group): static
     {

@@ -17,8 +17,8 @@ class GroupNewsFileFactory extends Factory
         return [
             'group_new_id' => GroupNews::factory(),
             'name' => 'melleklet.pdf',
-            // Csak a tárolt fájlnév; a news_files disk tartalmát a teszt
-            // állítja elő, ha a méret/letöltés viselkedése is számít.
+            // Just the stored filename; the test sets up the news_files
+            // disk's content when the size/download behaviour also matters.
             'file' => $file,
         ];
     }

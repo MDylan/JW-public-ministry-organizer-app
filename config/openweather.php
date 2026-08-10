@@ -3,37 +3,38 @@
 return [
 
     /**
-     * OpenWeather API kulcs.
-     * Ingyenes kulcs: https://openweathermap.org/price
+     * OpenWeather API key.
+     * Free key: https://openweathermap.org/price
      *
-     * A kulcs neve KORÁBBAN OPENWAETHER_API_KEY volt - egy elírás, ami
-     * következetesen szerepelt öt helyen (.env.example, ez a fájl, az admin
-     * beállítás-komponens és a hozzá tartozó nézet), ezért működött. A helyes
-     * név innentől OPENWEATHER_API_KEY.
+     * The key's name was PREVIOUSLY OPENWAETHER_API_KEY - a typo that
+     * appeared consistently in five places (.env.example, this file, the
+     * admin settings component and its view), which is why it worked. The
+     * correct name from now on is OPENWEATHER_API_KEY.
      *
-     * A régi név EGY KIADÁS EREJÉIG fallbackként megmarad, mert a telepített
-     * hostok .env fájlja még azt hordozza. Amint a kiadás minden helyre
-     * eljutott, a fallback törölhető.
+     * The old name stays as a fallback FOR ONE RELEASE, because installed
+     * hosts' .env files still carry it. Once the release has reached every
+     * install, the fallback can be removed.
      */
     'api_key' => env('OPENWEATHER_API_KEY', env('OPENWAETHER_API_KEY', '')),
 
     /**
-     * A válasz nyelve.
+     * The response language.
      *
-     * Üresen hagyva az alkalmazás aktuális lokálja dönt
-     * (OpenWeatherClient::language()). Korábban bedrótozott 'en' volt, ezért a
-     * magyar és német felületen is angol időjárás-leírások jelentek meg.
+     * Left empty, the application's current locale decides
+     * (OpenWeatherClient::language()). It used to be hardcoded to 'en',
+     * which is why English weather descriptions appeared on the Hungarian
+     * and German UI as well.
      */
     'lang' => env('OPENWEATHER_API_LANG', env('OPENWAETHER_API_LANG', '')),
 
     /**
-     * Mértékegység-rendszer: metric (Celsius, m/s), imperial (Fahrenheit,
-     * mérföld/óra) vagy standard (Kelvin).
+     * Unit system: metric (Celsius, m/s), imperial (Fahrenheit, mph) or
+     * standard (Kelvin).
      */
     'units' => env('OPENWEATHER_UNITS', 'metric'),
 
     /**
-     * A megjelenítéshez használt dátumformátum.
+     * The date format used for display.
      */
     'date_format' => 'Y-m-d',
 

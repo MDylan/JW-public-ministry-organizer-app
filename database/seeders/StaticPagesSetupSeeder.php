@@ -11,10 +11,10 @@ class StaticPagesSetupSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * A telepítő a Setup\AccountController-ből callWith()-szel adja át a
-     * tulajdonos azonosítóját. A paraméter opcionális, hogy a seeder
-     * `artisan db:seed --class=StaticPagesSetupSeeder` alakban is
-     * futtatható legyen; ilyenkor az első mainAdmin lesz a tulajdonos.
+     * The installer passes the owner id via callWith() from
+     * Setup\AccountController. The parameter is optional so the seeder can
+     * also be run as `artisan db:seed --class=StaticPagesSetupSeeder`, in
+     * which case the first mainAdmin becomes the owner.
      *
      * @param  int|null  $user_id
      * @return void

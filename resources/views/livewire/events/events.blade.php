@@ -129,10 +129,11 @@
 
                                             <div class="weather-widget mx-auto rounded-lg bg-light">
                                                 <!-- Current Weather -->
-                                                {{-- Nem elég a 'current_weather' kulcs LÉTE: egy csonka
-                                                     vagy hibaüzenetet hordozó válasz (pl. 429) esetén a
-                                                     blobból hiányzik a 'weather' és a 'main' ág, és a lenti
-                                                     dereferálás fatalt dobott a naptár renderelése közben.
+                                                {{-- The mere EXISTENCE of the 'current_weather' key is not
+                                                     enough: for a truncated response or one carrying an
+                                                     error message (e.g. 429), the 'weather' and 'main'
+                                                     branches are missing from the blob, and the dereference
+                                                     below threw a fatal error while rendering the calendar.
                                                      v1-patch C. --}}
                                                 @if(isset(
                                                     $cal_group_data['weather']['current_weather']['weather'][0]['icon'],

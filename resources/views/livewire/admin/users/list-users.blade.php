@@ -111,8 +111,8 @@
                                     <a href="" title="{{ __('app.edit') }}" wire:click.prevent="edit({{$user}})">
                                         <i class="fa fa-edit mr-2"></i>
                                     </a>
-                                    {{-- A megszemélyesítés indítása POST + CSRF: egy GET link
-                                         böngésző-előtöltésre vagy idegen oldalról is elsülhetett. --}}
+                                    {{-- Starting impersonation is POST + CSRF: a GET link could
+                                         have been triggered by browser prefetch or from a foreign page. --}}
                                     <form method="POST" action="{{ route('admin.users.login', ['user' => $user]) }}" class="d-inline">
                                         @csrf
                                         <button type="submit" class="btn btn-link p-0 border-0 align-baseline" title="@lang('user.login_to')">

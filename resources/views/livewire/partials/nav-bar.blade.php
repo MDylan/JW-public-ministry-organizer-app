@@ -7,8 +7,8 @@
       <li class="nav-item d-none d-sm-inline-block">
         <a href="{{route('home.home')}}" class="nav-link">{{__('app.menu-home')}}</a>
       </li>
-      {{-- A visszaút KORÁBBAN egy 12 órás aláírt URL volt a sessionben; most
-           csak egy jelző van ott, és a váltás POST + CSRF. --}}
+      {{-- The way back PREVIOUSLY was a 12-hour signed URL in the session;
+           now there is only a flag there, and the switch is POST + CSRF. --}}
       @if (session(App\Http\Controllers\Admin\LoginToUserController::SESSION_KEY))
       <li class="nav-item">
         <form method="POST" action="{{ route('admin.loginback') }}">

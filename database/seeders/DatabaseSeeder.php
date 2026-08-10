@@ -13,9 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // Csak az alap beállítássorokat töltjük be. A statikus oldalakat a
-        // telepítő hívja külön (StaticPagesSetupSeeder), mert azoknak
-        // tulajdonos felhasználóra van szükségük.
+        // Only the base settings rows are seeded here. The static pages are
+        // called separately by the installer (StaticPagesSetupSeeder),
+        // because those need an owner user.
         $this->call([
             CoreSettingsSeeder::class,
         ]);

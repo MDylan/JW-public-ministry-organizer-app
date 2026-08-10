@@ -25,7 +25,7 @@ class EventFactory extends Factory
         ];
     }
 
-    // --- Státusz state-ek ---
+    // --- Status states ---
 
     public function accepted(): static
     {
@@ -47,7 +47,7 @@ class EventFactory extends Factory
         ]);
     }
 
-    // --- Időpont state-ek ---
+    // --- Time states ---
 
     public function onDate(string $date): static
     {
@@ -75,7 +75,7 @@ class EventFactory extends Factory
         });
     }
 
-    // --- Kötési segédek ---
+    // --- Binding helpers ---
 
     public function forUser(User $user): static
     {

@@ -90,8 +90,8 @@
 
         </div>
         <div class="card-footer text-muted">
-            {{-- A törlés POST + CSRF: aláírt GET linkként egy böngésző-előtöltés
-                 vagy egy levelezőrendszer linkellenőrzője is elsüthette. --}}
+            {{-- Deleting is POST + CSRF: as a signed GET link, browser
+                 prefetch or a mail client's link scanner could also trigger it. --}}
             <form method="POST" action="{{ $cancelUrl }}" onsubmit="return confirm('@lang('user.finish.cancelAlert')');">
                 @csrf
                 <button type="submit" class="text-center btn btn-sm btn-warning">

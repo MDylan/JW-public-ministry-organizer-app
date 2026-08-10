@@ -14,7 +14,7 @@ class WeatherCityFactory extends Factory
         return [
             'city' => $this->faker->city(),
             'country' => 'HU',
-            // A két időjárás mező 'json' cast alatt van.
+            // Both weather fields are under a 'json' cast.
             'current_weather' => null,
             'forecast_weather' => null,
             'last_try' => null,
@@ -22,18 +22,19 @@ class WeatherCityFactory extends Factory
     }
 
     /**
-     * Az OpenWeather válaszainak valódi alakja, leszűkítve arra, amit a projekt
-     * ténylegesen olvas.
+     * The real shape of OpenWeather's responses, narrowed down to what the
+     * project actually reads.
      *
-     * A korábbi állapot nem volt reprodukálható éles adatból: a mentés kézzel
-     * is json_encode-olt a `json` cast MELLETT, tehát a `current_weather`
-     * oszlopban kétszer kódolt SZTRING állt, miközben ez a factory tömböt írt -
-     * a teszt olyan alakot állított, amit a termelés nem tudott előállítani.
-     * A dupla kódolás megszűnt (v1-patch C), így itt már a valódi szerkezet áll.
+     * The earlier state was not reproducible from live data: the save also
+     * called json_encode by hand ON TOP OF the `json` cast, so the
+     * `current_weather` column held a doubly-encoded STRING while this
+     * factory wrote an array - the test asserted a shape production could
+     * never produce. The double encoding is gone (v1-patch C), so the real
+     * structure is used here now.
      *
-     * A `forecast_weather` a `list` kulcs alatt hordozza a 3 óránkénti
-     * bontást, `dt_txt` és `main.temp` mezőkkel - ezt olvassa az
-     * Events\Events::render().
+     * `forecast_weather` carries the 3-hourly breakdown under the `list`
+     * key, with `dt_txt` and `main.temp` fields - this is what
+     * Events\Events::render() reads.
      */
     public function withWeatherData(): static
     {

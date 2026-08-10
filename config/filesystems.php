@@ -54,12 +54,13 @@ return [
             'throw' => false,
         ],
 
-        // A gyökér SZÁNDÉKOSAN public_path(), nem a korábbi csupasz 'public'
-        // relatív út. Az utóbbi a PHP munkakönyvtárához képest oldódott fel,
-        // ami webkérésben a public/ könyvtár (tehát public/public/), artisan
-        // vagy queue worker alatt viszont a projekt gyökere (tehát public/) -
-        // ugyanaz a diszk két különböző helyre írt attól függően, ki hívta.
-        // A nézet URL-előtagja (messages.blade.php) ezzel együtt mozdult.
+        // The root is DELIBERATELY public_path(), not the previous bare
+        // 'public' relative path. The latter resolved against PHP's working
+        // directory, which in a web request is the public/ directory (i.e.
+        // public/public/), but under artisan or a queue worker is the
+        // project root (i.e. public/) - the same disk wrote to two
+        // different places depending on who called it. The view's URL
+        // prefix (messages.blade.php) moved along with it.
         'web' => [
             'driver' => 'local',
             'root' => public_path(),

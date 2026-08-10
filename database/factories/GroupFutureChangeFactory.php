@@ -13,8 +13,8 @@ class GroupFutureChangeFactory extends Factory
 
     public function definition()
     {
-        // A group/days/disabled_slots mezők 'array' cast alatt vannak és
-        // NOT NULL-ok, ezért üres tömböt adunk alapértelmezésben.
+        // The group/days/disabled_slots fields are under an 'array' cast
+        // and are NOT NULL, so an empty array is the default here.
         return [
             'group_id' => Group::factory(),
             'user_id' => User::factory(),

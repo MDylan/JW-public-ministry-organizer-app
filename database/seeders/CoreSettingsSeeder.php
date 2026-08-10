@@ -6,13 +6,13 @@ use App\Models\Settings;
 use Illuminate\Database\Seeder;
 
 /**
- * Az alkalmazás működéséhez szükséges alap Settings sorok.
+ * The base Settings rows the application needs to function.
  *
- * Az AppServiceProvider::boot() ezekből tölti fel a settings_* config
- * kulcsokat; hiányukban a beépített alapértékek lépnek életbe, de a
- * beállítás-kezelő admin felület üres listát mutat.
+ * AppServiceProvider::boot() populates the settings_* config keys from
+ * these; without them the built-in defaults kick in, but the settings
+ * admin UI shows an empty list.
  *
- * Idempotens: többször is futtatható, meglévő értéket nem ír felül.
+ * Idempotent: safe to run repeatedly, never overwrites an existing value.
  */
 class CoreSettingsSeeder extends Seeder
 {
@@ -38,9 +38,9 @@ class CoreSettingsSeeder extends Seeder
             'weather' => '0',
             'terms_checkbox' => '0',
             'maintenance' => '0',
-            // v1-patch E: a csoportadatok megőrzési ideje hónapban. A '0' a
-            // kikapcsolt állapot - egy friss telepítés semmit nem töröl,
-            // amíg az adminisztrátor tudatosan be nem kapcsolja.
+            // v1-patch E: the group data retention period, in months. '0' is
+            // the disabled state - a fresh install deletes nothing until an
+            // administrator deliberately turns it on.
             'group_data_retention' => '0',
         ];
 

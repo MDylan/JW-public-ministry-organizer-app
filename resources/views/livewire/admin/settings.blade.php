@@ -37,12 +37,11 @@
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">@lang('settings.status.php_version'): @php echo phpversion(); @endphp </li>
                                 @php
-                                    // Egy példány, egy lekérdezés: korábban két
-                                    // külön new hívás ment ide. A harmadik állapot
-                                    // (magasabb major => kézi frissítés) ugyanabból
-                                    // az UpdateBranch döntésből jön, amit a
-                                    // frissítési kártya és az /updater.update kapuja
-                                    // is használ.
+                                    // One instance, one query: previously two
+                                    // separate new calls went here. The third state
+                                    // (higher major => manual update) comes from the
+                                    // same UpdateBranch decision that the update
+                                    // card and the /updater.update gate also use.
                                     $updater = new \MDylan\LaraUpdater\LaraUpdaterController;
                                     $available = $updater->check();
                                 @endphp
@@ -374,10 +373,11 @@
                                                 </div>
                                             </div>
                                             {{--
-                                                A megőrzési idő NEM a fenti kapcsoló-ciklus része (háromértékű),
-                                                és nem is a lap alján lévő "Módosítások mentése" gombhoz tartozik:
-                                                saját mentője van, mert a saveOthers() az egész .env fájlt
-                                                újraírná. Ezért nem eshet a wire:ignore blokkba sem.
+                                                The retention period is NOT part of the switch cycle above
+                                                (three-valued), nor does it belong to the "Módosítások mentése"
+                                                button at the bottom of the page: it has its own save handler,
+                                                because saveOthers() would rewrite the entire .env file. So it
+                                                cannot fall into the wire:ignore block either.
                                             --}}
                                             <div class="row mb-1 mt-3">
                                                 <div class="col-md-12">
