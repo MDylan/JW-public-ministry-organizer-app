@@ -139,10 +139,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
             'Laravel\\Sail\\' => 13,
             'Laravel\\Fortify\\' => 16,
         ),
-        'J' =>
-        array (
-            'JoeDixon\\Translation\\' => 21,
-        ),
         'I' =>
         array (
             'Intervention\\Image\\' => 19,
@@ -475,10 +471,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Laravel\\Fortify\\' =>
         array (
             0 => __DIR__ . '/..' . '/laravel/fortify/src',
-        ),
-        'JoeDixon\\Translation\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/joedixon/laravel-translation/src',
         ),
         'Intervention\\Image\\' =>
         array (
@@ -825,6 +817,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Support\\Gdpr\\Portable' => __DIR__ . '/../..' . '/app/Support/Gdpr/Portable.php',
         'App\\Support\\Retention\\RetentionWindow' => __DIR__ . '/../..' . '/app/Support/Retention/RetentionWindow.php',
         'App\\Support\\Settings\\ApplicationSettings' => __DIR__ . '/../..' . '/app/Support/Settings/ApplicationSettings.php',
+        'App\\Support\\Translation\\LangFiles' => __DIR__ . '/../..' . '/app/Support/Translation/LangFiles.php',
         'App\\Support\\Updates\\UpdateBranch' => __DIR__ . '/../..' . '/app/Support/Updates/UpdateBranch.php',
         'App\\Support\\Weather\\OpenWeatherClient' => __DIR__ . '/../..' . '/app/Support/Weather/OpenWeatherClient.php',
         'App\\Support\\Weather\\WeatherCache' => __DIR__ . '/../..' . '/app/Support/Weather/WeatherCache.php',
@@ -3697,32 +3690,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Intervention\\Image\\Point' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Point.php',
         'Intervention\\Image\\Response' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Response.php',
         'Intervention\\Image\\Size' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Size.php',
-        'JoeDixon\\Translation\\Console\\Commands\\AddLanguageCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/AddLanguageCommand.php',
-        'JoeDixon\\Translation\\Console\\Commands\\AddTranslationKeyCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/AddTranslationKeyCommand.php',
-        'JoeDixon\\Translation\\Console\\Commands\\BaseCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/BaseCommand.php',
-        'JoeDixon\\Translation\\Console\\Commands\\ListLanguagesCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/ListLanguagesCommand.php',
-        'JoeDixon\\Translation\\Console\\Commands\\ListMissingTranslationKeys' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/ListMissingTranslationKeys.php',
-        'JoeDixon\\Translation\\Console\\Commands\\SynchroniseMissingTranslationKeys' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/SynchroniseMissingTranslationKeys.php',
-        'JoeDixon\\Translation\\Console\\Commands\\SynchroniseTranslationsCommand' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Console/Commands/SynchroniseTranslationsCommand.php',
-        'JoeDixon\\Translation\\ContractDatabaseLoader' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/ContractDatabaseLoader.php',
-        'JoeDixon\\Translation\\Drivers\\Database' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Drivers/Database.php',
-        'JoeDixon\\Translation\\Drivers\\DriverInterface' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Drivers/DriverInterface.php',
-        'JoeDixon\\Translation\\Drivers\\File' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Drivers/File.php',
-        'JoeDixon\\Translation\\Drivers\\Translation' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Drivers/Translation.php',
-        'JoeDixon\\Translation\\Exceptions\\LanguageExistsException' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Exceptions/LanguageExistsException.php',
-        'JoeDixon\\Translation\\Exceptions\\LanguageKeyExistsException' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Exceptions/LanguageKeyExistsException.php',
-        'JoeDixon\\Translation\\Http\\Controllers\\LanguageController' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Http/Controllers/LanguageController.php',
-        'JoeDixon\\Translation\\Http\\Controllers\\LanguageTranslationController' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Http/Controllers/LanguageTranslationController.php',
-        'JoeDixon\\Translation\\Http\\Requests\\LanguageRequest' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Http/Requests/LanguageRequest.php',
-        'JoeDixon\\Translation\\Http\\Requests\\TranslationRequest' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Http/Requests/TranslationRequest.php',
-        'JoeDixon\\Translation\\InterfaceDatabaseLoader' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/InterfaceDatabaseLoader.php',
-        'JoeDixon\\Translation\\Language' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Language.php',
-        'JoeDixon\\Translation\\Rules\\LanguageNotExists' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Rules/LanguageNotExists.php',
-        'JoeDixon\\Translation\\Scanner' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Scanner.php',
-        'JoeDixon\\Translation\\Translation' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/Translation.php',
-        'JoeDixon\\Translation\\TranslationBindingsServiceProvider' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/TranslationBindingsServiceProvider.php',
-        'JoeDixon\\Translation\\TranslationManager' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/TranslationManager.php',
-        'JoeDixon\\Translation\\TranslationServiceProvider' => __DIR__ . '/..' . '/joedixon/laravel-translation/src/TranslationServiceProvider.php',
         'JsonException' => __DIR__ . '/..' . '/symfony/polyfill-php73/Resources/stubs/JsonException.php',
         'Laravel\\Fortify\\Actions\\AttemptToAuthenticate' => __DIR__ . '/..' . '/laravel/fortify/src/Actions/AttemptToAuthenticate.php',
         'Laravel\\Fortify\\Actions\\CompletePasswordReset' => __DIR__ . '/..' . '/laravel/fortify/src/Actions/CompletePasswordReset.php',
@@ -7005,6 +6972,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Gdpr\\AnonymizeCommandTest' => __DIR__ . '/../..' . '/tests/Feature/Gdpr/AnonymizeCommandTest.php',
         'Tests\\Feature\\Gdpr\\DataExportTest' => __DIR__ . '/../..' . '/tests/Feature/Gdpr/DataExportTest.php',
         'Tests\\Feature\\Gdpr\\PersonalDataDeletionTest' => __DIR__ . '/../..' . '/tests/Feature/Gdpr/PersonalDataDeletionTest.php',
+        'Tests\\Feature\\Gdpr\\ReanonymizeBackfillTest' => __DIR__ . '/../..' . '/tests/Feature/Gdpr/ReanonymizeBackfillTest.php',
         'Tests\\Feature\\GroupPosterEditModalTest' => __DIR__ . '/../..' . '/tests/Feature/GroupPosterEditModalTest.php',
         'Tests\\Feature\\GroupSpecialDateModalTest' => __DIR__ . '/../..' . '/tests/Feature/GroupSpecialDateModalTest.php',
         'Tests\\Feature\\Groups\\GroupCreationTest' => __DIR__ . '/../..' . '/tests/Feature/Groups/GroupCreationTest.php',
@@ -7027,6 +6995,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\LivewireRouteMountedComponentsTest' => __DIR__ . '/../..' . '/tests/Feature/LivewireRouteMountedComponentsTest.php',
         'Tests\\Feature\\Livewire\\AdminComponentsTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/AdminComponentsTest.php',
         'Tests\\Feature\\Livewire\\AdminSettingsTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/AdminSettingsTest.php',
+        'Tests\\Feature\\Livewire\\AdminTranslationEditorTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/AdminTranslationEditorTest.php',
         'Tests\\Feature\\Livewire\\AdminUserListPaginationTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/AdminUserListPaginationTest.php',
         'Tests\\Feature\\Livewire\\GroupComponentsTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/GroupComponentsTest.php',
         'Tests\\Feature\\Livewire\\GroupListPaginationTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/GroupListPaginationTest.php',
@@ -7079,6 +7048,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Unit\\Notifications\\NotificationEnvFallbackTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationEnvFallbackTest.php',
         'Tests\\Unit\\Notifications\\NotificationRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationRegressionTest.php',
         'Tests\\Unit\\Scheduler\\SchedulerRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Scheduler/SchedulerRegressionTest.php',
+        'Tests\\Unit\\Support\\LangFilesTest' => __DIR__ . '/../..' . '/tests/Unit/Support/LangFilesTest.php',
         'Tests\\Unit\\Support\\RetentionWindowTest' => __DIR__ . '/../..' . '/tests/Unit/Support/RetentionWindowTest.php',
         'TheSeer\\Tokenizer\\Exception' => __DIR__ . '/..' . '/theseer/tokenizer/src/Exception.php',
         'TheSeer\\Tokenizer\\NamespaceUri' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUri.php',

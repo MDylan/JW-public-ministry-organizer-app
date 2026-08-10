@@ -160,7 +160,7 @@
                                                     {{ $value['name'] }}
                                                 </td>
                                                 <td class="pt-2">
-                                                    <a href="/languages/{{ $country_code }}/translations" target="_blank">
+                                                    <a href="{{ route('admin.translate', ['targetLocale' => $country_code]) }}">
                                                         <i class="fa fa-arrow-right mr-1"></i>
                                                         @lang('settings.languages.translate')
                                                     </a>
@@ -195,7 +195,7 @@
                             </table>
                             <div class="alert alert-light mt-2" role="alert">
                                 @lang('settings.languages.lang_help')
-                                <a href="/languages" class="btn btn-info" target="_blank">
+                                <a href="{{ route('admin.translate') }}" class="btn btn-info">
                                     <i class="fa fa-arrow-right mr-1"></i>
                                     @lang('settings.languages.start_translation')
                                 </a>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "53738fb1e47bb031167d69180fb6c9bb",
+    "content-hash": "c1d5778e20b7b5f6c023ff6bcba0e82f",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1626,56 +1626,6 @@
                 }
             ],
             "time": "2022-05-21T17:30:32+00:00"
-        },
-        {
-            "name": "joedixon/laravel-translation",
-            "version": "v1.1.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/joedixon/laravel-translation.git",
-                "reference": "4a467398bae73cd16522d523b557e96f3455b9d2"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/joedixon/laravel-translation/zipball/4a467398bae73cd16522d523b557e96f3455b9d2",
-                "reference": "4a467398bae73cd16522d523b557e96f3455b9d2",
-                "shasum": ""
-            },
-            "require-dev": {
-                "mockery/mockery": "^1.0.0",
-                "orchestra/testbench": "^4.0",
-                "phpunit/phpunit": "^8.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "JoeDixon\\Translation\\TranslationServiceProvider",
-                        "JoeDixon\\Translation\\TranslationBindingsServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "JoeDixon\\Translation\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Joe Dixon",
-                    "email": "hello@joedixon.co.uk"
-                }
-            ],
-            "description": "A tool for managing all of your Laravel translations",
-            "support": {
-                "issues": "https://github.com/joedixon/laravel-translation/issues",
-                "source": "https://github.com/joedixon/laravel-translation/tree/master"
-            },
-            "time": "2020-04-13T20:06:24+00:00"
         },
         {
             "name": "laravel/fortify",

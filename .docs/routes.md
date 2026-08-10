@@ -237,21 +237,30 @@ They always use non-persistent authentication: the presence of a user's stored
 remembered, no remember state is stored in the impersonation session, and no
 new recaller cookie is created on return.
 
-## Package-Registered Translation Routes
+## The Translation Editor (`admin.translate`)
 
-These 7 named routes are **not defined in `routes/*.php`**. `joedixon/laravel-translation` registers them from its own route file via `loadRoutesFrom`, using the middleware stack declared in `config/translation.php:26`. They are live in production, they are pinned in `tests/Fixtures/route-contracts.json`, and `Admin\Translation` links to them by hardcoded URL. Roadmap TODO 33.3 removes all of them together with the package.
+Seven `languages.*` routes used to live here. They were **not** defined in
+`routes/*.php` - `joedixon/laravel-translation` registered them from its own
+route file via `loadRoutesFrom` - and **TODO 33.3 removed all of them with the
+package**. The feature now lives entirely on one route that was already there:
 
 | Method | URI | Name | Middleware |
 |---|---|---|---|
-| GET | `/languages` | `languages.index` | `web`, `auth`, `can:is-translator`, `password.confirm` |
-| GET | `/languages/create` | `languages.create` | same |
-| POST | `/languages` | `languages.store` | same |
-| GET | `/languages/{language}/translations` | `languages.translations.index` | same |
-| POST | `/languages/{language}` | `languages.translations.update` | same |
-| GET | `/languages/{language}/translations/create` | `languages.translations.create` | same |
-| POST | `/languages/{language}/translations` | `languages.translations.store` | same |
+| GET | `/admin/translate` | `admin.translate` | `web`, `auth`, `verified`, `profileFull`, `can:is-translator`, `password.confirm` |
 
-The URL prefix comes from `config('translation.ui_url')`, which is baked into each route path rather than applied as a group prefix - so changing it silently breaks the hardcoded links in `resources/views/livewire/admin/translation.blade.php:53,78`.
+`routes/web.php` was deliberately not touched: keeping the route exactly as it
+was is what preserves production access for `translator` and `mainAdmin`.
+
+**The move tightened access rather than loosening it, which is worth stating.**
+The package group carried only `web, auth, can:is-translator, password.confirm`;
+`admin.translate` also carries `verified` and `profileFull`. The two hardcoded
+`/languages` links that used to sit on the settings and translation screens
+therefore bypassed exactly those two gates - they now point at
+`route(admin.translate)`, the settings one passing the locale as a query
+parameter.
+
+Pinned by `RouteAdditionalBehaviorRegressionTest::test_translator_routes_require_translator_role_and_password_confirmation`
+(403 / password-confirm redirect / 200) and `LivewireRouteMountedComponentsTest`.
 
 ## Package-Registered Updater Routes
 

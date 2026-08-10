@@ -24,7 +24,15 @@ class CoreSettingsSeeder extends Seeder
             'registration' => '1',
             'claim_group_creator' => '1',
             'default_language' => $defaultLanguage,
-            'languages' => json_encode([$defaultLanguage => $defaultLanguage]),
+            // TODO 33.3: the shape matters. Every consumer of this blob -
+            // the language switcher, the group form, the translation editor -
+            // reads $value['visible'], and reaching that on a bare string is a
+            // TypeError on PHP 8. The installer (Setup\MailController) always
+            // wrote the object form; this seeder did not, so `db:seed` on a
+            // fresh database produced a blob that would fatal on render.
+            'languages' => json_encode([
+                $defaultLanguage => ['name' => $defaultLanguage, 'visible' => true],
+            ]),
             'show_homepage_alert' => '0',
             'homepage_message' => '',
             'weather' => '0',

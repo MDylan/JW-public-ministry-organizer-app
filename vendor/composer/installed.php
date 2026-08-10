@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'f2993f2c6de30e2e0affbfdac1061db284114d19',
+        'reference' => 'ca1f4c567ada09a8eaad7ebcc14242d457039d3e',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -469,15 +469,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'joedixon/laravel-translation' => array(
-            'pretty_version' => 'v1.1.2',
-            'version' => '1.1.2.0',
-            'reference' => '4a467398bae73cd16522d523b557e96f3455b9d2',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../joedixon/laravel-translation',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
         'kodova/hamcrest-php' => array(
             'dev_requirement' => true,
             'replaced' => array(
@@ -505,7 +496,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'f2993f2c6de30e2e0affbfdac1061db284114d19',
+            'reference' => 'ca1f4c567ada09a8eaad7ebcc14242d457039d3e',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

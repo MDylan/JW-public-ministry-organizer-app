@@ -7,6 +7,7 @@ use App\Http\Livewire\AppComponent;
 use App\Models\Group;
 use App\Models\Settings as ModelsSettings;
 use App\Models\User;
+use App\Support\Translation\LangFiles;
 use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
@@ -122,8 +123,20 @@ class Settings extends AppComponent
         ModelsSettings::updateOrCreate(
             ['name' => 'languages'],
             ['value' => $languages]
-        );        
-        
+        );
+
+        // TODO 33.3: the other half of what used to be a split brain. This
+        // method registered the locale and never created its directory, while
+        // the removed package's UI created the directory and never registered
+        // the locale - so a language added here had no files, and one added
+        // there never reached the language switcher. Registering is now the one
+        // place both happen.
+        //
+        // ensureLocale() never touches a directory that already exists, which
+        // is what lets a locale whose files predate the registry be adopted
+        // with its translations intact.
+        app(LangFiles::class)->ensureLocale($validatedData['country_code']);
+
         unset($this->state['languageAdd']);
 
         $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.success')]);

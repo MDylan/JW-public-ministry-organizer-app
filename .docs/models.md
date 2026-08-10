@@ -77,8 +77,32 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
      user **and marks it verified**, leaving a row that reads as anonymized while carrying real data.
 
   Deleting a user leaves the row orphaned for the same reason. All three are pinned as known defects
-  by `tests/Feature/NewEmail/PendingEmailKnownGapsTest.php`; the first two are fixed with the GDPR
-  replacement (roadmap TODO 33.2), the third with the package replacement (TODO 33.5).
+  by `tests/Feature/NewEmail/PendingEmailKnownGapsTest.php`. **The first two are fixed** - they
+  shipped on the `v1-patch` line and TODO 33.2 carried them through the GDPR rewrite:
+  `User::anonymize()` calls `clearPendingEmail()`, and `App\Models\PendingUserEmail` is a project
+  subclass whose `activate()` refuses an anonymized user. The third - the row orphaned by a delete -
+  waits for the package replacement (TODO 33.5).
+
+- **The `settings.languages` blob has one shape, and it was not always written that way.**
+  It is the registry of the locales the deployment offers, read everywhere through
+  `App\Support\Settings\ApplicationSettings::languages()` and consumed by the language
+  switcher, the group form and the translation editor. The shape is:
+
+  ```json
+  {"hu": {"name": "Magyar", "visible": true}}
+  ```
+
+  Three writers produce it - the installer (`Setup\MailController`, which writes an empty
+  `name`), `Admin\Settings::languageAdd()`, and `CoreSettingsSeeder`. **TODO 33.3 found the
+  seeder writing a bare string instead of the object**, which every consumer would have hit as
+  `$value['visible']` on a string - a `TypeError` on PHP 8. The installer path was correct, so
+  nothing had noticed; `db:seed` on a fresh database was the affected path. The seeder is fixed
+  and `LangFiles::locales()` normalizes all three shapes defensively.
+
+  **Registering a locale also creates its directory** since TODO 33.3
+  (`Admin\Settings::languageAdd()` calls `LangFiles::ensureLocale()`). Before that, the admin
+  screen registered without creating and the removed translation package created without
+  registering, so the two halves could drift apart in both directions.
 
 - **The weather cache** is `WeatherCity` plus two columns on `groups`: `weather_enabled` and
   `city_id`. `Group::weather()` is a `belongsTo(WeatherCity::class, 'city_id')`, and the whole

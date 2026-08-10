@@ -1,2 +1,0 @@
-
-__('This will go in the JSON array')

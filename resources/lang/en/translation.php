@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'title' => 'Translation',
+    'source_locale' => 'Source language',
+    'target_locale' => 'Language being translated',
+    'group' => 'Group',
+    'json_group' => 'Root JSON',
+    'key' => 'Key',
+    'value' => 'Value',
+    'search' => 'Search keys and texts',
+    'only_missing' => 'Missing only',
+    'missing_count' => ':count keys in this group have no translation.',
+    'nothing_found' => 'No key matches the filter.',
+    'save' => 'Save',
+    'save_all' => 'Save this page',
+    'saved' => 'Translation saved.',
+    'saved_count' => '{0} Nothing changed.|{1} One translation saved.|[2,*] :count translations saved.',
+    'save_failed' => 'The translation could not be saved.',
+    'add_key' => 'New key',
+    'add_key_help' => 'Dots create a nested key, except in the root JSON group where the whole text is one key.',
+    'key_added' => 'The new key has been created.',
+    'key_exists' => 'That key already exists, or its name is invalid.',
+    'unsaved_warning' => 'Changing page, language or group discards unsaved edits.',
+    'comment_warning' => 'Saving rewrites the whole file, so comments in it are lost. Saving an unchanged value writes nothing.',
+    'registry_help' => 'Only languages registered in Settings are listed. An existing language directory becomes editable, with its files intact, once it is registered.',
+];

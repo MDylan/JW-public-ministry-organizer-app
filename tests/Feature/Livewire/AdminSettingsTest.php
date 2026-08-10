@@ -6,7 +6,10 @@ use App\Http\Livewire\Admin\Settings;
 use App\Models\Settings as SettingsModel;
 use App\Models\User;
 use App\Notifications\TestNotification;
+use App\Support\Settings\ApplicationSettings;
+use App\Support\Translation\LangFiles;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
@@ -26,12 +29,33 @@ class AdminSettingsTest extends FeatureTestCase
 {
     private User $admin;
 
+    private string $langPath;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->admin = $this->createUser(['email' => 'settings-admin@example.test', 'role' => 'mainAdmin']);
         $this->actingAs($this->admin);
+
+        // TODO 33.3: languageAdd() now creates the locale directory too, so the
+        // repository is pointed at a temporary tree. Without this the suite
+        // would leave stray directories in the application's own resources/lang.
+        $this->langPath = storage_path('framework/testing/lang-settings');
+        File::deleteDirectory($this->langPath);
+        File::makeDirectory($this->langPath, 0755, true);
+
+        $this->app->instance(
+            LangFiles::class,
+            new LangFiles($this->app->make(ApplicationSettings::class), $this->langPath)
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        File::deleteDirectory($this->langPath);
+
+        parent::tearDown();
     }
 
     private function setLanguages(array $languages): void
@@ -162,6 +186,45 @@ class AdminSettingsTest extends FeatureTestCase
         $this->assertArrayHasKey('de', $languages);
         $this->assertSame('Deutsch', $languages['de']['name']);
         $this->assertTrue($languages['de']['visible']);
+    }
+
+    public function test_adding_a_language_also_creates_its_directory(): void
+    {
+        // TODO 33.3 closed a split brain here. This method registered the
+        // locale and never created the directory, while the removed package's
+        // UI created the directory and never registered the locale - so a
+        // language added on this screen had no files at all, and one added in
+        // the translation UI never reached the language switcher.
+        //
+        // CONTROL: drop the ensureLocale() call from Admin\Settings and this
+        // test fails while every other language test still passes.
+        $this->assertDirectoryDoesNotExist($this->langPath.'/de');
+
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->set('state.languageAdd', ['country_code' => 'de', 'country_name' => 'Deutsch'])
+            ->call('languageAdd')
+            ->assertHasNoErrors();
+
+        $this->assertDirectoryExists($this->langPath.'/de');
+    }
+
+    public function test_adopting_a_language_whose_files_already_exist_keeps_them(): void
+    {
+        // The reason ensureLocale() must never touch an existing directory:
+        // this project has locale directories that predate the registry, and
+        // registering one is how they become editable.
+        File::makeDirectory($this->langPath.'/ro', 0755, true);
+        file_put_contents($this->langPath.'/ro/auth.php', "<?php\n\nreturn ['failed' => 'Esuat'];\n");
+
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->set('state.languageAdd', ['country_code' => 'ro', 'country_name' => 'Roman'])
+            ->call('languageAdd')
+            ->assertHasNoErrors();
+
+        $this->assertFileExists($this->langPath.'/ro/auth.php');
+        $this->assertStringContainsString('Esuat', file_get_contents($this->langPath.'/ro/auth.php'));
     }
 
     public function test_adding_a_language_validates_the_code_and_name(): void

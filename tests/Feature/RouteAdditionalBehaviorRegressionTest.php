@@ -42,10 +42,21 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
 
     public function test_translator_routes_require_translator_role_and_password_confirmation(): void
     {
+        // TODO 33.3 re-pointed this test from the removed vendor UI
+        // (languages.*) to the in-house editor. The three assertions are the
+        // user's stated hard requirement and are unchanged: a plain user is
+        // refused, a translator is sent to password confirmation, and a
+        // translator with a confirmed password gets the page.
+        //
+        // The editor is in fact reached through a STRICTER chain than the
+        // vendor routes were: admin.translate also carries `verified` and
+        // `profileFull`, which the package's own route group did not. The two
+        // hardcoded /languages links that used to sit on the settings and
+        // translation screens bypassed exactly those two gates.
         $user = $this->createUser(['role' => 'registered', 'email' => 'translator-gate@example.test']);
 
         $this->actingAs($user)
-            ->get(route('languages.index'))
+            ->get(route('admin.translate'))
             ->assertForbidden();
 
         $user->role = 'translator';
@@ -53,22 +64,12 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
         $user = $user->fresh();
 
         $this->actingAs($user)
-            ->get(route('languages.index'))
+            ->get(route('admin.translate'))
             ->assertRedirect(route('password.confirm'));
 
         $this->actingAs($user)
             ->withSession($this->passwordConfirmedSession())
-            ->get(route('languages.index'))
-            ->assertStatus(200);
-
-        $this->actingAs($user)
-            ->withSession($this->passwordConfirmedSession())
-            ->get(route('languages.create'))
-            ->assertStatus(200);
-
-        $this->actingAs($user)
-            ->withSession($this->passwordConfirmedSession())
-            ->get(route('languages.translations.index', ['language' => config('app.locale', 'hu')]))
+            ->get(route('admin.translate'))
             ->assertStatus(200);
     }
 

@@ -102,6 +102,27 @@ if (! function_exists('main')) {
             base_path('app/Console/Commands/PackageAnonymizeInactiveUsers.php')
         ) && $ok;
 
+        // 5c) The translation package removed by TODO 33.3, and everything it
+        //     had published into the application. The editor is now
+        //     App\Http\Livewire\Admin\Translation plus
+        //     App\Support\Translation\LangFiles, so the Vue/Tailwind front-end,
+        //     the vendor views and the vendor language files are all dead
+        //     weight - and install() never deletes, so only this hook can clear
+        //     them from a deployed host.
+        //
+        //     config/translation.php goes with them: unlike config/gdpr.php it
+        //     described the package's own routes and driver, and nothing in the
+        //     application reads it any more.
+        //
+        //     NOTE: resources/lang/vendor/cookie-consent stays - that is a
+        //     different package, and only the translation subdirectory is
+        //     removed here.
+        $ok = laraupdater_upgrade_remove(base_path('vendor/joedixon')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('public/vendor/translation')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('resources/views/vendor/translation')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('resources/lang/vendor/translation')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('config/translation.php')) && $ok;
+
         // 6) Everything the packer generated inside the web root while rendering
         //    pages. None of it is tracked by git, so the release diff cannot
         //    carry the deletions - only this hook can. The files are inert once
