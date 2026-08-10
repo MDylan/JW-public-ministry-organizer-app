@@ -22,9 +22,10 @@ use App\Models\User;
  *      csoportelhagyás használ (Groups\ListGroups::confirmLogout()) - a két
  *      szabály nem sodródhat el egymástól.
  *
- * Az osztályt a User::anonymize() hívja, ezért mindhárom útvonalon érvényes:
- * a projekt gdpr:anonymize-inactive parancsán, a csomag 00:00-kor futó
- * gdpr:anonymizeInactiveUsers parancsán és a profiloldali GDPR-kérésen.
+ * Called from User::anonymize(), so it applies on every path that anonymizes a
+ * user - the nightly gdpr:anonymize-inactive command, the profile-initiated
+ * GDPR request, DeleteGroupDataProcess and the one-off backfill migration.
+ * TODO 33.2 removed a fifth: the Dialect package's own 00:00 command.
  */
 class AnonymizationPolicy
 {

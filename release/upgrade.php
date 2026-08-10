@@ -84,6 +84,24 @@ if (! function_exists('main')) {
         $ok = laraupdater_upgrade_remove(base_path('vendor/imagecow')) && $ok;
         $ok = laraupdater_upgrade_remove(base_path('config/packer.php')) && $ok;
 
+        // 5b) The GDPR package removed by TODO 33.2. Its two traits and one
+        //     FormRequest now live in app/Support/Gdpr and app/Http/Requests,
+        //     and the consent half went with it: a published view that always
+        //     returned a 500, and a middleware that was never registered.
+        //     config/gdpr.php stays - it is project-owned and still read.
+        //
+        //     The GdprServiceProvider FQCN is in the two bootstrap/cache
+        //     manifests removed above, so an install that fails its Artisan
+        //     call still boots.
+        $ok = laraupdater_upgrade_remove(base_path('vendor/dialect')) && $ok;
+        $ok = laraupdater_upgrade_remove(base_path('resources/views/gdpr')) && $ok;
+        $ok = laraupdater_upgrade_remove(
+            base_path('app/Http/Middleware/RedirectIfUnansweredTerms.php')
+        ) && $ok;
+        $ok = laraupdater_upgrade_remove(
+            base_path('app/Console/Commands/PackageAnonymizeInactiveUsers.php')
+        ) && $ok;
+
         // 6) Everything the packer generated inside the web root while rendering
         //    pages. None of it is tracked by git, so the release diff cannot
         //    carry the deletions - only this hook can. The files are inert once

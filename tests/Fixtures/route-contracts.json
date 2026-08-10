@@ -182,34 +182,6 @@
             "web"
         ]
     },
-    "gdpr-terms": {
-        "methods": [
-            "GET",
-            "HEAD"
-        ],
-        "middleware": [
-            "auth",
-            "web"
-        ]
-    },
-    "gdpr-terms-accepted": {
-        "methods": [
-            "POST"
-        ],
-        "middleware": [
-            "auth",
-            "web"
-        ]
-    },
-    "gdpr-terms-denied": {
-        "methods": [
-            "POST"
-        ],
-        "middleware": [
-            "auth",
-            "web"
-        ]
-    },
     "groups": {
         "methods": [
             "GET",

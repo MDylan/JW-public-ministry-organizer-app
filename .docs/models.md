@@ -12,17 +12,33 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
   - `GroupNews` + `GroupNewsTranslation`
   - `AdminNewsletter` + `AdminNewsletterTranslation`
 - **Soft deletes** are used by `Event`, `Group`, `GroupNews`, and `GroupUser` (pivot).
-- **GDPR traits** (`Dialect\Gdpr`) are used by `User`, `Group`, and `Event`.
+- **GDPR traits** (`App\Support\Gdpr\Portable`, `App\Support\Gdpr\Anonymizable`)
+  are used by `User`, `Group`, and `Event`. They were `Dialect\Gdpr` until
+  **TODO 33.2** moved them in-house and removed the package.
   `User` **overrides** the `Anonymizable::anonymize()` method (trait alias
   `anonymizeAttributes`) to enforce the succession rule from
   `App\Support\Gdpr\AnonymizationPolicy`, returning `false` and doing nothing
-  when blocked. The guard sits on the model because **five** separate code paths
+  when blocked. The guard sits on the model because **four** separate code paths
   anonymize users - see `.docs/commands.md` for the list.
   `Group` and `Event` carry `Anonymizable` with an empty `$gdprAnonymizableFields`
   for a reason that is easy to miss: `User::$gdprWith` makes `anonymize()` recurse
   into `eventsOnly` and `groupsAccepted` and call `anonymize()` on each. Remove the
   trait from either model and the user anonymization fatals. Neither declares
   `$gdprWith`, so the cascade stops one level deep.
+- **What anonymization writes** is declared in two lists on `User`:
+  `$gdprAnonymizableFields` for columns that get a replacement value, and
+  `$gdprNullFields` (new in TODO 33.2) for the thirteen columns that are simply
+  emptied because there is nothing worth keeping in them. The full matrix is in
+  `.docs/commands.md`. Two mechanics are worth knowing before editing either
+  list: the trait writes with `forceFill()->save()`, so a column outside
+  `$fillable` is still cleared; and a keyless entry needs a matching
+  `getAnonymized{Column}()` method on the model or the trait raises a
+  `LogicException`.
+- **`Portable::portable()` calls `setHidden()`, which REPLACES `$hidden`** rather
+  than extending it. Anything `$hidden` conceals but `$gdprHidden` does not list
+  therefore appears in the export (`language`, `created_at`, `updated_at`,
+  `isAnonymized`). That is intended - the data subject is entitled to them - and
+  `DataExportTest::test_the_export_reveals_fields_the_normal_api_hides` pins it.
 - **Data retention (v1-patch E).** Four models are now purged by age; every floor
   comes from `App\Support\Retention\RetentionWindow`, which is the only place a
   cutoff date is computed. Do not recompute one inline - the commands and the

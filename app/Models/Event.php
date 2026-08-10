@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\CalendarLinks\Link;
 use DateTime;
-use Dialect\Gdpr\Anonymizable;
+use App\Support\Gdpr\Anonymizable;
 
 class Event extends Model
 {

@@ -12,16 +12,18 @@ use Illuminate\Console\Command;
  * Korábban névtelen closure volt az App\Console\Kernel::schedule()-ben,
  * dailyAt('7:00') ütemezéssel.
  *
- * Figyelem: nem tévesztendő össze a Dialect\Gdpr\Commands\AnonymizeInactiveUsers
- * csomag-paranccsal, ami külön van regisztrálva a Kernel $commands tömbjében.
- * Ez a parancs annyival tesz többet, hogy előbb bontja a csoporttagságokat.
+ * TODO 33.2: this is now the ONLY anonymizer. It used to share the night with
+ * Dialect\Gdpr\Commands\AnonymizeInactiveUsers, which ran at 00:00 - seven
+ * hours earlier - and left group memberships in place, which is how an
+ * anonymized user stayed on the newsletter recipient list. That package is
+ * gone, and with it the divergence.
  *
  * TODO 12.2: a korábbi szerepszűrés (whereNotIn('role', ['mainAdmin',
  * 'groupCreator'])) megszűnt. Helyette az AnonymizationPolicy dönt, ami az
  * UTÓDLÁST nézi: van-e, aki átveszi a főadmin szerepet, illetve a csoportokat.
- * A szabály a User::anonymize()-ban is ott van, tehát a csomag 00:00-s futása
- * sem kerülheti meg - az itteni ellenőrzés a helyes sorrendért és a jelentésért
- * van.
+ * A szabály a User::anonymize()-ban is ott van, tehát a közvetlen modellhívások
+ * sem kerülhetik meg - az itteni ellenőrzés a helyes sorrendért és a
+ * jelentésért van.
  */
 class AnonymizeInactiveUsers extends Command
 {

@@ -323,19 +323,22 @@ class AnonymizationSuccessionTest extends FeatureTestCase
         $this->assertNotAnonymized($user);
     }
 
-    public function test_the_package_command_respects_the_rule(): void
+    public function test_the_model_call_respects_the_rule(): void
     {
-        // A CSOMAG parancsa 00:00-kor fut, hét órával a projekté előtt, és
-        // semmilyen szűrése nincs. Ezért kellett az őrnek a User::anonymize()-ba
-        // kerülnie: parancsba tett szabályt ez a futás megkerülné.
-        $user = $this->inactiveUser('package-path@example.test');
-        $group = $this->createGroup(['name' => 'Csomag parancs']);
+        // TODO 33.2 replaced a test for the Dialect package's 00:00 command,
+        // which is gone with the package. The reason that test existed still
+        // stands, so it is asserted against the model API instead: the guard
+        // lives in User::anonymize() rather than in a command precisely because
+        // callers reach it directly. DeleteGroupDataProcess:91 and the
+        // 2024_12_01_223022 backfill migration both do exactly this.
+        $user = $this->inactiveUser('model-path@example.test');
+        $group = $this->createGroup(['name' => 'Modellhívás']);
         $this->attachUserToGroup($user, $group, 'admin');
 
-        $this->artisan('gdpr:anonymizeInactiveUsers')->assertExitCode(0);
+        $this->assertFalse($user->fresh()->anonymize(), 'A blokkolt hívás false-szal tér vissza.');
 
         $this->assertNotAnonymized($user);
-        $this->assertSame('package-path@example.test', User::find($user->id)->email);
+        $this->assertSame('model-path@example.test', User::find($user->id)->email);
     }
 
     public function test_the_project_command_does_not_detach_a_blocked_user(): void

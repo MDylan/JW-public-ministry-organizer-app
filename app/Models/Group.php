@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Dialect\Gdpr\Anonymizable;
+use App\Support\Gdpr\Anonymizable;
 
 class Group extends Model
 {

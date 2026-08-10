@@ -68,19 +68,32 @@ All routes below are wrapped in `middleware(['signed'])`.
 | POST | `/finish-registration/{id}` | `finish_registration_register` | `FinishRegistration::register` |
 | POST | `/finish-registration/{id}/cancel` | `finish_registration_cancel` | `FinishRegistration::cancel`. **POST since v1-patch H** - it was a signed GET that deletes the user row. A signature proves the link came from us, not that the user meant to open it: browser prefetch, a mail scanner following links, or a stray navigation would all have fired it. |
 
-#### GDPR routes (`gdpr` prefix, `web` + `auth`)
-
-Registered by `Dialect\Gdpr\GdprServiceProvider`, served by the published
-`App\Http\Controllers\GdprController`. Covered by `tests/Feature/Gdpr/`.
+#### GDPR route (`gdpr` prefix, `web` + `auth`)
 
 | Route | State |
 |---|---|
 | `gdpr-download` | Works. Re-checks the password via `Auth::attempt()` (403 on mismatch, 302 + validation error when omitted), returns `portable()` as a JSON attachment. |
-| `gdpr-terms-accepted` / `-denied` | Work. Each writes `users.accepted_gdpr`; a denial has no further consequence. |
-| `gdpr-terms` | **Broken - returns 500.** The published view extends a `base` layout that does not exist in this project, and its text is still the package's Lorem ipsum. Nothing in the application links to it; only the unregistered `RedirectIfUnansweredTerms` would. |
 
-The consent feature as a whole is therefore unfinished rather than regressed:
-no middleware drives users to it, and the page it would show does not render.
+One route, served by `App\Http\Controllers\GdprController`. Covered by
+`tests/Feature/Gdpr/` and `RouteAdditionalBehaviorRegressionTest`.
+
+Since **TODO 33.2** it is registered in `routes/web.php` rather than by the
+removed `Dialect\Gdpr\GdprServiceProvider`. The group is built from
+`config('gdpr.uri')` and `config('gdpr.middleware')`, so the contract is
+unchanged: `POST gdpr/download`, `web` + `Authenticate`. The group deliberately
+sits outside every other group in the file - the config owns the middleware
+list, and nesting would hand that decision to the surrounding `auth` group.
+`web` therefore appears twice and `Router::uniqueMiddleware()` collapses it.
+
+**The consent half was removed in TODO 33.2** (decision recorded in TODO 16).
+`gdpr-terms`, `gdpr-terms-accepted` and `gdpr-terms-denied` are gone, together
+with the published `resources/views/gdpr/message.blade.php` and the never
+registered `RedirectIfUnansweredTerms` middleware. The feature had never worked:
+the page returned a 500 because the published view extended a `base` layout this
+project does not have, its body was still the package's Lorem ipsum, and nothing
+linked to it. `users.accepted_gdpr` **stays as a column** - no data migration -
+but anonymization now empties it. A `GdprController::anonymize($id)` action went
+with them: no route had ever pointed at it, and it checked no authorization.
 
 #### User-initiated deletion (`user.askToDelete`, `user.deletepersonaldata`)
 

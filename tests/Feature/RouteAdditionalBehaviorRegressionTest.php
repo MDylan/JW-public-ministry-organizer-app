@@ -138,33 +138,25 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
         $this->assertSoftDeleted('group_news', ['id' => $news->id]);
     }
 
-    public function test_gdpr_routes_require_auth_and_process_acceptance_download_flow(): void
+    public function test_gdpr_download_requires_auth_and_the_current_password(): void
     {
+        // TODO 33.2 narrowed this test to the one GDPR route that survives.
+        // The three consent routes it also exercised (gdpr-terms and its two
+        // POSTs) went with the package: the page had always returned a 500 - a
+        // published view extending a layout this project does not have - and
+        // nothing ever linked to it.
+        //
+        // What is still worth pinning here is that the route contract did NOT
+        // change when the registration moved out of the vendor service
+        // provider and into routes/web.php: same name, same URI, still behind
+        // web + auth.
         $user = $this->createUser([
             'email' => 'gdpr-user@example.test',
             'password' => bcrypt('password'),
-            'accepted_gdpr' => null,
         ]);
 
-        $this->get(route('gdpr-terms'))->assertRedirect(route('login'));
-
-        // TODO 12: itt korábban assertContains($status, [200, 500]) állt, ami
-        // az 500-at is elfogadta - és pontosan azt takarta el, hogy a
-        // gdpr-terms oldal TÉNYLEG elszáll (hiányzó 'base' layout). A törött
-        // oldalt most a Gdpr\ConsentTermsTest méri, névvel és indoklással;
-        // itt csak a route-szerződés marad.
-
-        $this->actingAs($user)
-            ->post(route('gdpr-terms-accepted'))
-            ->assertRedirect('/');
-
-        $this->assertTrue((bool) $user->fresh()->accepted_gdpr);
-
-        $this->actingAs($user)
-            ->post(route('gdpr-terms-denied'))
-            ->assertRedirect('/');
-
-        $this->assertFalse((bool) $user->fresh()->accepted_gdpr);
+        $this->post(route('gdpr-download'), ['password' => 'password'])
+            ->assertRedirect(route('login'));
 
         $this->actingAs($user)
             ->post(route('gdpr-download'), ['password' => 'wrong-password'])

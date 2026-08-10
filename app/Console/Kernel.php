@@ -12,13 +12,16 @@ class Kernel extends ConsoleKernel
      *
      * @var array
      */
+    // Empty since TODO 33.2. It used to hold PackageAnonymizeInactiveUsers, a
+    // subclass registered here purely to shadow the Dialect package's own
+    // gdpr:anonymizeInactiveUsers - a trick that worked only because
+    // Kernel::getArtisan() resolves $commands AFTER the Artisan::starting()
+    // callbacks a service provider registers through. A data-protection
+    // guarantee resting on framework-internal ordering is exactly what an
+    // 8 -> 13 upgrade would disturb, and removing the package removed the need.
+    // Everything else is discovered from app/Console/Commands.
     protected $commands = [
-        // A Dialect csomag gdpr:anonymizeInactiveUsers parancsának helyére a
-        // projekt leszármazottja kerül. Innen regisztrálva felülírja a csomag
-        // providerből jövő változatát - az indoklás a parancs osztálydokjában
-        // van (TODO 12.2). A csomag a saját ütemezését a providerből adja hozzá,
-        // ami a Kernel::schedule() után fut, ezért onnan nem szűrhető ki.
-        \App\Console\Commands\PackageAnonymizeInactiveUsers::class,
+        //
     ];
 
     /**

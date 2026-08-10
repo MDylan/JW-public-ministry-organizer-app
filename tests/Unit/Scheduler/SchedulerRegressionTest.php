@@ -41,8 +41,13 @@ class SchedulerRegressionTest extends TestCase
         // OpenWeather keret (1000 hívás/nap) és a 3 óránkénti előrejelzés
         // együtt indokolja ezt a gyakoriságot - lásd RefreshWeatherCache.
         'weather:refresh' => '0 */3 * * *',
-        // A Dialect GDPR csomag saját ütemezése.
-        'gdpr:anonymizeInactiveUsers' => '0 0 * * *',
+        // TODO 33.2 removed an 18th entry: gdpr:anonymizeInactiveUsers at
+        // 00:00, scheduled by the Dialect package's own service provider from
+        // an app->booted() callback - i.e. after Kernel::schedule(), so it
+        // could not be filtered out from here. With the package gone,
+        // gdpr:anonymize-inactive at 07:00 is the only anonymizer, and the
+        // divergence between the two (only one of them detached group
+        // memberships) is retired for good.
     ];
 
     private function scheduledEvents(): \Illuminate\Support\Collection

@@ -10,8 +10,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use App\Support\Gdpr\AnonymizationPolicy;
-use Dialect\Gdpr\Portable;
-use Dialect\Gdpr\Anonymizable;
+use App\Support\Gdpr\Portable;
+use App\Support\Gdpr\Anonymizable;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -108,17 +109,58 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      */
     protected $gdprWith = ['eventsOnly', 'groupsAccepted'];
 
+    /**
+     * Columns that get a replacement VALUE when the user is anonymized.
+     *
+     * A keyless entry needs a getAnonymized{Column}() method on this model to
+     * supply the value; App\Support\Gdpr\Anonymizable throws if one is missing,
+     * rather than writing the column's own name into it the way the old
+     * Dialect package did.
+     *
+     * Columns with nothing worth keeping belong in $gdprNullFields below.
+     */
     protected $gdprAnonymizableFields = [
-        'email',
+        'email',                        // getAnonymizedEmail()
+        'password',                     // getAnonymizedPassword()
         'name' => 'Anonym',
-        'phone_number'  => null,
         'role' => 'registered',
-        'last_login_ip' => null,
         'isAnonymized' => 1,
-        'opted_out_of_notifications' => null,
-        'show_fields' => null,
-        'congregation' => null,
-        'firstDay' => null,
+        // NOT NULL, so it cannot join the list below; 0 is its own default.
+        'two_factor_confirmed' => 0,
+    ];
+
+    /**
+     * Columns that are simply emptied. TODO 33.2.
+     *
+     * There is nothing worth storing in any of these once a user has asked to
+     * be forgotten, so they get NULL rather than a placeholder. Every column
+     * here is nullable in the schema - check before adding one.
+     *
+     * The last seven were not anonymized at all before TODO 33.2. Two of them
+     * mattered more than the rest: two_factor_secret / _recovery_codes are
+     * encrypted credentials that used to outlive the anonymization forever, and
+     * remember_token kept a live "remember me" cookie working, because
+     * Auth::logout() only runs on the profile-initiated path and never in the
+     * nightly command.
+     *
+     * NOTE: emptying email_verified_at drops the row into
+     * users:purge-unverified's selection, which hard-deletes. That command
+     * therefore carries an isAnonymized filter - see PurgeUnverifiedUsers.
+     */
+    protected $gdprNullFields = [
+        'phone_number',
+        'congregation',
+        'show_fields',
+        'opted_out_of_notifications',
+        'last_login_ip',
+        'firstDay',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'remember_token',
+        'calendars',
+        'last_login_time',
+        'email_verified_at',
+        'accepted_gdpr',
     ];
 
 
@@ -247,10 +289,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     /**
      * TODO 12.2: az anonimizálás feltétele az utódlás.
      *
-     * Az őr szándékosan itt van, és nem a napi parancsban: naponta KÉT
-     * anonimizáló fut (a Dialect csomagé 00:00-kor, mindenféle szűrés nélkül,
-     * a projekté 07:00-kor), és a profiloldali GDPR-kérés is közvetlenül ezt a
-     * metódust hívja. Parancsba tett szabályt a csomag futása megkerülné.
+     * The guard sits here rather than in the nightly command on purpose: four
+     * code paths anonymize a user - the command, the profile-initiated GDPR
+     * request, DeleteGroupDataProcess and the one-off backfill migration - and
+     * a rule placed in any one of them is bypassed by the other three.
+     * TODO 33.2 removed a fifth path with the Dialect package's own command.
      *
      * A hívók előre is ellenőrizzenek az AnonymizationPolicy-vel, ha a
      * blokkolásnak következménye van (üzenet a felhasználónak, a tagságbontás
@@ -286,6 +329,21 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     {
         // return random_bytes(10);
         return Str::random(10);
+    }
+
+    /**
+     * The replacement for the password hash.
+     *
+     * users.password is NOT NULL, so it cannot simply be emptied. Before
+     * TODO 33.2 the original hash survived anonymization untouched and only the
+     * replaced email address made the account unreachable - a working
+     * credential kept for someone who asked to be forgotten. This hashes 64
+     * random characters that are never stored anywhere, so no password opens
+     * the account again.
+     */
+    public function getAnonymizedPassword()
+    {
+        return Hash::make(Str::random(64));
     }
 
         /**
@@ -348,7 +406,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     public function routeNotificationFor($driver, $notification = null)
     {
         if($driver == "mail") {
-            if (!filter_var($this->email, FILTER_VALIDATE_EMAIL) 
+            // (string) because filter_var() takes a non-nullable parameter and
+            // PHP 8.1 deprecates passing null to it. The column is NOT NULL
+            // today, so this costs nothing and closes the deprecation early.
+            if (!filter_var((string) $this->email, FILTER_VALIDATE_EMAIL)
                     || $this->isAnonymized == 1) {
                 return null;
             } 

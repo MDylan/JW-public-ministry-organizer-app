@@ -18,11 +18,10 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 
 | Signature | Class | Purpose |
 |---|---|---|
-| `users:purge-unverified` | `PurgeUnverifiedUsers` | Deletes users who have not verified their email within a week. |
+| `users:purge-unverified` | `PurgeUnverifiedUsers` | Deletes users who have not verified their email within a week. **Skips anonymized rows** - anonymization empties `email_verified_at` (TODO 33.2), and those rows are retained deliberately so `events.user_id` and `group_user.user_id` keep resolving. |
 | `events:expire-pending` | `ExpirePendingEvents` | Marks still-pending events (`status=0`) as denied (`status=2`) once their start time has passed. |
 | `gdpr:anonymize-inactive` | `AnonymizeInactiveUsers` | Anonymizes users inactive beyond `gdpr.settings.ttl` months. Skips anyone the succession rule blocks (see below), then detaches group memberships and anonymizes. Reports the skipped count. No-op when `gdpr.enabled` is false. |
 | `gdpr:notify-anonymization` | `NotifyUpcomingAnonymization` | Warns users approaching the retention limit, and separately alerts group editors (`roler`, `admin`) about members in a narrow 6-7 day window. Both halves apply the same succession rule as the anonymizer, so a user who cannot be anonymized is not warned either. No-op when `gdpr.enabled` is false. |
-| `gdpr:anonymizeInactiveUsers` | `PackageAnonymizeInactiveUsers` | Overrides the Dialect package command of the same name (see below). Same behaviour as the package's, minus the redundant `isAnonymized` write that bypassed the succession rule. |
 | `gdpr:purge-old-events` | `PurgeOldEvents` | Permanently deletes events whose `day` is older than `retention.events_months` (13), together with their `event_service_reports` rows via the FK cascade. No-op when `gdpr.enabled` is false. Accepts `--dry-run`. |
 | `maintenance:purge-old-group-data` | `PurgeOldGroupData` | Permanently deletes `DayStat` and `GroupDate` rows older than the `group_data_retention` setting (`0` off, `12` or `24` months). Not gated on GDPR - these tables hold no personal data. Accepts `--dry-run`. |
 | `maintenance:purge-log-history` | `PurgeLogHistory` | Deletes `LogHistory` entries older than three months. |
@@ -37,21 +36,21 @@ this: it fails if a closure is reintroduced or a task changes frequency.
 ### Anonymization is conditional on succession, not on role
 
 The rule lives in `App\Support\Gdpr\AnonymizationPolicy` and is enforced from
-`User::anonymize()`, which overrides the package trait's method (trait alias
+`User::anonymize()`, which overrides the trait's method (trait alias
 `Anonymizable::anonymize as anonymizeAttributes`). Placing it on the model is
-deliberate: **five** separate code paths anonymize users - and a rule living in
-any one command would be bypassed by the other four.
+deliberate: **four** separate code paths anonymize users - and a rule living in
+any one command would be bypassed by the other three.
 
 | Path | Where |
 |---|---|
-| Project command, 07:00 | `AnonymizeInactiveUsers::handle()` |
-| Package command, 00:00 | `PackageAnonymizeInactiveUsers::handle()` |
+| Nightly command, 07:00 | `AnonymizeInactiveUsers::handle()` |
 | User-initiated GDPR request | `deletePersonalDataController::deletePersonalData()` |
 | Group deletion | `DeleteGroupDataProcess::handle()` - anonymizes a member left with no other group |
 | One-off backfill | `2024_12_01_223022_anonymize_old_data` migration |
 
 The last two were undercounted until the TODO 16 assessment; both discard the
-return value, so a blocked user is simply left alone.
+return value, so a blocked user is simply left alone. There used to be a fifth -
+the Dialect package's own 00:00 command - removed with the package in TODO 33.2.
 
 Two conditions, both about whether somebody is left to take over:
 
@@ -84,50 +83,55 @@ need a consequence must ask the policy first:
 
 Covered by `tests/Feature/Gdpr/AnonymizationSuccessionTest.php`.
 
-### Package command registration (`Kernel::$commands`)
+### One anonymizer, since TODO 33.2
 
-- `App\Console\Commands\PackageAnonymizeInactiveUsers::class` **replaces**
-  `Dialect\Gdpr\Commands\AnonymizeInactiveUsers::class`, which used to be
-  registered here. Same signature (`gdpr:anonymizeInactiveUsers`), so the later
-  registration wins: the package registers from its provider through an
-  `Artisan::starting()` callback, while `Kernel::$commands` is resolved after the
-  console application is constructed.
-- Why the override exists: the package's `handle()` runs `$user->anonymize()`
-  **and then** `$user->update(['isAnonymized' => true])`. The model guard stops
-  the first call but not the second, so a protected user would keep their data
-  yet be flagged anonymized - invisible in every group listing and unable to
-  receive any mail. The subclass skips the whole iteration when the policy
-  blocks. Everything else about the package's behaviour is preserved.
-- The package schedules the command from `GdprServiceProvider::boot()` inside an
-  `app->booted()` callback, which runs **after** `Kernel::schedule()`. It
-  therefore cannot be filtered out of the schedule; unscheduling it would require
-  disabling package auto-discovery, which belongs to the TODO 16 package decision.
+`Kernel::$commands` is **empty**. Until TODO 33.2 it held
+`PackageAnonymizeInactiveUsers`, a subclass whose only job was to shadow
+`Dialect\Gdpr\Commands\AnonymizeInactiveUsers` - and it won only because
+`Kernel::getArtisan()` resolves `$commands` *after* the `Artisan::starting()`
+callbacks a service provider registers through. A data-protection guarantee
+resting on framework-internal ordering was one of the reasons the package went.
 
-#### The two anonymizers still differ, and both run every day
+The removed command ran at `00:00`, seven hours before `gdpr:anonymize-inactive`,
+and **never detached group memberships**. That is what used to leave an
+anonymized user on the newsletter recipient list, and it is retired for good.
+Measured by `tests/Feature/Gdpr/AnonymizeCommandTest.php`.
 
-Measured by `tests/Feature/Gdpr/AnonymizeCommandDivergenceTest.php`:
+Consequences still worth knowing:
 
-| | `gdpr:anonymizeInactiveUsers` (package name, project class) | `gdpr:anonymize-inactive` (project) |
-|---|---|---|
-| Runs at | daily `00:00` | daily `07:00` |
-| Succession rule | applied | applied |
-| Group memberships | left intact | deleted first |
-
-Consequences worth knowing before changing either one:
-
-- Because the package command leaves memberships in place, an anonymized user
-  still matches `User::userGroupsEditable()` / `userGroupsDeletable()`, which do
-  **not** filter `isAnonymized` (unlike `Group::groupUsers()` and `Group::users()`,
-  which do). Such a user therefore stays in the `newsletters:send-due` recipient
-  list.
-- No mail actually reaches them, because `User::routeNotificationFor()` returns
-  `null` for any anonymized user and for any address failing
-  `FILTER_VALIDATE_EMAIL`. That method is load-bearing and must survive any
-  replacement of the GDPR package.
+- `User::userGroupsEditable()` / `userGroupsDeletable()` do **not** filter
+  `isAnonymized` (unlike `Group::groupUsers()` and `Group::users()`, which do).
+  The nightly command detaches memberships, so it no longer produces such a row -
+  but `DeleteGroupDataProcess` and the backfill migration call
+  `User::anonymize()` directly and leave memberships alone.
+- No mail reaches an anonymized user regardless, because
+  `User::routeNotificationFor()` returns `null` for any anonymized user and for
+  any address failing `FILTER_VALIDATE_EMAIL`. That method is load-bearing.
 - Uniqueness of the anonymized address rests entirely on
-  `User::getAnonymizedEmail()`. Without it the trait writes the literal string
-  `email` into a unique column, and the second user in the batch fails with
-  `SQLSTATE[23000]`.
+  `User::getAnonymizedEmail()`. Since TODO 33.2 a keyless field declared without
+  such a method raises a `LogicException` instead of writing the column's own
+  name into a unique column, which is what used to kill the second row of a
+  batch with `SQLSTATE[23000]`.
+
+#### What anonymization writes
+
+Two declarations on `App\Models\User`, and the split is the point.
+
+| List | Columns |
+|---|---|
+| `$gdprAnonymizableFields` (replacement values) | `email` (`getAnonymizedEmail()`, a 10-character token), `password` (`getAnonymizedPassword()`, a hash of 64 random characters), `name` = `Anonym`, `role` = `registered`, `isAnonymized` = `1`, `two_factor_confirmed` = `0` |
+| `$gdprNullFields` (simply emptied) | `phone_number`, `congregation`, `show_fields`, `opted_out_of_notifications`, `last_login_ip`, `firstDay`, `two_factor_secret`, `two_factor_recovery_codes`, `remember_token`, `calendars`, `last_login_time`, `email_verified_at`, `accepted_gdpr` |
+
+The last seven of the null list, plus `password` and `two_factor_confirmed`, were
+not anonymized at all before TODO 33.2. Three of those mattered beyond tidiness:
+the encrypted TOTP secret and its recovery codes outlived the anonymization
+forever, a live "remember me" cookie kept working because `Auth::logout()` only
+runs on the profile path, and the password hash itself survived untouched.
+
+The trait writes with `forceFill()->save()` rather than `update()`, because
+`two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed` and
+`remember_token` are **not** in `User::$fillable` - `update()` would have dropped
+them silently. See `app/Support/Gdpr/Anonymizable.php`.
 
 ### Closure command (`routes/console.php`)
 
@@ -155,7 +159,6 @@ Consequences worth knowing before changing either one:
 | Hourly | `statistics:record-active-users` |
 | Every minute | `scheduler:heartbeat` |
 | `0 */3 * * *` | `weather:refresh` |
-| Daily | `gdpr:anonymizeInactiveUsers` (scheduled by the Dialect GDPR package itself; served by `PackageAnonymizeInactiveUsers`) |
 
 ## Known Behavioural Quirks
 

@@ -18,6 +18,12 @@ class PurgeUnverifiedUsers extends Command
     public function handle()
     {
         $deleted = User::whereNull('email_verified_at')
+            // TODO 33.2: an anonymized row is kept deliberately - the user's
+            // data is replaced, the row itself stays so events.user_id and
+            // group_user.user_id keep resolving. Anonymization now empties
+            // email_verified_at, which would otherwise put every anonymized
+            // user in front of this hard delete within the hour.
+            ->where('isAnonymized', 0)
             ->where('created_at', '<', date('Y-m-d H:i:s', strtotime('-1 week')))
             ->delete();
 

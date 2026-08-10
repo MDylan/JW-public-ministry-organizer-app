@@ -2,17 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Dialect\Gdpr\Http\Requests\GdprDownload;
+use App\Http\Requests\GdprDownload;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * GDPR article 20 (data portability). One action, one route:
+ * POST gdpr/download, registered in routes/web.php from config/gdpr.php.
+ *
+ * TODO 33.2 removed the consent half this controller used to carry
+ * (showTerms / termsAccepted / termsDenied). It was never finished: the page
+ * returned a 500 because the published view extended a layout this project
+ * does not have, its body was still the package's Lorem ipsum, nothing linked
+ * to it, and the middleware that would have driven users to it was never
+ * registered. users.accepted_gdpr stays as a column - see TODO 16 for the
+ * decision. An anonymize($id) action was removed with it: no route ever
+ * pointed at it, and it checked no authorization at all.
+ */
 class GdprController extends Controller
 {
     /**
      * Download the GDPR compliant data portability JSON file.
      *
-     * @param  \Dialect\Package\Gdpr\Http\Requests\GdprDownload  $request
+     * @param  \App\Http\Requests\GdprDownload  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function download(GdprDownload $request)
@@ -31,67 +43,5 @@ class GdprController extends Controller
                 'Content-Disposition' => 'attachment; filename="user.json"',
             ]
         );
-    }
-
-    /**
-     * Shows The GDPR terms to the user.
-     *
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
-     */
-    public function showTerms()
-    {
-        return view('gdpr.message');
-    }
-
-    /**
-     * Saves the users acceptance of terms and the time of acceptance.
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function termsAccepted()
-    {
-        $user = Auth::user();
-
-        $user->update([
-            'accepted_gdpr' => true,
-        ]);
-
-        return redirect()->to('/');
-    }
-
-    /**
-     * Saves the users denial of terms and the time of denial.
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function termsDenied()
-    {
-        $user = Auth::user();
-
-        $user->update([
-            'accepted_gdpr' => false,
-        ]);
-
-        return redirect()->to('/');
-    }
-
-    /**
-     * Anonymizes the user and sets the boolean.
-     *
-     * @param $id
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function anonymize($id)
-    {
-        $user = User::findOrFail($id);
-
-        $user->anonymize();
-
-        $user->update([
-            'isAnonymized' => true,
-        ]);
-
-        return redirect()->back();
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\LoginToUserController;
 use App\Http\Controllers\deletePersonalDataController;
 use App\Http\Controllers\FinishRegistration;
+use App\Http\Controllers\GdprController;
 use App\Http\Controllers\GroupDelete;
 use App\Http\Controllers\GroupLogout;
 use App\Http\Controllers\GroupNewsDelete;
@@ -247,4 +248,32 @@ Route::middleware(['auth'])->group(function () {
             });
         });
     });
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| GDPR data export
+|--------------------------------------------------------------------------
+|
+| Registered here since TODO 33.2; it used to come from the removed
+| dialect/laravel-gdpr-compliance service provider. The prefix and the
+| middleware are read from config/gdpr.php so the route contract stays exactly
+| what it was: POST gdpr/download, web + auth.
+|
+| The group sits OUTSIDE every other group in this file on purpose. The
+| middleware list is the config's to own, and nesting it under the file's
+| auth group would let that group decide instead. "web" therefore appears
+| twice - routes/web.php is itself loaded inside the web group - which is
+| harmless: Router::uniqueMiddleware() collapses it, and
+| RouteContractSnapshotTest gathers middleware into array keys anyway.
+|
+| The consent routes (gdpr-terms, gdpr-terms-accepted, gdpr-terms-denied) are
+| deliberately NOT reproduced - see TODO 16 and GdprController.
+*/
+Route::group([
+    'prefix' => config('gdpr.uri'),
+    'middleware' => config('gdpr.middleware'),
+], function () {
+    Route::post('download', [GdprController::class, 'download'])->name('gdpr-download');
 });

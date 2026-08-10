@@ -74,6 +74,32 @@ class MaintenanceCommandsTest extends FeatureTestCase
         $this->assertNotNull(User::find($verified->id));
     }
 
+    public function test_purge_unverified_never_touches_an_anonymized_user(): void
+    {
+        // TODO 33.2 put email_verified_at into User::$gdprNullFields, which
+        // dropped every anonymized user straight into this command's selection:
+        // no verification timestamp, and created_at is months old by the time
+        // the retention window closes. This runs hourly at :50, so an
+        // anonymized row would have been hard-deleted within the hour - leaving
+        // events.user_id and group_user.user_id dangling, and contradicting
+        // AnonymizationTest, which requires the row to survive with its data
+        // replaced. CONTROL: remove the isAnonymized filter from
+        // PurgeUnverifiedUsers and this test fails while the three above pass.
+        $anonymized = $this->createUser([
+            'email' => 'anonymized-purge@example.test',
+            'email_verified_at' => null,
+            'isAnonymized' => 1,
+            'created_at' => now()->subMonths(7),
+        ]);
+
+        $this->artisan('users:purge-unverified')->assertExitCode(0);
+
+        $this->assertNotNull(
+            User::find($anonymized->id),
+            'An anonymized row is retained deliberately; it must not be swept up as unverified.'
+        );
+    }
+
     // --- events:expire-pending ---
 
     public function test_expire_pending_marks_started_pending_events_as_denied(): void
