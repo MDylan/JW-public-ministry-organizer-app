@@ -38,6 +38,23 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - When changing models/routes/jobs/auth flow, update the corresponding file under `.docs/` in the same change set.
 - Prefer documenting behavior and integration points (what triggers what), not just file names.
 - If behavior is disabled/commented in code, mark it clearly as inactive in docs.
+- **Never write figures taken from a real database into documentation or code
+  comments.** Row counts, "how many records were affected", distributions,
+  timings measured on live data, sample values - none of it belongs in `.docs/`,
+  in `upgrade-roadmap.md`, in PHPDoc blocks, in inline `//` comments or in test
+  comments. Three reasons: the repository is distributed (the release archive is
+  built from it, and `vendor/` is committed), so those figures travel to every
+  install; they describe one deployment at one moment and are wrong everywhere
+  else, including on the next deployment; and a count of affected rows is itself
+  information about the data set.
+  Measuring the database while investigating is right and expected - the rule is
+  about what gets **written down** afterwards. Record the *mechanism* instead of
+  the measurement: say which column was never cleared and why, not how many rows
+  it affected. "Every row anonymized before this change still carried the
+  original password hash" is a statement about the defect; "1234 rows still
+  carried it" is a statistic about the production database.
+  Test-suite numbers are a different thing and stay: test and assertion counts,
+  file counts and line counts come from the repository, not from user data.
 
 ## Source-of-Truth Paths
 

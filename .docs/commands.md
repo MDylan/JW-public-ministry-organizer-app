@@ -133,6 +133,16 @@ The trait writes with `forceFill()->save()` rather than `update()`, because
 `remember_token` are **not** in `User::$fillable` - `update()` would have dropped
 them silently. See `app/Support/Gdpr/Anonymizable.php`.
 
+**Rows anonymized before TODO 33.2 are repaired by a one-off backfill**,
+`2026_08_10_140000_reanonymize_users_for_the_null_field_list`. No ordinary run
+would ever reach them: `gdpr:anonymize-inactive` selects on `isAnonymized = 0`,
+so a row is anonymized exactly once. The migration writes with the query builder
+rather than through `User::anonymize()`, so the succession rule cannot silently
+skip a row that still holds a real password hash, and its column list is frozen
+at the TODO 33.2 state - a later addition to `$gdprNullFields` needs its own
+backfill. It costs roughly one bcrypt per affected row. Covered by
+`tests/Feature/Gdpr/ReanonymizeBackfillTest.php`.
+
 ### Closure command (`routes/console.php`)
 
 | Signature | Purpose |
