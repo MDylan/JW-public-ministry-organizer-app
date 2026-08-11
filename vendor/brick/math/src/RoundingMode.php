@@ -13,15 +13,24 @@ namespace Brick\Math;
  * regardless the digits' contribution to the value of the number. In other words, considered
  * as a numerical value, the discarded fraction could have an absolute value greater than one.
  */
-enum RoundingMode
+final class RoundingMode
 {
+    /**
+     * Private constructor. This class is not instantiable.
+     *
+     * @codeCoverageIgnore
+     */
+    private function __construct()
+    {
+    }
+
     /**
      * Asserts that the requested operation has an exact result, hence no rounding is necessary.
      *
      * If this rounding mode is specified on an operation that yields a result that
      * cannot be represented at the requested scale, a RoundingNecessaryException is thrown.
      */
-    case UNNECESSARY;
+    public const UNNECESSARY = 0;
 
     /**
      * Rounds away from zero.
@@ -29,7 +38,7 @@ enum RoundingMode
      * Always increments the digit prior to a nonzero discarded fraction.
      * Note that this rounding mode never decreases the magnitude of the calculated value.
      */
-    case UP;
+    public const UP = 1;
 
     /**
      * Rounds towards zero.
@@ -37,7 +46,7 @@ enum RoundingMode
      * Never increments the digit prior to a discarded fraction (i.e., truncates).
      * Note that this rounding mode never increases the magnitude of the calculated value.
      */
-    case DOWN;
+    public const DOWN = 2;
 
     /**
      * Rounds towards positive infinity.
@@ -45,7 +54,7 @@ enum RoundingMode
      * If the result is positive, behaves as for UP; if negative, behaves as for DOWN.
      * Note that this rounding mode never decreases the calculated value.
      */
-    case CEILING;
+    public const CEILING = 3;
 
     /**
      * Rounds towards negative infinity.
@@ -53,7 +62,7 @@ enum RoundingMode
      * If the result is positive, behave as for DOWN; if negative, behave as for UP.
      * Note that this rounding mode never increases the calculated value.
      */
-    case FLOOR;
+    public const FLOOR = 4;
 
     /**
      * Rounds towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
@@ -61,28 +70,28 @@ enum RoundingMode
      * Behaves as for UP if the discarded fraction is >= 0.5; otherwise, behaves as for DOWN.
      * Note that this is the rounding mode commonly taught at school.
      */
-    case HALF_UP;
+    public const HALF_UP = 5;
 
     /**
      * Rounds towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
      *
      * Behaves as for UP if the discarded fraction is > 0.5; otherwise, behaves as for DOWN.
      */
-    case HALF_DOWN;
+    public const HALF_DOWN = 6;
 
     /**
      * Rounds towards "nearest neighbor" unless both neighbors are equidistant, in which case round towards positive infinity.
      *
      * If the result is positive, behaves as for HALF_UP; if negative, behaves as for HALF_DOWN.
      */
-    case HALF_CEILING;
+    public const HALF_CEILING = 7;
 
     /**
      * Rounds towards "nearest neighbor" unless both neighbors are equidistant, in which case round towards negative infinity.
      *
      * If the result is positive, behaves as for HALF_DOWN; if negative, behaves as for HALF_UP.
      */
-    case HALF_FLOOR;
+    public const HALF_FLOOR = 8;
 
     /**
      * Rounds towards the "nearest neighbor" unless both neighbors are equidistant, in which case rounds towards the even neighbor.
@@ -94,5 +103,5 @@ enum RoundingMode
      * cumulative error when applied repeatedly over a sequence of calculations.
      * It is sometimes known as "Banker's rounding", and is chiefly used in the USA.
      */
-    case HALF_EVEN;
+    public const HALF_EVEN = 9;
 }

@@ -207,9 +207,15 @@ class Validator implements ValidatorContract
         'Declined',
         'DeclinedIf',
         'Filled',
+        'Missing',
+        'MissingIf',
+        'MissingUnless',
+        'MissingWith',
+        'MissingWithAll',
         'Present',
         'Required',
         'RequiredIf',
+        'RequiredIfAccepted',
         'RequiredUnless',
         'RequiredWith',
         'RequiredWithAll',
@@ -231,6 +237,7 @@ class Validator implements ValidatorContract
         'Different',
         'ExcludeIf',
         'ExcludeUnless',
+        'ExcludeWith',
         'ExcludeWithout',
         'Gt',
         'Gte',
@@ -239,6 +246,7 @@ class Validator implements ValidatorContract
         'AcceptedIf',
         'DeclinedIf',
         'RequiredIf',
+        'RequiredIfAccepted',
         'RequiredUnless',
         'RequiredWith',
         'RequiredWithAll',
@@ -257,7 +265,7 @@ class Validator implements ValidatorContract
      *
      * @var string[]
      */
-    protected $excludeRules = ['Exclude', 'ExcludeIf', 'ExcludeUnless', 'ExcludeWithout'];
+    protected $excludeRules = ['Exclude', 'ExcludeIf', 'ExcludeUnless', 'ExcludeWith', 'ExcludeWithout'];
 
     /**
      * The size related validation rules.
@@ -271,7 +279,7 @@ class Validator implements ValidatorContract
      *
      * @var string[]
      */
-    protected $numericRules = ['Numeric', 'Integer'];
+    protected $numericRules = ['Numeric', 'Integer', 'Decimal'];
 
     /**
      * The current placeholder for dots in rule keys.
@@ -380,9 +388,7 @@ class Validator implements ValidatorContract
      */
     public function after($callback)
     {
-        $this->after[] = function () use ($callback) {
-            return $callback($this);
-        };
+        $this->after[] = fn () => $callback($this);
 
         return $this;
     }
@@ -516,7 +522,7 @@ class Validator implements ValidatorContract
      * @param  array|null  $keys
      * @return \Illuminate\Support\ValidatedInput|array
      */
-    public function safe(array $keys = null)
+    public function safe(?array $keys = null)
     {
         return is_array($keys)
                 ? (new ValidatedInput($this->validated()))->only($keys)
@@ -667,7 +673,6 @@ class Validator implements ValidatorContract
      * Replace each field parameter which has an escaped dot with the dot placeholder.
      *
      * @param  array  $parameters
-     * @param  array  $keys
      * @return array
      */
     protected function replaceDotInParameters(array $parameters)
@@ -812,15 +817,21 @@ class Validator implements ValidatorContract
         }
 
         if (! $rule->passes($attribute, $value)) {
-            $this->failedRules[$attribute][get_class($rule)] = [];
+            $ruleClass = $rule instanceof InvokableValidationRule ?
+                get_class($rule->invokable()) :
+                get_class($rule);
 
-            $messages = $rule->message();
+            $this->failedRules[$attribute][$ruleClass] = [];
 
-            $messages = $messages ? (array) $messages : [get_class($rule)];
+            $messages = $this->getFromLocalArray($attribute, $ruleClass) ?? $rule->message();
 
-            foreach ($messages as $message) {
-                $this->messages->add($attribute, $this->makeReplacements(
-                    $message, $attribute, get_class($rule), []
+            $messages = $messages ? (array) $messages : [$ruleClass];
+
+            foreach ($messages as $key => $message) {
+                $key = is_string($key) ? $key : $attribute;
+
+                $this->messages->add($key, $this->makeReplacements(
+                    $message, $key, $ruleClass, []
                 ));
             }
         }
@@ -869,11 +880,7 @@ class Validator implements ValidatorContract
 
         $attributeWithPlaceholders = $attribute;
 
-        $attribute = str_replace(
-            [$this->dotPlaceholder, '__asterisk__'],
-            ['.', '*'],
-            $attribute
-        );
+        $attribute = $this->replacePlaceholderInString($attribute);
 
         if (in_array($rule, $this->excludeRules)) {
             return $this->excludeAttribute($attribute);
@@ -1090,6 +1097,20 @@ class Validator implements ValidatorContract
     }
 
     /**
+     * Get the validation rules with key placeholders removed.
+     *
+     * @return array
+     */
+    public function getRulesWithoutPlaceholders()
+    {
+        return collect($this->rules)
+            ->mapWithKeys(fn ($value, $key) => [
+                str_replace($this->dotPlaceholder, '\\.', $key) => $value,
+            ])
+            ->all();
+    }
+
+    /**
      * Set the validation rules.
      *
      * @param  array  $rules
@@ -1151,7 +1172,7 @@ class Validator implements ValidatorContract
             $this->implicitAttributes = array_merge($response->implicitAttributes, $this->implicitAttributes);
 
             foreach ($response->rules as $ruleKey => $ruleValue) {
-                if ($callback($payload, $this->dataForSometimesIteration($ruleKey, ! Str::endsWith($key, '.*')))) {
+                if ($callback($payload, $this->dataForSometimesIteration($ruleKey, ! str_ends_with($key, '.*')))) {
                     $this->addRules([$ruleKey => $ruleValue]);
                 }
             }
@@ -1353,7 +1374,7 @@ class Validator implements ValidatorContract
      * @param  callable|null  $formatter
      * @return $this
      */
-    public function setImplicitAttributesFormatter(callable $formatter = null)
+    public function setImplicitAttributesFormatter(?callable $formatter = null)
     {
         $this->implicitAttributesFormatter = $formatter;
 

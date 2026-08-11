@@ -14,7 +14,7 @@ if ('cli' !== \PHP_SAPI) {
 }
 
 // load new map
-$data = json_decode(file_get_contents('https://cdn.jsdelivr.net/gh/jshttp/mime-db@v1.49.0/db.json'), true);
+$data = json_decode(file_get_contents('https://cdn.jsdelivr.net/gh/jshttp/mime-db/db.json'), true);
 $new = [];
 foreach ($data as $mimeType => $mimeTypeInformation) {
     if (!array_key_exists('extensions', $mimeTypeInformation)) {
@@ -80,7 +80,7 @@ $exts = [
     'html' => ['text/html'],
     'jar' => ['application/x-java-archive'],
     'jpg' => ['image/jpeg'],
-    'js' => ['text/javascript'],
+    'js' => ['text/javascript', 'application/javascript', 'application/x-javascript'],
     'keynote' => ['application/vnd.apple.keynote'],
     'key' => ['application/vnd.apple.keynote'],
     'm3u' => ['audio/x-mpegurl'],
@@ -88,11 +88,16 @@ $exts = [
     'md' => ['text/markdown', 'text/x-markdown'],
     'mdb' => ['application/x-msaccess'],
     'mid' => ['audio/midi'],
+    'mk3d' => ['video/matroska'],
+    'mka' => ['audio/matroska'],
+    'mks' => ['video/matroska'],
+    'mkv' => ['video/matroska'],
     'mov' => ['video/quicktime'],
     'mp3' => ['audio/mpeg'],
     'ogg' => ['audio/ogg'],
     'pdf' => ['application/pdf'],
     'php' => ['application/x-php'],
+    'png' => ['image/png'],
     'ppt' => ['application/vnd.ms-powerpoint'],
     'rar' => ['application/x-rar-compressed'],
     'hqx' => ['application/stuffit'],
@@ -106,6 +111,8 @@ $exts = [
     'wma' => ['audio/x-ms-wma'],
     'wmv' => ['audio/x-ms-wmv'],
     'xls' => ['application/vnd.ms-excel'],
+    'yaml' => ['application/yaml'],
+    'yml' => ['application/yaml'],
     'zip' => ['application/zip'],
 ];
 
@@ -158,7 +165,7 @@ foreach (explode("\n", $data) as $line) {
     $state = 1;
 }
 
-$updated = preg_replace('{Updated from upstream on .+?\.}', 'Updated from upstream on '.date('Y-m-d'), $updated, -1);
+$updated = preg_replace('{Updated from upstream on .+?\.}', sprintf('Updated from upstream on %s.', date('Y-m-d')), $updated, -1);
 
 file_put_contents($output, rtrim($updated, "\n")."\n");
 

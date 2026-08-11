@@ -155,7 +155,7 @@ class Batch implements Arrayable, JsonSerializable
     /**
      * Add additional jobs to the batch.
      *
-     * @param  \Illuminate\Support\Enumerable|array  $jobs
+     * @param  \Illuminate\Support\Enumerable|object|array  $jobs
      * @return self
      */
     public function add($jobs)
@@ -424,7 +424,7 @@ class Batch implements Arrayable, JsonSerializable
      * @param  \Throwable|null  $e
      * @return void
      */
-    protected function invokeHandlerCallback($handler, Batch $batch, Throwable $e = null)
+    protected function invokeHandlerCallback($handler, Batch $batch, ?Throwable $e = null)
     {
         try {
             return $handler($batch, $e);
@@ -462,8 +462,7 @@ class Batch implements Arrayable, JsonSerializable
      *
      * @return array
      */
-    #[\ReturnTypeWillChange]
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }

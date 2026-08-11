@@ -25,7 +25,7 @@ trait RoutesNotifications
      * @param  array|null  $channels
      * @return void
      */
-    public function notifyNow($instance, array $channels = null)
+    public function notifyNow($instance, ?array $channels = null)
     {
         app(Dispatcher::class)->sendNow($this, $instance, $channels);
     }
@@ -43,11 +43,10 @@ trait RoutesNotifications
             return $this->{$method}($notification);
         }
 
-        switch ($driver) {
-            case 'database':
-                return $this->notifications();
-            case 'mail':
-                return $this->email;
-        }
+        return match ($driver) {
+            'database' => $this->notifications(),
+            'mail' => $this->email,
+            default => null,
+        };
     }
 }

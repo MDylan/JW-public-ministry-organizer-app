@@ -34,11 +34,11 @@ class ClassNotFoundErrorEnhancer implements ErrorEnhancerInterface
         if (false !== $namespaceSeparatorIndex = strrpos($fullyQualifiedClassName, '\\')) {
             $className = substr($fullyQualifiedClassName, $namespaceSeparatorIndex + 1);
             $namespacePrefix = substr($fullyQualifiedClassName, 0, $namespaceSeparatorIndex);
-            $message = sprintf('Attempted to load %s "%s" from namespace "%s".', $typeName, $className, $namespacePrefix);
+            $message = \sprintf('Attempted to load %s "%s" from namespace "%s".', $typeName, $className, $namespacePrefix);
             $tail = ' for another namespace?';
         } else {
             $className = $fullyQualifiedClassName;
-            $message = sprintf('Attempted to load %s "%s" from the global namespace.', $typeName, $className);
+            $message = \sprintf('Attempted to load %s "%s" from the global namespace.', $typeName, $className);
             $tail = '?';
         }
 
@@ -114,10 +114,14 @@ class ClassNotFoundErrorEnhancer implements ErrorEnhancerInterface
 
         $classes = [];
         $filename = $class.'.php';
-        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::LEAVES_ONLY) as $file) {
-            if ($filename == $file->getFileName() && $class = $this->convertFileToClass($path, $file->getPathName(), $prefix)) {
-                $classes[] = $class;
+        try {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::LEAVES_ONLY) as $file) {
+                if ($filename == $file->getFileName() && $class = $this->convertFileToClass($path, $file->getPathName(), $prefix)) {
+                    $classes[] = $class;
+                }
             }
+        } catch (\UnexpectedValueException) {
+            // a subdirectory may vanish between listing and recursion (e.g. test fixtures)
         }
 
         return $classes;
@@ -141,7 +145,7 @@ class ClassNotFoundErrorEnhancer implements ErrorEnhancerInterface
         ];
 
         if ($prefix) {
-            $candidates = array_filter($candidates, function ($candidate) use ($prefix) { return 0 === strpos($candidate, $prefix); });
+            $candidates = array_filter($candidates, static fn ($candidate) => str_starts_with($candidate, $prefix));
         }
 
         // We cannot use the autoloader here as most of them use require; but if the class
@@ -153,9 +157,17 @@ class ClassNotFoundErrorEnhancer implements ErrorEnhancerInterface
             }
         }
 
+        // Symfony may ship some polyfills, like "Normalizer". But if the Intl
+        // extension is already installed, the next require_once will fail with
+        // a compile error because the class is already defined. And this one
+        // does not throw a Throwable. So it's better to skip it here.
+        if (str_contains($file, 'Resources/stubs')) {
+            return null;
+        }
+
         try {
             require_once $file;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return null;
         }
 

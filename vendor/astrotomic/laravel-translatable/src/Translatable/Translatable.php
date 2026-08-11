@@ -16,12 +16,13 @@ use Illuminate\Support\Str;
  * @property-read string $translationForeignKey
  * @property-read string $localeKey
  * @property-read bool $useTranslationFallback
+ * @property string[] $translatedAttributes
  *
  * @mixin Model
  */
 trait Translatable
 {
-    use Scopes, Relationship;
+    use Relationship, Scopes;
 
     protected static $autoloadTranslations = null;
 
@@ -115,22 +116,34 @@ trait Translatable
     public function fill(array $attributes)
     {
         foreach ($attributes as $key => $values) {
+            if ($this->isWrapperAttribute($key)) {
+                $this->fill($values);
+
+                unset($attributes[$key]);
+
+                continue;
+            }
+
             if (
                 $this->getLocalesHelper()->has($key)
                 && is_array($values)
             ) {
                 $this->getTranslationOrNew($key)->fill($values);
-                unset($attributes[$key]);
-            } else {
-                [$attribute, $locale] = $this->getAttributeAndLocale($key);
 
-                if (
-                    $this->getLocalesHelper()->has($locale)
-                    && $this->isTranslationAttribute($attribute)
-                ) {
-                    $this->getTranslationOrNew($locale)->fill([$attribute => $values]);
-                    unset($attributes[$key]);
-                }
+                unset($attributes[$key]);
+
+                continue;
+            }
+
+            [$attribute, $locale] = $this->getAttributeAndLocale($key);
+
+            if (
+                $this->getLocalesHelper()->has($locale)
+                && $this->isTranslationAttribute($attribute)
+            ) {
+                $this->getTranslationOrNew($locale)->fill([$attribute => $values]);
+
+                unset($attributes[$key]);
             }
         }
 
@@ -179,14 +192,15 @@ trait Translatable
         $modelName = $this->getTranslationModelName();
 
         /** @var Model $translation */
-        $translation = new $modelName();
+        $translation = new $modelName;
         $translation->setAttribute($this->getLocaleKey(), $locale);
+        $translation->setAttribute($this->getTranslationRelationKey(), $this->getKey());
         $this->translations->add($translation);
 
         return $translation;
     }
 
-    public function getTranslation(?string $locale = null, bool $withFallback = null): ?Model
+    public function getTranslation(?string $locale = null, ?bool $withFallback = null): ?Model
     {
         $configFallbackLocale = $this->getFallbackLocale();
         $locale = $locale ?: $this->locale();
@@ -279,7 +293,12 @@ trait Translatable
         return in_array($key, $this->translatedAttributes);
     }
 
-    public function replicateWithTranslations(array $except = null): Model
+    public function isWrapperAttribute(string $key): bool
+    {
+        return $key === config('translatable.translations_wrapper');
+    }
+
+    public function replicateWithTranslations(?array $except = null): Model
     {
         $newInstance = $this->replicate($except);
 
@@ -346,6 +365,7 @@ trait Translatable
     {
         $dirtyAttributes = $translation->getDirty();
         unset($dirtyAttributes[$this->getLocaleKey()]);
+        unset($dirtyAttributes[$this->getTranslationRelationKey()]);
 
         return count($dirtyAttributes) > 0;
     }

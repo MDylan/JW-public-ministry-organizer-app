@@ -35,7 +35,7 @@ class StartSession
      * @param  callable|null  $cacheFactoryResolver
      * @return void
      */
-    public function __construct(SessionManager $manager, callable $cacheFactoryResolver = null)
+    public function __construct(SessionManager $manager, ?callable $cacheFactoryResolver = null)
     {
         $this->manager = $manager;
         $this->cacheFactoryResolver = $cacheFactoryResolver;
@@ -95,7 +95,7 @@ class StartSession
 
             return $this->handleStatefulRequest($request, $session, $next);
         } finally {
-            optional($lock)->release();
+            $lock?->release();
         }
     }
 
@@ -199,10 +199,11 @@ class StartSession
      */
     protected function storeCurrentUrl(Request $request, $session)
     {
-        if ($request->method() === 'GET' &&
+        if ($request->isMethod('GET') &&
             $request->route() instanceof Route &&
             ! $request->ajax() &&
-            ! $request->prefetch()) {
+            ! $request->prefetch() &&
+            ! $request->isPrecognitive()) {
             $session->setPreviousUrl($request->fullUrl());
         }
     }
@@ -233,7 +234,9 @@ class StartSession
      */
     protected function saveSession($request)
     {
-        $this->manager->driver()->save();
+        if (! $request->isPrecognitive()) {
+            $this->manager->driver()->save();
+        }
     }
 
     /**
@@ -276,7 +279,7 @@ class StartSession
      * @param  array|null  $config
      * @return bool
      */
-    protected function sessionIsPersistent(array $config = null)
+    protected function sessionIsPersistent(?array $config = null)
     {
         $config = $config ?: $this->manager->getSessionConfig();
 

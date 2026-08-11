@@ -40,7 +40,7 @@ class AssertableJson implements Arrayable
      * @param  string|null  $path
      * @return void
      */
-    protected function __construct(array $props, string $path = null)
+    protected function __construct(array $props, ?string $path = null)
     {
         $this->path = $path;
         $this->props = $props;
@@ -67,7 +67,7 @@ class AssertableJson implements Arrayable
      * @param  string|null  $key
      * @return mixed
      */
-    protected function prop(string $key = null)
+    protected function prop(?string $key = null)
     {
         return Arr::get($this->props, $key);
     }
@@ -155,7 +155,7 @@ class AssertableJson implements Arrayable
     }
 
     /**
-     * Create a new instance from a AssertableJsonString.
+     * Create a new instance from an AssertableJsonString.
      *
      * @param  \Illuminate\Testing\AssertableJsonString  $json
      * @return static
