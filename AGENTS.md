@@ -1,6 +1,6 @@
 # AGENTS Guide
 
-This repository contains a Laravel 8 application for organizing congregation public ministry activity.
+This repository contains a Laravel 9 application for organizing congregation public ministry activity.
 
 This file is the root documentation entrypoint. Detailed technical docs are under `.docs/`.
 
@@ -16,10 +16,14 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/observers.md`: Observer registration status and side-effect mapping.
 - `.docs/middleware.md`: HTTP middleware stacks, aliases, and custom behavior.
 - `.docs/assets.md`: CSS/JS delivery - the live `laravel-packer` pipeline, the dead Mix one, and the traps in both.
+- `upgrade-roadmap.md`: the developer's framework-upgrade plan, Laravel 8 -> 13.
+- `upgrade-guide.md`: the **operator's** counterpart - what a deployed host has
+  to do to reach 2.0.0. Filled one hop at a time and **not complete** until the
+  Laravel 13 hop; it says so at the top.
 
 ## Project Stack Snapshot
 
-- Framework: Laravel 8
+- Framework: Laravel 9
 - UI architecture: Livewire + Blade views/components
 - Auth stack: Laravel Fortify (custom route registration)
 - Background processing: Laravel queue jobs + scheduler (`app/Console/Kernel.php`)
@@ -68,4 +72,4 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- This codebase contains legacy Laravel 8 dependencies. Some Artisan inspection commands may fail on newer PHP runtimes unless dependencies are upgraded.
+- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 9 as of TODO 34 and **runs on `php81`, not the default `php` 8.3** - the interpreter switches in Phase 5. Some Artisan commands fail on 8.3 until then.

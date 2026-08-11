@@ -83,10 +83,12 @@ the hardcoded `register` action and the server never looked at the field.
 
 `POST /forgot-password` and `POST /reset-password` additionally carry
 **`strictEmail`** (`App\Http\Middleware\EnsureWellFormedEmail`). Both controllers
-are vendor code validating `required|email`, and Laravel 8's default `email` rule
-accepts CR/LF inside the address (GHSA-5vg9-5847-vvmq, high) - from there it
+are vendor code validating `required|email`, and the framework's default `email`
+rule accepts CR/LF inside the address (GHSA-5vg9-5847-vvmq, high) - from there it
 reaches a mail header, where a line break opens a new one. Fixed only in 12.60.0,
-no Laravel 8 backport, and the vendor rule cannot be edited durably. The
+so **Laravel 9 is affected exactly as Laravel 8 was** (TODO 34 re-measured this:
+the advisory is still on the ignore list and still has no backport), and the
+vendor rule cannot be edited durably. The
 middleware re-validates with the same `email:filter` the rest of the application
 uses, and runs before `checkRecaptcha`.
 

@@ -38,6 +38,26 @@
 | per-release, so it stays useful for as long as any host might still carry the
 | directory the packer created.
 |
+| FROZEN FROM TODO 34 ONWARDS
+|
+| main() does NOT grow any more. The framework hops of Phase 4 through Phase 10
+| replace essentially the whole vendor/ tree, and listing every orphaned path
+| here, hop by hop, would be neither reviewable nor exercised until the single
+| release that finally needs it. Those paths are recorded in upgrade-guide.md
+| (section 2) instead, and the 2.0.0 release decides in one place what to do
+| with the accumulated list.
+|
+| This is a deliberate reversal of what the TODO 33.5 and 33.8 entries say. It
+| applies from Phase 4 onwards; everything already in main() below belongs to
+| Phase 3 and stays.
+|
+| The file itself stays shippable, and the reason is item 3: deleting the two
+| bootstrap/cache manifests is needed by EVERY release that moves a service
+| provider, which from here on means every hop. The hook still serves the 1.x
+| line, which is the only line it can reach - App\Support\Updates\UpdateBranch
+| refuses to auto-install a higher major, so 2.0.0 never arrives through
+| install() at all.
+|
 | NOTE for whoever ships the OpenWeather change: deployed .env files still carry
 | the misspelled OPENWAETHER_API_KEY. config/openweather.php reads the new
 | OPENWEATHER_API_KEY first and falls back to the old name for exactly one
