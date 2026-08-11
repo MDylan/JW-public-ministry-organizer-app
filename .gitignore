@@ -14,6 +14,17 @@ yarn-error.log
 /storage/installed
 /.vscode
 /tmp/*
-/vendor
+# vendor/ is COMMITTED on purpose. There is no composer install on the target
+# host: the release archive carries the tree itself, and release/build-update.php
+# builds that archive from a GIT DIFF, so an untracked package cannot ship.
+#
+# This line used to read "/vendor", and the tree was force-added past it. That
+# silently dropped every package Composer added afterwards, because `git add -A`
+# and `git add -u` both skip ignored paths - 1037 files by the time TODO 35.1
+# measured it. Ignoring nothing here is what makes the ordinary commit flow, the
+# builder's dirty-tree check and `git status --porcelain vendor/` all work.
+#
+# The IDE cache is the one thing under vendor/ that Composer did not put there.
+/vendor/_laravel_ide/
 # Update archives built by release/build-update.php
 /release/dist

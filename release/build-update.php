@@ -20,16 +20,22 @@
 |   RELEASE-<version>.files.txt     what shipped, for auditing
 |   RELEASE-<version>.deleted.txt   what install() CANNOT remove - see below
 |
-| BEFORE RUNNING THIS ON v2-dev: READ TODO 35.1
+| WHY vendor/ IS CHECKED BEFORE ANYTHING ELSE
 |
-| The archive is built from a GIT DIFF, so anything git does not track cannot
-| ship. .gitignore excludes /vendor while this repository commits vendor/ on
-| purpose, and `git add -A` skips ignored paths - so every package added since
-| TODO 24 is missing from the index. 1037 files as of 2026-08-11, including all
-| 63 of symfony/mailer. A release built from this branch today would install a
-| Laravel 9 framework without its mailer, and would list vendor/fruitcake/php-cors
-| as a deletion. The dirty-tree check further down cannot see any of it, because
-| git status does not report ignored files.
+| The archive is built from a GIT DIFF, so a file git does not track cannot
+| ship - and vendor/ is committed on purpose here, because the target host runs
+| no composer install. That pair went wrong once. .gitignore excluded /vendor,
+| the tree was force-added past it, and `git add -A` skips ignored paths, so
+| every package Composer installed after that force-add was silently absent
+| from the index: 1037 files by the time TODO 35.1 measured it, symfony/mailer
+| among them in full. The release would have installed a Laravel 9 framework
+| without its own mailer, and would have told the operator to delete
+| vendor/fruitcake/php-cors on top.
+|
+| TODO 35.1 dropped the /vendor line and committed the catch-up.
+| invisibleVendorFiles() is what stops it recurring, and it runs before the
+| dirty-tree check because that check structurally cannot do the job: git
+| status says nothing about a file an ignore rule hides.
 |
 | THREE PROPERTIES OF install() THIS SCRIPT EXISTS TO SATISFY
 |
@@ -95,6 +101,12 @@ if (! class_exists(ZipArchive::class)) {
 | but they are not the running application: they have no business on a
 | production host. Everything under release/ is excluded here - the hook is
 | added back explicitly, under its own name.
+|
+| vendor/_laravel_ide/ is the odd one out. It is the IDE plugin's cache, not
+| repository content and not part of any Composer package, and .gitignore keeps
+| it out of the index - so it should never reach a diff in the first place. It
+| is listed here anyway, because it HAS been force-added once before (see
+| release/README.md), and a rule is cheaper than remembering.
 */
 const EXCLUDE_PREFIXES = [
     '.claude/',
@@ -103,6 +115,7 @@ const EXCLUDE_PREFIXES = [
     'release/',
     'tests/',
     'upgrade-notes/',
+    'vendor/_laravel_ide/',
 ];
 
 const EXCLUDE_EXACT = [
@@ -147,6 +160,32 @@ if ($headSha === null) {
 }
 if (revParse('HEAD') !== $headSha) {
     fail("The working tree is not on {$head}. Run: git checkout {$head}");
+}
+// vendor/ is checked before anything else, and separately, because it is the
+// one tree where "git cannot see it" and "it is not there" look identical from
+// the outside. It is committed on purpose - the target host has no composer
+// install - so every file Composer writes has to reach the index, and the
+// dirty-tree check below is structurally unable to say so: git status is silent
+// about a file an ignore rule hides. See TODO 35.1 for the release this missed.
+$invisible = invisibleVendorFiles();
+
+if ($invisible !== []) {
+    $reported = [];
+
+    foreach (array_slice($invisible, 0, 20, true) as $path => $reason) {
+        $reported[] = $path.'   '.$reason;
+    }
+
+    fail(
+        count($invisible)." file(s) under vendor/ cannot reach the archive:\n    ".
+        implode("\n    ", $reported).
+        (count($invisible) > 20 ? "\n    ... and ".(count($invisible) - 20).' more' : '')."\n\n".
+        "  \"untracked\" means: git add vendor\n".
+        "  \"hidden by ...\" means an ignore rule outside this repository's own .gitignore\n".
+        "  swallowed the file - a package ships its own .gitignore and a nested one beats\n".
+        "  the root, and .git/info/exclude is per-machine. Adding it is not enough; the\n".
+        '  rule has to go. See TODO 35.1 in upgrade-roadmap.md.'
+    );
 }
 // Only content that actually ships has to be clean. Editing this script, or
 // leaving release/dist/ lying around, cannot change a single archive entry -
@@ -580,6 +619,124 @@ function workingTreeChanges(): array
     }
 
     return $paths;
+}
+
+/**
+ * Files under vendor/ that would not reach the archive, keyed by path, valued
+ * by the reason - because there are two different reasons and only one of them
+ * is fixed by committing.
+ *
+ * 1. UNTRACKED. A package was installed and nobody added it. This is the case
+ *    that produced TODO 35.1: /vendor sat in .gitignore while the tree was
+ *    force-added past it, so `git add -A` skipped every later arrival for ten
+ *    hops. `git add vendor` closes it.
+ *
+ * 2. HIDDEN BY A RULE THAT IS NOT THIS REPOSITORY'S .gitignore. Packages ship
+ *    their own .gitignore files - eight of them under vendor/ as this was
+ *    written, one of which excludes '*' from a directory holding 900 KB of
+ *    release assets - and a nested .gitignore BEATS the root one. .git/info/
+ *    exclude and core.excludesFile do the same and are per-machine, so they
+ *    survive no review at all. `git add` does not fix any of these; the rule
+ *    does. Only the repository's own .gitignore is allowed to hide something,
+ *    because it is the one a reviewer reads.
+ */
+function invisibleVendorFiles(): array
+{
+    // Without --exclude-standard this lists ignored files too, which is the
+    // entire point: an ignore rule is exactly what the second case is about.
+    $untracked = splitNul(git(['ls-files', '--others', '-z', 'vendor']));
+
+    if ($untracked === []) {
+        return [];
+    }
+
+    $addable = array_flip(splitNul(git(['ls-files', '--others', '--exclude-standard', '-z', 'vendor'])));
+
+    $problems = [];
+    $hidden = [];
+
+    foreach ($untracked as $path) {
+        if (isExcluded($path)) {
+            continue;
+        }
+
+        if (isset($addable[$path])) {
+            $problems[$path] = 'untracked';
+            continue;
+        }
+
+        $hidden[] = $path;
+    }
+
+    if ($hidden !== []) {
+        $rules = ignoreRules($hidden);
+
+        foreach ($hidden as $path) {
+            $rule = $rules[$path] ?? null;
+
+            if ($rule === null) {
+                $problems[$path] = 'hidden by an ignore rule git would not name';
+                continue;
+            }
+
+            if (strpos($rule, '.gitignore:') === 0) {
+                continue;
+            }
+
+            $problems[$path] = 'hidden by '.$rule;
+        }
+    }
+
+    ksort($problems);
+
+    return $problems;
+}
+
+/**
+ * The ignore rule matching each given path, as "source:line:pattern".
+ *
+ * Paths go in over stdin rather than as arguments: -z requires --stdin, and a
+ * full vendor/ tree would overflow the command line anyway. check-ignore exits
+ * 1 when nothing matches, so git() cannot be used - it treats that as failure.
+ * A path with no rule is simply absent from the result, which the caller reads
+ * as its own kind of answer.
+ */
+function ignoreRules(array $paths): array
+{
+    $command = 'git '.implode(' ', array_map('escapeshellarg', ['check-ignore', '-v', '-z', '--stdin']));
+
+    $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+
+    if (! is_resource($process)) {
+        fail('Could not run: '.$command);
+    }
+
+    fwrite($pipes[0], implode("\0", $paths)."\0");
+    fclose($pipes[0]);
+
+    $stdout = stream_get_contents($pipes[1]);
+    stream_get_contents($pipes[2]);
+
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($process);
+
+    // Four NUL-separated fields per match: source, line, pattern, then path.
+    $fields = explode("\0", $stdout);
+    $rules = [];
+
+    for ($i = 0; $i + 3 < count($fields); $i += 4) {
+        $rules[$fields[$i + 3]] = $fields[$i].':'.$fields[$i + 1].':'.$fields[$i + 2];
+    }
+
+    return $rules;
+}
+
+function splitNul(string $output): array
+{
+    return array_values(array_filter(explode("\0", $output), function ($path) {
+        return $path !== '';
+    }));
 }
 
 function isExcluded(string $path): bool
