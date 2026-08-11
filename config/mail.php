@@ -42,14 +42,34 @@ return [
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
-            'auth_mode' => null,
-            'stream' => env('APP_ENV') == "local" ? [
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true,
-                ],
-            ] : [],
+
+            /*
+             * Certificate verification, for a local mail catcher with a
+             * self-signed certificate.
+             *
+             * This replaces a stream/ssl block that WORKED on Laravel 8 -
+             * MailManager:222-223 passed it to setStreamOptions() - and has
+             * done nothing since Laravel 9, which hands the mailer config to
+             * Symfony as DSN options instead. TODO 34 made that switch and
+             * nothing noticed, because no test ever built an SMTP transport;
+             * TODO 36 restores the behaviour rather than inventing one.
+             *
+             * Symfony reads a mailer-level verify_peer
+             * (EsmtpTransportFactory:36) and turns a falsy value into
+             * ssl.verify_peer = false AND ssl.verify_peer_name = false - the
+             * two settings of the old block that did anything. Its
+             * allow_self_signed has no equivalent and needs none: that one only
+             * applies while verification is still on.
+             *
+             * null outside local rather than true, deliberately:
+             * Dsn::getOption() resolves with ??, so null is indistinguishable
+             * from an absent key and leaves Symfony's own default alone. That
+             * is what keeps this exactly as narrow as the block it replaces.
+             *
+             * Both halves are pinned by
+             * tests/Feature/Mail/MailTransportConfigTest.php.
+             */
+            'verify_peer' => env('APP_ENV') === 'local' ? false : null,
         ],
 
         'phpmail' => [
@@ -60,7 +80,6 @@ return [
             'username' => '',
             'password' => '',
             'timeout' => null,
-            'auth_mode' => null,
         ],
 
         'ses' => [

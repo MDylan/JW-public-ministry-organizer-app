@@ -142,7 +142,34 @@ class MailTransportConfigTest extends TestCase
     }
 
     // =========================================================================
-    // 3. Why nothing else in the suite measures any of this
+    // 3. What config/mail.php ships since TODO 36
+    // =========================================================================
+
+    public function test_the_two_dead_keys_are_gone_from_the_configuration(): void
+    {
+        // They were removed once measured, so nothing suggests a knob that
+        // turns nothing. The mechanism assertions above stay regardless: they
+        // set the keys themselves, and they are what would notice if a future
+        // framework version started reading either one again.
+        foreach (['smtp', 'phpmail'] as $mailer) {
+            $this->assertArrayNotHasKey('stream', config('mail.mailers.'.$mailer));
+            $this->assertArrayNotHasKey('auth_mode', config('mail.mailers.'.$mailer));
+        }
+    }
+
+    public function test_the_shipped_configuration_leaves_verification_on(): void
+    {
+        // APP_ENV is 'testing' under phpunit.xml, so this is the value every
+        // host that is not a developer's machine gets. null, not false, and the
+        // transport confirms it changes nothing - which is the whole guarantee
+        // that the local convenience cannot leak into production.
+        $this->assertNull(config('mail.mailers.smtp.verify_peer'));
+
+        $this->assertSame([], $this->smtpStreamOptions());
+    }
+
+    // =========================================================================
+    // 4. Why nothing else in the suite measures any of this
     // =========================================================================
 
     public function test_the_suite_runs_on_the_array_transport(): void
