@@ -27,7 +27,26 @@ return [
     'channels' => ['mail'],
 
     'mail' => [
-        'to' => env('MAIL_FROM_ADDRESS', 'email@example.com'),
+        /*
+         * ?: rather than env()'s second argument, and that is not a style
+         * preference. An env() default only applies when the KEY IS ABSENT,
+         * and .env.example ships MAIL_FROM_ADDRESS=null - which env() resolves
+         * to a real null (Illuminate\Support\Env:88), not to the string
+         * "null". The default therefore never got a turn on exactly the
+         * installs that had not configured mail yet.
+         *
+         * That matters here more than anywhere else, because
+         * Spatie\FailedJobMonitor\Notifiable::routeNotificationForMail() is
+         * typed : array and passes this value straight through. A null
+         * recipient is a TypeError - raised by the thing whose entire job is
+         * to report failed jobs, on the first job that fails. ?: catches the
+         * empty string too, which lands in the same place.
+         *
+         * Measured by tests/Feature/Mail/FailedJobMonitorRouteTest.php: the
+         * vendor constraint, env()'s handling of "null", and this line's own
+         * output.
+         */
+        'to' => env('MAIL_FROM_ADDRESS') ?: 'email@example.com',
     ],
 
     'slack' => [

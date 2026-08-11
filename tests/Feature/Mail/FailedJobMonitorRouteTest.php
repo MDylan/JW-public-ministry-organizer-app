@@ -22,14 +22,19 @@ use TypeError;
  *         return $recipients;                 // null -> TypeError
  *     }
  *
- * config/failed-job-monitor.php feeds that from env('MAIL_FROM_ADDRESS', ...),
- * and an env() default only applies when the KEY IS ABSENT. .env.example ships
- * MAIL_FROM_ADDRESS=null, which env() turns into a real null (Env.php:88), so
- * the default never runs. On such an install a failed queue job takes down the
- * thing whose whole job is to report failed queue jobs, silently.
+ * config/failed-job-monitor.php used to feed that from
+ * env('MAIL_FROM_ADDRESS', 'email@example.com'), and an env() default only
+ * applies when the KEY IS ABSENT. .env.example ships MAIL_FROM_ADDRESS=null,
+ * which env() turns into a real null (Env.php:88), so the default never ran on
+ * exactly the installs that had not configured mail yet. On one of those, the
+ * first failed queue job took down the thing whose whole job is to report
+ * failed queue jobs, silently.
  *
- * The vendor behaviour is not something this repository can change, so the
- * cases below pin it as a constraint: the configured value must never be null.
+ * TODO 36 fixed that in the configuration, with ?:, because the vendor
+ * behaviour is not something this repository can change. The cases below keep
+ * it that way from three directions: the vendor constraint itself, env()'s
+ * handling of the literal "null" string, and what the config file now produces
+ * for every value that used to break it.
  */
 class FailedJobMonitorRouteTest extends TestCase
 {
@@ -92,27 +97,37 @@ class FailedJobMonitorRouteTest extends TestCase
     // 3. What the configuration file actually produces
     // =========================================================================
 
-    public function test_a_null_env_value_currently_leaves_the_recipient_null(): void
+    /**
+     * @dataProvider emptyEnvValueProvider
+     */
+    public function test_the_recipient_is_never_empty_whatever_the_env_says(string $envValue): void
     {
-        // THE DEFECT, recorded as it stands rather than described. The config
-        // file is re-evaluated here rather than read through config(), because
-        // config() only ever shows the value this process booted with;
-        // re-requiring runs the env() call again against the environment this
-        // test controls.
+        // THE FIX, and the assertion it flipped. Until TODO 36 this asserted
+        // null - the defect recorded as it stood - because
+        // env('MAIL_FROM_ADDRESS', 'email@example.com') hands back a real null
+        // for the line .env.example ships, and an env() default only covers an
+        // ABSENT key. Together with the vendor case above that was a complete
+        // failure path: MAIL_FROM_ADDRESS=null -> null recipient -> the first
+        // failed queue job raises a TypeError instead of a notification.
         //
-        // Combined with the vendor case above, this is a complete failure path:
-        // .env carries MAIL_FROM_ADDRESS=null -> the configured recipient is
-        // null -> the first failed queue job raises a TypeError instead of a
-        // notification. The assertion flips when config/failed-job-monitor.php
-        // is fixed, so the fix has to prove itself here.
-        $this->putServer('MAIL_FROM_ADDRESS', 'null');
+        // The config file is re-evaluated here rather than read through
+        // config(), because config() only ever shows the value this process
+        // booted with; re-requiring runs the env() call again, against the
+        // environment this test controls.
+        $this->putServer('MAIL_FROM_ADDRESS', $envValue);
 
         $config = require base_path('config/failed-job-monitor.php');
 
-        $this->assertNull(
+        $this->assertNotNull(
             $config['mail']['to'],
-            'A hibafigyelő címzettje már nem null - ha ez elbukik, a javítás megtörtént és az assertion megfordítandó.'
+            'A hibafigyelő címzettje null - egy elbukott queue job TypeError-t okoz a Notifiable-ben.'
         );
+        $this->assertNotSame('', $config['mail']['to']);
+
+        // The whole point of not being null: this call is what breaks.
+        config()->set('failed-job-monitor.mail.to', $config['mail']['to']);
+
+        $this->assertSame([$config['mail']['to']], (new Notifiable())->routeNotificationForMail());
     }
 
     public function test_a_real_address_still_wins_over_the_fallback(): void
@@ -122,6 +137,19 @@ class FailedJobMonitorRouteTest extends TestCase
         $config = require base_path('config/failed-job-monitor.php');
 
         $this->assertSame('uzemeltetes@example.test', $config['mail']['to']);
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public function emptyEnvValueProvider(): array
+    {
+        return [
+            // What .env.example ships. env() turns it into a real null.
+            'the literal null string' => ['null'],
+            // Same destination by a different road: ?: covers this one, ?? would not.
+            'an empty value' => [''],
+        ];
     }
 
     // =========================================================================
