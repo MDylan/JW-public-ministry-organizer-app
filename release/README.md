@@ -38,9 +38,12 @@ offer it.
 ### What it excludes
 
 `.claude/`, `.docs/`, `.github/`, `release/`, `tests/`, `upgrade-notes/`,
-`AGENTS.md`, `CLAUDE.md`, `upgrade-roadmap.md`, `phpunit.xml`, `.gitignore`,
-`.env.example`, `.env.testing`. These are tracked by git and appear in the diff,
-but they are not the running application. `release/upgrade.php` is added back
+`vendor/_laravel_ide/`, `AGENTS.md`, `CLAUDE.md`, `upgrade-roadmap.md`,
+`phpunit.xml`, `.gitignore`, `.env.example`, `.env.testing`. These are tracked by
+git and appear in the diff, but they are not the running application.
+`vendor/_laravel_ide/` is the exception to that sentence - it is git-ignored and
+should never reach a diff at all, and it is listed so that a stray force-add
+cannot put it in an archive. `release/upgrade.php` is added back
 explicitly, as a **root-level `upgrade.php`** entry, so no `release/` directory
 is created on production hosts. `composer.json` and `composer.lock` **do** ship:
 they describe the `vendor/` tree that ships with them.
@@ -48,16 +51,13 @@ they describe the `vendor/` tree that ships with them.
 Only files that would actually ship have to be committed. Editing the builder
 itself, or leaving `release/dist/` around, does not block a build.
 
-> **This rule is currently violated, and the build does not notice — see TODO 35.1
-> in `upgrade-roadmap.md` before publishing anything from `v2-dev`.**
-> `.gitignore` excludes `/vendor` while this repository commits `vendor/` on
-> purpose, so `git add -A` skips every newly added package. As of 2026-08-11,
-> 1037 of the 9465 files under `vendor/` are untracked, `symfony/mailer` among
-> them in full. An archive built from this branch would carry a Laravel 9
-> framework without the mailer it requires, and would additionally list
-> `vendor/fruitcake/php-cors` as a deletion — a package the framework's
-> `HandleCors` cannot resolve without. The dirty-tree check below cannot catch
-> this: `git status --porcelain` does not report ignored files.
+This rule went violated from TODO 24 to TODO 35 without the build noticing,
+which is what
+TODO 35.1 was about: `/vendor` sat in `.gitignore` while the tree was committed
+on purpose, so `git add -A` skipped every newly installed package and
+`git status` stayed clean over 1037 missing files. The line is gone and the tree
+is complete. `invisibleVendorFiles()` in the builder now refuses to build while
+anything under `vendor/` is untracked or hidden — see the section below.
 
 ### The directory-entry requirement
 
@@ -175,19 +175,46 @@ body of `main()` or delete the file so later archives stop carrying it.
 
 ## Building an archive — the constraint that matters
 
-`vendor/` is committed to this repository (force-added past the `/vendor` line in
-`.gitignore`) **because there is no `composer install` on the target host**. The
-archive has to carry the full `vendor/` tree, and anything Composer adds needs an
-explicit `git add -f` or it will be missing from the release and every updated
-site will fatal on boot.
+`vendor/` is committed to this repository **because there is no
+`composer install` on the target host**. The archive has to carry the full
+`vendor/` tree, so anything Composer adds has to reach the index or the release
+ships without it and every updated site fatals on boot.
 
-**But `git add -f -A vendor` sweeps in more than Composer put there.** The VS Code
-Laravel extension writes `vendor/_laravel_ide/` — 16 generated `discover-*.php`
-files that are not part of any package, churn on every IDE run, and have no
-business in a release archive. `.gitignore` cannot stop it: `-f` is exactly the
-flag that overrides `.gitignore`. Check `git status --porcelain vendor/` for
-directories Composer did not name before committing a dependency bump. This was
-caught after the fact once, on `v1-patch H`.
+**Nothing special is needed for that any more: `git add -A` is enough.** It was
+not always. `.gitignore` used to carry a `/vendor` line and the tree was
+force-added past it, which meant `git add -A` and `git add -u` silently skipped
+every package installed afterwards — 1037 files by the time TODO 35.1
+measured it, with `git status` clean and the suite green the whole time. The line
+is gone; `/vendor/_laravel_ide/` is the only thing ignored under `vendor/` now.
+
+**Do not reach for `git add -f`.** That flag is what caused the problem above,
+and it is also what put `vendor/_laravel_ide/` into a release once, on
+`v1-patch H` — the VS Code Laravel extension writes 19 generated files there
+that belong to no package and churn on every IDE run. `-f` is precisely the flag
+that overrides `.gitignore`, so it defeats the one rule protecting that
+directory. Without it, `git add vendor` does the right thing unaided, and
+`git status --porcelain vendor/` finally answers the question it was always
+supposed to answer.
+
+**The build checks this rather than trusting it.** `invisibleVendorFiles()` runs
+before every other precondition and fails the build on two different things:
+
+| Reported as | Means | Fix |
+|---|---|---|
+| `untracked` | a package nobody committed | `git add vendor` |
+| `hidden by <rule>` | an ignore rule outside this repository's `.gitignore` swallowed the file | remove the rule — adding does nothing |
+
+The second row is not hypothetical. Packages ship their own `.gitignore` files —
+eight under `vendor/` as this was written — and **a nested `.gitignore` beats the
+root one**. `vendor/spatie/ignition/resources/compiled/.gitignore` excludes `*`
+from a directory holding 900 KB of release assets, and only three `!` lines keep
+its current contents visible; a version bump that adds a fourth file there would
+drop it from every release with no signal whatsoever. `.git/info/exclude` and
+`core.excludesFile` can do the same and are per-machine, so they survive no
+review at all. That is why the check reads `git ls-files --others vendor`
+**without** `--exclude-standard` and then asks git which rule matched: only this
+repository's own `.gitignore` is allowed to hide something, because it is the one
+a reviewer reads.
 
 ## Manifest shape — what the major ceiling depends on
 

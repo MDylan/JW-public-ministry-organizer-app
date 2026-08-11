@@ -141,23 +141,30 @@ the first entry in this list that is a *partial* namespace removal, and it will
 not be the last.
 
 **`vendor/asm89` is invisible to the release tooling, and always was.**
-`.gitignore` excludes `/vendor`, and the committed vendor tree was force-added,
-so a package that was not present at that force-add has never been tracked -
-`asm89` among them. `release/build-update.php` builds each archive from a **git
-diff**, so a package git cannot see never shipped in an update and can never be
-deleted by one either. It reached deployed hosts with the original full
-installation and will only be cleared by a full `vendor/` replacement
-(section 6, Branch B).
+`.gitignore` used to exclude `/vendor`, and the committed vendor tree was
+force-added past it, so a package that was not present at that force-add has
+never been tracked - `asm89` among them. `release/build-update.php` builds each
+archive from a **git diff**, so a package git cannot see never shipped in an
+update and can never be deleted by one either. It reached deployed hosts with
+the original full installation and will only be cleared by a full `vendor/`
+replacement (section 6, Branch B). Verified: zero `asm89` files in `v1`'s tree
+and zero in `release/dist/RELEASE-1.2.0.files.txt`.
 
-**That is not a footnote about one package - the tree is missing 1037 files, and
-TODO 35.1 owns it.** Fourteen packages have no tracked file at all, `symfony/mailer`
-included, and the Laravel 8 -> 9 framework upgrade contributed a single added
-file to git while 145 new ones sit untracked on disk. **No release can currently
-be built from this branch that would boot**, which makes TODO 35.1 a
-prerequisite of section 6 rather than a cleanup task. Read that entry before
-planning the 2.0.0 package, whichever branch is chosen - the manual
-full-`vendor/` route needs a complete `vendor/` to hand out just as much as the
-automated one does.
+**TODO 35.1 closed the mechanism, but not this consequence.** The `/vendor` line
+is gone from `.gitignore` and 1017 never-tracked files were committed, so the
+tree this branch carries is now complete and a 2.0.0 archive built from it does
+contain a working `vendor/`. What that does **not** fix is the deployed 1.x
+hosts: they are still carrying whatever the original installation put there,
+including packages no update ever shipped and therefore no update can name in a
+deletion list. That is an argument for Branch B (full `vendor/` replacement) in
+section 6, and it does not expire - it is a property of the hosts, not of this
+repository.
+
+The scale of what was missing is worth keeping, because it says how quietly this
+failed: fourteen packages had no tracked file at all, `symfony/mailer` among
+them in full, and the Laravel 8 -> 9 framework upgrade contributed a single added
+file to git while 145 new ones sat on disk. Everything looked present, `git
+status` was clean, and the suite was green throughout.
 
 **How this list is derived**, so the next hop does not guess: diff the package
 name lists of the old and the new `composer.lock`, reduce each removed name to
@@ -168,7 +175,7 @@ survives the reduction with a package still under it, and `asm89` only appears
 at all because the check is done against `composer.lock` and the disk rather
 than against the git diff.
 
-*Last updated: TODO 35.*
+*Last updated: TODO 35.1.*
 
 ## 3. Application files that move or disappear
 
@@ -268,8 +275,10 @@ verified against a real host before it is published:
 5. **Delete `vendor/` entirely and replace it with the archive's copy.** This is
    what makes section 2 unnecessary and is the reason this branch is simpler
    than it looks: no orphan list has to be correct. It is also the only step
-   that can clear the untracked packages section 2 describes, which the
-   incremental updater has never been able to touch.
+   that can clear the packages section 2 describes, which never shipped in any
+   1.x update and which the incremental updater therefore cannot name in a
+   deletion list. TODO 35.1 fixed the repository so this cannot grow further;
+   it could not retroactively fix the hosts.
 6. Delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php`.
 7. Apply sections 3 and 4 (moved files, `.env` keys).
 8. `php artisan migrate --force`.
@@ -282,7 +291,7 @@ Rollback is step 2's backup restored wholesale. A partial rollback is not safe
 once step 8 has run: `install()`'s own `restore()` brings back files but not
 migrations, which is the same reason the major ceiling exists.
 
-*Last updated: TODO 35.*
+*Last updated: TODO 35.1.*
 
 ---
 
@@ -292,3 +301,4 @@ migrations, which is the same reason the major ceiling exists.
 |---|---|---|
 | Laravel 8 -> 9 | 34 | The document itself; the PHP `^8.0.2` floor, six orphaned vendor paths, the `bootstrap/cache` manifest rule. Sections 3 and 4 gained nothing, which is itself the finding. |
 | (no framework hop) | 35 | Three more orphaned paths, the first **partial** namespace removal among them (`vendor/fruitcake/laravel-cors` goes, `vendor/fruitcake/php-cors` must stay). Two facts that change how section 6 reads: a removed service provider breaks a stale `bootstrap/cache` manifest exactly like a renamed one, and untracked `vendor/` packages are unreachable by the incremental updater at all. |
+| (no framework hop) | 35.1 | The committed `vendor/` tree was 1017 files short and no archive built from this branch would have booted. Fixed at the source, so section 2's untracked-package problem stops growing - but the deployed 1.x hosts still carry what never shipped, which keeps Branch B's step 5 the only thing that can clear it. Section 6 is no longer blocked. |
