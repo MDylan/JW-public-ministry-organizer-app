@@ -141,14 +141,23 @@ the first entry in this list that is a *partial* namespace removal, and it will
 not be the last.
 
 **`vendor/asm89` is invisible to the release tooling, and always was.**
-`.gitignore` excludes `/vendor`, and the committed vendor tree was force-added -
-1044 of the 9485 files on disk have never been tracked, the whole `asm89` tree
-among them. `release/build-update.php` builds each archive from a **git diff**,
-so a package git cannot see never shipped in an update and can never be deleted
-by one either. It reached deployed hosts with the original full installation and
-will only be cleared by a full `vendor/` replacement (section 6, Branch B). The
-same is true of any other untracked package, which is a reason in itself to
-prefer Branch B.
+`.gitignore` excludes `/vendor`, and the committed vendor tree was force-added,
+so a package that was not present at that force-add has never been tracked -
+`asm89` among them. `release/build-update.php` builds each archive from a **git
+diff**, so a package git cannot see never shipped in an update and can never be
+deleted by one either. It reached deployed hosts with the original full
+installation and will only be cleared by a full `vendor/` replacement
+(section 6, Branch B).
+
+**That is not a footnote about one package - the tree is missing 1037 files, and
+TODO 35.1 owns it.** Fourteen packages have no tracked file at all, `symfony/mailer`
+included, and the Laravel 8 -> 9 framework upgrade contributed a single added
+file to git while 145 new ones sit untracked on disk. **No release can currently
+be built from this branch that would boot**, which makes TODO 35.1 a
+prerequisite of section 6 rather than a cleanup task. Read that entry before
+planning the 2.0.0 package, whichever branch is chosen - the manual
+full-`vendor/` route needs a complete `vendor/` to hand out just as much as the
+automated one does.
 
 **How this list is derived**, so the next hop does not guess: diff the package
 name lists of the old and the new `composer.lock`, reduce each removed name to

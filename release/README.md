@@ -48,6 +48,17 @@ they describe the `vendor/` tree that ships with them.
 Only files that would actually ship have to be committed. Editing the builder
 itself, or leaving `release/dist/` around, does not block a build.
 
+> **This rule is currently violated, and the build does not notice — see TODO 35.1
+> in `upgrade-roadmap.md` before publishing anything from `v2-dev`.**
+> `.gitignore` excludes `/vendor` while this repository commits `vendor/` on
+> purpose, so `git add -A` skips every newly added package. As of 2026-08-11,
+> 1037 of the 9465 files under `vendor/` are untracked, `symfony/mailer` among
+> them in full. An archive built from this branch would carry a Laravel 9
+> framework without the mailer it requires, and would additionally list
+> `vendor/fruitcake/php-cors` as a deletion — a package the framework's
+> `HandleCors` cannot resolve without. The dirty-tree check below cannot catch
+> this: `git status --porcelain` does not report ignored files.
+
 ### The directory-entry requirement
 
 `install()` creates a directory only when the **zip entry itself** is a

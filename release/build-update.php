@@ -20,6 +20,17 @@
 |   RELEASE-<version>.files.txt     what shipped, for auditing
 |   RELEASE-<version>.deleted.txt   what install() CANNOT remove - see below
 |
+| BEFORE RUNNING THIS ON v2-dev: READ TODO 35.1
+|
+| The archive is built from a GIT DIFF, so anything git does not track cannot
+| ship. .gitignore excludes /vendor while this repository commits vendor/ on
+| purpose, and `git add -A` skips ignored paths - so every package added since
+| TODO 24 is missing from the index. 1037 files as of 2026-08-11, including all
+| 63 of symfony/mailer. A release built from this branch today would install a
+| Laravel 9 framework without its mailer, and would list vendor/fruitcake/php-cors
+| as a deletion. The dirty-tree check further down cannot see any of it, because
+| git status does not report ignored files.
+|
 | THREE PROPERTIES OF install() THIS SCRIPT EXISTS TO SATISFY
 |
 | 1. Entry paths are relative to base_path(). install() does
