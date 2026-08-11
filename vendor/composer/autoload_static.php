@@ -12,10 +12,10 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
-        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
+        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '3bd81c9b8fcc150b69d8b63b4d2ccf23' => __DIR__ . '/..' . '/spatie/flare-client-php/src/helpers.php',
@@ -158,7 +158,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'F' =>
         array (
             'Fruitcake\\Cors\\' => 15,
-            'Fideloper\\Proxy\\' => 16,
             'Faker\\' => 6,
         ),
         'E' =>
@@ -196,7 +195,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'A' =>
         array (
             'Astrotomic\\Translatable\\' => 24,
-            'Asm89\\Stack\\' => 12,
             'App\\' => 4,
         ),
     );
@@ -532,12 +530,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         ),
         'Fruitcake\\Cors\\' =>
         array (
-            0 => __DIR__ . '/..' . '/fruitcake/laravel-cors/src',
-            1 => __DIR__ . '/..' . '/fruitcake/php-cors/src',
-        ),
-        'Fideloper\\Proxy\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/fideloper/proxy/src',
+            0 => __DIR__ . '/..' . '/fruitcake/php-cors/src',
         ),
         'Faker\\' =>
         array (
@@ -626,10 +619,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Astrotomic\\Translatable\\' =>
         array (
             0 => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable',
-        ),
-        'Asm89\\Stack\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/asm89/stack-cors/src',
         ),
         'App\\' =>
         array (
@@ -849,8 +838,6 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\View\\Components\\Modal' => __DIR__ . '/../..' . '/app/View/Components/Modal.php',
         'App\\View\\Components\\SideStaticPages' => __DIR__ . '/../..' . '/app/View/Components/SideStaticPages.php',
         'App\\View\\Components\\UpdateNotification' => __DIR__ . '/../..' . '/app/View/Components/UpdateNotification.php',
-        'Asm89\\Stack\\Cors' => __DIR__ . '/..' . '/asm89/stack-cors/src/Cors.php',
-        'Asm89\\Stack\\CorsService' => __DIR__ . '/..' . '/asm89/stack-cors/src/CorsService.php',
         'Astrotomic\\Translatable\\Contracts\\Translatable' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Contracts/Translatable.php',
         'Astrotomic\\Translatable\\Exception\\LocalesNotDefinedException' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Exception/LocalesNotDefinedException.php',
         'Astrotomic\\Translatable\\Locales' => __DIR__ . '/..' . '/astrotomic/laravel-translatable/src/Translatable/Locales.php',
@@ -2265,12 +2252,8 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Faker\\Provider\\zh_TW\\Text' => __DIR__ . '/..' . '/fakerphp/faker/src/Faker/Provider/zh_TW/Text.php',
         'Faker\\UniqueGenerator' => __DIR__ . '/..' . '/fakerphp/faker/src/Faker/UniqueGenerator.php',
         'Faker\\ValidGenerator' => __DIR__ . '/..' . '/fakerphp/faker/src/Faker/ValidGenerator.php',
-        'Fideloper\\Proxy\\TrustProxies' => __DIR__ . '/..' . '/fideloper/proxy/src/TrustProxies.php',
-        'Fideloper\\Proxy\\TrustedProxyServiceProvider' => __DIR__ . '/..' . '/fideloper/proxy/src/TrustedProxyServiceProvider.php',
         'Fruitcake\\Cors\\CorsService' => __DIR__ . '/..' . '/fruitcake/php-cors/src/CorsService.php',
-        'Fruitcake\\Cors\\CorsServiceProvider' => __DIR__ . '/..' . '/fruitcake/laravel-cors/src/CorsServiceProvider.php',
         'Fruitcake\\Cors\\Exceptions\\InvalidOptionException' => __DIR__ . '/..' . '/fruitcake/php-cors/src/Exceptions/InvalidOptionException.php',
-        'Fruitcake\\Cors\\HandleCors' => __DIR__ . '/..' . '/fruitcake/laravel-cors/src/HandleCors.php',
         'GrahamCampbell\\ResultType\\Error' => __DIR__ . '/..' . '/graham-campbell/result-type/src/Error.php',
         'GrahamCampbell\\ResultType\\Result' => __DIR__ . '/..' . '/graham-campbell/result-type/src/Result.php',
         'GrahamCampbell\\ResultType\\Success' => __DIR__ . '/..' . '/graham-campbell/result-type/src/Success.php',
@@ -7429,10 +7412,12 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Livewire\\PartialComponentsTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/PartialComponentsTest.php',
         'Tests\\Feature\\Livewire\\RetentionFloorTest' => __DIR__ . '/../..' . '/tests/Feature/Livewire/RetentionFloorTest.php',
         'Tests\\Feature\\Middleware\\CheckRecaptchaTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/CheckRecaptchaTest.php',
+        'Tests\\Feature\\Middleware\\CorsHeadersTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/CorsHeadersTest.php',
         'Tests\\Feature\\Middleware\\HttpsProtocolTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/HttpsProtocolTest.php',
         'Tests\\Feature\\Middleware\\SetGuestLanguageTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/SetGuestLanguageTest.php',
         'Tests\\Feature\\Middleware\\SetLocaleTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/SetLocaleTest.php',
         'Tests\\Feature\\Middleware\\SetUserLastActivityTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/SetUserLastActivityTest.php',
+        'Tests\\Feature\\Middleware\\TrustProxiesTest' => __DIR__ . '/../..' . '/tests/Feature/Middleware/TrustProxiesTest.php',
         'Tests\\Feature\\Models\\EncryptedAttributeTest' => __DIR__ . '/../..' . '/tests/Feature/Models/EncryptedAttributeTest.php',
         'Tests\\Feature\\Models\\EncryptedColumnSchemaTest' => __DIR__ . '/../..' . '/tests/Feature/Models/EncryptedColumnSchemaTest.php',
         'Tests\\Feature\\NewEmail\\PendingEmailFlowTest' => __DIR__ . '/../..' . '/tests/Feature/NewEmail/PendingEmailFlowTest.php',
