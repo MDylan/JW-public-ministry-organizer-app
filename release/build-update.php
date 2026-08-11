@@ -40,8 +40,23 @@
 |
 | 3. install() only ever adds and overwrites. It NEVER deletes. Files that
 |    disappeared between the two refs cannot be expressed in the archive at
-|    all; they need release/upgrade.php, the per-release hook. This script
-|    lists them, and flags the ones the current hook does not already cover.
+|    all. This script lists them, and flags the ones the current hook does not
+|    already cover.
+|
+| WHERE UNCOVERED DELETIONS GO FROM TODO 34 ONWARDS
+|
+| The obvious reading of point 3 is "add a laraupdater_upgrade_remove() line to
+| release/upgrade.php until the uncovered count reaches zero". That was right
+| through Phase 3, and it is NOT right any more: the hook is frozen (see its own
+| header), because the framework hops replace essentially the whole vendor/ tree
+| and one main() cannot carry that list reviewably. TODO 35 is the first release
+| to report uncovered deletions under the freeze - thirteen vendor files from
+| fideloper/proxy and fruitcake/laravel-cors - and that report is EXPECTED
+| OUTPUT, not a defect to fix here.
+|
+| Orphaned paths belong in upgrade-guide.md section 2 instead, which the 2.0.0
+| release turns into one procedure. Read the count below as "what a deployed 1.x
+| host will still be carrying", not as "what somebody forgot to write".
 |
 | THE upgrade.php TRAP
 |

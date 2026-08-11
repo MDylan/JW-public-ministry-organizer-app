@@ -90,7 +90,9 @@ Note for Phase 4 specifically: `^8.0` -> `^8.0.2` excludes only PHP 8.0.0 and
 8.0.1. It is a real exclusion, not a formality, but no host that can run 8.0 at
 all is likely to be pinned to those two patch releases.
 
-*Last updated: TODO 34.*
+TODO 35 raised nothing here: removing two packages cannot raise a floor.
+
+*Last updated: TODO 35.*
 
 ## 2. Orphaned `vendor/` paths
 
@@ -122,12 +124,42 @@ which itself stays.
 this repository commits the dev packages too - the release archive carries
 them - so they are on deployed hosts as well.
 
+**TODO 35 (proxy and CORS packages):**
+
+```
+vendor/fideloper                  (proxy; framework-native since Laravel 9)
+vendor/asm89                      (stack-cors; a fruitcake/laravel-cors dependency)
+vendor/fruitcake/laravel-cors     (NOT the whole vendor/fruitcake - see below)
+```
+
+**`vendor/fruitcake` itself must survive.** Only the `laravel-cors` subdirectory
+goes; `vendor/fruitcake/php-cors` stays and is now load-bearing - it is a direct
+requirement of `laravel/framework` v9 and supplies the `Fruitcake\Cors\CorsService`
+that the framework's `HandleCors` type-hints. Deleting the parent directory
+because its name matches the removed package would fatal every request. This is
+the first entry in this list that is a *partial* namespace removal, and it will
+not be the last.
+
+**`vendor/asm89` is invisible to the release tooling, and always was.**
+`.gitignore` excludes `/vendor`, and the committed vendor tree was force-added -
+1044 of the 9485 files on disk have never been tracked, the whole `asm89` tree
+among them. `release/build-update.php` builds each archive from a **git diff**,
+so a package git cannot see never shipped in an update and can never be deleted
+by one either. It reached deployed hosts with the original full installation and
+will only be cleared by a full `vendor/` replacement (section 6, Branch B). The
+same is true of any other untracked package, which is a reason in itself to
+prefer Branch B.
+
 **How this list is derived**, so the next hop does not guess: diff the package
 name lists of the old and the new `composer.lock`, reduce each removed name to
 its vendor namespace, and keep a namespace only when no package remains under
 it. Then verify on disk that the path is actually gone before writing it down.
+TODO 35 is the case that shows why the last two steps matter: `fruitcake`
+survives the reduction with a package still under it, and `asm89` only appears
+at all because the check is done against `composer.lock` and the disk rather
+than against the git diff.
 
-*Last updated: TODO 34.*
+*Last updated: TODO 35.*
 
 ## 3. Application files that move or disappear
 
@@ -139,10 +171,16 @@ to assume.
 **TODO 34: nothing.** The Laravel 9 hop changed `composer.json`, `composer.lock`,
 `vendor/` and the test layer only. No application file moved.
 
+**TODO 35: nothing.** `config/cors.php` stays exactly where and as it is - the
+framework's `HandleCors` reads the same keys the removed package did, so there
+is no config file to move, republish or edit. `config/trustedproxy.php` never
+existed in this application; the value it would have held came from the removed
+package's own default and was `null`, which is also what a missing key reads as.
+
 Known to be coming: `resources/lang/` -> `lang/` (TODO 38). Laravel 9 still
 accepts the old location, which is why it did not happen in this hop.
 
-*Last updated: TODO 34.*
+*Last updated: TODO 35.*
 
 ## 4. `.env` changes
 
@@ -159,9 +197,9 @@ the fallback be dropped from the config.
 
 Nothing else. TODO 28 deliberately moved `env()` calls into config **without**
 renaming a single variable, precisely so that no deployed `.env` would need
-editing.
+editing. **TODO 35: none** either.
 
-*Last updated: TODO 34.*
+*Last updated: TODO 35.*
 
 ## 5. Per-install state to repair
 
@@ -172,9 +210,12 @@ State that lives on the host and is not expressible in a release archive.
   providers by FQCN, so a stale manifest boots the next request straight into a
   "class not found" fatal. Every framework hop from TODO 34 onwards triggers
   this: the Laravel 9 hop alone removed `Facade\Ignition\IgnitionServiceProvider`
-  and added `Spatie\LaravelIgnition\IgnitionServiceProvider`. The 1.x hook
-  already does this; a manual upgrade must do it by hand, **before** the first
-  request.
+  and added `Spatie\LaravelIgnition\IgnitionServiceProvider`, and TODO 35 removed
+  `Fideloper\Proxy\TrustedProxyServiceProvider` and
+  `Fruitcake\Cors\CorsServiceProvider` without adding anything - a removal is
+  just as fatal as a rename, because the manifest still names the class. The 1.x
+  hook already does this; a manual upgrade must do it by hand, **before** the
+  first request.
 - **`public/storage`** may be a real directory rather than the symlink it should
   be, on any host that ever rendered a page while `eusonlito/laravel-packer` was
   installed. `php artisan storage:link` silently skips when the path exists, so
@@ -186,7 +227,7 @@ State that lives on the host and is not expressible in a release archive.
   leftover `bootstrap/cache/config.php` makes the application read the previous
   release's configuration.
 
-*Last updated: TODO 34.*
+*Last updated: TODO 35.*
 
 ## 6. The upgrade procedure
 
@@ -217,7 +258,9 @@ verified against a real host before it is published:
 4. Unpack the 2.0.0 archive over the application directory.
 5. **Delete `vendor/` entirely and replace it with the archive's copy.** This is
    what makes section 2 unnecessary and is the reason this branch is simpler
-   than it looks: no orphan list has to be correct.
+   than it looks: no orphan list has to be correct. It is also the only step
+   that can clear the untracked packages section 2 describes, which the
+   incremental updater has never been able to touch.
 6. Delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php`.
 7. Apply sections 3 and 4 (moved files, `.env` keys).
 8. `php artisan migrate --force`.
@@ -230,7 +273,7 @@ Rollback is step 2's backup restored wholesale. A partial rollback is not safe
 once step 8 has run: `install()`'s own `restore()` brings back files but not
 migrations, which is the same reason the major ceiling exists.
 
-*Last updated: TODO 34.*
+*Last updated: TODO 35.*
 
 ---
 
@@ -239,3 +282,4 @@ migrations, which is the same reason the major ceiling exists.
 | Hop | TODO | What it added |
 |---|---|---|
 | Laravel 8 -> 9 | 34 | The document itself; the PHP `^8.0.2` floor, six orphaned vendor paths, the `bootstrap/cache` manifest rule. Sections 3 and 4 gained nothing, which is itself the finding. |
+| (no framework hop) | 35 | Three more orphaned paths, the first **partial** namespace removal among them (`vendor/fruitcake/laravel-cors` goes, `vendor/fruitcake/php-cors` must stay). Two facts that change how section 6 reads: a removed service provider breaks a stale `bootstrap/cache` manifest exactly like a renamed one, and untracked `vendor/` packages are unreachable by the incremental updater at all. |
