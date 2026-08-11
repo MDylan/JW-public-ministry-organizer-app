@@ -193,10 +193,20 @@ is no config file to move, republish or edit. `config/trustedproxy.php` never
 existed in this application; the value it would have held came from the removed
 package's own default and was `null`, which is also what a missing key reads as.
 
+**TODO 36: nothing.** Two configuration files changed content - `config/mail.php`
+and `config/failed-job-monitor.php` - and both are tracked, so both ship in the
+archive and overwrite in place. Nothing moves, nothing has to be republished,
+and nothing has to be hand-edited on the host.
+
+One dependency worth naming, because it is easy to read this as "no action":
+a host that has run `config:cache` keeps serving the OLD values until the cache
+is rebuilt. Section 6 step 10 (`php artisan optimize:clear`) is what makes these
+two changes take effect, so it is not optional for this hop either.
+
 Known to be coming: `resources/lang/` -> `lang/` (TODO 38). Laravel 9 still
 accepts the old location, which is why it did not happen in this hop.
 
-*Last updated: TODO 35.*
+*Last updated: TODO 36.*
 
 ## 4. `.env` changes
 
@@ -215,7 +225,17 @@ Nothing else. TODO 28 deliberately moved `env()` calls into config **without**
 renaming a single variable, precisely so that no deployed `.env` would need
 editing. **TODO 35: none** either.
 
-*Last updated: TODO 35.*
+**TODO 36: none, and one existing key stopped being able to hurt.** The restored
+certificate exception keys off `APP_ENV`, which every install already has, and no
+new variable was introduced. Separately, a `.env` carrying the literal
+`MAIL_FROM_ADDRESS=null` - the line `.env.example` ships - used to make the
+failed-job monitor raise a `TypeError` on the first failed queue job, because
+`env()` resolves that to a real null and an `env()` default only covers an
+*absent* key. That is now handled in `config/failed-job-monitor.php`, so the
+`.env` on the host needs no edit. Setting a real address is still the right thing
+to do; it is simply no longer load-bearing.
+
+*Last updated: TODO 36.*
 
 ## 5. Per-install state to repair
 
@@ -302,3 +322,4 @@ migrations, which is the same reason the major ceiling exists.
 | Laravel 8 -> 9 | 34 | The document itself; the PHP `^8.0.2` floor, six orphaned vendor paths, the `bootstrap/cache` manifest rule. Sections 3 and 4 gained nothing, which is itself the finding. |
 | (no framework hop) | 35 | Three more orphaned paths, the first **partial** namespace removal among them (`vendor/fruitcake/laravel-cors` goes, `vendor/fruitcake/php-cors` must stay). Two facts that change how section 6 reads: a removed service provider breaks a stale `bootstrap/cache` manifest exactly like a renamed one, and untracked `vendor/` packages are unreachable by the incremental updater at all. |
 | (no framework hop) | 35.1 | The committed `vendor/` tree was 1017 files short and no archive built from this branch would have booted. Fixed at the source, so section 2's untracked-package problem stops growing - but the deployed 1.x hosts still carry what never shipped, which keeps Branch B's step 5 the only thing that can clear it. Section 6 is no longer blocked. |
+| (no framework hop) | 36 | Sections 3 and 4 gained their first entries since TODO 34, and both say "nothing" - but section 3 now also names what that depends on: two configuration files changed content, and a host with a warm `config:cache` keeps the old values until step 10 runs. The verification also found that a `.env` carrying `MAIL_FROM_ADDRESS=null` broke the failed-job monitor outright; fixed in configuration, so no deployed `.env` needs editing. |

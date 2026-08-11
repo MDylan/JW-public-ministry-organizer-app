@@ -21,11 +21,13 @@ Used by:
 - `GroupPriorityMessageNotification`
 - `UserProfileChangedNotification`
 
-### Two kinds of coverage
+### Three kinds of coverage
 
 `tests/Unit/Notifications/NotificationRegressionTest.php` covers the **mail contract** of every class: whether it queues, whether `mail` is among its channels, and whether `toMail()` builds a `MailMessage`. That says nothing about whether the notification is ever *sent*. Its data provider is itself an assertion — `test_every_notification_class_has_a_mail_contract` reads this directory and fails if a class is added without a contract row (roadmap TODO 15).
 
 The "Covered by" column below records the **dispatch trigger** test — the one that would fail if a notification silently stopped going out. Settled in roadmap TODO 11. **Every notification now has both kinds of coverage, with no exceptions**: the last gap, `TestNotification`'s setup-flow dispatch site, was closed by TODO 12, and the one class that had no dispatch site at all was deleted in TODO 15.
+
+`tests/Feature/Mail/NotificationAddressingTest.php` adds the third kind, and roadmap TODO 36 added it because the first two together still left a gap: neither ever renders a `MailMessage` into a `Symfony\Component\Mime\Email`. **Rendering is where the mailer's address handling applies**, so on the hop that replaced SwiftMailer with Symfony Mailer, the step most likely to break was the one nothing looked at. That file sends the five address-carrying notifications through the `array` transport and reads `getTo()` / `getReplyTo()` / `getBcc()` off the finished message. It covers those five only — the other twenty address nothing beyond their recipient, and the contract test already covers them.
 
 ## Notification Catalog
 
@@ -121,9 +123,19 @@ Two consequences worth knowing:
 
 All six now read `config('mail.from.address')` / `config('app.name')` — the same values through the cacheable path. The `replyTo`/`bcc` fallback only applies when the group's own `replyTo` is blank, so the failure was data-dependent rather than universal. The measured failure was `Swift_RfcComplianceException: Address in mailbox given [] does not comply with RFC 2822, 3.6.2.`; **Phase 4 (TODO 34) has since swapped SwiftMailer for Symfony Mailer**, where the same condition surfaces as `Symfony\Component\Mime\Exception\RfcComplianceException`. That was a forecast when this line was written - and it named the wrong phase, Phase 5 - so it is now a statement of fact: the notification suite runs on Symfony Mailer and is green, which is the evidence that the TODO 28 fix holds under the stricter mailer.
 
+**TODO 36 finished the measurement those five deserved.** `NotificationAddressingTest` renders each of them and asserts the address that actually lands, on three inputs: a real group `replyTo`, a blank one, and a **null** one. The null case is the one worth having — `groups.replyTo` is a nullable `text` column and every producer passes it through untouched (`EventObserver:56`, `CalculateDatesEvents:237`) — and it exposed an inconsistency worth knowing about: only `EventDeletedNotification` guards the value with `?? ''`; the other three call `trim()` on the null directly. All four reach the same address, so this is recorded rather than fixed.
+
 `tests/Unit/Notifications/NotificationEnvFallbackTest.php` pinned all of it, including a real send that proved the hard failure was a failure and not a cosmetic one; every one of those cases is now inverted and asserts that removing the environment variable changes nothing. `tests/Feature/ConfigCacheSafetyTest.php` is the standing guard: it tokenizes `app/`, `routes/`, `database/` and `resources/views/` — compiling the Blade views first — and fails on any runtime `env()` call outside `config/`.
 
 **Why this mattered right then.** `artisan optimize` had never completed on this codebase, because a duplicate route name made `route:cache` throw (v1-patch A7). The moment that was fixed, `config:cache` became reachable in practice, and with it every trap in the table above.
+
+## The failed-job monitor is a notification path too
+
+`spatie/laravel-failed-job-monitor` sends `Spatie\FailedJobMonitor\Notification` on every `JobFailed` event, over the `mail` channel (`config/failed-job-monitor.php`). Its notifiable is the package's own `Spatie\FailedJobMonitor\Notifiable`, not a `User`, and it routes to a single address taken straight from configuration.
+
+**That route had the same shape of defect the table above describes, and TODO 36 fixed it.** `routeNotificationForMail()` is typed `: array` and returns `config('failed-job-monitor.mail.to')` untouched, so a **null** recipient is a `TypeError` rather than a missing address. The config used to read `env('MAIL_FROM_ADDRESS', 'email@example.com')`, and an `env()` default only applies when the **key is absent** — while `.env.example` ships `MAIL_FROM_ADDRESS=null`, which `env()` resolves to a real null. On an install that had not configured mail yet, the first failed queue job took down the thing whose entire job is to report failed queue jobs.
+
+The line is now `env('MAIL_FROM_ADDRESS') ?: 'email@example.com'`. `?:` rather than `??` on purpose: `env()` returns `''` for an empty value, and `??` would pass that through into an invalid address further down. `tests/Feature/Mail/FailedJobMonitorRouteTest.php` holds all three parts — the vendor's `TypeError` as a constraint, `env()`'s handling of the literal `"null"` string, and what the config file produces for both values that used to break it.
 
 ## Notes
 
