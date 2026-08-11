@@ -23,7 +23,8 @@ use Tests\TestCase;
  * There were two severity classes, and the tests' names split them apart too:
  *  - the four Event*Notification classes' ->replyTo() and
  *    UserRoleIsGroupCreatorNotification's ->bcc() read the ADDRESS itself
- *    from env(), so sending FAILED (Swift_RfcComplianceException),
+ *    from env(), so sending FAILED (Swift_RfcComplianceException at the time;
+ *    Symfony\Component\Mime\Exception\RfcComplianceException since TODO 34),
  *  - UserWillBeAnonymizeNotification only put APP_NAME into the mail's BODY,
  *    so the mail went out, with an empty name.
  *
@@ -201,11 +202,12 @@ class NotificationEnvFallbackTest extends TestCase
      *   Swift_RfcComplianceException
      *   "Address in mailbox given [] does not comply with RFC 2822, 3.6.2."
      *
-     * Phase 5 (Laravel 9) replaces SwiftMailer with Symfony Mailer, where the
-     * same error would come as
-     * Symfony\Component\Mime\Exception\RfcComplianceException - meaning
-     * that without the fix, sending would fail the same way after Phase 5
-     * too, just under a different exception name.
+     * That prediction has since been executed: Phase 4 (TODO 34, Laravel 9)
+     * replaced SwiftMailer with Symfony Mailer, where the same error arrives
+     * as Symfony\Component\Mime\Exception\RfcComplianceException. The case
+     * below still passes, which is the point - the TODO 28 fix holds under
+     * the stricter mailer, and this test is now a measurement of that rather
+     * than a forecast.
      */
     public function test_sending_without_the_environment_variable_no_longer_fails(): void
     {

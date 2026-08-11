@@ -136,8 +136,9 @@ class AnonymizationTest extends FeatureTestCase
         // users.email becomes a 10-character token with no @ sign - i.e. not an
         // e-mail address. Unique, but syntactically invalid.
         //
-        // This matters if any sending path can reach an anonymized user:
-        // SwiftMailer throws an RFC error on an invalid address. The group
+        // This matters if any sending path can reach an anonymized user: the
+        // mailer throws an RFC error on an invalid address - SwiftMailer did
+        // when this was written, Symfony Mailer does since TODO 34. The group
         // relations (Group::groupUsers, ::users) filter on isAnonymized, but
         // User::userGroupsEditable / ::userGroupsDeletable do NOT - and
         // newsletters:send-due selects precisely through those.

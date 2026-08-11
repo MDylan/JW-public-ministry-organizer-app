@@ -186,9 +186,11 @@ class GroupCreationTest extends FeatureTestCase
     public function test_the_privilege_request_mail_goes_to_the_configured_address_and_replies_to_the_applicant(): void
     {
         // ListGroupsTest already covers the validation and the successful run;
-        // here the ADDRESSING of the email is the subject, because that is the
+        // here the ADDRESSING of the email is the subject, because that was the
         // Phase 4 (TODO 36) risk: Symfony Mailer validates addresses more
         // strictly than SwiftMailer, and replyTo comes from user-supplied data.
+        // Since TODO 34 this runs ON Symfony Mailer, so the assertions below
+        // are no longer a prediction - they are the measurement.
         //
         // Mail::fake() cannot be used here: MailFake::send() only records
         // Mailable instances, it silently drops the raw
@@ -212,8 +214,8 @@ class GroupCreationTest extends FeatureTestCase
 
         $message = $messages->first();
 
-        $this->assertArrayHasKey(config('mail.from.address'), $message->getTo());
-        $this->assertArrayHasKey('applicant@example.test', $message->getReplyTo());
+        $this->assertContains(config('mail.from.address'), $this->addresses($message->getTo()));
+        $this->assertContains('applicant@example.test', $this->addresses($message->getReplyTo()));
         $this->assertSame(__('group.requestMail.subject'), $message->getSubject());
     }
 
@@ -242,7 +244,7 @@ class GroupCreationTest extends FeatureTestCase
             ->call('requestGroupCreatorPrivilege')
             ->assertHasNoErrors();
 
-        $body = $this->sentMessages()->first()->getBody();
+        $body = $this->sentMessages()->first()->getHtmlBody();
 
         $this->assertStringContainsString('Vastag Gyülekezet', $body);
         $this->assertStringNotContainsString('<b>', $body);
@@ -254,14 +256,40 @@ class GroupCreationTest extends FeatureTestCase
      * phpunit.xml is configured with MAIL_MAILER=array, so sent emails
      * remain in the ArrayTransport's memory.
      *
-     * ATTENTION: the returned messages are Swift_Message instances. Laravel 9
-     * switches to Symfony Mailer (TODO 36), where getTo()/getReplyTo() returns
-     * an array of Address objects, not an address => name map - the two
-     * assertions must be rewritten there. This test is useful there for
-     * exactly this reason: it will flag it.
+     * REWRITTEN BY TODO 34, and the previous version of this comment is the
+     * reason it was easy: it predicted that Laravel 9's Symfony Mailer switch
+     * would break exactly this helper, and it did - `Mailer::getSwiftMailer()`
+     * no longer exists and the call died with a BadMethodCallException.
+     *
+     * Three things changed at once, so all three are named here rather than
+     * left for the next reader to rediscover:
+     *
+     *  1. the accessor is `Mail::getSymfonyTransport()`;
+     *  2. ArrayTransport now stores Symfony\Component\Mailer\SentMessage
+     *     envelopes, so the mail itself needs ->getOriginalMessage();
+     *  3. getTo()/getReplyTo() return a list of Symfony\Component\Mime\Address
+     *     objects instead of an address => name map, which is why the callers
+     *     assertContains() over ->addresses() instead of assertArrayHasKey().
+     *
+     * @return \Illuminate\Support\Collection<int, \Symfony\Component\Mime\Email>
      */
     private function sentMessages()
     {
-        return Mail::getSwiftMailer()->getTransport()->messages();
+        return collect(Mail::getSymfonyTransport()->messages())
+            ->map(fn ($sent) => $sent->getOriginalMessage());
+    }
+
+    /**
+     * The bare addresses of a Symfony address list.
+     *
+     * The display name is deliberately dropped: none of these assertions ever
+     * measured it, and the old Swift map keyed on the address alone too.
+     *
+     * @param  \Symfony\Component\Mime\Address[]  $addresses
+     * @return string[]
+     */
+    private function addresses(array $addresses): array
+    {
+        return array_map(fn ($address) => $address->getAddress(), $addresses);
     }
 }

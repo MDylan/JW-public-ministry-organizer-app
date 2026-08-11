@@ -38,6 +38,34 @@ class RouteContractSnapshotTest extends TestCase
         'routes/api.php',
     ];
 
+    /**
+     * Name prefixes of `require-dev` packages, excluded from every snapshot.
+     *
+     * These routes exist in the test tree and NOT on a `composer install
+     * --no-dev` host, so snapshotting their contract would freeze dev-only
+     * state into a fixture the production route table can never satisfy. That
+     * is the same reasoning the Livewire test below gives for keeping Debugbar
+     * out, applied to the second package of the same kind.
+     *
+     * `ignition.` joined the list in TODO 34, and the mechanism is worth
+     * recording because the routes did not appear out of nowhere:
+     * `facade/ignition` registered FIVE `ignition.*` routes as well, but
+     * behind `if ($this->app->runningInConsole()) { return; }` - and PHPUnit
+     * runs in console, so they were never in the table during a test run. Its
+     * replacement, `spatie/laravel-ignition`, calls registerRoutes() from
+     * boot() unconditionally, so three of them (healthCheck, executeSolution,
+     * updateConfig) now are. Nothing about the application changed; what
+     * changed is when the vendor package registers.
+     *
+     * test_every_named_route_is_accounted_for is what caught this, which is
+     * exactly the job it was written for - so this entry is a reviewed
+     * exclusion, not a silenced failure.
+     */
+    private const DEV_ONLY_ROUTE_PREFIXES = [
+        'debugbar.',
+        'ignition.',
+    ];
+
     public function test_named_route_contracts_match_the_snapshot(): void
     {
         $expected = $this->fixture('route-contracts.json');
@@ -90,9 +118,10 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_every_named_route_is_accounted_for(): void
     {
-        // The two fixtures plus the debugbar prefix together cover ALL named
+        // The two fixtures plus the dev-only prefixes together cover ALL named
         // routes. This catches it if a package update sneaks in a new named
-        // route: it cannot disappear silently behind the prefix filter.
+        // route: it cannot disappear silently behind the prefix filter. It
+        // earned its keep in TODO 34 - see DEV_ONLY_ROUTE_PREFIXES.
         $known = array_merge(
             array_keys($this->fixture('route-contracts.json')),
             array_keys($this->fixture('vendor-route-contracts.json'))
@@ -103,7 +132,7 @@ class RouteContractSnapshotTest extends TestCase
         foreach (app('router')->getRoutes() as $route) {
             $name = $route->getName();
 
-            if ($name === null || str_starts_with($name, 'debugbar.')) {
+            if ($name === null || $this->isDevOnlyRoute($name)) {
                 continue;
             }
 
@@ -305,7 +334,7 @@ class RouteContractSnapshotTest extends TestCase
             }
 
             if ($onlyPrefix === null) {
-                if (str_starts_with($name, 'debugbar.')
+                if ($this->isDevOnlyRoute($name)
                     || str_starts_with($name, 'livewire.')
                     || str_starts_with($name, 'laraupdater.')) {
                     continue;
@@ -385,6 +414,20 @@ class RouteContractSnapshotTest extends TestCase
         }
 
         return $matches;
+    }
+
+    /**
+     * Does this route name come from a `require-dev` package?
+     */
+    private function isDevOnlyRoute(string $name): bool
+    {
+        foreach (self::DEV_ONLY_ROUTE_PREFIXES as $prefix) {
+            if (str_starts_with($name, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sortedMiddleware(Route $route): array

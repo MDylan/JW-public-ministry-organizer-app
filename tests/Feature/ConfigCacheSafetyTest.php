@@ -25,8 +25,10 @@ use Tests\TestCase;
  *  - `USE_HTTPS` -> forcing HTTPS turns off;
  *  - `USE_RECAPTCHA` -> bot protection turns off, and the six Blade views
  *    do not even render the captcha field, so nothing gives it away;
- *  - `MAIL_FROM_ADDRESS` -> sending five notifications FAILS
- *    (`Swift_RfcComplianceException` on the empty address);
+ *  - `MAIL_FROM_ADDRESS` -> sending five notifications FAILS (the measured
+ *    exception was `Swift_RfcComplianceException` on the empty address; since
+ *    TODO 34 the same condition surfaces as
+ *    `Symfony\Component\Mime\Exception\RfcComplianceException`);
  *  - `APP_NAME` -> the mail goes out with an empty application name;
  *  - the admin's `.env` editor shows empty fields, and on save writes the
  *    empty values back to the file.

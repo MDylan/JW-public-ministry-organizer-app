@@ -182,9 +182,16 @@ class AnonymizeCommandTest extends FeatureTestCase
 
         $this->artisan('newsletters:send-due')->assertExitCode(0);
 
-        $messages = app('mailer')->getSwiftMailer()->getTransport()->messages();
+        // REWRITTEN BY TODO 34. Laravel 9 replaced SwiftMailer with Symfony
+        // Mailer, so `getSwiftMailer()` is gone: the transport is reached
+        // through getSymfonyTransport(), it hands back SentMessage envelopes
+        // rather than mails, and getTo() returns Address objects instead of an
+        // address => name map. The measurement itself is unchanged - it is
+        // still the list of addresses the transport was asked to deliver to.
+        $messages = app('mailer')->getSymfonyTransport()->messages();
         $recipients = collect($messages)
-            ->flatMap(fn ($message) => array_keys($message->getTo() ?? []))
+            ->flatMap(fn ($sent) => $sent->getOriginalMessage()->getTo())
+            ->map(fn ($address) => $address->getAddress())
             ->all();
 
         $this->assertNotContains(
