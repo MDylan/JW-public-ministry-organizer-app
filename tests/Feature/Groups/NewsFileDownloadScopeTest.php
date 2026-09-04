@@ -120,21 +120,20 @@ class NewsFileDownloadScopeTest extends FeatureTestCase
 
     /**
      * TODO 37: the same Flysystem 3 gap GroupNewsFileSizeTest reaches through
-     * the model, reached here through the route.
+     * the model, reached here through the route - and now fixed.
      *
-     * The controller guards with exists()-then-download() (:36-37), and
-     * download() builds its Content-Length from size() (FilesystemAdapter:283
-     * via response()). An empty file column passes the guard - the empty path
-     * names the disk root, which is a directory - and then size() throws
-     * straight through 'throw' => false.
+     * The controller guarded with exists()-then-download(), and download()
+     * builds its Content-Length from size() (FilesystemAdapter:283 via
+     * response()). An empty file column passed the guard - the empty path
+     * names the disk root, which is a directory - and then size() threw
+     * straight through 'throw' => false, so the member got a 500 where the
+     * else branch was written to answer 404.
      *
-     * So the member gets a 500 where the else branch was written to answer
-     * 404. On Laravel 8 this route answered 404, because Flysystem 1's has()
-     * returned false for an empty path.
-     *
-     * Stated as the broken behaviour first, so the fix reverses it visibly.
+     * The guard is fileExists() now, which the disk root does not satisfy, so
+     * the route answers 404 again, the way it did on Laravel 8. This assertion
+     * recorded the 500 in the commit before the fix.
      */
-    public function test_an_empty_file_column_answers_500_today_where_the_guard_intends_404(): void
+    public function test_an_empty_file_column_answers_404_not_500(): void
     {
         Storage::fake('news_files');
 
@@ -157,6 +156,6 @@ class NewsFileDownloadScopeTest extends FeatureTestCase
 
         $this->actingAs($member)
             ->get(route('groups.news.filedownload', ['group' => $group->id, 'file' => $file->id]))
-            ->assertStatus(500);
+            ->assertNotFound();
     }
 }

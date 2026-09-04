@@ -33,7 +33,14 @@ class GroupNewsFileDownloadController extends Controller
             abort(404);
         }
 
-        if (Storage::disk('news_files')->exists($file->file)) {
+        // TODO 37: fileExists(), not exists(). download() builds its
+        // Content-Length from size() (FilesystemAdapter:283 via response()),
+        // and size() is not covered by the disk's 'throw' => false. On
+        // Flysystem 3 exists() also answers true for a directory and for the
+        // empty path, so a row with an empty file column used to pass this
+        // guard and turn the else branch's intended 404 into a 500. See
+        // GroupNewsFile::getSizeAttribute() for how such a row is created.
+        if (Storage::disk('news_files')->fileExists($file->file)) {
             return Storage::disk('news_files')->download($file->file, $file->name);
         } else {
             return abort('404');

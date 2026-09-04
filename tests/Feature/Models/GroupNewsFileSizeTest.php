@@ -4,7 +4,6 @@ namespace Tests\Feature\Models;
 
 use App\Models\GroupNewsFile;
 use Illuminate\Support\Facades\Storage;
-use League\Flysystem\UnableToRetrieveMetadata;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -15,11 +14,12 @@ use Tests\Feature\FeatureTestCase;
  * serialization of the model: every news listing, every API-shaped response,
  * every toArray(). Whatever it does, it does on a page a group member loads.
  *
- * Its guard is exists()-then-size(), and FlysystemThreeSemanticsTest measures
- * why that pairing is not safe on Flysystem 3: exists() answers true for a
- * directory and for the empty path, and size() is one of the two readers that
- * 'throw' => false does not cover. The last case below is that gap reached
- * through real application code.
+ * Its guard used to be exists()-then-size(), and FlysystemThreeSemanticsTest
+ * measures why that pairing is not safe on Flysystem 3: exists() answers true
+ * for a directory and for the empty path, and size() is one of the two readers
+ * that 'throw' => false does not cover. The last case below is that gap
+ * reached through real application code - it recorded the 500 first and now
+ * records the fix.
  */
 class GroupNewsFileSizeTest extends FeatureTestCase
 {
@@ -75,7 +75,8 @@ class GroupNewsFileSizeTest extends FeatureTestCase
     }
 
     /**
-     * THE DEFECT, as it stands today.
+     * THE DEFECT, now fixed - this assertion is the reversal of the one this
+     * file opened with.
      *
      * The file column is a non-nullable string (2021_06_17_230555:20), and
      * NewsEdit:109 writes the return value of TemporaryUploadedFile::store()
@@ -86,25 +87,31 @@ class GroupNewsFileSizeTest extends FeatureTestCase
      * On Laravel 8 such a row reported 0 bytes: Flysystem 1's has()
      * short-circuited an empty path to false, so the guard's else branch ran.
      * On Laravel 9 the empty path names the disk root, which is a directory,
-     * which exists - so the guard passes and size() throws straight through
-     * 'throw' => false.
+     * which exists - so the guard passed and size() threw straight through
+     * 'throw' => false, turning a harmless zero into a 500 on the news
+     * listing.
      *
-     * The hop turned a harmless zero into a 500 on the news listing, and
-     * nothing announced it. This assertion is written the way TODO 36 wrote
-     * the failed-job-monitor one: it states the broken behaviour first, so the
-     * fix is a visible reversal rather than a claim.
+     * The guard now uses fileExists(), which answers false for the disk root,
+     * so the else branch runs again and the Laravel 8 answer is restored.
+     *
+     * The first assertion is kept as the control: it states WHY the old guard
+     * let this through, so a future edit back to exists() fails here with the
+     * reason attached rather than somewhere downstream.
      */
-    public function test_an_empty_file_column_makes_the_size_attribute_throw_today()
+    public function test_an_empty_file_column_reports_zero_bytes()
     {
         $file = GroupNewsFile::factory()->create(['file' => '']);
 
         $this->assertTrue(
             Storage::disk('news_files')->exists(''),
-            'The empty path no longer passes the guard; this defect may already be gone.'
+            'The empty path no longer passes exists(); the guard below is no longer load-bearing.'
         );
 
-        $this->expectException(UnableToRetrieveMetadata::class);
+        $this->assertFalse(
+            Storage::disk('news_files')->fileExists(''),
+            'fileExists() now accepts the disk root, which is what the guard relies on.'
+        );
 
-        $file->size;
+        $this->assertSame(0, $file->toArray()['size']);
     }
 }
