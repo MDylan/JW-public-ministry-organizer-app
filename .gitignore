@@ -2,6 +2,15 @@
 /public/hot
 /public/storage
 /public/avatars/*
+# Leftovers of the removed packer (eusonlito/laravel-packer). It wrote its
+# output as {filemtime}-cache_*.ext next to the source asset, plus a mirror of
+# the whole asset tree under public/cache. Nothing references them any more,
+# the names differ per install, and release/upgrade.php deletes them on the
+# target host - so they must never enter a commit. The patterns match the ones
+# the upgrade hook removes.
+/public/cache/
+/public/dist/**/*-cache_*
+/public/plugins/**/*-cache_*
 /storage/*.key
 .env
 .env.backup
