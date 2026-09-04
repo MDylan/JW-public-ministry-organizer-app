@@ -43,9 +43,11 @@ use Tests\TestCase;
 class FlysystemThreeSemanticsTest extends TestCase
 {
     /**
-     * Every disk whose driver is actually installed. The s3 entry is excluded
-     * because resolving it would fail at the missing adapter package, which
-     * FilesystemDiskContractTest pins separately.
+     * Every disk this application configures.
+     *
+     * The list is spelled out rather than read from the config, so that adding
+     * a disk without deciding what these semantics mean for it fails
+     * FilesystemDiskContractTest instead of silently widening this file.
      */
     private const LOCAL_DISKS = ['local', 'public', 'web', 'news_files'];
 

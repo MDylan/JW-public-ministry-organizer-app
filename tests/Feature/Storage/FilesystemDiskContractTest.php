@@ -31,25 +31,30 @@ class FilesystemDiskContractTest extends TestCase
      * assertArrayHasKey calls, because the thing worth guarding is the SET:
      * an entry appearing is as much a change as an entry vanishing.
      */
-    public function test_the_application_configures_exactly_five_disks()
+    public function test_the_application_configures_exactly_four_disks()
     {
         $this->assertSame(
-            ['local', 'public', 'web', 'news_files', 's3'],
+            ['local', 'public', 'web', 'news_files'],
             array_keys(config('filesystems.disks'))
         );
     }
 
     /**
-     * Four of the five disks are local; the fifth names a driver whose adapter
-     * package is not installed and never was.
+     * Every configured disk names a driver whose adapter is actually in the
+     * tree.
      *
-     * league/flysystem-aws-s3-v3 is absent from composer.json, from
-     * composer.lock and from vendor/league/, and no application code addresses
-     * the s3 disk. Resolving it would fail at the adapter, not at the
-     * credentials - so the entry is unreachable configuration rather than an
-     * unconfigured feature.
+     * This replaces the assertion TODO 37 opened with, which recorded the
+     * opposite: an "s3" entry inherited from the framework's default
+     * configuration, naming a driver with no league/flysystem-aws-s3-v3 in
+     * composer.json, in composer.lock or under vendor/league/, and with no
+     * call site anywhere in the application. It could never have resolved -
+     * it would have failed at the adapter, not at the credentials - so it was
+     * removed rather than configured.
+     *
+     * The class_exists() check is what keeps this honest: adding a cloud disk
+     * without its adapter package fails here rather than at the first upload.
      */
-    public function test_the_s3_disk_names_a_driver_whose_adapter_is_not_installed()
+    public function test_every_configured_disk_uses_a_driver_whose_adapter_is_installed()
     {
         $drivers = array_map(
             fn (array $disk): string => $disk['driver'],
@@ -57,13 +62,13 @@ class FilesystemDiskContractTest extends TestCase
         );
 
         $this->assertSame(
-            ['local' => 'local', 'public' => 'local', 'web' => 'local', 'news_files' => 'local', 's3' => 's3'],
+            ['local' => 'local', 'public' => 'local', 'web' => 'local', 'news_files' => 'local'],
             $drivers
         );
 
-        $this->assertFalse(
-            class_exists(\League\Flysystem\AwsS3V3\AwsS3V3Adapter::class),
-            'The s3 adapter package is installed; the s3 disk is no longer unreachable configuration.'
+        $this->assertTrue(
+            class_exists(\League\Flysystem\Local\LocalFilesystemAdapter::class),
+            'The local adapter package is missing; every disk in this application is unresolvable.'
         );
     }
 

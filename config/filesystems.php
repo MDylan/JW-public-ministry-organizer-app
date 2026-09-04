@@ -21,10 +21,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may configure as many filesystem "disks" as you wish, and you
-    | may even configure multiple disks of the same driver. Defaults have
-    | been setup for each driver as an example of the required options.
+    | may even configure multiple disks of the same driver.
     |
-    | Supported Drivers: "local", "ftp", "sftp", "s3"
+    | Every disk here uses the "local" driver, and that is the whole list of
+    | drivers this application can resolve: no adapter package for any other
+    | one is installed. Flysystem 3 ships the local adapter as a separate
+    | package (league/flysystem-local), and the s3, ftp and sftp adapters are
+    | separate packages too - none of which is in composer.json.
+    |
+    | TODO 37 removed an "s3" entry that had been sitting here since the
+    | framework's own default configuration. It had never been reachable: no
+    | league/flysystem-aws-s3-v3 in the tree, and no call site anywhere in the
+    | application. Adding a cloud disk means adding its adapter package first.
     |
     */
 
@@ -85,17 +93,6 @@ return [
                     'private' => 0700,
                 ],
             ],
-        ],
-
-        's3' => [
-            'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'throw' => false,
         ],
 
     ],
