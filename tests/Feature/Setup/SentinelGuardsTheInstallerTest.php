@@ -62,4 +62,33 @@ class SentinelGuardsTheInstallerTest extends FeatureTestCase
             $this->assertStringStartsNotWith('setup.', $name);
         }
     }
+
+    /**
+     * TODO 37: where the bare Storage:: call actually lands.
+     *
+     * The sentinel is read with no disk argument at all - routes/web.php:104
+     * and Handler.php:60 - and written the same way (Setup/MetaController:89).
+     * That resolves through filesystems.default, so the file's location is a
+     * consequence of a configuration key rather than of anything written at
+     * the call sites. Nothing said so before this test.
+     *
+     * The Flysystem 3 hop did not change this call: exists() on a name that is
+     * simply absent behaved the same on Flysystem 1. It is pinned because the
+     * route table's shape depends on it, and a change to filesystems.default
+     * would move the file without touching a line of installer code.
+     */
+    public function test_the_sentinel_is_read_from_the_default_disk_under_storage_app(): void
+    {
+        $this->assertSame('local', config('filesystems.default'));
+
+        $this->assertSame(
+            storage_path('app'.DIRECTORY_SEPARATOR.'installed.txt'),
+            Storage::disk(config('filesystems.default'))->path('installed.txt')
+        );
+
+        $this->assertSame(
+            file_exists(storage_path('app/installed.txt')),
+            Storage::exists('installed.txt')
+        );
+    }
 }

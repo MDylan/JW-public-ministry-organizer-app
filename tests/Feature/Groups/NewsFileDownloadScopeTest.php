@@ -117,4 +117,46 @@ class NewsFileDownloadScopeTest extends FeatureTestCase
             ->get(route('groups.news.filedownload', ['group' => $group->id, 'file' => $file->id]))
             ->assertForbidden();
     }
+
+    /**
+     * TODO 37: the same Flysystem 3 gap GroupNewsFileSizeTest reaches through
+     * the model, reached here through the route.
+     *
+     * The controller guards with exists()-then-download() (:36-37), and
+     * download() builds its Content-Length from size() (FilesystemAdapter:283
+     * via response()). An empty file column passes the guard - the empty path
+     * names the disk root, which is a directory - and then size() throws
+     * straight through 'throw' => false.
+     *
+     * So the member gets a 500 where the else branch was written to answer
+     * 404. On Laravel 8 this route answered 404, because Flysystem 1's has()
+     * returned false for an empty path.
+     *
+     * Stated as the broken behaviour first, so the fix reverses it visibly.
+     */
+    public function test_an_empty_file_column_answers_500_today_where_the_guard_intends_404(): void
+    {
+        Storage::fake('news_files');
+
+        $group = $this->createGroup();
+        $admin = $this->createUser(['email' => 'file-scope-empty-admin@example.test']);
+        $member = $this->createUser(['email' => 'file-scope-empty-member@example.test']);
+
+        $this->attachUserToGroup($admin, $group, 'roler', true);
+        $this->attachUserToGroup($member, $group, 'member', true);
+
+        $this->actingAs($admin);
+        $news = $this->createGroupNews($group, $admin);
+        $file = GroupNewsFile::create([
+            'group_new_id' => $news->id,
+            'name' => 'ures.pdf',
+            // What NewsEdit:109 writes when TemporaryUploadedFile::store()
+            // fails: its false return reaching a non-nullable string column.
+            'file' => '',
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('groups.news.filedownload', ['group' => $group->id, 'file' => $file->id]))
+            ->assertStatus(500);
+    }
 }
