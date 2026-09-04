@@ -236,7 +236,7 @@ into the column undetectably.
 | `StaticPageTranslation` | Localized title/content for static pages. | package-managed | No timestamps. |
 | `GroupNews` | Group-level announcements. | `belongsTo(Group)`, `belongsTo(User)`, `hasMany(GroupNewsFile)`, morph-many `LogHistory` | Translatable title/content, soft deletes, scheduled date/status. |
 | `GroupNewsTranslation` | Localized news content. | morph-many `LogHistory` | No timestamps. |
-| `GroupNewsFile` | Attachment metadata for a news item. | `belongsTo(GroupNews)` | Appends download `url` and file `size` from `news_files` disk. |
+| `GroupNewsFile` | Attachment metadata for a news item. | `belongsTo(GroupNews)` | Appends download `url` and file `size` from `news_files` disk. The `size` accessor guards with `fileExists()`, not `exists()`, and the distinction is load-bearing: `Storage::size()` is not covered by the disk's `'throw' => false`, while Flysystem 3's `exists()` also answers true for a directory and for the empty path. Since the accessor is appended, it runs on every serialization - see TODO 37. |
 | `GroupNewsUserLogs` | Last-seen marker for group news per user. | `belongsTo(Group)`, `belongsTo(User)` | Used to calculate unread status. |
 | `AdminNewsletter` | Global newsletter entries for privileged audiences. | `belongsTo(User)`, `hasOne(AdminNewsletterRead)` | Translatable subject/content, scheduled send date/time and recipient segmenting. |
 | `AdminNewsletterTranslation` | Localized newsletter content. | package-managed | No timestamps. |

@@ -175,7 +175,17 @@ survives the reduction with a package still under it, and `asm89` only appears
 at all because the check is done against `composer.lock` and the disk rather
 than against the git diff.
 
-*Last updated: TODO 35.1.*
+**TODO 37: none, and the reason is worth a line.** The `s3` disk was removed
+from `config/filesystems.php`, which looks like it should orphan an adapter -
+but `league/flysystem-aws-s3-v3` was never installed. It is absent from
+`composer.json`, from `composer.lock` and from `vendor/league/`, and so is
+`aws/aws-sdk-php`. The entry had been unreachable configuration inherited from
+the framework's own defaults, so nothing leaves the tree and nothing is left
+behind on a host.
+
+**TODO 38: none.** Moving `resources/lang` to `lang/` touches no package.
+
+*Last updated: TODO 38.*
 
 ## 3. Application files that move or disappear
 
@@ -203,10 +213,68 @@ a host that has run `config:cache` keeps serving the OLD values until the cache
 is rebuilt. Section 6 step 10 (`php artisan optimize:clear`) is what makes these
 two changes take effect, so it is not optional for this hop either.
 
-Known to be coming: `resources/lang/` -> `lang/` (TODO 38). Laravel 9 still
-accepts the old location, which is why it did not happen in this hop.
+**TODO 37: nothing moves, two configuration files change content.**
+`config/filesystems.php` loses its `s3` disk and `config/livewire.php` loses an
+example mentioning it. Both are tracked, both ship in the archive, both
+overwrite in place. The same `config:cache` dependency as TODO 36 applies:
+step 10 (`optimize:clear`) is what makes them take effect.
 
-*Last updated: TODO 36.*
+### TODO 38: `resources/lang/` -> `lang/`, and this one needs a hand
+
+**This is the first entry in this section that is not "nothing", and skipping
+it breaks translations silently.**
+
+122 files move from `resources/lang/` to `lang/` at the project root - 90 PHP
+files, five root JSON files (`de`, `fr`, `hu`, `ro`, `sk`) and the 27 published
+`vendor/cookie-consent/` files.
+
+**The old directory must be deleted on the host.** Not tidied up later:
+deleted, before the first request after the upgrade.
+
+Why, in one mechanism: Laravel decides where the language files are by looking
+at the disk, not at configuration. `Application::bindPathsInContainer()`
+(`vendor/laravel/framework/src/Illuminate/Foundation/Application.php:349-355`)
+reads
+
+```php
+if (is_dir($directory = $this->resourcePath('lang'))) {
+    return $directory;
+}
+
+return $this->basePath('lang');
+```
+
+so **`resources/lang/` wins whenever it exists.** An update archive overwrites
+files and adds them; it never removes a directory. A host that unpacks 2.0.0
+therefore ends up with both directories, and the framework keeps reading the
+old one. The new `lang/` tree sits there unread, every translation stays at its
+pre-upgrade content, and the in-house translation editor writes into the old
+directory as well.
+
+Nothing announces this. There is no exception, no log line and no error page:
+keys that exist only in the new tree render as raw keys, and keys whose text
+changed keep the old text. It looks like the upgrade simply did not include
+translation changes.
+
+The repository's own half of this is guarded -
+`tests/Unit/Support/LangPathTest::test_the_repository_carries_exactly_one
+_language_directory` fails if both directories ever exist here - but no test
+can reach a deployed host. This paragraph is the only thing that can.
+
+`release/build-update.php` lists all 122 old paths in
+`RELEASE-<version>.deleted.txt`. That file is the evidence, not the remedy:
+nothing executes it, because the hook has been frozen since TODO 34.
+
+Two related notes:
+
+- `resources/lang/vendor/translation/` - the directory `release/upgrade.php`
+  removes on the 1.x line - is a special case of the same deletion. A host that
+  never ran that hook still has it, and it goes with the rest of
+  `resources/lang/`.
+- `resources/` itself stays. Only its `lang/` subdirectory goes; `views/` and
+  the rest of the tree are untouched.
+
+*Last updated: TODO 38.*
 
 ## 4. `.env` changes
 
@@ -235,7 +303,18 @@ failed-job monitor raise a `TypeError` on the first failed queue job, because
 `.env` on the host needs no edit. Setting a real address is still the right thing
 to do; it is simply no longer load-bearing.
 
-*Last updated: TODO 36.*
+**TODO 37: four keys stop being read, and no host has to do anything.**
+`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` and
+`AWS_BUCKET` left `.env.example` with the `s3` disk. Nothing reads them any
+more, so a `.env` that still carries them is not wrong, only misleading -
+deleting the four lines is optional housekeeping, not an upgrade step. This is
+the opposite of the `MAIL_FROM_ADDRESS` case above precisely because that key
+*is* read.
+
+**TODO 38: none.** The language directory move introduces no environment
+variable and reinterprets none.
+
+*Last updated: TODO 38.*
 
 ## 5. Per-install state to repair
 
@@ -259,11 +338,16 @@ State that lives on the host and is not expressible in a release archive.
   packer's `cache/` subtree. Anything else in there is somebody's data and the
   repair must refuse to run. `release/upgrade.php` implements exactly that
   guard; a manual procedure has to reproduce it, not shortcut it.
+- **`resources/lang/`** must be deleted after the archive is unpacked, because
+  no archive can express a deletion. Section 3 has the mechanism and why it
+  fails silently; it is repeated here because this is the list an operator
+  works through, and it is the only per-install repair on it that costs
+  translations rather than a boot.
 - **`optimize:clear`** after every upgrade, and before measuring anything. A
   leftover `bootstrap/cache/config.php` makes the application read the previous
   release's configuration.
 
-*Last updated: TODO 35.*
+*Last updated: TODO 38.*
 
 ## 6. The upgrade procedure
 
@@ -323,3 +407,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 35 | Three more orphaned paths, the first **partial** namespace removal among them (`vendor/fruitcake/laravel-cors` goes, `vendor/fruitcake/php-cors` must stay). Two facts that change how section 6 reads: a removed service provider breaks a stale `bootstrap/cache` manifest exactly like a renamed one, and untracked `vendor/` packages are unreachable by the incremental updater at all. |
 | (no framework hop) | 35.1 | The committed `vendor/` tree was 1017 files short and no archive built from this branch would have booted. Fixed at the source, so section 2's untracked-package problem stops growing - but the deployed 1.x hosts still carry what never shipped, which keeps Branch B's step 5 the only thing that can clear it. Section 6 is no longer blocked. |
 | (no framework hop) | 36 | Sections 3 and 4 gained their first entries since TODO 34, and both say "nothing" - but section 3 now also names what that depends on: two configuration files changed content, and a host with a warm `config:cache` keeps the old values until step 10 runs. The verification also found that a `.env` carrying `MAIL_FROM_ADDRESS=null` broke the failed-job monitor outright; fixed in configuration, so no deployed `.env` needs editing. |
+| (no framework hop) | 37-38 | **Section 3 gained its first entry that is not "nothing", and section 5 its first repair that costs data rather than a boot.** Moving `resources/lang/` to `lang/` is invisible to an update archive, and Laravel picks the OLD directory whenever it still exists (`Application.php:349-355`), so a host that keeps it freezes every translation at the pre-upgrade content with no error anywhere. TODO 37 contributed nothing to sections 2 and 5, and four now-unread `AWS_*` keys to section 4 - the `s3` disk it removed never had an adapter package to orphan. |

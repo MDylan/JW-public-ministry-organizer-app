@@ -284,7 +284,7 @@ class RouteContractSnapshotTest extends TestCase
         //
         // WARNING: never compare the source scanner's COUNT against
         // route-contracts.json. The setup.* routes sit behind
-        // `if (!Storage::exists('installed.txt'))` in routes/web.php:78, so
+        // `if (!Storage::exists('installed.txt'))` in routes/web.php:104, so
         // they are absent from the runtime snapshot but present in the
         // source. It can still be used for duplicate filtering regardless:
         // the setup names are unique.

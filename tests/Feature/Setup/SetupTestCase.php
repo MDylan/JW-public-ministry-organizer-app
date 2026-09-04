@@ -11,7 +11,7 @@ use Tests\TestCase;
 /**
  * TODO 12: make the installer testable.
  *
- * The setup/* route group in routes/web.php:78 sits behind a condition: it
+ * The setup/* route group in routes/web.php:104 sits behind a condition: it
  * only registers if Storage::exists('installed.txt') is false. This file
  * EXISTS in the development instance, so the group has never been created in
  * the tests so far - there is not a single setup. entry in

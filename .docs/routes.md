@@ -213,7 +213,11 @@ files sit on the private `news_files` disk outside the docroot, so this
 controller was the only route to them. `GroupNewsFileDownloadController` now
 verifies `$file->new->group_id` against `{group}` and answers **404** - not 403,
 which would confirm the file exists. `tests/Feature/Groups/NewsFileDownloadScopeTest.php`
-pins it. Treat this as the pattern to check on every route that carries a group
+pins it. TODO 37 added a second reason for that 404: the file-presence guard
+uses `fileExists()` rather than `exists()`, because `download()` reads `size()`
+for its `Content-Length` and `size()` is not covered by the disk's
+`'throw' => false` - a row with an empty `file` column used to turn the
+intended 404 into a 500. Treat this as the pattern to check on every route that carries a group
 plus a second model.
 
 ### Impersonation (`v1-patch H`)

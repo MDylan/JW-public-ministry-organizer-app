@@ -41,7 +41,7 @@ class InstallerExceptionHandlerTest extends SetupTestCase
 
     public function test_the_redirect_target_exists_precisely_because_the_sentinel_is_missing(): void
     {
-        // The two conditions build on the same file: routes/web.php:78
+        // The two conditions build on the same file: routes/web.php:104
         // registers the route, and Handler:57 redirects here. If the sentinel
         // appeared, the handler would try to redirect to a non-existent route -
         // which is why it is important that the two branches always move together.

@@ -9,5 +9,6 @@
 - [Notifications](./notifications.md)
 - [Observers](./observers.md)
 - [Middleware](./middleware.md)
+- [Assets](./assets.md)
 
 Root entrypoint: [`AGENTS.md`](../AGENTS.md)
