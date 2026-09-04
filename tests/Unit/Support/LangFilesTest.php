@@ -63,6 +63,26 @@ class LangFilesTest extends TestCase
         return $path;
     }
 
+    /**
+     * Compare rendered language files by content, not by checkout artefact.
+     *
+     * LangFiles::renderArray() and renderJson() end every line with a literal
+     * "\n" on purpose - the language tree is LF throughout, and writing
+     * PHP_EOL would rewrite every file with CRLF the first time somebody saved
+     * a translation on Windows.
+     *
+     * A heredoc in THIS file, however, carries whatever line endings the
+     * checkout produced. .gitattributes says `* text=auto` with no eol, so on
+     * a client with core.autocrlf=true the working copy is CRLF and the
+     * expectation below arrives with CRLF while the file under test is LF.
+     * That is a property of the checkout, not of the code, so both sides are
+     * normalised rather than one of them being declared correct.
+     */
+    private function withUnixLineEndings(string $contents): string
+    {
+        return str_replace("\r\n", "\n", $contents);
+    }
+
     // =========================================================================
     // 1. Reading - the path, not a flattened key
     // =========================================================================
@@ -198,7 +218,7 @@ PHP);
 
         $this->langFiles()->write('hu', 'app', ['alma'], 'Körte');
 
-        $this->assertSame(<<<'PHP'
+        $this->assertSame($this->withUnixLineEndings(<<<'PHP'
 <?php
 
 return [
@@ -209,7 +229,7 @@ return [
     ],
 ];
 
-PHP, file_get_contents($path));
+PHP), $this->withUnixLineEndings(file_get_contents($path)));
     }
 
     public function test_integer_keys_stay_integers(): void
