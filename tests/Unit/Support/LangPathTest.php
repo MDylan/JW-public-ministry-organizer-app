@@ -32,9 +32,10 @@ class LangPathTest extends TestCase
      * The path the framework resolves, and therefore the one LangFiles,
      * FileLoader and every trans() call use.
      */
-    public function test_the_language_path_is_the_resources_lang_directory()
+    public function test_the_language_path_is_the_project_root_lang_directory()
     {
-        $this->assertSame(resource_path('lang'), App::langPath());
+        $this->assertSame(base_path('lang'), App::langPath());
+        $this->assertSame(lang_path(), App::langPath());
     }
 
     /**
@@ -43,11 +44,16 @@ class LangPathTest extends TestCase
      * This is the guard the deployed-host risk has no equivalent for. It is
      * written as a pair of assertions rather than a count, so a failure names
      * which of the two is wrong.
+     *
+     * The second line is the one that matters after the move: resources/lang
+     * coming back - through a bad merge, a half-applied revert, or a stray
+     * checkout - would take precedence over the directory beside it and be
+     * invisible until somebody noticed a translation was stale.
      */
     public function test_the_repository_carries_exactly_one_language_directory()
     {
-        $this->assertDirectoryExists(resource_path('lang'));
-        $this->assertDirectoryDoesNotExist(base_path('lang'));
+        $this->assertDirectoryExists(base_path('lang'));
+        $this->assertDirectoryDoesNotExist(resource_path('lang'));
     }
 
     /**

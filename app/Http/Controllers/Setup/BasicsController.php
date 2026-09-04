@@ -34,7 +34,10 @@ class BasicsController extends Controller
     }
 
     private function languages() {
-        $filesInFolder = File::files(base_path('resources/lang'));
+        // TODO 38: lang_path(), never a literal - see the same call in
+        // MetaController::welcome() for why. The two screens must offer the
+        // same list, and SetupLanguageListTest asserts that they do.
+        $filesInFolder = File::files(lang_path());
         $languages = ['en'];
         foreach($filesInFolder as $path) { 
               $file = pathinfo($path);

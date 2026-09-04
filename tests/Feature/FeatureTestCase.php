@@ -20,7 +20,7 @@ abstract class FeatureTestCase extends TestCase
      *
      * TODO 33.3. App\Support\Translation\LangFiles WRITES language files, and
      * under APP_ENV=testing App::langPath() resolves to the application's own
-     * resources/lang - so a test that forgets to point it elsewhere edits the
+     * application's own language tree - so a test that forgets to point it
      * tree the suite is running against. That is the same trap TODO 07 recorded
      * for Admin\Settings::saveOthers() and .env.testing, and it is not one to
      * leave to each test's discipline: the binding is made here, once, so

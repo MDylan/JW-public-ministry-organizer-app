@@ -75,13 +75,14 @@ class SetupLanguageListTest extends SetupTestCase
      * configuration. Nothing asserted it before, which is why the two
      * controllers could hardcode the old path without anything noticing.
      *
-     * Today the two agree because the directory has not moved yet. After the
-     * move this becomes lang_path() === base_path('lang') and the controllers
-     * read it through the helper instead of spelling it out.
+     * The two agree because the controllers now read lang_path() instead of
+     * spelling the old location out. Before the move they agreed by accident -
+     * the literal happened to name the directory the framework had picked.
      */
     public function test_the_language_directory_the_application_resolves_is_the_one_the_installer_reads(): void
     {
-        $this->assertSame(resource_path('lang'), App::langPath());
+        $this->assertSame(base_path('lang'), App::langPath());
+        $this->assertSame(lang_path(), App::langPath());
         $this->assertDirectoryExists(App::langPath());
     }
 }

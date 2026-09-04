@@ -16,7 +16,7 @@ use Tests\Feature\FeatureTestCase;
  * joedixon/laravel-translation.
  *
  * Every test binds LangFiles to a temporary language directory. Without that
- * the component would edit the application's own resources/lang while the suite
+ * the component would edit the application's own language tree while the suite
  * runs - the editor writes real files, and under APP_ENV=testing App::langPath()
  * is the real path.
  */

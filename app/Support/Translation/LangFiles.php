@@ -63,11 +63,12 @@ use Throwable;
  * settings makes it editable with its existing files intact - ensureLocale()
  * never touches a directory that is already there.
  *
- * PATH RESOLUTION: always App::langPath(), never resource_path('lang'), so the
- * Laravel 9 move of the language directory is a no-op for this code. The
- * constructor takes an override, which is what the tests bind - the editor
- * writes real files, and under APP_ENV=testing the real path is the
- * application's own resources/lang.
+ * PATH RESOLUTION: always App::langPath(), never a literal. TODO 38 carried
+ * out the Laravel 9 move of the language directory - resources/lang became
+ * lang/ at the project root - and this class needed no change at all, which
+ * is what that choice was for. The constructor takes an override, which is
+ * what the tests bind: the editor writes real files, and under
+ * APP_ENV=testing the real path is the application's own language tree.
  */
 class LangFiles
 {

@@ -11,7 +11,7 @@ return [
                         Meglévő nyelv módosításához írd be újra az országkódot és a módosítandó szöveget.
                         Kijelölhetsz "Fordító" jogkört azon felhasználók számára, akiknek lehetővé szeretnéd tenni az online fordítási lehetőséget.
                         <hr>
-                        Mielőtt elérhetővé teszel egy új nyelvet, kérjük győződj meg róla, hogy a nyelvi fájlok elérhetőek a "/resources/lang" mappában. <br/>
+                        Mielőtt elérhetővé teszel egy új nyelvet, kérjük győződj meg róla, hogy a nyelvi fájlok elérhetőek a "/lang" mappában. <br/>
                         Ha az adott nyelven nincs lefordítva valami, akkor ettől még használható lesz az oldal, de nem fog megjelenni értelmezhető szöveg a tartalom helyén.<br/>
                         Bővebb információért lásd a <a class="alert-link" href="https://laravel.com/docs/8.x/localization" target="_blank">laravel dokumentációt</a>.',
         'success' => 'A nyelv hozzá lett adva',

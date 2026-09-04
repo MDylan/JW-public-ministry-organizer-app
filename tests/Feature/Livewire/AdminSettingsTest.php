@@ -40,7 +40,7 @@ class AdminSettingsTest extends FeatureTestCase
 
         // TODO 33.3: languageAdd() now creates the locale directory too, so the
         // repository is pointed at a temporary tree. Without this the suite
-        // would leave stray directories in the application's own resources/lang.
+        // would leave stray directories in the application's own language tree.
         $this->langPath = storage_path('framework/testing/lang-settings');
         File::deleteDirectory($this->langPath);
         File::makeDirectory($this->langPath, 0755, true);

@@ -22,7 +22,7 @@ return array (
       'success' => 'New default language enabled',
     ),
     'empty' => 'You have not added any languages yet.',
-    'lang_help' => 'The language drop-down list will appear if there are at least 2 optional languages.<br/> To modify an existing language, fill in the country code again and create the text.  You can assign "Translator" role to those whom you want to involve in translation. <hr> Before you make a new language available, make sure that the language files are available in the "/resources/lang" folder. <br/> If a text has not been translated in the selected language, the page will function properly, but no comprehendible text will appear in the place of the given content.<br/> For more information see the <a class="alert-link" href="https://laravel.com/docs/8.x/localization" target="_blank">laravel documentation</a>.',
+    'lang_help' => 'The language drop-down list will appear if there are at least 2 optional languages.<br/> To modify an existing language, fill in the country code again and create the text.  You can assign "Translator" role to those whom you want to involve in translation. <hr> Before you make a new language available, make sure that the language files are available in the "/lang" folder. <br/> If a text has not been translated in the selected language, the page will function properly, but no comprehendible text will appear in the place of the given content.<br/> For more information see the <a class="alert-link" href="https://laravel.com/docs/8.x/localization" target="_blank">laravel documentation</a>.',
     'start_translation' => 'Start translation',
     'success' => 'The language has been added.',
     'title' => 'Available languages',

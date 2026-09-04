@@ -21,7 +21,12 @@ class MetaController extends Controller
      */
     public function welcome(): View
     {
-        $filesInFolder = File::files(base_path('resources/lang'));
+        // TODO 38: lang_path(), never a literal. Laravel 9 moved the language
+        // directory to the project root, and the framework resolves it from
+        // what is on disk (Application::bindPathsInContainer():349-355) - so
+        // spelling the path out here is how this screen would end up reading a
+        // different directory than every trans() call around it.
+        $filesInFolder = File::files(lang_path());
         $languages = ['en'];
         foreach($filesInFolder as $path) { 
               $file = pathinfo($path);

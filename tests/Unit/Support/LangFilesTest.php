@@ -14,7 +14,7 @@ use Tests\TestCase;
  *
  * Every test here works in a temporary language directory. That is not
  * tidiness: LangFiles writes real files, and under APP_ENV=testing
- * App::langPath() resolves to the application's own resources/lang - the same
+ * App::langPath() resolves to the application's own language tree - the same
  * trap TODO 07 hit when Admin\Settings::saveOthers() rewrote .env.testing. A
  * test that forgot the injected base path would shred the language tree it is
  * running against.
