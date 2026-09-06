@@ -1,6 +1,7 @@
 # Project Documentation Index
 
 - [Models](./models.md)
+- [Database](./database.md)
 - [Components](./components.md)
 - [Routes](./routes.md)
 - [Commands](./commands.md)

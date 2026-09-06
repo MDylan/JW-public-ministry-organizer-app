@@ -965,9 +965,30 @@ fires no events, and this codebase had two of those on live routes. Both are
 patterns, not accidents of this feature; the roadmap has other items that lean on
 observers and on read-then-write guards.
 
-Still open in this phase: **TODO 32** (migration squash), which deserves its own
-plan - though every item priced as multi-day so far has turned out to be one
-sitting, so read that estimate with suspicion. One small, well-specified
+**TODO 32 shipped on 2026-09-06**, which closes this phase - and it shipped
+**without squashing anything**. The entry deserved its own plan, but not for the
+reason the warning about multi-day items suggested. The work was one sitting;
+what changed under measurement was the **size of the problem**. "16 `->change()`
+calls across 8 files" reads like sixteen hazards, and the entry priced a squash
+against that impression. Measured, **two columns** diverge under Laravel 11's
+native `change()`, and one migration restating eight definitions closes it.
+
+The squash was built and verified byte-for-byte before being reverted, so the
+comparison is not hypothetical, and two lessons came out of it. The first
+repeats one TODO 33.3 already paid for: the entry prescribed a `schema:dump`
+baseline, and that form **cannot run on the hosting this project installs
+onto** - loading a dump shells out to the `mysql` client while the installer
+runs `migrate:fresh` from a web request, and it would have failed silently,
+because the schema path is derived from the connection name and the installer's
+connection is called `setup`. An instruction written from reading the framework
+is not the same as one written from running it.
+
+The second is new and larger: **measure the blast radius of the problem before
+choosing the size of the solution.** A baseline would have made a
+release-manifest key load-bearing for schema correctness on live installations,
+which is a real operational risk accepted to avoid two `ALTER TABLE`
+statements. It took the user asking whether a small migration would have done
+instead to get the two numbers compared at all. One small, well-specified
 follow-up also sits here unclaimed: converting
 `resources/views/public.blade.php` to `pwbs_asset()`, recorded at the end of
 TODO 33.8.
@@ -1558,7 +1579,52 @@ and is not covered by a general test.
     - **Consequence of the boot-time read, worth stating explicitly:** because `settings_maintenance` is populated from the `Settings` table during `boot()`, **maintenance mode cannot be turned on for the current request** - writing the settings row has no effect until the next one. The TODO 09 tests therefore drive it with `Config::set()`, and that workaround should disappear when this TODO lands.
   - Expected changes: `app/Providers/AppServiceProvider.php`, `app/Http/Middleware/SetLocale.php`.
 
-- [ ] **TODO 32: Squash the migration history**
+- [x] **TODO 32: Squash the migration history** - DONE, but **NOT by squashing**
+  - Delivered on 2026-09-06. The squash was built, verified byte-for-byte, and then **deliberately reverted** on the user's decision. What shipped instead is one migration, two test files and one new document. Suite: **1425 -> 1436 tests, 3952 -> 3976 assertions, green**; `database/migrations/` still holds its full history, now 102 files. Nothing is committed.
+  - **THE LESSON, and it is the expensive one: the size of the problem was assumed from the shape of the instruction, not measured.** "16 `->change()` calls across 8 files" reads like sixteen hazards, and this entry priced a squash against that impression. Measured, **two columns** diverge under Laravel 11's native `change()`. The rest redeclare enough to survive. The whole item is two `ALTER TABLE` statements' worth of risk, and it took the user asking "wouldn't a migration that fixes those few fields have been simpler?" to get it measured. **Measure the blast radius of the problem before choosing the size of the solution** - this roadmap already had the rule for specifications (`:955`) and did not apply it to its own framing.
+  - **CORRECTION to this entry's own numbers.** "97 migrations" is **101**; "16 `->change()` calls across 8 files" is 16 across **7**; "68 `dropColumn`/`renameColumn`" is correct. The schema is 36 tables, 291 columns, 103 indexes and 30 foreign keys - repository figures, since `kozter_testing` is built from the migration path.
+
+  - **What the trap actually is, measured.** Under Laravel 8-10 a `->change()` goes through `doctrine/dbal`, which reads the column's current definition and alters only what the migration redeclares. Laravel 11's native `change()` **drops every attribute not redeclared**. Of the eight `up()` declarations:
+
+    | Column | Declared | Laravel default | Actual | Diverges |
+    | --- | --- | --- | --- | --- |
+    | `group_news_translations.title` | `string()->nullable()` | NULL | NULL | no |
+    | `group_news_translations.content` | `text()->nullable()` | NULL | NULL | no |
+    | `groups.name` | `text()` | NOT NULL | NOT NULL | no |
+    | `group_posters.info` | `mediumText()` | NOT NULL | NOT NULL | no |
+    | `static_page_translations.content` | `longText()` | NOT NULL | NOT NULL | no |
+    | `jobs.attempts` | `unsignedSmallInteger()` | NOT NULL | NOT NULL | no |
+    | **`events.comment`** | `text()` | NOT NULL | **NULL** | **yes** |
+    | **`group_user.note`** | `text()` | NOT NULL | **NULL** | **yes** |
+
+    The charset and collation halves are harmless in this schema, because every table already defaults to `utf8mb4` / `utf8mb4_unicode_ci`, which is what the columns fall back to. **Both divergent columns carry the `encrypted` cast**, and `null` bypasses that cast in both directions, so the flip is a write failure rather than a cosmetic difference. And it bites **nobody on an existing installation** - those migrations have run and never run again - only a **fresh install after the Laravel 11 hop**, which is what the web installer does on customer hosting. The two would then diverge permanently, surfacing months later on the first event saved without a comment.
+
+  - **What shipped:**
+    - **`database/migrations/2026_09_06_120000_pin_the_changed_column_definitions.php`.** It **restates** the final definition of all eight columns as raw `ALTER TABLE`, so it does not depend on what any version of `change()` preserves and needs no revisiting when the framework changes its mind again. It compares against `information_schema` first and issues a statement only for a column that has actually drifted: a `MODIFY` on a TEXT column can rebuild the table, and on a deployed host this runs inside the updater's **web request** against tables that are not small. On every existing installation it therefore issues nothing at all - which is the property the test asserts, because "harmless statement" and "no statement" are very different things there.
+    - **`tests/Feature/Database/ChangedColumnDefinitionsTest.php`** (5 tests): the no-op case, a nullability repair, a collation repair, idempotence, and a **census** that fails if a new `->change()` call appears on a column the migration does not pin. The list is the assertion, the same shape as TODO 13's cast list.
+    - **`tests/Feature/Database/SchemaStructureTest.php`** (5 tests): the exact table set, all 30 foreign keys **with delete rules**, all 13 non-primary unique indexes **with column order**, the primary-key exception, and the absence of the orphaned translation tables. **Nothing covered any of this before** - the only two structural assertions in the suite sat inside the feature tests that happened to need them. Four more framework majors have to replay 101 migrations on every fresh install, and a structural loss raises no error at all: a missing foreign key or unique index fails nothing until the data is already wrong.
+    - **`EncryptedColumnSchemaTest` gained `COLLATION_NAME`.** This entry demanded collation survive and nothing pinned it. The control proved it earns its place: changing one column's collation fails **exactly** this new case while `test_every_encrypted_column_stays_on_utf8mb4` stays green.
+    - **New `.docs/database.md`**, plus the index and a pointer from `.docs/models.md`.
+
+  - **Why the squash was reverted, and it is a live-data argument rather than a taste one.** The updater unpacks an archive and runs `migrate --force`, so an installation several releases behind gets every migration it has not run yet **from its own copy of the files**, with no coordination. A baseline cannot do that: it must carry a guard that skips it on any existing installation, so anything folded into it never reaches a host that was behind, and that host's schema freezes silently. The only defence would have been the `previous_version` chain in `laraupdater.json`, which would have made a release-manifest key **load-bearing for schema correctness** rather than for the major-version ceiling alone. That is a new operational risk on live data, taken on to avoid two `ALTER TABLE` statements. The user's call, and the right one.
+
+  - **The squash was built and fully verified before being reverted, so its measurements are real and are the reason to trust the alternative.** Recorded because re-deriving them costs a day:
+    1. **`database/schema/*.sql` is not usable here, whatever form the baseline takes.** `MySqlSchemaState::dump()` shells out to `mysqldump` and `load()` runs `Process::fromShellCommandline('mysql … < file')` - external binaries, a shell and `proc_open`, none guaranteed on customer hosting where `migrate:fresh` runs from a web request. And it would have failed **silently**: `MigrateCommand::schemaPath()` builds the path from the **connection name**, the installer's connection is called `setup`, so it would look for `setup-schema.sql`, never find `mysql-schema.sql`, skip the load without raising anything and build a near-empty database. `SetupDatabaseTest`'s docblock records that this branch is deliberately untested, so the suite would not have caught it. **If a squash is ever revisited, it cannot be `schema:dump`.**
+    2. **Parity, measured rather than argued.** A PHP baseline of 35 raw `CREATE TABLE` statements, generated from a scratch database migrated with the pre-cut files only, was compared against a database built from the full history across `TABLES`, `COLUMNS` (including `ORDINAL_POSITION`, `COLUMN_DEFAULT`, `EXTRA`, `COLUMN_COMMENT`), `STATISTICS` (excluding the sampled `CARDINALITY`), `KEY_COLUMN_USAGE`, `REFERENTIAL_CONSTRAINTS` and `CHECK_CONSTRAINTS`: **zero differences**, and the full suite was green on it. The squash worked. It was reverted for the reason above, not because it failed.
+    3. **The installer path was driven by hand**, since the suite cannot: `migrate:fresh --database=setup` produced the same 35 tables with zero mismatches. The interesting part is *why* it works - `Migrator::usingConnection()` swaps the DatabaseManager's **default** connection, so a migration's bare `DB::statement()` and `Schema::hasTable()` follow `--database`. That is a framework internal worth knowing before writing any migration that uses the facades directly.
+    4. **The cut line, if it is ever needed.** `v.1.2.0` is the same commit as `v1`; `v1` carries 98 migrations and `v2-dev` 101, the difference being exactly the three `2026_08_10_*` files, none of which has ever shipped. `kozter_live` cannot answer "has every host run this?" - it is a developer copy migrated along with `v2-dev`, one batch per delivered item.
+
+  - **Four findings that outlived the revert:**
+    1. **`password_resets` has no primary key.** The structural test first asserted that every table has one and failed on exactly that table - Laravel's own stock migration creates an indexed `email`, a `token` and a nullable `created_at`, nothing more. The assertion pins the exception rather than the rule, so a *second* such table is still an error.
+    2. **DDL causes an implicit COMMIT in MySQL.** A single `ALTER TABLE` inside a test ends the transaction `RefreshDatabase` opened; the rollback then does nothing, the seeded fixtures survive into the next test and it dies on a duplicate e-mail address. That is how this was found. Any test performing DDL must do it on its own database - `ChangedColumnDefinitionsTest` carries the pattern.
+    3. **`SHOW CREATE TABLE` is not idempotent on the first round trip.** The first parity run reported 25 differing tables and **zero** `information_schema` differences, which is the signature of a rendering artefact rather than a schema one. A column inheriting its collation prints only `COLLATE utf8mb4_unicode_ci`, because that is not utf8mb4's default collation on MySQL 8; feeding that text back makes the collation explicit, so the next dump also prints `CHARACTER SET utf8mb4`. Normalising the clause away leaves zero differences, and a second round trip is a fixed point - both verified.
+    4. **The `disableForeignKeyConstraints()` reflex is wrong for a generated schema.** With the checks off, a missing table lets every dependent `CREATE TABLE` succeed and surfaces far from the cause; in topological order with the checks on, the omission fails on the statement that needs it. It also avoids leaving `FOREIGN_KEY_CHECKS=0` on a connection if a statement throws, which on the updater path is a live web request.
+
+  - **CORRECTION to TODO 57 (`:2183`), which this entry invalidates.** It reads "TODO 32 already neutralized the 16 `->change()` calls by squashing." The calls are still there and still need `doctrine/dbal` on Laravel 8-10. What TODO 32 delivered is that their **outcome** no longer depends on `change()` semantics: `2026_09_06_120000` restates the final definitions afterwards. Removing `doctrine/dbal` is still safe at Phase 8, because Laravel 11's `change()` is native and needs no package - the corrective migration is what makes its behaviour harmless. Corrected in place.
+
+  - **Not done, and deliberately:** `doctrine/dbal` stays in `composer.json` and `DatabaseController::databaseHasData()` still calls `getDoctrineSchemaManager()`; both are TODO 57. The migration history stays as it is - see the revert reasoning above, and `.docs/database.md` for the standing version of it.
+  - Expected changes: as delivered - 1 new migration, 2 new test files, 1 test extended, 1 new document, 2 documents touched.
+  - Original specification, unchanged:
   - Needed:
     - 97 migrations, 16 `->change()` calls across 8 files, 68 `dropColumn`/`renameColumn` occurrences. Squashing to a single schema dump removes the `doctrine/dbal` dependency risk and the Laravel 11 native-`change()` attribute-loss trap in one move.
     - **Before squashing**, verify the resulting schema against production for the encrypted columns (`text` widening from `2022_04_12_*` and `2022_06_05_*`) - nullable, default, charset, and collation must survive.
@@ -2180,7 +2246,7 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
 
 - [ ] **TODO 57: Remove `doctrine/dbal` and fix the schema-manager call**
   - Needed:
-    - Remove `doctrine/dbal` from `composer.json`. TODO 32 already neutralized the 16 `->change()` calls by squashing.
+    - Remove `doctrine/dbal` from `composer.json`. **TODO 32 did NOT squash** - see the correction in that entry. The 16 `->change()` calls are still in the migration path, but Laravel 11 needs no package for them, and `2026_09_06_120000_pin_the_changed_column_definitions` restates the eight affected columns afterwards so the native semantics cannot bite.
     - `app/Http/Controllers/Setup/DatabaseController.php:124` calls `->getDoctrineSchemaManager()`, which no longer exists on the connection - rewrite using `Schema::` / `getSchemaBuilder()`.
     - Re-run all migrations from scratch against `kozter_testing`.
   - Expected changes: `composer.json`, `DatabaseController.php`, verified by the TODO 12 setup-flow tests.

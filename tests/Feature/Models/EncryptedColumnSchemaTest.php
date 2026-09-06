@@ -8,10 +8,10 @@ use Tests\Feature\FeatureTestCase;
 /**
  * TODO 13: the SCHEMA of the 9 encrypted columns, pinned.
  *
- * This file is the actual safety net underneath the migration squash
- * (TODO 32) and Laravel 11's native change() (TODO 66). The latter DROPS
- * every attribute that is not redeclared - nullable, default, charset - and
- * four of the nine below have exactly one ->change() migration behind them:
+ * This file is the actual safety net underneath Laravel 11's native
+ * change() (TODO 66), which DROPS every attribute that is not redeclared -
+ * nullable, default, charset, collation - and four of the nine below have
+ * exactly one ->change() migration behind them:
  *
  *   2022_04_12_205152  groups.name        string -> text
  *   2022_04_12_210544  events.comment     string(100) -> text
@@ -27,6 +27,12 @@ use Tests\Feature\FeatureTestCase;
  * measurement, a 100-character plaintext's encrypted form already exceeds
  * 255, so a column that fell back to varchar would silently truncate (MySQL
  * in non-strict mode) or throw an error.
+ *
+ * TODO 32 measured which of those declarations would actually diverge under
+ * the native change(), and the answer is two columns on nullability alone -
+ * events.comment and group_user.note, both declared without ->nullable().
+ * A migration restates the final definition of all eight ->change() columns
+ * so the outcome no longer depends on what change() preserves.
  */
 class EncryptedColumnSchemaTest extends FeatureTestCase
 {
@@ -51,7 +57,8 @@ class EncryptedColumnSchemaTest extends FeatureTestCase
     private function columnMetadata(): array
     {
         $rows = DB::select(
-            'select TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH, CHARACTER_SET_NAME
+            'select TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH,
+                    CHARACTER_SET_NAME, COLLATION_NAME
              from information_schema.COLUMNS
              where TABLE_SCHEMA = ?',
             [DB::getDatabaseName()]
@@ -126,6 +133,27 @@ class EncryptedColumnSchemaTest extends FeatureTestCase
                 'varchar',
                 strtolower($metadata[$column]->DATA_TYPE),
                 "A(z) {$column} visszaesett varchar-ra; ebbe nem fér bele a titkosított érték."
+            );
+        }
+    }
+
+    public function test_every_encrypted_column_keeps_its_collation(): void
+    {
+        // The collation sits in the same attribute group as the charset, the
+        // one Laravel 11's change() drops, and nothing pinned it before
+        // TODO 32. It is the quietest member of that group: a definition that
+        // omits COLLATE inherits the table default, and if that ever fell back
+        // to the SERVER default - utf8mb4_0900_ai_ci on MySQL 8, not the
+        // utf8mb4_unicode_ci config/database.php declares - comparison
+        // semantics would change on every text column of the table with no
+        // error anywhere.
+        $metadata = $this->columnMetadata();
+
+        foreach (array_keys(self::EXPECTED_SCHEMA) as $column) {
+            $this->assertSame(
+                'utf8mb4_unicode_ci',
+                $metadata[$column]->COLLATION_NAME,
+                "A(z) {$column} rendezési szabálya megváltozott."
             );
         }
     }

@@ -158,7 +158,8 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
 
 Nine columns across six models use the `encrypted` cast. Behaviour is covered by
 `tests/Feature/Models/EncryptedAttributeTest.php`, the schema by
-`tests/Feature/Models/EncryptedColumnSchemaTest.php`.
+`tests/Feature/Models/EncryptedColumnSchemaTest.php`, which also pins their charset and
+collation. How the schema is built and guarded is [`database.md`](./database.md).
 
 | Column | Type | Nullable |
 |---|---|---|
@@ -196,7 +197,12 @@ Rules that follow from the cast, all measured:
   `varchar(255)` would hold roughly 30 characters of plain text and the original
   `varchar(100)` on `events.comment` could hold none at all. Four of the nine
   columns were widened by `->change()` migrations, which is what makes the schema
-  test a prerequisite for the Laravel 11 upgrade.
+  test a prerequisite for the Laravel 11 upgrade - Laravel 11 makes `change()`
+  native, and the native one drops every attribute the migration does not
+  redeclare. TODO 32 measured which declarations actually diverge (two, both on
+  nullability, `events.comment` and `group_user.note`) and added
+  `2026_09_06_120000_pin_the_changed_column_definitions`, which restates all
+  eight so the outcome no longer depends on what `change()` preserves.
 
 **Pivot columns depend on `using()`.** `group_user.note` is encrypted on write
 only because the relation declares `using(GroupUser::class)`:
