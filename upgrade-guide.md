@@ -185,7 +185,19 @@ behind on a host.
 
 **TODO 38: none.** Moving `resources/lang` to `lang/` touches no package.
 
-*Last updated: TODO 38.*
+**TODO 39.1 (avatars stop being rendered):**
+
+```
+vendor/laravolt                   (avatar; replaced by App\Support\Avatar\InitialsAvatar)
+vendor/intervention               (image; it was only there for the avatar package)
+```
+
+Both namespaces empty out completely - each held exactly one package - so the
+reduction described above keeps both. `intervention/image` was never declared in
+`composer.json`; it arrived as `laravolt/avatar`'s dependency and leaves with it,
+which is why removing one package orphans two paths.
+
+*Last updated: TODO 39.1.*
 
 ## 3. Application files that move or disappear
 
@@ -274,7 +286,18 @@ Two related notes:
 - `resources/` itself stays. Only its `lang/` subdirectory goes; `views/` and
   the rest of the tree are untouched.
 
-*Last updated: TODO 38.*
+**TODO 39.1: one directory disappears, and nothing breaks if it lingers.**
+`config/laravolt/` (holding `avatar.php`) goes with the package. It is the same
+shape of problem as TODO 38 - an archive cannot express a deletion - but not the
+same severity: no code reads `config('laravolt.*')` any more, so a host that
+keeps the stale directory only carries a dead file. Laravel loads every file
+under `config/` into the config repository, so the keys reappear unused; nothing
+resolves them.
+
+Delete it anyway when convenient, for the same reason as the rest of section 2:
+a partial tree is what makes the *next* upgrade hard to reason about.
+
+*Last updated: TODO 39.1.*
 
 ## 4. `.env` changes
 
@@ -331,6 +354,14 @@ State that lives on the host and is not expressible in a release archive.
   just as fatal as a rename, because the manifest still names the class. The 1.x
   hook already does this; a manual upgrade must do it by hand, **before** the
   first request.
+
+  **It is not only framework hops.** TODO 39.1 is not one - it removed a single
+  application dependency on Laravel 9 - and it still orphaned two providers
+  (`Laravolt\Avatar\ServiceProvider` and `Intervention\Image\ImageServiceProvider`).
+  The failure showed up immediately in development, on the first command run
+  after the removal: `Class "Intervention\Image\ImageServiceProvider" not found`,
+  thrown before anything else could run. Read the rule as "whenever a package
+  leaves or arrives", not "whenever the framework moves".
 - **`public/storage`** may be a real directory rather than the symlink it should
   be, on any host that ever rendered a page while `eusonlito/laravel-packer` was
   installed. `php artisan storage:link` silently skips when the path exists, so
@@ -343,11 +374,21 @@ State that lives on the host and is not expressible in a release archive.
   fails silently; it is repeated here because this is the list an operator
   works through, and it is the only per-install repair on it that costs
   translations rather than a boot.
+- **`public/avatars/`** holds one PNG per user who ever posted on a group
+  message board, and after TODO 39.1 nothing reads them: the board computes an
+  SVG per render. They are orphaned data, not broken state - leaving them costs
+  disk space and nothing else, and no page 404s because no URL points at them
+  any more. Safe to delete the directory's contents; safe to ignore. It is
+  listed because an operator finding a directory full of avatars after the
+  upgrade should know which of the two it is.
 - **`optimize:clear`** after every upgrade, and before measuring anything. A
   leftover `bootstrap/cache/config.php` makes the application read the previous
-  release's configuration.
+  release's configuration. TODO 39.1 adds a second reason for this hop: a cached
+  config still carries the `laravolt.avatar.*` keys from the deleted
+  `config/laravolt/avatar.php`, which is harmless but misleading when reading
+  `config:show`.
 
-*Last updated: TODO 38.*
+*Last updated: TODO 39.1.*
 
 ## 6. The upgrade procedure
 

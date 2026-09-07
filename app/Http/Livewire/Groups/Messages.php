@@ -8,10 +8,9 @@ use App\Models\GroupUser;
 use App\Models\User;
 use App\Notifications\GroupPriorityMessageNotification;
 use App\Rules\Throttle;
+use App\Support\Avatar\InitialsAvatar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
-use Laravolt\Avatar\Facade as Avatar;
 use Livewire\Component;
 
 class Messages extends Component
@@ -167,20 +166,20 @@ class Messages extends Component
 
         $total = GroupMessage::where('group_id', $this->group_id)->count();
 
-        foreach($messages as $message) {
-            $file = "avatar-".$message->user_id.".png";
-            $path = 'avatars/';
-            if(!Storage::disk('web')->exists($path.$file)) {
-                $avatar = Avatar::create($message->user->name);
-                $image = $avatar->getImageObject();
-                Storage::disk('web')->put($path.$file, $image->stream("png"));
-            }
-        }
+        // TODO 39.1: the avatars are computed, not stored. Keyed by author, so
+        // a board full of one person's messages builds a single SVG rather than
+        // one per message - and nothing touches the disk any more.
+        $avatars = $messages->pluck('user.name', 'user_id')
+                            ->map(function ($name) {
+                                return InitialsAvatar::dataUri((string) $name);
+                            })
+                            ->all();
 
         return view('livewire.groups.messages', [
             'messages' => $messages,
             'messages_count' => $messages->count(),
-            'total' => $total
+            'total' => $total,
+            'avatars' => $avatars
         ]);
     }
 }

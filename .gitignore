@@ -1,6 +1,11 @@
 /node_modules
 /public/hot
 /public/storage
+# Leftovers of the removed avatar files (TODO 39.1). Nothing writes here any
+# more - the message board computes an SVG data URI per author instead - but
+# every install and every dev machine still carries the PNGs the old mechanism
+# generated, and dropping the pattern would sweep them into a commit. It stays
+# for the same reason the packer patterns below do.
 /public/avatars/*
 # Leftovers of the removed packer (eusonlito/laravel-packer). It wrote its
 # output as {filemtime}-cache_*.ext next to the source asset, plus a mirror of
