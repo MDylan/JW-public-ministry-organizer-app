@@ -386,6 +386,20 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         return $array;
     }
 
+    /**
+     * Whether this user has proved they can read their own authenticator.
+     *
+     * TODO 39.2 added this accessor so that nothing outside the model has to
+     * name the column the answer is stored in. Fortify's own
+     * hasEnabledTwoFactorAuthentication() answers a different question - it
+     * only asks whether a secret exists - and enabling without confirming is
+     * exactly the state this project keeps apart from a confirmed one.
+     */
+    public function hasConfirmedTwoFactorAuth(): bool
+    {
+        return (bool) $this->two_factor_confirmed;
+    }
+
     public function confirmTwoFactorAuth($code)
     {
         $codeIsValid = app(TwoFactorAuthenticationProvider::class)

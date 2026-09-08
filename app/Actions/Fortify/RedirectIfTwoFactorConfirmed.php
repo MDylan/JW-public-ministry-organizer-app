@@ -11,7 +11,9 @@ class RedirectIfTwoFactorConfirmed extends RedirectIfTwoFactorAuthenticatable
     {
         $user = $this->validateCredentials($request);
 
-        if (optional($user)->two_factor_confirmed &&
+        // TODO 39.2: asks the model rather than naming the column, so the
+        // storage migration has one call site instead of several.
+        if (optional($user)->hasConfirmedTwoFactorAuth() &&
             in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
             return $this->twoFactorChallengeResponse($request, $user);
         }
