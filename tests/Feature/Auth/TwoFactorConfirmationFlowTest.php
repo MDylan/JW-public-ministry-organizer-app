@@ -14,12 +14,12 @@ use Tests\Feature\FeatureTestCase;
  *
  * WHY THIS FILE EXISTS
  *
- * composer.json pins laravel/fortify at ~1.11.2, and 1.11.2 declares
- * illuminate/support ^8.82|^9.0 - so it admits no Laravel 10 release, and the
- * Phase 5 hop cannot resolve while the pin stands. Lifting the ceiling crosses
- * 1.12.0, which introduces Fortify's own two_factor_confirmed_at column and its
- * own confirmation flow. This project confirms a second factor itself, through
- * a boolean the vendor knows nothing about, so "bump", "override" and "migrate"
+ * composer.json pinned laravel/fortify at ~1.11.2, and 1.11.2 declares
+ * illuminate/support ^8.82|^9.0 - so it admitted no Laravel 10 release, and the
+ * Phase 5 hop could not resolve while the pin stood. Lifting the ceiling
+ * reaches 1.19.1, whose own confirmation flow is built around a
+ * two_factor_confirmed_at column. This project confirms a second factor
+ * itself, through a column of its own, so "bump", "override" and "migrate"
  * were indistinguishable in risk while the flow had no acceptance criteria at
  * all - the same reason TODO 19.1, 20.1, 21.1 and 22.1 were written.
  *

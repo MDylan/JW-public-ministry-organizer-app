@@ -10,11 +10,26 @@ use Illuminate\Support\Facades\Schema;
  *
  * WHY. composer.json pinned laravel/fortify at ~1.11.2, which declares
  * illuminate/support ^8.82|^9.0 and therefore admits no Laravel 10 release.
- * Lifting that ceiling crosses 1.12.0, where Fortify grew its own
- * two_factor_confirmed_at column and writes it from its own actions. This
- * project had answered the same question with a two_factor_confirmed boolean
- * of its own, so after the bump two columns would have claimed the same fact
- * and only one of them would have been written by the vendor.
+ * Lifting that ceiling reaches 1.19.1, where Fortify's own confirmation flow
+ * is built around a two_factor_confirmed_at column. This project had answered
+ * the same question with a two_factor_confirmed boolean of its own, so two
+ * columns would have claimed the same fact.
+ *
+ * WHAT THE BUMP DOES NOT DO, measured on 1.19.1 rather than assumed. Every
+ * vendor path that touches two_factor_confirmed_at is gated on
+ * Fortify::confirmsTwoFactorAuthentication(), and config/fortify.php passes
+ * only 'confirmPassword' - so it is false here. EnableTwoFactorAuthentication
+ * does not write the column at all, the package's own disable action skips it,
+ * hasEnabledTwoFactorAuthentication() does not read it, and the confirmation
+ * controller that would write it is never routed, because
+ * FortifyServiceProvider calls Fortify::ignoreRoutes(). So the bump does NOT
+ * force this migration.
+ *
+ * It is a deliberate convergence instead. Keeping the answer in the column the
+ * vendor would use turns "adopt Fortify's own confirmation flow" (TODO 69)
+ * into a config decision rather than a schema migration made in the middle of
+ * an authentication change, and it removes the duplicate-concept hazard the
+ * moment anybody enables 'confirm'.
  *
  * WHAT THIS DOES. Adds the nullable timestamp, carries the boolean's answer
  * across, then drops the boolean. Nothing else about the flow changes: the
