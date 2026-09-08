@@ -4,6 +4,7 @@ namespace Laravel\Fortify\Actions;
 
 use Illuminate\Support\Collection;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
+use Laravel\Fortify\Fortify;
 use Laravel\Fortify\RecoveryCode;
 
 class GenerateNewRecoveryCodes
@@ -17,7 +18,7 @@ class GenerateNewRecoveryCodes
     public function __invoke($user)
     {
         $user->forceFill([
-            'two_factor_recovery_codes' => encrypt(json_encode(Collection::times(8, function () {
+            'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode(Collection::times(8, function () {
                 return RecoveryCode::generate();
             })->all())),
         ])->save();

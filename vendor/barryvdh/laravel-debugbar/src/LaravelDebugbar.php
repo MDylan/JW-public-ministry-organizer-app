@@ -181,7 +181,11 @@ class LaravelDebugbar extends DebugBar
 
         // Set custom error handler
         if ($config->get('debugbar.error_handler', false)) {
-            $this->prevErrorHandler = set_error_handler([$this, 'handleError']);
+            // Get the error_level config, default to E_ALL
+            $errorLevel = $config->get('debugbar.error_level', E_ALL);
+
+            // set error handler with configured error reporting level
+            $this->prevErrorHandler = set_error_handler([$this, 'handleError'], $errorLevel);
         }
 
         $this->selectStorage($this);
@@ -363,6 +367,11 @@ class LaravelDebugbar extends DebugBar
             $queryCollector->setLimits($config->get('debugbar.options.db.soft_limit'), $config->get('debugbar.options.db.hard_limit'));
             $queryCollector->setDurationBackground($config->get('debugbar.options.db.duration_background'));
 
+            $threshold = $config->get('debugbar.options.db.slow_threshold', false);
+            if ($threshold && !$config->get('debugbar.options.db.only_slow_queries', true)) {
+                $queryCollector->setSlowThreshold($threshold);
+            }
+
             if ($config->get('debugbar.options.db.with_params')) {
                 $queryCollector->setRenderSqlWithParams(true);
             }
@@ -402,9 +411,10 @@ class LaravelDebugbar extends DebugBar
                             return; // Issue 776 : We've turned off collecting after the listener was attached
                         }
 
-                        //allow collecting only queries slower than a specified amount of milliseconds
                         $threshold = app('config')->get('debugbar.options.db.slow_threshold', false);
-                        if (!$threshold || $query->time > $threshold) {
+                        $onlyThreshold = app('config')->get('debugbar.options.db.only_slow_queries', true);
+                        //allow collecting only queries slower than a specified amount of milliseconds
+                        if (!$onlyThreshold || !$threshold || $query->time > $threshold) {
                             $this['queries']->addQuery($query);
                         }
                     }

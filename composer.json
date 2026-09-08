@@ -11,12 +11,12 @@
         }
     ],
     "require": {
-        "php": "^8.0.2",
+        "php": "^8.1",
         "astrotomic/laravel-translatable": "^11.9",
         "doctrine/dbal": "^3.1",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/fortify": ">=1.19.1 <1.37.0",
-        "laravel/framework": "^9.0",
+        "laravel/framework": "^10.0",
         "laravel/tinker": "^2.5",
         "livewire/livewire": "^2.10.4",
         "mdylan/laraupdater": "^2.0",
@@ -31,9 +31,9 @@
         "fakerphp/faker": "^1.9.1",
         "laravel/sail": "^1.0.1",
         "mockery/mockery": "^1.4.2",
-        "nunomaduro/collision": "^6.0",
-        "phpunit/phpunit": "^9.3.3",
-        "spatie/laravel-ignition": "^1.0"
+        "nunomaduro/collision": "^7.0",
+        "phpunit/phpunit": "^10.0",
+        "spatie/laravel-ignition": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -90,10 +90,6 @@
                     },
                     "PKSA-mdq4-51ck-6kdq": {
                         "reason": "CVE-2026-48019 - the SECOND Packagist record of the same GHSA-5vg9-5847-vvmq CRLF issue as PKSA-3r5d-mb8f-1qw9. Its affected range starts at 9.0.0, which is why it blocks from Laravel 9 onwards and never blocked Laravel 8. Same fix (12.60.0), same mitigation, same expiry as the entry above. Unblocks resolution only; composer audit still reports it. See upgrade-roadmap.md, TODO 34.",
-                        "on-audit": false
-                    },
-                    "PKSA-8qx3-n5y5-vvnd": {
-                        "reason": "CVE-2025-27515 file validation bypass. Fixed in 10.48.29 only - no Laravel 9 backport. This is the first of the four to expire: remove it at Phase 5 (TODO 39). Unblocks resolution only; composer audit still reports it. See upgrade-roadmap.md, TODO 34.",
                         "on-audit": false
                     }
                 }

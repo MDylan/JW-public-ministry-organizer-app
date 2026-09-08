@@ -2,6 +2,55 @@
 
 All notable changes to `cookie-consent` will be documented in this file
 
+## 3.3.2 - 2024-08-07
+
+### What's Changed
+
+* Add catalan translation by @agisbertb in https://github.com/spatie/laravel-cookie-consent/pull/197
+
+### New Contributors
+
+* @agisbertb made their first contribution in https://github.com/spatie/laravel-cookie-consent/pull/197
+
+**Full Changelog**: https://github.com/spatie/laravel-cookie-consent/compare/3.3.1...3.3.2
+
+## 3.3.1 - 2024-07-15
+
+### What's Changed
+
+* fix - styling on smaller screens by @antonL95 in https://github.com/spatie/laravel-cookie-consent/pull/196
+
+### New Contributors
+
+* @antonL95 made their first contribution in https://github.com/spatie/laravel-cookie-consent/pull/196
+
+**Full Changelog**: https://github.com/spatie/laravel-cookie-consent/compare/3.3.0...3.3.1
+
+## 3.3.0 - 2024-03-08
+
+### What's Changed
+
+* Clarifying when this package is required. by @matthiaz in https://github.com/spatie/laravel-cookie-consent/pull/192
+* Laravel 11.x Compatibility by @laravel-shift in https://github.com/spatie/laravel-cookie-consent/pull/194
+
+### New Contributors
+
+* @matthiaz made their first contribution in https://github.com/spatie/laravel-cookie-consent/pull/192
+
+**Full Changelog**: https://github.com/spatie/laravel-cookie-consent/compare/3.2.4...3.3.0
+
+## 3.2.4 - 2023-01-25
+
+### What's Changed
+
+- Laravel 10.x Compatibility by @laravel-shift in https://github.com/spatie/laravel-cookie-consent/pull/187
+
+### New Contributors
+
+- @laravel-shift made their first contribution in https://github.com/spatie/laravel-cookie-consent/pull/187
+
+**Full Changelog**: https://github.com/spatie/laravel-cookie-consent/compare/3.2.3...3.2.4
+
 ## 3.2.3 - 2023-01-16
 
 ### What's Changed

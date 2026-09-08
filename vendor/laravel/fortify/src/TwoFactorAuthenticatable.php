@@ -9,6 +9,7 @@ use BaconQrCode\Renderer\RendererStyle\Fill;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Events\RecoveryCodeReplaced;
 
 trait TwoFactorAuthenticatable
 {
@@ -34,7 +35,7 @@ trait TwoFactorAuthenticatable
      */
     public function recoveryCodes()
     {
-        return json_decode(decrypt($this->two_factor_recovery_codes), true);
+        return json_decode(Fortify::currentEncrypter()->decrypt($this->two_factor_recovery_codes), true);
     }
 
     /**
@@ -46,12 +47,14 @@ trait TwoFactorAuthenticatable
     public function replaceRecoveryCode($code)
     {
         $this->forceFill([
-            'two_factor_recovery_codes' => encrypt(str_replace(
+            'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(str_replace(
                 $code,
                 RecoveryCode::generate(),
-                decrypt($this->two_factor_recovery_codes)
+                Fortify::currentEncrypter()->decrypt($this->two_factor_recovery_codes)
             )),
         ])->save();
+
+        RecoveryCodeReplaced::dispatch($this, $code);
     }
 
     /**
@@ -81,7 +84,7 @@ trait TwoFactorAuthenticatable
         return app(TwoFactorAuthenticationProvider::class)->qrCodeUrl(
             config('app.name'),
             $this->{Fortify::username()},
-            decrypt($this->two_factor_secret)
+            Fortify::currentEncrypter()->decrypt($this->two_factor_secret)
         );
     }
 }

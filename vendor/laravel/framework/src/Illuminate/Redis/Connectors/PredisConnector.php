@@ -12,7 +12,7 @@ use Predis\Client;
 class PredisConnector implements Connector
 {
     /**
-     * Create a new clustered Predis connection.
+     * Create a new connection.
      *
      * @param  array  $config
      * @param  array  $options

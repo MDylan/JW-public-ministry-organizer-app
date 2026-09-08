@@ -114,7 +114,14 @@ class Store implements Session
             if ($this->serialization === 'json') {
                 $data = json_decode($this->prepareForUnserialize($data), true);
             } else {
-                $data = @unserialize($this->prepareForUnserialize($data));
+                $data = $this->prepareForUnserialize($data);
+
+                if (strpos($data, 'Illuminate\Validation\Validator') !== false &&
+                    strpos($data, 'Illuminate\Broadcasting\PendingBroadcast') !== false) {
+                    return [];
+                }
+
+                $data = @unserialize($data);
             }
 
             if ($data !== false && is_array($data)) {
@@ -243,6 +250,17 @@ class Store implements Session
     public function only(array $keys)
     {
         return Arr::only($this->attributes, $keys);
+    }
+
+    /**
+     * Get all the session data except for a specified array of items.
+     *
+     * @param  array  $keys
+     * @return array
+     */
+    public function except(array $keys)
+    {
+        return Arr::except($this->attributes, $keys);
     }
 
     /**

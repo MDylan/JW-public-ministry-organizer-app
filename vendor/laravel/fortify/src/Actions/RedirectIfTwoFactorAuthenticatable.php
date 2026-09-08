@@ -5,12 +5,13 @@ namespace Laravel\Fortify\Actions;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Events\TwoFactorAuthenticationChallenged;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\LoginRateLimiter;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class RedirectIfTwoFactorAuthenticatable
+class RedirectIfTwoFactorAuthenticatable implements RedirectsIfTwoFactorAuthenticatable
 {
     /**
      * The guard implementation.
@@ -86,13 +87,17 @@ class RedirectIfTwoFactorAuthenticatable
             });
         }
 
-        $model = $this->guard->getProvider()->getModel();
+        $provider = $this->guard->getProvider();
 
-        return tap($model::where(Fortify::username(), $request->{Fortify::username()})->first(), function ($user) use ($request) {
-            if (! $user || ! $this->guard->getProvider()->validateCredentials($user, ['password' => $request->password])) {
+        return tap($provider->retrieveByCredentials($request->only(Fortify::username(), 'password')), function ($user) use ($provider, $request) {
+            if (! $user || ! $provider->validateCredentials($user, ['password' => $request->password])) {
                 $this->fireFailedEvent($request, $user);
 
                 $this->throwFailedAuthenticationException($request);
+            }
+
+            if (config('hashing.rehash_on_login', true) && method_exists($provider, 'rehashPasswordIfRequired')) {
+                $provider->rehashPasswordIfRequired($user, ['password' => $request->password]);
             }
         });
     }
@@ -123,7 +128,7 @@ class RedirectIfTwoFactorAuthenticatable
      */
     protected function fireFailedEvent($request, $user = null)
     {
-        event(new Failed(config('fortify.guard'), $user, [
+        event(new Failed($this->guard?->name ?? config('fortify.guard'), $user, [
             Fortify::username() => $request->{Fortify::username()},
             'password' => $request->password,
         ]));
@@ -146,7 +151,7 @@ class RedirectIfTwoFactorAuthenticatable
         TwoFactorAuthenticationChallenged::dispatch($user);
 
         return $request->wantsJson()
-                    ? response()->json(['two_factor' => true])
-                    : redirect()->route('two-factor.login');
+            ? response()->json(['two_factor' => true])
+            : redirect()->route('two-factor.login');
     }
 }

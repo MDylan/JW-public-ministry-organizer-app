@@ -38,6 +38,7 @@ class QueryCollector extends PDOCollector
         '/vendor/laravel/framework/src/Illuminate/Collections',
         '/vendor/october/rain',
         '/vendor/barryvdh/laravel-debugbar',
+        '/vendor/fruitcake/laravel-debugbar',
     ];
 
     /**
@@ -399,7 +400,6 @@ class QueryCollector extends PDOCollector
         } else {
             $reflection = new \ReflectionClass($finder);
             $property = $reflection->getProperty('views');
-            $property->setAccessible(true);
             $this->reflection['viewfinderViews'] = $property;
         }
 
@@ -517,6 +517,7 @@ class QueryCollector extends PDOCollector
                 'start' => $query['start'] ?? null,
                 'duration' => $query['time'],
                 'duration_str' => ($query['type'] == 'transaction') ? '' : $this->formatDuration($query['time']),
+                'slow' => $this->slowThreshold && $this->slowThreshold <= $query['time'],
                 'memory' => $query['memory'],
                 'memory_str' => $query['memory'] ? $this->getDataFormatter()->formatBytes($query['memory']) : null,
                 'filename' => $this->getDataFormatter()->formatSource($source, true),

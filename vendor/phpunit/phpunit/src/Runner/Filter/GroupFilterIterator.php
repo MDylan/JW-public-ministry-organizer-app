@@ -10,35 +10,42 @@
 namespace PHPUnit\Runner\Filter;
 
 use function array_map;
-use function array_merge;
+use function array_push;
 use function in_array;
 use function spl_object_id;
+use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 use RecursiveFilterIterator;
 use RecursiveIterator;
 
 /**
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
+ *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 abstract class GroupFilterIterator extends RecursiveFilterIterator
 {
     /**
-     * @var int[]
+     * @psalm-var list<int>
      */
-    protected $groupTests = [];
+    protected array $groupTests = [];
 
+    /**
+     * @psalm-param RecursiveIterator<int, Test> $iterator
+     * @psalm-param list<non-empty-string> $groups
+     */
     public function __construct(RecursiveIterator $iterator, array $groups, TestSuite $suite)
     {
         parent::__construct($iterator);
 
-        foreach ($suite->getGroupDetails() as $group => $tests) {
+        foreach ($suite->groupDetails() as $group => $tests) {
             if (in_array((string) $group, $groups, true)) {
-                $testIds = array_map(
+                $testHashes = array_map(
                     'spl_object_id',
                     $tests,
                 );
 
-                $this->groupTests = array_merge($this->groupTests, $testIds);
+                array_push($this->groupTests, ...$testHashes);
             }
         }
     }
@@ -54,5 +61,5 @@ abstract class GroupFilterIterator extends RecursiveFilterIterator
         return $this->doAccept(spl_object_id($test));
     }
 
-    abstract protected function doAccept(int $id);
+    abstract protected function doAccept(int $id): bool;
 }

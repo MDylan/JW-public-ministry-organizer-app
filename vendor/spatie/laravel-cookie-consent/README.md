@@ -1,18 +1,25 @@
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/support-ukraine.svg?t=1" />](https://supportukrainenow.org)
-
-# Make your Laravel app comply with the crazy EU cookie law
+# Simple, customizable cookie consent message for Laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/spatie/laravel-cookie-consent.svg?style=flat-square)](https://packagist.org/packages/spatie/laravel-cookie-consent)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/spatie/laravel-cookie-consent/run-tests?label=tests)
+[![run-tests](https://github.com/spatie/laravel-cookie-consent/actions/workflows/run-tests.yml/badge.svg)](https://github.com/spatie/laravel-cookie-consent/actions/workflows/run-tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/spatie/laravel-cookie-consent.svg?style=flat-square)](https://packagist.org/packages/spatie/laravel-cookie-consent)
 
-All sites owned by EU citizens or targeted towards EU citizens must comply with a crazy EU law. This law requires a dialog to be displayed to inform the users of your websites how cookies are being used. You can read more info on the legislation on [the site of the European Commission](http://ec.europa.eu/ipg/basics/legal/cookies/index_en.htm#section_2).
+This package adds a simple, customizable cookie consent message to your site. When the site loads, the banner appears and lets users consent to cookies. Once consent is given, the banner hides and stays hidden.
 
-This package provides an easily configurable view to display the message. Also included is JavaScript code to set a cookie when a user agrees with the cookie policy. The package will not display the dialog when that cookie has been set.
+**What this package does not:**
+- Include an option to 'Decline' all cookies, which might be required.
+- Block trackers and cookies before consent. You need to handle this yourself.
+- Include options for different consent categories like "Necessary" or "Marketing".
 
-Spatie is a web design agency based in Antwerp, Belgium. You'll find an overview of all our open source projects [on our website](https://spatie.be/opensource).
+For more advanced cookie consent options in Laravel, consider these alternatives.
+
+- [whitecube/laravel-cookie-consent](https://github.com/whitecube/laravel-cookie-consent)
+- [statikbe/laravel-cookie-consent](https://github.com/statikbe/laravel-cookie-consent)
+
+If you need an implementation of cookie consent for [Filament](https://github.com/filamentphp/filament) you can evaluate this plugin:
+
+- [marcogermani87/filament-cookie-consent](https://github.com/marcogermani87/filament-cookie-consent)
 
 ## Support us
 
@@ -114,6 +121,16 @@ This will copy the `index` and `dialogContents` view files over to `resources/vi
 
 Instead of including `cookie-consent::index` in your view you could opt to add the `Spatie\CookieConsent\CookieConsentMiddleware` to your kernel:
 
+In Laravel 11 open /bootstrap/app.php and register them there:
+
+```php
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\Spatie\CookieConsent\CookieConsentMiddleware::class);
+    })
+```
+
+In Laravel 9 and 10 you can add them in app/Http/Kernel.php:
+
 ```php
 // app/Http/Kernel.php
 
@@ -131,7 +148,7 @@ class Kernel extends HttpKernel
 This will automatically add `cookie-consent::index` to the content of your response right before the closing body tag.
 
 ## Notice
-The legislation is pretty very vague on how to display the warning, which texts are necessary, and what options you need to provide. This package will go a long way towards compliance, but if you want to be 100% sure that your website is ok, you should consult a legal expert.
+We are not lawyers and can't provide legal advice. Consult legal professionals what rules apply to your project.
 
 ## Changelog
 

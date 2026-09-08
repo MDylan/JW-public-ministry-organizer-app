@@ -43,6 +43,8 @@ class AttemptToAuthenticate
      * @param  \Illuminate\Http\Request  $request
      * @param  callable  $next
      * @return mixed
+     *
+     * @throws ValidationException
      */
     public function handle($request, $next)
     {
@@ -66,6 +68,8 @@ class AttemptToAuthenticate
      * @param  \Illuminate\Http\Request  $request
      * @param  callable  $next
      * @return mixed
+     *
+     * @throws ValidationException
      */
     protected function handleUsingCustomCallback($request, $next)
     {
@@ -107,7 +111,7 @@ class AttemptToAuthenticate
      */
     protected function fireFailedEvent($request)
     {
-        event(new Failed(config('fortify.guard'), null, [
+        event(new Failed($this->guard?->name ?? config('fortify.guard'), null, [
             Fortify::username() => $request->{Fortify::username()},
             'password' => $request->password,
         ]));

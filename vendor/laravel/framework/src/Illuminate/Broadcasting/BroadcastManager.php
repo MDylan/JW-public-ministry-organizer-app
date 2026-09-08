@@ -112,7 +112,7 @@ class BroadcastManager implements FactoryContract
      */
     public function channelRoutes(?array $attributes = null)
     {
-        return $this->routes($attributes);
+        $this->routes($attributes);
     }
 
     /**
@@ -271,6 +271,17 @@ class BroadcastManager implements FactoryContract
     protected function callCustomCreator(array $config)
     {
         return $this->customCreators[$config['driver']]($this->app, $config);
+    }
+
+    /**
+     * Create an instance of the driver.
+     *
+     * @param  array  $config
+     * @return \Illuminate\Contracts\Broadcasting\Broadcaster
+     */
+    protected function createReverbDriver(array $config)
+    {
+        return $this->createPusherDriver($config);
     }
 
     /**
