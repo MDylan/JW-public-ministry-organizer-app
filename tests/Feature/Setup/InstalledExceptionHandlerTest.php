@@ -27,8 +27,12 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
     {
         parent::setUp();
 
+        // Laravel 10 added $connectionName as QueryException's first
+        // constructor argument; the value only reaches the formatted
+        // message, and the connection this suite runs on is mysql.
         Route::middleware('web')->get('/__test/query-exception', function () {
             throw new QueryException(
+                'mysql',
                 'select * from nem_letezo_tabla',
                 [],
                 new \PDOException('SQLSTATE[42S02]: Base table or view not found: nem_letezo_tabla')

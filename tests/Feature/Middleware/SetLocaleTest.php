@@ -405,9 +405,12 @@ class SetLocaleTest extends FeatureTestCase
         Cache::shouldReceive('rememberForever')
             ->with(ApplicationSettings::CACHE_KEY, \Mockery::any())
             ->andReturnUsing(fn ($key, $callback) => $callback());
+        // Laravel 10 added $connectionName as QueryException's first
+        // constructor argument; the value only reaches the formatted
+        // message, and the connection this suite runs on is mysql.
         Cache::shouldReceive('rememberForever')
             ->with('sidemenu_guest', \Mockery::any())
-            ->andThrow(new QueryException('select * from `static_pages`', [], new \Exception('Table not found')));
+            ->andThrow(new QueryException('mysql', 'select * from `static_pages`', [], new \Exception('Table not found')));
 
         $this->get($this->homeUrl())->assertStatus(200);
 

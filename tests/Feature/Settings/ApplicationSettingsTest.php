@@ -169,10 +169,13 @@ class ApplicationSettingsTest extends FeatureTestCase
         // rememberForever closure, so a QueryException raised there surfaces at
         // exactly this point. This is the branch that used to run into an EMPTY
         // catch.
+        // Laravel 10 added $connectionName as QueryException's first
+        // constructor argument; the value only reaches the formatted
+        // message, and the connection this suite runs on is mysql.
         Log::spy();
         Cache::shouldReceive('rememberForever')
             ->once()
-            ->andThrow(new QueryException('select * from `settings`', [], new \Exception('Table not found')));
+            ->andThrow(new QueryException('mysql', 'select * from `settings`', [], new \Exception('Table not found')));
 
         $settings = (new ApplicationSettings())->all();
 
@@ -200,7 +203,7 @@ class ApplicationSettingsTest extends FeatureTestCase
         // flush. The failed state is memoized for the running request only.
         Cache::shouldReceive('rememberForever')
             ->once()
-            ->andThrow(new QueryException('select * from `settings`', [], new \Exception('Table not found')));
+            ->andThrow(new QueryException('mysql', 'select * from `settings`', [], new \Exception('Table not found')));
         Cache::shouldNotReceive('put');
         Cache::shouldNotReceive('forever');
 
