@@ -74,7 +74,7 @@ whose PHP cannot be raised cannot take 2.0.0 at all.
 |---|---|---|---|
 | 1.2.0 (current release) | 8.83.x | `^8.0` | - |
 | after Phase 4 | 9.52.x | **`^8.0.2`** | TODO 34 |
-| after Phase 5 | 10.x | `^8.1` (planned) | TODO 39 |
+| after Phase 5 | **10.50.x** | **`^8.1`** | TODO 39 |
 | after Phase 8 | 11.x | `^8.2` (planned) | TODO 55 |
 | after Phase 10 | 13.x | `^8.3` (planned) | TODO 64 |
 
@@ -202,7 +202,25 @@ which is why removing one package orphans two paths.
 removals. The `league/commonmark` advisory bump in the same change set is the
 same shape. Nothing leaves a vendor namespace, so nothing is orphaned on a host.
 
-*Last updated: TODO 39.2.*
+**TODO 39 (Laravel 9 -> 10): two partial paths, and no whole namespace.**
+
+```
+vendor/doctrine/instantiator            (a PHPUnit 9 dependency)
+vendor/sebastian/resource-operations    (a PHPUnit 9 dependency)
+```
+
+These are the lock's only two removals against 71 additions and updates. Both
+namespaces **stay** - `doctrine` still holds dbal and its own dependencies,
+`sebastian` still holds fifteen packages - so the reduction described above
+keeps neither, and these are package paths rather than namespace paths. That is
+the same shape as `vendor/fruitcake/laravel-cors` at TODO 35, and the same
+warning applies: deleting the namespace rather than the package would take
+working code with it.
+
+Both are `require-dev`, and both still shipped, because this repository commits
+the dev tree too - see the TODO 34 entry above for why.
+
+*Last updated: TODO 39.*
 
 ## 3. Application files that move or disappear
 
@@ -313,7 +331,22 @@ a moved directory, and cuts the other way: the archive carries the migration,
 so it applies itself as soon as `migrate` runs. What an operator has to know is
 that it is **not additive**. See section 5 for the rollback consequence.
 
-*Last updated: TODO 39.2.*
+**TODO 39: nothing moves, and one class of file changes content that an
+administrator can also edit.** No application file was relocated or deleted by
+the Laravel 10 hop. But `lang/<locale>/validation.php` changed in all six
+locales - the password-strength messages moved to the key Laravel 10 resolves -
+and those files are exactly the ones the built-in translation editor writes:
+`App\Support\Translation\LangFiles` globs every `*.php` in a locale
+directory.
+
+So on a host where an administrator has edited a `validation.php` through that
+editor, the archive overwrites their version. It has to: the old content makes
+every password-strength error render as `validation.password.mixed` and its
+siblings, in every language. Anything else customised in those six files goes
+with it, so it is worth exporting them before the upgrade and re-applying the
+wanted changes through the editor afterwards.
+
+*Last updated: TODO 39.*
 
 ## 4. `.env` changes
 
@@ -356,7 +389,13 @@ variable and reinterprets none.
 **TODO 39.2: none.** The Fortify constraint change and the two-factor storage
 migration introduce no environment variable and reinterpret none.
 
-*Last updated: TODO 39.2.*
+**TODO 39: none.** The Laravel 10 hop adds, renames and reinterprets no
+environment variable. `FILESYSTEM_DRIVER` keeps its Laravel 8 spelling on
+purpose: `config/filesystems.php` still reads that name, so no deployed `.env`
+needs editing. Renaming it to `FILESYSTEM_DISK` is a later decision, and it has
+to move the config and the `.env` together or it moves nothing.
+
+*Last updated: TODO 39.*
 
 ## 5. Per-install state to repair
 
@@ -421,7 +460,17 @@ State that lives on the host and is not expressible in a release archive.
   their own `updated_at`. Nothing reads it as a date; everything asks whether it
   is null.
 
-*Last updated: TODO 39.2.*
+- **The Laravel 10 hop triggers the `bootstrap/cache` rule above**, and it is
+  the plainest case of it so far: two packages arrived (`laravel/prompts`,
+  `spatie/error-solutions`) and two left, while `spatie/laravel-ignition`
+  crossed a major. The provider class names happen not to have changed, but the
+  manifests still name a package set that no longer matches the tree, and the
+  rule is "whenever a package leaves or arrives" rather than "whenever a class
+  is renamed". Delete both files before the first request.
+- **`php artisan migrate` is required by this release**, and section 3 explains
+  which migration and why its rollback is not symmetrical.
+
+*Last updated: TODO 39.*
 
 ## 6. The upgrade procedure
 
@@ -484,3 +533,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 37-38 | **Section 3 gained its first entry that is not "nothing", and section 5 its first repair that costs data rather than a boot.** Moving `resources/lang/` to `lang/` is invisible to an update archive, and Laravel picks the OLD directory whenever it still exists (`Application.php:349-355`), so a host that keeps it freezes every translation at the pre-upgrade content with no error anywhere. TODO 37 contributed nothing to sections 2 and 5, and four now-unread `AWS_*` keys to section 4 - the `s3` disk it removed never had an adapter package to orphan. |
 | (no framework hop) | 39.1 | **Row added retroactively at TODO 39.2, which found it missing.** Removing `laravolt/avatar` orphaned two vendor namespaces in section 2 (`vendor/laravolt`, `vendor/intervention` - one declared package taking its dependency with it), and gave section 5 two entries: `public/avatars/` becomes orphaned data rather than broken state, and a cached config still carrying `laravolt.avatar.*` keys is a second reason for `optimize:clear`. It also supplied the rule's sharpest example - a non-framework change that still breaks a stale `bootstrap/cache` manifest. |
 | (no framework hop) | 39.2 | **Section 3 gained its first entry that is not a file: a database column.** Lifting the `laravel/fortify` ceiling was the price of Laravel 10 resolving at all - the `~1.11.2` pin admitted no release that supports it - and the two-factor confirmation moved from a NOT NULL boolean to Fortify's own nullable `two_factor_confirmed_at`. Sections 2 and 4 gained nothing. Section 5 gained the first non-additive migration in this guide: rolling back needs `migrate:rollback` **before** the old release goes back, not after. |
+| **Laravel 9 -> 10** | **39, 40** | The first hop since 34, and it moves the runtime with it: PHP `^8.1`, and the interpreter on the development machine switched from `php81` to the default `php` 8.3 one commit ahead of the framework. Section 2 gains two **partial** paths whose namespaces both stay. Section 3 gains a kind of entry it did not have: no file moves, but six `validation.php` files change content **and are editable through the application's own translation editor**, so an administrator's customisations there are overwritten - and have to be, because the old content renders every password-strength error as a raw key. Section 4 is empty, deliberately: `FILESYSTEM_DRIVER` keeps its Laravel 8 spelling so that no deployed `.env` needs editing. |

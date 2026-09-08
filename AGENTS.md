@@ -1,6 +1,6 @@
 # AGENTS Guide
 
-This repository contains a Laravel 9 application for organizing congregation public ministry activity.
+This repository contains a Laravel 10 application for organizing congregation public ministry activity.
 
 This file is the root documentation entrypoint. Detailed technical docs are under `.docs/`.
 
@@ -15,7 +15,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/notifications.md`: Notification catalog, delivery channels, and trigger points.
 - `.docs/observers.md`: Observer registration status and side-effect mapping.
 - `.docs/middleware.md`: HTTP middleware stacks, aliases, and custom behavior.
-- `.docs/assets.md`: CSS/JS delivery - the live `laravel-packer` pipeline, the dead Mix one, and the traps in both.
+- `.docs/assets.md`: CSS/JS delivery - the `pwbs_asset()` helper that replaced `laravel-packer`, the dead Mix pipeline, and the traps in both.
 - `upgrade-roadmap.md`: the developer's framework-upgrade plan, Laravel 8 -> 13.
 - `upgrade-guide.md`: the **operator's** counterpart - what a deployed host has
   to do to reach 2.0.0. Filled one hop at a time and **not complete** until the
@@ -23,7 +23,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Project Stack Snapshot
 
-- Framework: Laravel 9
+- Framework: Laravel 10
 - UI architecture: Livewire + Blade views/components
 - Auth stack: Laravel Fortify (custom route registration)
 - Background processing: Laravel queue jobs + scheduler (`app/Console/Kernel.php`)
@@ -72,4 +72,4 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 9 as of TODO 34 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite is green on 8.3 with its numbers unmoved.
+- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite is green on 8.3 with its numbers unmoved.

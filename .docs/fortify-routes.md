@@ -86,8 +86,9 @@ the hardcoded `register` action and the server never looked at the field.
 are vendor code validating `required|email`, and the framework's default `email`
 rule accepts CR/LF inside the address (GHSA-5vg9-5847-vvmq, high) - from there it
 reaches a mail header, where a line break opens a new one. Fixed only in 12.60.0,
-so **Laravel 9 is affected exactly as Laravel 8 was** (TODO 34 re-measured this:
-the advisory is still on the ignore list and still has no backport), and the
+so **Laravel 10 is affected exactly as 9 and 8 were** (re-measured at TODO 39:
+`composer audit` still reports the advisory against 10.50.3, it is still on the
+ignore list, and it still has no backport below 12.60.0), and the
 vendor rule cannot be edited durably. The
 middleware re-validates with the same `email:filter` the rest of the application
 uses, and runs before `checkRecaptcha`.

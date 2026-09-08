@@ -41,7 +41,7 @@ Monthly calendar
 - Easy customization (Can set by Group overseers and servants)
 - Easy to invite new publishers (only email address needed)
 
-Based on [Laravel 8](https://laravel.com/)
+Based on [Laravel 10](https://laravel.com/)
 
 
 ## Supported languages
@@ -53,15 +53,15 @@ Based on [Laravel 8](https://laravel.com/)
 Any help are welcomed! :)
 ## Requirements
 
-- A webserver, running PHP 8.0.7 or later
+- A webserver, running PHP 8.1 or later
 - An existing email address, for email notifications. (You can use smtp, php mail or sendmail)
-- You need to run cron for scheduled jobs. [Check documentation](https://laravel.com/docs/8.x/scheduling#running-the-scheduler)
+- You need to run cron for scheduled jobs. [Check documentation](https://laravel.com/docs/10.x/scheduling#running-the-scheduler)
 - Mysql / MariaDB database
 - You must set your domain's root path to "/public" folder.
 - Public domain name
 
 ## PHP REQUIREMENTS
-- Minimum PHP 8.0.7 
+- Minimum PHP 8.1 
 - Allow URL fopen
 - INTL PHP extension
 - BCMath PHP Extension

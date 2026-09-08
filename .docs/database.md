@@ -23,7 +23,8 @@ place where it has already come due.
 ## The `->change()` trap, and how it is closed
 
 Eight columns reached their current shape through a `->change()` call, in seven
-migrations. Under Laravel 8-10 those go through `doctrine/dbal`, which reads the
+migrations. Under Laravel 8-10 - which since TODO 39 means the version actually
+running - those go through `doctrine/dbal`, which reads the
 column's current definition and alters only what the migration redeclares.
 **Laravel 11 makes `change()` native, and the native one drops every attribute
 that is not redeclared** - nullability, default, charset, collation.
