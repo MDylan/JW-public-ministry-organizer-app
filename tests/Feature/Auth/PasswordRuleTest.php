@@ -119,6 +119,78 @@ class PasswordRuleTest extends TestCase
         $this->assertStringContainsString('nagybetűt', $message);
     }
 
+    /**
+     * TODO 39: no locale may render the rule's failure as a raw key.
+     *
+     * The test above only covers Hungarian, and only the mixed-case branch.
+     * The Laravel 10 hop broke all five branches in all six locales at once -
+     * the rule stopped falling back to a hardcoded English sentence and started
+     * resolving validation.password.* through lang/<locale>/validation.php,
+     * where every locale still carried the flat pre-Laravel-9 string. Nothing
+     * failed loudly; the messages simply became their own keys.
+     *
+     * So the guard is locale-complete and asserts the shape of the failure
+     * rather than its wording: whatever a locale says, it may not say
+     * "validation.password.something".
+     *
+     * IT HAS TWO HALVES, AND THE CONTROL EXPERIMENT IS WHY. Replacing one
+     * locale's array with a string again does NOT fail the behavioural half:
+     * APP_FALLBACK_LOCALE is en, so a broken locale resolves through English
+     * and the user sees a real sentence rather than a key. That is the truth
+     * about what a user sees, and it is worth asserting - but on its own it
+     * would have stayed green until English broke too, which is precisely the
+     * state this hop created. The structural half closes that: every locale
+     * file has to declare the key itself.
+     */
+    public function test_every_locale_declares_the_password_message_keys(): void
+    {
+        $expected = ['letters', 'mixed', 'numbers', 'symbols', 'uncompromised'];
+
+        foreach (glob(lang_path('*/validation.php')) as $path) {
+            $locale = basename(dirname($path));
+            $messages = require $path;
+
+            $this->assertIsArray(
+                $messages['password'] ?? null,
+                "[{$locale}] validation.password has to be the nested array Laravel 10 resolves through, "
+                .'not the flat pre-Laravel-9 string.'
+            );
+
+            foreach ($expected as $key) {
+                $this->assertArrayHasKey($key, $messages['password'], "[{$locale}] password.{$key} is missing.");
+            }
+        }
+    }
+
+    public function test_no_locale_renders_the_password_failure_as_a_raw_key(): void
+    {
+        $locales = array_map(
+            fn ($path) => basename(dirname($path)),
+            glob(lang_path('*/validation.php'))
+        );
+
+        $this->assertNotEmpty($locales, 'The language tree has to be readable for this to measure anything.');
+
+        foreach ($locales as $locale) {
+            $this->app->setLocale($locale);
+
+            $validator = Validator::make(
+                ['password' => 'password1', 'password_confirmation' => 'password1'],
+                ['password' => $this->currentRules()]
+            );
+
+            $this->assertFalse($validator->passes(), "[{$locale}] the weak password has to fail.");
+
+            $message = $validator->errors()->first('password');
+
+            $this->assertStringNotContainsString(
+                'validation.password',
+                $message,
+                "[{$locale}] the message is the untranslated key: {$message}"
+            );
+        }
+    }
+
     private function currentRules(): array
     {
         return (new class
