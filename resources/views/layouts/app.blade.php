@@ -29,7 +29,7 @@
           <p>{!! __('app.verifyEmail', ['url' => '/email/verify']) !!}</p>
         </div>
       @endif
-      @if (!auth()->user()->two_factor_confirmed && !is_null(auth()->user()->two_factor_secret) && !request()->routeIs('user.twofactorsettings'))
+      @if (!auth()->user()->hasConfirmedTwoFactorAuth() && !is_null(auth()->user()->two_factor_secret) && !request()->routeIs('user.twofactorsettings'))
         <div class="alert alert-warning mx-2 my-2 text-center">
           <h5>@lang('user.two_factor.status_disabled')</h5>
           <p>@lang('user.two_factor.half_way') 

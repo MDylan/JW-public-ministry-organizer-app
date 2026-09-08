@@ -157,7 +157,7 @@ class TwoFactorReplayTest extends FeatureTestCase
 
         $this->assertTrue($user->confirmTwoFactorAuth($code));
 
-        $user->forceFill(['two_factor_confirmed' => 0])->save();
+        $user->forceFill(['two_factor_confirmed_at' => null])->save();
 
         $this->assertFalse($user->fresh()->confirmTwoFactorAuth($code));
     }

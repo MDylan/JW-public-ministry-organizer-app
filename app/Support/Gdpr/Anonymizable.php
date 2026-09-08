@@ -65,7 +65,7 @@ use LogicException;
  * WHY forceFill() AND NOT update()
  *
  * update() honours $fillable, and User::$fillable does not list
- * two_factor_secret, two_factor_recovery_codes, two_factor_confirmed or
+ * two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at or
  * remember_token - all of which this project now clears. update() would have
  * dropped them without a word, which is the worst possible failure mode for a
  * data-protection guarantee: no error, no log, and personal data left behind.

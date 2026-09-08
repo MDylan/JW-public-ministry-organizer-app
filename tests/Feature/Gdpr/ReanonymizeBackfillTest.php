@@ -52,7 +52,6 @@ class ReanonymizeBackfillTest extends FeatureTestCase
         $user->forceFill([
             'two_factor_secret' => encrypt('TOTPSECRET'),
             'two_factor_recovery_codes' => encrypt(json_encode(['one', 'two'])),
-            'two_factor_confirmed' => 1,
             'remember_token' => Str::random(60),
         ])->save();
 
@@ -93,7 +92,16 @@ class ReanonymizeBackfillTest extends FeatureTestCase
             );
         }
 
-        $this->assertSame(0, (int) $fresh->two_factor_confirmed);
+        // TODO 39.2 removed the two_factor_confirmed assertion that used to
+        // close this test, and deliberately put nothing in its place.
+        //
+        // The column it read is gone, and the successor cannot be asserted here
+        // without the assertion being vacuous: the fixture can no longer set a
+        // confirmed second factor on a legacy row, because on a fresh database
+        // this backfill runs BEFORE the migration that creates
+        // two_factor_confirmed_at. That is also why nothing is lost - that
+        // migration derives the timestamp from the very boolean this backfill
+        // sets to 0, so a row it has touched cannot come out confirmed.
     }
 
     public function test_it_replaces_the_surviving_password_hash(): void

@@ -251,7 +251,7 @@ class AnonymizationTest extends FeatureTestCase
         $user->forceFill([
             'two_factor_secret' => encrypt('TOTPSECRET'),
             'two_factor_recovery_codes' => encrypt(json_encode(['code-one', 'code-two'])),
-            'two_factor_confirmed' => 1,
+            'two_factor_confirmed_at' => now(),
             'remember_token' => Str::random(60),
         ])->save();
 
@@ -326,10 +326,9 @@ class AnonymizationTest extends FeatureTestCase
 
         $this->assertNull($fresh->two_factor_secret);
         $this->assertNull($fresh->two_factor_recovery_codes);
-        $this->assertSame(
-            0,
-            (int) $fresh->two_factor_confirmed,
-            'The column is NOT NULL, so it is declared with a 0 rather than in $gdprNullFields.'
+        $this->assertNull(
+            $fresh->two_factor_confirmed_at,
+            'TODO 39.2: the confirmation is a nullable timestamp now, so it joins $gdprNullFields instead of being declared with a 0.'
         );
     }
 

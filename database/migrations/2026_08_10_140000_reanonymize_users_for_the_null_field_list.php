@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -91,14 +92,27 @@ class ReanonymizeUsersForTheNullFieldList extends Migration
         }
 
         // One statement for everything that is the same on every row.
-        // two_factor_confirmed is NOT NULL, so it gets its default rather than
-        // joining the null list - exactly as User declares it.
+        // two_factor_confirmed was NOT NULL when this migration was written, so
+        // it got its default rather than joining the null list - exactly as
+        // User declared it at the time.
+        //
+        // TODO 39.2 later dropped that column in favour of Fortify's nullable
+        // two_factor_confirmed_at. On a fresh install this migration still runs
+        // BEFORE that one, so the column is there and the write is the original
+        // one; the guard only decides what happens when this up() is invoked
+        // against a schema that has already moved past it, which is what
+        // ReanonymizeBackfillTest does. Nothing is lost in that case either:
+        // TODO 39.2 derives the timestamp from this very boolean, so a row this
+        // migration has touched cannot come out confirmed.
+        $sameOnEveryRow = array_fill_keys(self::NULL_COLUMNS, null);
+
+        if (Schema::hasColumn('users', 'two_factor_confirmed')) {
+            $sameOnEveryRow['two_factor_confirmed'] = 0;
+        }
+
         (clone $anonymized)->update(array_merge(
-            array_fill_keys(self::NULL_COLUMNS, null),
-            [
-                'two_factor_confirmed' => 0,
-                'updated_at' => now(),
-            ]
+            $sameOnEveryRow,
+            ['updated_at' => now()]
         ));
 
         // The password cannot be emptied - the column is NOT NULL - so each row

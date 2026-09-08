@@ -39,7 +39,7 @@
                             @endif
                             <p class="mt-2">
                                 {{-- 2FA confirmed, we show a 'disable' button to disable it --}}
-                                @if(auth()->user()->two_factor_confirmed)
+                                @if(auth()->user()->hasConfirmedTwoFactorAuth())
                                     <b>@lang('user.two_factor.status_enabled')</b>
 
                                     <form action="{{ route('two-factor.enable') }}" method="POST">
@@ -96,7 +96,7 @@
                         </div>
                     </div>
                 </div>
-                @if (auth()->user()->two_factor_confirmed)
+                @if (auth()->user()->hasConfirmedTwoFactorAuth())
                     <div class="col-6">
                         <div class="pt-2 card card-primary card-outline">
                             <div class="card-header">

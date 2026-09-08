@@ -75,6 +75,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'two_factor_confirmed_at' => 'datetime',
         'calendars' => 'array',
         'phone_number' => 'encrypted',
         // 'hidden_fields' => 'array',
@@ -125,8 +126,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'name' => 'Anonym',
         'role' => 'registered',
         'isAnonymized' => 1,
-        // NOT NULL, so it cannot join the list below; 0 is its own default.
-        'two_factor_confirmed' => 0,
     ];
 
     /**
@@ -156,6 +155,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         'firstDay',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        // TODO 39.2 moved this here from $gdprAnonymizableFields. It used to
+        // need a replacement value because the boolean it replaced was NOT
+        // NULL; the timestamp is nullable, so "never confirmed" is expressible.
+        'two_factor_confirmed_at',
         'remember_token',
         'calendars',
         'last_login_time',
@@ -394,10 +397,14 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      * hasEnabledTwoFactorAuthentication() answers a different question - it
      * only asks whether a secret exists - and enabling without confirming is
      * exactly the state this project keeps apart from a confirmed one.
+     *
+     * The timestamp is only ever asked whether it is null. Its value is a
+     * marker rather than a measurement for every row that predates the
+     * TODO 39.2 migration, which is where that is written down.
      */
     public function hasConfirmedTwoFactorAuth(): bool
     {
-        return (bool) $this->two_factor_confirmed;
+        return ! is_null($this->two_factor_confirmed_at);
     }
 
     public function confirmTwoFactorAuth($code)
@@ -406,7 +413,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
             ->verify(decrypt($this->two_factor_secret), $code);
 
         if ($codeIsValid) {
-            $this->two_factor_confirmed = true;
+            $this->two_factor_confirmed_at = $this->freshTimestamp();
             $this->save();
 
             return true;

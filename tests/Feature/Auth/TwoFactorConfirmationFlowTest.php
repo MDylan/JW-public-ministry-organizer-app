@@ -30,12 +30,14 @@ use Tests\Feature\FeatureTestCase;
  * WHAT IS BEHAVIOUR AND WHAT IS STORAGE
  *
  * Every test but the last asserts BEHAVIOUR, and asks the model rather than the
- * column. Those assertions have to survive the storage migration untouched - if
- * one of them moves, the migration changed something it was not asked to.
+ * column. They were written against the boolean and they did not move by a
+ * single character when the storage migrated - which is the actual proof that
+ * the migration changed where the answer is kept and nothing else.
  *
- * The last test is deliberately directional. It asserts the storage AS IT IS
- * TODAY, and it is meant to fail the moment the confirmation moves onto a
- * timestamp column. That failure is the review, not a regression.
+ * The last test is the directional one, and it is the only one that moved. It
+ * asserted the old storage on purpose so that it would fail the moment the
+ * confirmation moved; that failure was the review. It now states the new
+ * storage, and its comment carries what it used to say.
  */
 class TwoFactorConfirmationFlowTest extends FeatureTestCase
 {
@@ -183,20 +185,22 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
         );
     }
 
-    public function test_the_confirmation_is_stored_in_the_two_factor_confirmed_column(): void
+    public function test_the_confirmation_is_stored_in_the_two_factor_confirmed_at_column(): void
     {
-        // DIRECTIONAL. This is the assertion TODO 39.2 reverses: the boolean
-        // goes, a nullable two_factor_confirmed_at takes its place, and the
-        // column Fortify itself writes becomes the source of truth.
-        $this->assertTrue(Schema::hasColumn('users', 'two_factor_confirmed'));
-        $this->assertFalse(Schema::hasColumn('users', 'two_factor_confirmed_at'));
+        // This is the directional assertion, REVERSED by the migration commit -
+        // and the reversal is the whole review. Before it, this test read
+        // "two_factor_confirmed exists and two_factor_confirmed_at does not".
+        // The boolean is gone, and the column Fortify itself writes from 1.12.0
+        // onwards is now the only one that carries the answer.
+        $this->assertTrue(Schema::hasColumn('users', 'two_factor_confirmed_at'));
+        $this->assertFalse(Schema::hasColumn('users', 'two_factor_confirmed'));
 
         [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-column@example.test');
 
-        $this->assertSame(0, (int) $user->two_factor_confirmed);
+        $this->assertNull($user->two_factor_confirmed_at);
 
         $user->confirmTwoFactorAuth(app(Google2FA::class)->getCurrentOtp($secret));
 
-        $this->assertSame(1, (int) $user->fresh()->two_factor_confirmed);
+        $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
     }
 }
