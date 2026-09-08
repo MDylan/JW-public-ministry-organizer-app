@@ -197,7 +197,12 @@ reduction described above keeps both. `intervention/image` was never declared in
 `composer.json`; it arrived as `laravolt/avatar`'s dependency and leaves with it,
 which is why removing one package orphans two paths.
 
-*Last updated: TODO 39.1.*
+**TODO 39.2: none.** Lifting the `laravel/fortify` ceiling from `~1.11.2` to
+`>=1.19.1 <1.37.0` moved one package and added none: 0 installs, 1 update, 0
+removals. The `league/commonmark` advisory bump in the same change set is the
+same shape. Nothing leaves a vendor namespace, so nothing is orphaned on a host.
+
+*Last updated: TODO 39.2.*
 
 ## 3. Application files that move or disappear
 
@@ -297,7 +302,18 @@ resolves them.
 Delete it anyway when convenient, for the same reason as the rest of section 2:
 a partial tree is what makes the *next* upgrade hard to reason about.
 
-*Last updated: TODO 39.1.*
+**TODO 39.2: nothing moves, but a database column disappears - and that is the
+first entry in this section that is not a file.** The two-factor confirmation
+moved from a `two_factor_confirmed` boolean to a nullable
+`two_factor_confirmed_at` timestamp. No application file was relocated or
+deleted; the change is entirely inside `users`.
+
+It matters here because a schema change is as invisible to an update archive as
+a moved directory, and cuts the other way: the archive carries the migration,
+so it applies itself as soon as `migrate` runs. What an operator has to know is
+that it is **not additive**. See section 5 for the rollback consequence.
+
+*Last updated: TODO 39.2.*
 
 ## 4. `.env` changes
 
@@ -337,7 +353,10 @@ the opposite of the `MAIL_FROM_ADDRESS` case above precisely because that key
 **TODO 38: none.** The language directory move introduces no environment
 variable and reinterprets none.
 
-*Last updated: TODO 38.*
+**TODO 39.2: none.** The Fortify constraint change and the two-factor storage
+migration introduce no environment variable and reinterpret none.
+
+*Last updated: TODO 39.2.*
 
 ## 5. Per-install state to repair
 
@@ -388,7 +407,21 @@ State that lives on the host and is not expressible in a release archive.
   `config/laravolt/avatar.php`, which is harmless but misleading when reading
   `config:show`.
 
-*Last updated: TODO 39.1.*
+- **The TODO 39.2 migration drops a column, and this is the first hop in this
+  guide whose migration is not additive.** `two_factor_confirmed` is replaced by
+  `two_factor_confirmed_at`, with confirmed rows carrying their answer across.
+  Nothing has to be done for the upgrade itself - `migrate` applies it - but a
+  **rollback does not work by restoring the old code alone**: the previous
+  release reads a column that is no longer there, and every two-factor page
+  fatals. The migration's `down()` puts the boolean back and refills it from the
+  timestamp, so the recovery is `migrate:rollback` **before** the old release
+  goes back, not after. Both directions were executed rather than read.
+  The backfilled timestamp is a marker, not a measurement: the old schema stored
+  *whether* a second factor was confirmed and never *when*, so confirmed rows get
+  their own `updated_at`. Nothing reads it as a date; everything asks whether it
+  is null.
+
+*Last updated: TODO 39.2.*
 
 ## 6. The upgrade procedure
 
@@ -449,3 +482,5 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 35.1 | The committed `vendor/` tree was 1017 files short and no archive built from this branch would have booted. Fixed at the source, so section 2's untracked-package problem stops growing - but the deployed 1.x hosts still carry what never shipped, which keeps Branch B's step 5 the only thing that can clear it. Section 6 is no longer blocked. |
 | (no framework hop) | 36 | Sections 3 and 4 gained their first entries since TODO 34, and both say "nothing" - but section 3 now also names what that depends on: two configuration files changed content, and a host with a warm `config:cache` keeps the old values until step 10 runs. The verification also found that a `.env` carrying `MAIL_FROM_ADDRESS=null` broke the failed-job monitor outright; fixed in configuration, so no deployed `.env` needs editing. |
 | (no framework hop) | 37-38 | **Section 3 gained its first entry that is not "nothing", and section 5 its first repair that costs data rather than a boot.** Moving `resources/lang/` to `lang/` is invisible to an update archive, and Laravel picks the OLD directory whenever it still exists (`Application.php:349-355`), so a host that keeps it freezes every translation at the pre-upgrade content with no error anywhere. TODO 37 contributed nothing to sections 2 and 5, and four now-unread `AWS_*` keys to section 4 - the `s3` disk it removed never had an adapter package to orphan. |
+| (no framework hop) | 39.1 | **Row added retroactively at TODO 39.2, which found it missing.** Removing `laravolt/avatar` orphaned two vendor namespaces in section 2 (`vendor/laravolt`, `vendor/intervention` - one declared package taking its dependency with it), and gave section 5 two entries: `public/avatars/` becomes orphaned data rather than broken state, and a cached config still carrying `laravolt.avatar.*` keys is a second reason for `optimize:clear`. It also supplied the rule's sharpest example - a non-framework change that still breaks a stale `bootstrap/cache` manifest. |
+| (no framework hop) | 39.2 | **Section 3 gained its first entry that is not a file: a database column.** Lifting the `laravel/fortify` ceiling was the price of Laravel 10 resolving at all - the `~1.11.2` pin admitted no release that supports it - and the two-factor confirmation moved from a NOT NULL boolean to Fortify's own nullable `two_factor_confirmed_at`. Sections 2 and 4 gained nothing. Section 5 gained the first non-additive migration in this guide: rolling back needs `migrate:rollback` **before** the old release goes back, not after. |

@@ -169,22 +169,47 @@ left `/register` and `/forgot-password` with no bot protection at all.
 
 ## Fortify version pin
 
-`composer.json` pins `laravel/fortify` to `~1.11.2` (>=1.11.2 <1.12.0), not `^1`.
+`composer.json` constrains `laravel/fortify` to `>=1.19.1 <1.37.0`, not `^1`.
+Both ends are decisions, and the file states them so a reviewer does not have to
+reconstruct either.
 
-- **1.11.2 is the floor** because CVE-2022-25838 (GHSA-6w4v-qr4m-97gg, TOTP
-  replay) is fixed there; v1.10.2 was installed until v1-patch H.
-- **1.12.0 is the ceiling** because it introduces the `two_factor_confirmed_at`
-  column and enables Fortify's own 2FA confirmation flow by default. This app has
-  its own `two_factor_confirmed` boolean
-  (`database/migrations/2022_03_03_121545_add_two_factor_confirmed.php`), its own
+- **1.19.1 is the floor** because it is the lowest release admitting Laravel 10
+  (`illuminate/support ^8.82|^9.0|^10.0`). Re-measured at TODO 39.2 against
+  Packagist with Composer's own `Semver::satisfies()`; the rest of the ladder is
+  1.21.0 for Laravel 11, 1.31.3 for 12 and 1.36.2 for 13, all inside this range,
+  so the remaining framework hops need lock movement and no edit here.
+- **1.37.0 is the ceiling** because it adds `laravel/passkeys` as a hard
+  requirement and registers passkey routes that `routes/fortify.php` - a
+  hand-maintained copy - would have to absorb. It also raises its own floor to
+  `illuminate ^11` / `php ^8.2`. Taking 1.37+ is a feature decision for TODO 69,
+  not a side effect of a version bump.
+- **The ceiling used to be `~1.11.2`**, and the reason it moved is worth keeping.
+  It was set because 1.12.0 introduces the `two_factor_confirmed_at` column and
+  Fortify's own confirmation flow, which collided with this application's own
+  `two_factor_confirmed` boolean. That reading held until it was measured: the
+  boolean would not resolve Laravel 10 at all, so TODO 39.2 lifted the ceiling on
+  Laravel 9 and moved the confirmation onto `two_factor_confirmed_at`
+  (`database/migrations/2026_09_08_120000_move_two_factor_confirmation_onto_a_timestamp.php`).
+- **What the bump does NOT change, measured on 1.19.1 rather than assumed.**
+  Every package path that touches `two_factor_confirmed_at` is gated on
+  `Fortify::confirmsTwoFactorAuthentication()`, and `config/fortify.php` passes
+  only `'confirmPassword'` - so it is **false** here.
+  `EnableTwoFactorAuthentication` writes only the secret and the recovery codes,
+  the package's own disable action skips the timestamp,
+  `hasEnabledTwoFactorAuthentication()` does not read it, and
+  `ConfirmTwoFactorAuthentication` is never routed. The application keeps its own
   `App\Actions\Fortify\DisableTwoFactorAuthentication`,
-  `RedirectIfTwoFactorConfirmed`, `User::confirmTwoFactorAuth()` and a
-  `two-factor.confirm` route name that 1.12+ also claims for its own controller.
-  Lifting the ceiling is a schema plus flow migration, not a lock bump.
-- 1.11.2 also adds `POST /user/confirmed-two-factor-authentication` named
-  `two-factor.confirm` to its vendor route file. `routes/fortify.php` is a
-  hand-maintained copy and deliberately does **not** carry it - the name is
-  already taken by `routes/web.php:175`.
+  `RedirectIfTwoFactorConfirmed`, `User::confirmTwoFactorAuth()` and its own
+  `two-factor.confirm` route, and none of them competes with the package.
+- **All 15 controllers `routes/fortify.php` names by FQCN exist in 1.19.1**,
+  checked rather than assumed. The package ships two the file does not name -
+  `ConfirmedTwoFactorAuthenticationController` and `TwoFactorSecretKeyController`
+  - and neither is registered, because `Fortify::ignoreRoutes()` means the route
+  table is entirely this file's.
+- 1.11.2 also added `POST /user/confirmed-two-factor-authentication` named
+  `two-factor.confirm` to its vendor route file, and 1.19.1 still has it.
+  `routes/fortify.php` deliberately does **not** carry it - the name is already
+  taken by `routes/web.php:213`.
 
 ### Credential-scoped, atomic replay protection
 

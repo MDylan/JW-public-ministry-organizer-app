@@ -119,17 +119,23 @@ Two declarations on `App\Models\User`, and the split is the point.
 
 | List | Columns |
 |---|---|
-| `$gdprAnonymizableFields` (replacement values) | `email` (`getAnonymizedEmail()`, a 10-character token), `password` (`getAnonymizedPassword()`, a hash of 64 random characters), `name` = `Anonym`, `role` = `registered`, `isAnonymized` = `1`, `two_factor_confirmed` = `0` |
-| `$gdprNullFields` (simply emptied) | `phone_number`, `congregation`, `show_fields`, `opted_out_of_notifications`, `last_login_ip`, `firstDay`, `two_factor_secret`, `two_factor_recovery_codes`, `remember_token`, `calendars`, `last_login_time`, `email_verified_at`, `accepted_gdpr` |
+| `$gdprAnonymizableFields` (replacement values) | `email` (`getAnonymizedEmail()`, a 10-character token), `password` (`getAnonymizedPassword()`, a hash of 64 random characters), `name` = `Anonym`, `role` = `registered`, `isAnonymized` = `1` |
+| `$gdprNullFields` (simply emptied) | `phone_number`, `congregation`, `show_fields`, `opted_out_of_notifications`, `last_login_ip`, `firstDay`, `two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at`, `remember_token`, `calendars`, `last_login_time`, `email_verified_at`, `accepted_gdpr` |
 
-The last seven of the null list, plus `password` and `two_factor_confirmed`, were
+The two-factor confirmation used to sit in the **replacement-value** list with a
+`0`, because the `two_factor_confirmed` boolean it lived in was NOT NULL and
+"never confirmed" was not expressible. TODO 39.2 moved the confirmation onto the
+nullable `two_factor_confirmed_at`, so it joined the null list and the
+replacement value went away.
+
+The last seven of the null list, plus `password` and the two-factor confirmation, were
 not anonymized at all before TODO 33.2. Three of those mattered beyond tidiness:
 the encrypted TOTP secret and its recovery codes outlived the anonymization
 forever, a live "remember me" cookie kept working because `Auth::logout()` only
 runs on the profile path, and the password hash itself survived untouched.
 
 The trait writes with `forceFill()->save()` rather than `update()`, because
-`two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed` and
+`two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at` and
 `remember_token` are **not** in `User::$fillable` - `update()` would have dropped
 them silently. See `app/Support/Gdpr/Anonymizable.php`.
 
