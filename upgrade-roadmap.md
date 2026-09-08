@@ -5,12 +5,13 @@ Each item is intentionally small enough to complete and mark independently.
 
 ## Execution Environment (Important)
 
-- The default `php` on this machine points to **PHP 8.3**, which cannot boot the current Laravel 9 baseline either - `nesbot/carbon`'s `setLastErrors()` throws a `TypeError` immediately.
-- **Today, run all Laravel commands with `php81 artisan ...`.** TODO 34 moved the framework to Laravel 9 and deliberately did **not** move the interpreter; that switch is Phase 5's, per the note on the matrix below.
+- **The default `php` on this machine is PHP 8.3.16, and it is the runtime the project uses.** The interpreter switched at Phase 5 (TODO 39.2's follow-up commit), one step ahead of the framework hop. This bullet used to say 8.3 "cannot boot the current Laravel 9 baseline" because `nesbot/carbon`'s `setLastErrors()` threw a `TypeError`; that reason expired with the `v1-patch H` refresh, and the roadmap said to measure it before writing it up as a risk. Measured: the Laravel 9 suite is green on 8.3 with **the same 1469 tests and 4030 assertions** it reports on `php81`, and with no deprecation notice.
+- **Run all Laravel commands with `php artisan ...`.** `php81` is still installed and still works on this branch - Laravel 9 supports `^8.0.2` - but nothing needs it any more, and `composer test` no longer calls it.
 - The required runtime changes as the upgrade progresses. After each framework hop, switch the interpreter according to the *Runtime and Version Matrix* below and update this section.
 - Locally installed PHP runtimes (Laragon): `php-8.1.30-nts-Win32-vs16-x64`, `php-8.3.16-Win32-vs16-x64`. PHP 8.0 is not installed at all.
-- **No additional PHP runtime needs to be installed.** Laravel 11 and 12 declare `php: ^8.2`, which the installed PHP 8.3 satisfies, and Laravel 13 declares `^8.3`. The two installed runtimes cover the entire upgrade path: `php81` for Laravel 8 and 9, the default `php` (8.3) from Laravel 10 onward.
+- **No additional PHP runtime needs to be installed.** Laravel 11 and 12 declare `php: ^8.2`, which the installed PHP 8.3 satisfies, and Laravel 13 declares `^8.3`. `php81` served Laravel 8 and 9 and is now unused; the default `php` (8.3) carries the rest of the path.
 - Composer is 2.10.2 and enforces `config.allow-plugins`. TODO 24 added an explicit **empty** block, i.e. deny-by-default; the Laravel 9 resolution introduced no plugin, so it is still empty after TODO 34.
+- **`config.platform.php` is gone.** TODO 24 raised it to `8.1.30` rather than removing it, because Composer ran on 8.3 while the application ran on 8.1 and an unpinned resolution could lock versions the real runtime could not execute. That rule said to delete the key once the two coincide, and the interpreter switch is when they do.
 
 ## Status Convention
 
@@ -22,8 +23,8 @@ Each item is intentionally small enough to complete and mark independently.
 | Phase | Laravel | PHP required | Interpreter to use | PHPUnit | Collision | Node |
 | --- | --- | --- | --- | --- | --- | --- |
 | Phase 0-3 baseline | 8.83.29 | `^8.0` (pinned to 8.1.30 by TODO 24) | `php81` | 9.5 | 5.x | 24.18 (unused) |
-| **Phase 4 - CURRENT** | **9.52.21** | **`^8.0.2`** | **`php81`** (see note) | **9.6** | **6.x** | 24.18 (unused) |
-| Phase 5 | 10.x | `^8.1` | `php81`, then switch to `php` (8.3) | 10.x | 7.x | 24.18 (unused) |
+| Phase 4 | 9.52.21 | `^8.0.2` | `php81`, then `php` (8.3) | 9.6 | 6.x | 24.18 (unused) |
+| **Phase 5 - CURRENT** | 10.x | **`^8.1`** | **`php` (8.3)** - switched, see note | 10.x | 7.x | 24.18 (unused) |
 | Phase 7 | 10.x | `^8.1` | `php` (8.3) | 10.x | 7.x | 24.18 (only if TODO 52 keeps a build) |
 | Phase 8 | 11.x | `^8.2` | `php` (8.3) OK | 10.x/11.x | 8.x | 24.18 |
 | Phase 9 | 12.x | `^8.2` | `php` (8.3) OK | 11.x | 8.x | 24.18 |
@@ -31,7 +32,7 @@ Each item is intentionally small enough to complete and mark independently.
 
 - **Node is listed for completeness only.** No phase before 7 uses it: the Mix pipeline is dead (zero `mix()` calls, empty entrypoints, no outputs), and the assets are served by the `pwbs_asset()` helper since TODO 33.8 removed `eusonlito/laravel-packer`. Whether Node is ever needed is the open question in the Phase 7 preamble.
 - **Both required runtimes are already installed.** `^8.2` is a caret constraint, so PHP 8.3 satisfies Laravel 11 and 12; no PHP 8.2 install is needed.
-- **Note on Phase 4:** although Laravel 9 declares `^8.0.2`, its officially tested ceiling is PHP 8.2, and the current `nesbot/carbon` line already fatals on PHP 8.3. Stay on `php81` for Laravel 9 and only move to PHP 8.3 once Laravel 10 is in place (Laravel 10.x supports PHP 8.1-8.3).
+- ~~**Note on Phase 4:** although Laravel 9 declares `^8.0.2`, its officially tested ceiling is PHP 8.2, and the current `nesbot/carbon` line already fatals on PHP 8.3. Stay on `php81` for Laravel 9 and only move to PHP 8.3 once Laravel 10 is in place.~~ **Overtaken by measurement at Phase 5.** The Carbon fatal was real when this note was written and is not any more - 2.73.0 carries the untyped `setLastErrors()`. The switch happened at the start of Phase 5, on Laravel 9 and **before** the framework hop, as its own commit, so a runtime change and a framework change are never in the same diff. "Officially tested ceiling" remained a fair caution and is why it was measured rather than assumed; the suite is green on 8.3 with its numbers unmoved.
 - PHP 8.4 is not installed. Laravel 13 accepts `^8.3`, so 8.4 is forward-looking only (TODO 68).
 - Do not skip intermediate majors. Each hop gets its own composer resolution, its own test run, and its own PR.
 
@@ -2078,7 +2079,24 @@ This is where the interpreter switches. Laravel 10.x supports PHP 8.1 through 8.
 
 Removing the package instead dissolved the conflict rather than resolving it: nothing in Phase 5 now needs PHP 8.2, so **the interpreter switch is a free-standing step that can go before, during or after the framework bump.** Doing it first, as its own commit, is still the recommendation - it isolates a runtime change from a framework change - but it is a preference now, not a constraint.
 
-**Worth measuring before assuming it is risky:** the *Execution Environment* section's justification for staying on `php81` is Carbon's `setLastErrors()` fataling on PHP 8.3. The installed `nesbot/carbon` 2.73.0 already carries the fixed, untyped implementation (`vendor/nesbot/carbon/src/Carbon/Traits/Creator.php:955`, which accepts `false`), so that reason has probably expired with the `v1-patch H` refresh. Run the current suite on the default `php` before writing the switch up as a risk.
+**DONE on 2026-09-08, and the measurement this preamble asked for is the reason it was cheap.** The interpreter switched
+**before** the framework hop, on Laravel 9, as its own commit - the ordering this preamble recommends and TODO 39.1
+demoted from a constraint to a preference. `composer test` reports **OK (1469 tests, 4030 assertions)** on PHP 8.3.16,
+the same numbers it reports on `php81`, with no deprecation notice and no test touched.
+
+Three things moved with it, and two of them this document never mentioned:
+
+- **`composer.json`'s `test` script hardcoded `php81`, twice.** It is the command every delivered entry quotes its suite
+  numbers from, so leaving it would have kept the whole suite on 8.1 while the framework moved to 10 - a switch that
+  documented itself and changed nothing.
+- **`config.platform.php` is deleted**, executing TODO 24's own rule: the pin existed because Composer ran on 8.3 while
+  the application ran on 8.1, and it says to remove the key once the two coincide. They now do.
+- `AGENTS.md`, `release/README.md` and the baseline report's *How to compare after a hop* recipe. The `php81` mentions
+  left in that report are records of the TODO 03 run and stay.
+
+`php81` remains installed and Laravel 9 still supports it, so this commit is revertible on its own.
+
+**Worth measuring before assuming it is risky - and it was, with the answer above:** the *Execution Environment* section's justification for staying on `php81` is Carbon's `setLastErrors()` fataling on PHP 8.3. The installed `nesbot/carbon` 2.73.0 already carries the fixed, untyped implementation (`vendor/nesbot/carbon/src/Carbon/Traits/Creator.php:955`, which accepts `false`), so that reason has probably expired with the `v1-patch H` refresh. Run the current suite on the default `php` before writing the switch up as a risk. **It had expired, and the run is the one recorded above.**
 
 - [ ] **TODO 39: Upgrade to Laravel 10 and align the toolchain**
   - Needed:

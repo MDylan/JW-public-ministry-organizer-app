@@ -110,9 +110,9 @@ Re-capture both once the relevant hop lands, for a richer after-picture.
 
 ```powershell
 composer test -- --colors=never                        # preferred: clears build caches first
-php81 vendor/phpunit/phpunit/phpunit --colors=never    # what the script runs underneath
-php81 artisan route:list --json | Out-File -Encoding utf8 upgrade-notes/after-<phase>-routes.json
-php81 artisan schedule:list      | Out-File -Encoding utf8 upgrade-notes/after-<phase>-schedule.txt
+php vendor/phpunit/phpunit/phpunit --colors=never      # what the script runs underneath
+php artisan route:list --json | Out-File -Encoding utf8 upgrade-notes/after-<phase>-routes.json
+php artisan schedule:list      | Out-File -Encoding utf8 upgrade-notes/after-<phase>-schedule.txt
 ```
 
-Note: `vendor/bin/phpunit` is a POSIX shell wrapper - calling it via `php81` just prints the script. Use `vendor/phpunit/phpunit/phpunit` (or `vendor/bin/phpunit.bat`).
+Note: `vendor/bin/phpunit` is a POSIX shell wrapper - calling it via `php` just prints the script. Use `vendor/phpunit/phpunit/phpunit` (or `vendor/bin/phpunit.bat`).

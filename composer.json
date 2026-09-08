@@ -62,7 +62,7 @@
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
         ],
-        "test": "php81 artisan optimize:clear --quiet && php81 vendor/phpunit/phpunit/phpunit"
+        "test": "php artisan optimize:clear --quiet && php vendor/phpunit/phpunit/phpunit"
     },
     "scripts-descriptions": {
         "test": "Clears the build caches, then runs the PHPUnit suite against the kozter_testing database. Use this, never `artisan test` - that one boots the framework first, so .env wins over phpunit.xml and RefreshDatabase would wipe the application database."
@@ -77,9 +77,6 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
-        "platform": {
-            "php": "8.1.30"
-        },
         "policy": {
             "advisories": {
                 "ignore-id": {

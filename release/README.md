@@ -10,9 +10,9 @@ Builds the archive and the manifest from the file difference between two git
 refs — by default `v1` (the last published release) and `dev`.
 
 ```
-php81 release/build-update.php                       # v1 -> dev
-php81 release/build-update.php --dry-run             # report only, writes nothing
-php81 release/build-update.php --base=v1 --head=dev --description="..." --previous=1.1.5
+php release/build-update.php                       # v1 -> dev
+php release/build-update.php --dry-run             # report only, writes nothing
+php release/build-update.php --base=v1 --head=dev --description="..." --previous=1.1.5
 ```
 
 Output goes to `release/dist/` (git-ignored):

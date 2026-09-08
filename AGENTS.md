@@ -72,4 +72,4 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 9 as of TODO 34 and **runs on `php81`, not the default `php` 8.3** - the interpreter switches in Phase 5. Some Artisan commands fail on 8.3 until then.
+- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 9 as of TODO 34 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite is green on 8.3 with its numbers unmoved.
