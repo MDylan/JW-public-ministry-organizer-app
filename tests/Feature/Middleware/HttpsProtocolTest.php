@@ -6,6 +6,7 @@ use App\Http\Middleware\HttpsProtocol;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 09: the HttpsProtocol middleware.
@@ -133,9 +134,7 @@ class HttpsProtocolTest extends FeatureTestCase
     // 3. The string-comparison trap
     // =========================================================================
 
-    /**
-     * @dataProvider truthyFlagProvider
-     */
+    #[DataProvider('truthyFlagProvider')]
     public function test_every_common_truthy_spelling_enables_the_redirect(string $value): void
     {
         // REVERSED first by the v1-patch B14 fix, then by the TODO 28 fix.
@@ -176,9 +175,7 @@ class HttpsProtocolTest extends FeatureTestCase
         ];
     }
 
-    /**
-     * @dataProvider falsyFlagProvider
-     */
+    #[DataProvider('falsyFlagProvider')]
     public function test_no_other_value_enables_the_redirect(string $value): void
     {
         // B14's control experiment: the looser interpretation must not

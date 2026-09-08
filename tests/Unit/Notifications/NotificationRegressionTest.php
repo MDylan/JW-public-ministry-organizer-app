@@ -30,12 +30,11 @@ use App\Notifications\deletePersonalDataNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class NotificationRegressionTest extends TestCase
 {
-    /**
-     * @dataProvider notificationProvider
-     */
+    #[DataProvider('notificationProvider')]
     public function test_notification_mail_contracts(string $class, array $constructorArgs, bool $shouldQueue): void
     {
         $notifiable = $this->makeNotifiable();
@@ -67,7 +66,7 @@ class NotificationRegressionTest extends TestCase
             ],
         ]);
 
-        $payload = $this->sharedPayload();
+        $payload = self::sharedPayload();
 
         $this->assertSame([], (new EventDeletedNotification($payload))->via($notifiable));
         $this->assertSame([], (new EventDeletedAdminsNotification($payload))->via($notifiable));
@@ -91,15 +90,15 @@ class NotificationRegressionTest extends TestCase
         );
         sort($classes);
 
-        $covered = array_keys($this->notificationProvider());
+        $covered = array_keys(self::notificationProvider());
         sort($covered);
 
         $this->assertSame($classes, $covered);
     }
 
-    public function notificationProvider(): array
+    public static function notificationProvider(): array
     {
-        $payload = $this->sharedPayload();
+        $payload = self::sharedPayload();
 
         return [
             'EventCreatedNotification' => [EventCreatedNotification::class, [$payload], true],
@@ -130,7 +129,11 @@ class NotificationRegressionTest extends TestCase
         ];
     }
 
-    private function sharedPayload(): array
+    /**
+     * Static because notificationProvider() is, and PHPUnit 10 calls a data
+     * provider without an instance. Nothing in here ever needed $this.
+     */
+    private static function sharedPayload(): array
     {
         return [
             'userName' => 'Tester',

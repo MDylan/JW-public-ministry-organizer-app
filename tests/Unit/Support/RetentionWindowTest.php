@@ -5,6 +5,7 @@ namespace Tests\Unit\Support;
 use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * v1-patch E1: the single source of truth for the retention floors.
@@ -80,10 +81,15 @@ class RetentionWindowTest extends TestCase
      * Livewire component writes to the settings table without validation, so
      * anything can end up in there. If the value were cast, (int) would give
      * zero, the zero-month window's floor would be TODAY, and the command
-     * would delete all 471,754 day_stats rows.
+     * would delete every day_stats row on the installation.
      *
-     * @dataProvider garbageSettingValues
+     * The sentence above used to quote a row count measured on a real
+     * database, which AGENTS.md forbids in test comments for the same reason
+     * it forbids it anywhere else: the repository ships to every install, and
+     * the number describes one of them at one moment. The defect is the same
+     * size whatever the count is.
      */
+    #[DataProvider('garbageSettingValues')]
     public function test_the_group_data_floor_refuses_a_value_outside_the_whitelist($value): void
     {
         config(['settings_group_data_retention' => $value]);
@@ -91,7 +97,7 @@ class RetentionWindowTest extends TestCase
         $this->assertNull(RetentionWindow::groupDataFloor());
     }
 
-    public function garbageSettingValues(): array
+    public static function garbageSettingValues(): array
     {
         return [
             'letters'        => ['abc'],

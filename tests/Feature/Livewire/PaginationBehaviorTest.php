@@ -9,6 +9,7 @@ use App\Http\Livewire\Groups\ListUsers as GroupUserList;
 use Livewire\Livewire;
 use Livewire\WithPagination;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 08: the AppComponent pagination contract.
@@ -46,9 +47,7 @@ class PaginationBehaviorTest extends FeatureTestCase
         $this->assertSame('livewire::simple-bootstrap', $component->paginationSimpleView());
     }
 
-    /**
-     * @dataProvider paginatingComponentProvider
-     */
+    #[DataProvider('paginatingComponentProvider')]
     public function test_every_paginating_component_inherits_the_bootstrap_theme(string $componentClass): void
     {
         $component = new $componentClass();
@@ -58,7 +57,7 @@ class PaginationBehaviorTest extends FeatureTestCase
         $this->assertSame('livewire::bootstrap', $component->paginationView());
     }
 
-    public function paginatingComponentProvider(): array
+    public static function paginatingComponentProvider(): array
     {
         return [
             'admin users'  => [AdminUserList::class],
@@ -67,9 +66,7 @@ class PaginationBehaviorTest extends FeatureTestCase
         ];
     }
 
-    /**
-     * @dataProvider paginatingComponentProvider
-     */
+    #[DataProvider('paginatingComponentProvider')]
     public function test_every_paginating_component_exposes_the_pagination_methods_the_view_calls(string $componentClass): void
     {
         // The vendor bootstrap template renders wire:click="previousPage('page')",

@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 18 / 33.4: laraupdater's self-update contract.
@@ -346,9 +347,7 @@ class UpdaterContractTest extends FeatureTestCase
         $this->assertContains('updater.update', $uris);
     }
 
-    /**
-     * @dataProvider updaterEndpoints
-     */
+    #[DataProvider('updaterEndpoints')]
     public function test_every_updater_endpoint_rejects_a_guest(string $uri): void
     {
         // DELIBERATELY asserts the DESIRED state, not today's. The
@@ -361,9 +360,7 @@ class UpdaterContractTest extends FeatureTestCase
         $this->get('/'.$uri)->assertRedirect(route('login'));
     }
 
-    /**
-     * @dataProvider updaterEndpoints
-     */
+    #[DataProvider('updaterEndpoints')]
     public function test_every_updater_endpoint_rejects_a_non_admin(string $uri): void
     {
         $this->actingAs($this->createUser(['email' => 'non-admin@example.test']));

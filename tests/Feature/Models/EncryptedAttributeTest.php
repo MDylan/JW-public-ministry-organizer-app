@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 13: the behavior of the 9 columns under the `encrypted` cast.
@@ -131,7 +132,7 @@ class EncryptedAttributeTest extends FeatureTestCase
     // 2. Round trip
     // =========================================================================
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_the_value_round_trips_through_the_cast(string $model, string $column, string $table): void
     {
         $value = 'Árvíztűrő tükörfúrógép';
@@ -141,7 +142,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         $this->assertSame($value, $record->fresh()->{$column});
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_the_stored_column_is_not_plain_text(string $model, string $column, string $table): void
     {
         $value = 'Titkos érték '.$column;
@@ -159,7 +160,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         $this->assertSame($value, Crypt::decryptString($raw));
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_the_same_text_produces_a_different_ciphertext_every_time(string $model, string $column, string $table): void
     {
         // Random IV, so the encryption is not deterministic. The most
@@ -177,7 +178,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         );
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_the_column_cannot_be_searched_with_a_plain_where(string $model, string $column, string $table): void
     {
         // A STATED RULE that so far only a side clause has recorded
@@ -202,7 +203,7 @@ class EncryptedAttributeTest extends FeatureTestCase
     // 3. Null and the empty string
     // =========================================================================
 
-    /** @dataProvider nullableEncryptedColumns */
+    #[DataProvider('nullableEncryptedColumns')]
     public function test_null_is_stored_and_read_back_as_null(string $model, string $column, string $table): void
     {
         $record = $this->makeWith($model, $column, null);
@@ -214,7 +215,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         );
     }
 
-    /** @dataProvider notNullEncryptedColumns */
+    #[DataProvider('notNullEncryptedColumns')]
     public function test_a_not_null_column_rejects_null(string $model, string $column, string $table): void
     {
         // Live check of the nullability matrix. Laravel 11's native change()
@@ -225,7 +226,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         $this->makeWith($model, $column, null);
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_an_empty_string_is_encrypted_not_treated_as_null(string $model, string $column, string $table): void
     {
         // The empty string is NOT null: setAttribute()'s null check
@@ -245,7 +246,7 @@ class EncryptedAttributeTest extends FeatureTestCase
     // 4. Length - why every column had to be widened
     // =========================================================================
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_the_ciphertext_has_a_fixed_two_hundred_character_floor(string $model, string $column, string $table): void
     {
         // MEASURED VALUE, not an estimate: the AES-256-CBC payload (iv +
@@ -261,7 +262,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         $this->assertLessThan(255, $length, 'Rövid értékre a payload még belefér egy varchar(255)-be.');
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_ordinary_length_content_outgrows_a_varchar_255(string $model, string $column, string $table): void
     {
         // AND HERE IS THE LIMIT. A 100-character - i.e. completely ordinary -
@@ -279,7 +280,7 @@ class EncryptedAttributeTest extends FeatureTestCase
         );
     }
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_a_multi_kilobyte_value_survives_the_round_trip(string $model, string $column, string $table): void
     {
         // 4 KB of plaintext encrypted is roughly 5.5 KB - a TEXT column
@@ -301,7 +302,7 @@ class EncryptedAttributeTest extends FeatureTestCase
     // 5. What breaks it: a write that bypasses the cast, and a wrong key
     // =========================================================================
 
-    /** @dataProvider encryptedColumns */
+    #[DataProvider('encryptedColumns')]
     public function test_a_raw_write_makes_the_column_unreadable(string $model, string $column, string $table): void
     {
         // THE MOST IMPORTANT SAFETY NET underneath the TODO 32 squash and

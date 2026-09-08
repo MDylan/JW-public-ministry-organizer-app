@@ -5,6 +5,7 @@ namespace Tests\Feature\Setup;
 use App\Http\Middleware\EnsureInstallerToken;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * v1-patch D2: the installer's access protection.
@@ -44,9 +45,7 @@ class InstallerAccessTest extends SetupTestCase
     // 1. The gate
     // =========================================================================
 
-    /**
-     * @dataProvider guardedRouteProvider
-     */
+    #[DataProvider('guardedRouteProvider')]
     public function test_a_visitor_without_the_token_is_turned_away(string $route): void
     {
         $this->get(route($route))->assertRedirect(route('setup.welcome'));

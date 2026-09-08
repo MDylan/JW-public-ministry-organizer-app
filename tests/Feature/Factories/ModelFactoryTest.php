@@ -35,6 +35,7 @@ use App\Models\WeatherCity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Guards TODO 04: every model must have a working factory.
@@ -100,9 +101,7 @@ class ModelFactoryTest extends FeatureTestCase
         ];
     }
 
-    /**
-     * @dataProvider factoryBackedModels
-     */
+    #[DataProvider('factoryBackedModels')]
     public function test_factory_persists_its_default_definition(string $modelClass): void
     {
         /** @var Model $model */
@@ -115,9 +114,7 @@ class ModelFactoryTest extends FeatureTestCase
         ]);
     }
 
-    /**
-     * @dataProvider factoryBackedModels
-     */
+    #[DataProvider('factoryBackedModels')]
     public function test_factory_can_create_multiple_records(string $modelClass): void
     {
         $before = $modelClass::count();

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 09: a SetLocale middleware.
@@ -125,9 +126,7 @@ class SetLocaleTest extends FeatureTestCase
         $this->assertNull(session('language'));
     }
 
-    /**
-     * @dataProvider privilegedRoleProvider
-     */
+    #[DataProvider('privilegedRoleProvider')]
     public function test_a_hidden_language_is_applied_for_privileged_roles(string $role): void
     {
         $user = $this->createUser([
@@ -143,7 +142,7 @@ class SetLocaleTest extends FeatureTestCase
         $this->assertSame('de', $user->fresh()->language);
     }
 
-    public function privilegedRoleProvider(): array
+    public static function privilegedRoleProvider(): array
     {
         return [
             'mainAdmin'  => ['mainAdmin'],

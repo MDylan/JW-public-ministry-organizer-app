@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Actions\Fortify\PasswordValidationRules;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 27: the password rule - characterized first, then replaced.
@@ -43,9 +44,7 @@ use Tests\TestCase;
  */
 class PasswordRuleTest extends TestCase
 {
-    /**
-     * @dataProvider passwordCases
-     */
+    #[DataProvider('passwordCases')]
     public function test_the_current_password_rules_accept_exactly_these_passwords(string $password, bool $expectedToPass, string $why): void
     {
         $validator = Validator::make(

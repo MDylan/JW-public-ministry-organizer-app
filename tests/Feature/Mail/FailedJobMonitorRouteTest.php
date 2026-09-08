@@ -6,6 +6,7 @@ use Illuminate\Support\Env;
 use Spatie\FailedJobMonitor\Notifiable;
 use Tests\TestCase;
 use TypeError;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 36: re-verifying spatie/laravel-failed-job-monitor, which the roadmap
@@ -97,9 +98,7 @@ class FailedJobMonitorRouteTest extends TestCase
     // 3. What the configuration file actually produces
     // =========================================================================
 
-    /**
-     * @dataProvider emptyEnvValueProvider
-     */
+    #[DataProvider('emptyEnvValueProvider')]
     public function test_the_recipient_is_never_empty_whatever_the_env_says(string $envValue): void
     {
         // THE FIX, and the assertion it flipped. Until TODO 36 this asserted
@@ -142,7 +141,7 @@ class FailedJobMonitorRouteTest extends TestCase
     /**
      * @return array<string, array{0: string}>
      */
-    public function emptyEnvValueProvider(): array
+    public static function emptyEnvValueProvider(): array
     {
         return [
             // What .env.example ships. env() turns it into a real null.

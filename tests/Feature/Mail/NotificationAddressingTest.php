@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Symfony\Component\Mime\Email;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 36: the notification addresses, measured on a RENDERED message.
@@ -39,7 +40,7 @@ class NotificationAddressingTest extends TestCase
     /**
      * @return array<string, array{0: class-string}>
      */
-    public function replyToNotificationProvider(): array
+    public static function replyToNotificationProvider(): array
     {
         return [
             'EventCreatedNotification' => [EventCreatedNotification::class],
@@ -53,9 +54,7 @@ class NotificationAddressingTest extends TestCase
     // 1. The address the group supplies
     // =========================================================================
 
-    /**
-     * @dataProvider replyToNotificationProvider
-     */
+    #[DataProvider('replyToNotificationProvider')]
     public function test_the_group_reply_to_address_survives_rendering(string $class): void
     {
         $message = $this->send(new $class($this->payload()));
@@ -72,9 +71,7 @@ class NotificationAddressingTest extends TestCase
     // 2. The fallback, and the two ways it is reached
     // =========================================================================
 
-    /**
-     * @dataProvider replyToNotificationProvider
-     */
+    #[DataProvider('replyToNotificationProvider')]
     public function test_an_empty_reply_to_falls_back_to_the_configured_from_address(string $class): void
     {
         $message = $this->send(new $class($this->payload(['replyTo' => '   '])));
@@ -86,9 +83,7 @@ class NotificationAddressingTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider replyToNotificationProvider
-     */
+    #[DataProvider('replyToNotificationProvider')]
     public function test_a_null_reply_to_falls_back_too(string $class): void
     {
         // groups.replyTo is a NULLABLE text column and every producer passes it

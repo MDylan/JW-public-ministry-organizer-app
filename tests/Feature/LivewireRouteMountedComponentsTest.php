@@ -3,12 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\StaticPage;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class LivewireRouteMountedComponentsTest extends FeatureTestCase
 {
-    /**
-     * @dataProvider mountedRouteProvider
-     */
+    #[DataProvider('mountedRouteProvider')]
     public function test_route_mounted_livewire_components_boot_successfully(
         string $routeName,
         string $actor,
@@ -71,7 +70,7 @@ class LivewireRouteMountedComponentsTest extends FeatureTestCase
         $request->get(route($routeName, $parameters))->assertStatus(200);
     }
 
-    public function mountedRouteProvider(): array
+    public static function mountedRouteProvider(): array
     {
         return [
             'home' => ['home.home', 'member', false, false, false, false],

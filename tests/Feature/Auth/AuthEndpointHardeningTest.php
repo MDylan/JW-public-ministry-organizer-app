@@ -6,6 +6,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * v1-patch H: the medium- and low-priority items from the security audit that
@@ -94,9 +95,7 @@ class AuthEndpointHardeningTest extends FeatureTestCase
     // CRLF in the email field of the mail-sending endpoints
     // =========================================================================
 
-    /**
-     * @dataProvider crlfPayloads
-     */
+    #[DataProvider('crlfPayloads')]
     public function test_a_crlf_payload_is_rejected_on_the_forgot_password_endpoint(string $payload): void
     {
         // Laravel 8's default `email` rule uses RFCValidation, which ACCEPTS
@@ -113,9 +112,7 @@ class AuthEndpointHardeningTest extends FeatureTestCase
             ->assertSessionHasErrors('email');
     }
 
-    /**
-     * @dataProvider crlfPayloads
-     */
+    #[DataProvider('crlfPayloads')]
     public function test_a_crlf_payload_is_rejected_on_the_reset_password_endpoint(string $payload): void
     {
         $this->post(route('password.update'), [
@@ -126,7 +123,7 @@ class AuthEndpointHardeningTest extends FeatureTestCase
         ])->assertSessionHasErrors('email');
     }
 
-    public function crlfPayloads(): array
+    public static function crlfPayloads(): array
     {
         return [
             'CRLF' => ["valaki@example.test\r\nBcc: aldozat@example.test"],

@@ -10,6 +10,7 @@ use App\Notifications\UserRoleIsGroupCreatorNotification;
 use App\Notifications\UserWillBeAnonymizeNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 11 -> TODO 28: from a tripwire to proof.
@@ -133,9 +134,7 @@ class NotificationEnvFallbackTest extends TestCase
         $this->assertSame(config('mail.from.address'), $mail->replyTo[0][0]);
     }
 
-    /**
-     * @dataProvider replyToNotificationProvider
-     */
+    #[DataProvider('replyToNotificationProvider')]
     public function test_every_event_notification_falls_back_to_the_same_configured_value(string $class): void
     {
         $mail = (new $class($this->payload()))->toMail($this->notifiable());
@@ -143,7 +142,7 @@ class NotificationEnvFallbackTest extends TestCase
         $this->assertSame(config('mail.from.address'), $mail->replyTo[0][0]);
     }
 
-    public function replyToNotificationProvider(): array
+    public static function replyToNotificationProvider(): array
     {
         return [
             'EventCreatedNotification'       => [EventCreatedNotification::class],

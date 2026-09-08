@@ -7,6 +7,7 @@ use App\Models\GroupUser;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 07.2: the AuthServiceProvider's five gate closures.
@@ -83,9 +84,7 @@ class AuthorizationGateTest extends FeatureTestCase
         $this->assertFalse($this->allows($this->userWithRole('groupCreator', 'gs-gc@example.test'), 'is-groupservant'));
     }
 
-    /**
-     * @dataProvider groupServantMembershipProvider
-     */
+    #[DataProvider('groupServantMembershipProvider')]
     public function test_group_servant_gate_depends_on_the_membership_role(string $role, bool $expected): void
     {
         $group = $this->createGroup();
@@ -95,7 +94,7 @@ class AuthorizationGateTest extends FeatureTestCase
         $this->assertSame($expected, $this->allows($user->fresh(), 'is-groupservant'));
     }
 
-    public function groupServantMembershipProvider(): array
+    public static function groupServantMembershipProvider(): array
     {
         return [
             'member' => ['member', false],

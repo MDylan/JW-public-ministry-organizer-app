@@ -4,6 +4,7 @@ namespace Tests\Unit\Support;
 
 use App\Support\Avatar\InitialsAvatar;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * TODO 39.1: the avatar generator that replaced `laravolt/avatar`.
@@ -53,9 +54,7 @@ class InitialsAvatarTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider colourCases
-     */
+    #[DataProvider('colourCases')]
     public function test_the_background_matches_the_colour_the_removed_package_produced(string $name, string $expected): void
     {
         $this->assertSame($expected, InitialsAvatar::background($name));
@@ -118,9 +117,7 @@ class InitialsAvatarTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider initialsCases
-     */
+    #[DataProvider('initialsCases')]
     public function test_the_initials_follow_the_generator_rules(string $name, string $expected): void
     {
         $this->assertSame($expected, InitialsAvatar::initials($name));

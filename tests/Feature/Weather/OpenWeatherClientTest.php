@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\Feature\FeatureTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * The v1-patch C package: the OpenWeather client's successful and failing branches.
@@ -174,9 +175,7 @@ class OpenWeatherClientTest extends FeatureTestCase
         Http::assertNothingSent();
     }
 
-    /**
-     * @dataProvider errorStatusProvider
-     */
+    #[DataProvider('errorStatusProvider')]
     public function test_each_error_status_carries_its_own_message(int $status, string $needle): void
     {
         Http::fake(['*' => Http::response([], $status)]);
