@@ -9,6 +9,7 @@ use App\Models\GroupMessage;
 use App\Models\GroupUser;
 use App\Models\User;
 use App\Notifications\GroupPriorityMessageNotification;
+use App\Rules\Throttle;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
@@ -204,7 +205,17 @@ class GroupMessagesTest extends FeatureTestCase
             $component->set('message', "Uzenet szama {$i}")->call('sendMessage')->assertHasNoErrors();
         }
 
-        $component->set('message', 'Ez mar tul sok')->call('sendMessage')->assertHasErrors(['message']);
+        $component->set('message', 'Ez mar tul sok')
+            ->call('sendMessage')
+            ->assertHasErrors(['message' => Throttle::class]);
+
+        // TODO 42: the rule now implements ValidationRule, so the validator
+        // wraps it in an InvokableValidationRule - naming the class above is
+        // what proves the throttle rejected this, and not min:3 or max:250.
+        // The message assertion guards the other half of that migration: a
+        // $fail() without ->translate() would put the raw `group.messages.limit`
+        // key here, and the component would render the key to the user.
+        $this->assertSame(__('group.messages.limit'), $component->lastErrorBag->first('message'));
 
         $this->assertSame(3, GroupMessage::where('group_id', $this->group->id)->count());
     }
