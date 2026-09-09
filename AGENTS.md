@@ -40,6 +40,12 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
   them is tracked as roadmap TODO 33.9 and is deliberately *not* something to do
   opportunistically inside an unrelated change set.
 - When changing models/routes/jobs/auth flow, update the corresponding file under `.docs/` in the same change set.
+- **The suite fails on any PHP deprecation raised by code under `app/`.**
+  `tests/Concerns/FailsOnApplicationDeprecations` reports the file and line, so
+  a failure that names a deprecation is a defect in the change, not test flake.
+  Do not silence it by narrowing the guard; fix the call. Deprecations raised
+  inside `vendor/` are deliberately out of scope, and the trait's docblock
+  explains why `phpunit.xml`'s own `failOnDeprecation` cannot do this job.
 - Prefer documenting behavior and integration points (what triggers what), not just file names.
 - If behavior is disabled/commented in code, mark it clearly as inactive in docs.
 - **Never write figures taken from a real database into documentation or code

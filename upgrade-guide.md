@@ -220,7 +220,10 @@ working code with it.
 Both are `require-dev`, and both still shipped, because this repository commits
 the dev tree too - see the TODO 34 entry above for why.
 
-*Last updated: TODO 39.*
+**TODO 41: none.** The deprecation sweep changed no dependency at all - no
+`composer.json` edit, no lock movement - so nothing orphans and nothing arrives.
+
+*Last updated: TODO 41.*
 
 ## 3. Application files that move or disappear
 
@@ -346,7 +349,13 @@ siblings, in every language. Anything else customised in those six files goes
 with it, so it is worth exporting them before the upgrade and re-applying the
 wanted changes through the editor afterwards.
 
-*Last updated: TODO 39.*
+**TODO 41: none.** Fourteen files under `app/` changed content, one of them
+the HTTP kernel, whose middleware alias property was renamed - but no file
+moves, no file disappears, and none of them is editable from inside the
+application the way the `validation.php` files above are. An archive that
+overwrites them is the whole of the change.
+
+*Last updated: TODO 41.*
 
 ## 4. `.env` changes
 
@@ -395,7 +404,13 @@ purpose: `config/filesystems.php` still reads that name, so no deployed `.env`
 needs editing. Renaming it to `FILESYSTEM_DISK` is a later decision, and it has
 to move the config and the `.env` together or it moves nothing.
 
-*Last updated: TODO 39.*
+**TODO 41: none.** No environment variable is added, renamed or
+reinterpreted. Worth naming because one was considered and rejected: Laravel
+reads `LOG_DEPRECATIONS_WHILE_TESTING` to decide whether to log deprecations
+under test, and TODO 41 solved that inside the test suite instead, so no
+deployed `.env` gains a key that only ever mattered to a test run.
+
+*Last updated: TODO 41.*
 
 ## 5. Per-install state to repair
 
@@ -469,8 +484,12 @@ State that lives on the host and is not expressible in a release archive.
   is renamed". Delete both files before the first request.
 - **`php artisan migrate` is required by this release**, and section 3 explains
   which migration and why its rollback is not symmetrical.
+- **TODO 41 adds nothing here.** No package leaves or arrives, so no
+  `bootstrap/cache` manifest goes stale on its account; there is no migration;
+  and no per-install state changes. The usual `optimize:clear` at step 10 is
+  enough, for the ordinary reason that `config:cache` predates the release.
 
-*Last updated: TODO 39.*
+*Last updated: TODO 41.*
 
 ## 6. The upgrade procedure
 
@@ -534,3 +553,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 39.1 | **Row added retroactively at TODO 39.2, which found it missing.** Removing `laravolt/avatar` orphaned two vendor namespaces in section 2 (`vendor/laravolt`, `vendor/intervention` - one declared package taking its dependency with it), and gave section 5 two entries: `public/avatars/` becomes orphaned data rather than broken state, and a cached config still carrying `laravolt.avatar.*` keys is a second reason for `optimize:clear`. It also supplied the rule's sharpest example - a non-framework change that still breaks a stale `bootstrap/cache` manifest. |
 | (no framework hop) | 39.2 | **Section 3 gained its first entry that is not a file: a database column.** Lifting the `laravel/fortify` ceiling was the price of Laravel 10 resolving at all - the `~1.11.2` pin admitted no release that supports it - and the two-factor confirmation moved from a NOT NULL boolean to Fortify's own nullable `two_factor_confirmed_at`. Sections 2 and 4 gained nothing. Section 5 gained the first non-additive migration in this guide: rolling back needs `migrate:rollback` **before** the old release goes back, not after. |
 | **Laravel 9 -> 10** | **39, 40** | The first hop since 34, and it moves the runtime with it: PHP `^8.1`, and the interpreter on the development machine switched from `php81` to the default `php` 8.3 one commit ahead of the framework. Section 2 gains two **partial** paths whose namespaces both stay. Section 3 gains a kind of entry it did not have: no file moves, but six `validation.php` files change content **and are editable through the application's own translation editor**, so an administrator's customisations there are overwritten - and have to be, because the old content renders every password-strength error as a raw key. Section 4 is empty, deliberately: `FILESYSTEM_DRIVER` keeps its Laravel 8 spelling so that no deployed `.env` needs editing. |
+| (no framework hop) | 41 | **Every section says "none", and the reason is worth more than the rows.** TODO 41 was supposed to be a small refactor; the sweep that was meant to confirm nothing was left instead found that the test suite had never been able to see a PHP deprecation at all - Laravel's own error handler drops them under test, and PHPUnit's handler steps aside once Laravel's is installed. Sixteen deprecation sites in the application's own code were closed as a result, all of them behaviour-neutral, none of them visible to an operator. Nothing orphans, nothing moves, no `.env` key changes and there is no migration - the first delivered item in this guide that costs a deployed host nothing at all. |
