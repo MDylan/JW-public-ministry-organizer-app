@@ -12,6 +12,7 @@ Each item is intentionally small enough to complete and mark independently.
 - **No additional PHP runtime needs to be installed.** Laravel 11 and 12 declare `php: ^8.2`, which the installed PHP 8.3 satisfies, and Laravel 13 declares `^8.3`. `php81` served Laravel 8 and 9 and is now unused; the default `php` (8.3) carries the rest of the path.
 - Composer is 2.10.2 and enforces `config.allow-plugins`. TODO 24 added an explicit **empty** block, i.e. deny-by-default; the Laravel 9 resolution introduced no plugin, so it is still empty after TODO 34.
 - **`config.platform.php` is gone.** TODO 24 raised it to `8.1.30` rather than removing it, because Composer ran on 8.3 while the application ran on 8.1 and an unpinned resolution could lock versions the real runtime could not execute. That rule said to delete the key once the two coincide, and the interpreter switch is when they do.
+- **`composer audit` runs at the framework hops and once at the end (TODO 73.1) - not per item.** An item that touches no `composer.json`, no `composer.lock` and no `vendor/` cannot change this project's exposure, so running the audit inside one measures the **upstream advisory database**, not the work. That database moves on its own: entries are published, merged, withdrawn and re-classified between two runs of an unchanged lock, in both directions. Recording a count in a non-hop entry therefore produces a figure that drifts by itself and reads, later, as if the item had caused it. Delivered non-hop entries state that no composer file moved and stop there. Where an advisory **does** arrive mid-item and forces a lock bump, that is a composer change like any other and gets its own commit and its own entry - TODO 39.2 is the worked example. The `config.policy.advisories.ignore-id` block is re-evaluated at each hop, which is the practice TODO 24 established and TODO 34 followed.
 
 ## Status Convention
 
@@ -34,7 +35,7 @@ Each item is intentionally small enough to complete and mark independently.
 - **Both required runtimes are already installed.** `^8.2` is a caret constraint, so PHP 8.3 satisfies Laravel 11 and 12; no PHP 8.2 install is needed.
 - ~~**Note on Phase 4:** although Laravel 9 declares `^8.0.2`, its officially tested ceiling is PHP 8.2, and the current `nesbot/carbon` line already fatals on PHP 8.3. Stay on `php81` for Laravel 9 and only move to PHP 8.3 once Laravel 10 is in place.~~ **Overtaken by measurement at Phase 5.** The Carbon fatal was real when this note was written and is not any more - 2.73.0 carries the untyped `setLastErrors()`. The switch happened at the start of Phase 5, on Laravel 9 and **before** the framework hop, as its own commit, so a runtime change and a framework change are never in the same diff. "Officially tested ceiling" remained a fair caution and is why it was measured rather than assumed; the suite is green on 8.3 with its numbers unmoved.
 - PHP 8.4 is not installed. Laravel 13 accepts `^8.3`, so 8.4 is forward-looking only (TODO 68).
-- Do not skip intermediate majors. Each hop gets its own composer resolution, its own test run, and its own PR.
+- Do not skip intermediate majors. Each hop gets its own composer resolution, its own test run, its own `composer audit`, and its own PR. **The audit belongs to the hop and to nothing smaller**: the hop is where the lock moves, so it is the only point before Phase 12 at which the run says something about this project rather than about the upstream advisory database. See *Execution Environment* for why, and TODO 73.1 for the final run.
 
 ## Project-Specific Baseline (Current State, verified)
 
@@ -2538,6 +2539,16 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - Full test run on the Laravel 13 stack, plus manual smoke checks for: login/logout, registration and email verification, profile update, group membership flows, event create/update/delete, all admin pages, the translation UI, the GDPR export, and the setup flow.
     - Verify scheduled commands and queue workers on the upgraded stack.
   - Expected changes: a release-candidate report with a pass/fail matrix in `upgrade-notes/`.
+
+- [ ] **TODO 73.1: Close the advisory ledger**
+  - **This is the roadmap's final `composer audit`, and the only one outside a framework hop.** The rule and its reasoning are in *Execution Environment*: between hops the lock does not move, so an audit run inside a non-hop item measures the upstream advisory database rather than the work, and a count recorded there drifts on its own. Everything accumulated across the path is settled here instead, once, on the lock that actually ships.
+  - Needed:
+    - Run `composer audit` on the final Laravel 13 lock and record the result: advisories, affected packages, and abandoned packages.
+    - **Empty the `config.policy.advisories.ignore-id` block, or justify every entry that survives.** It exists because Composer 2.10 blocks advisory-affected versions during resolution, and it was filled with Laravel 8 advisories that had no fixed 8.x release (TODO 24, re-evaluated at TODO 34). Those reasons expire with Laravel 8. **An entry that outlives its framework is an unexplained ignore**, and shipping 2.0.0 with one is the failure mode this item exists to prevent - so each survivor needs a fixed-version check and a written reason, not a carry-forward.
+    - Cross-check the survivors against the *Package Compatibility Matrix* in Appendix A: an advisory with no fix is a different decision from an advisory whose fix needs a package this project has already decided not to take.
+    - Re-run after the final `composer update`, not before it, so the recorded result describes the lock in the release archive.
+  - **Where the result goes:** the release-candidate report TODO 73 produces, and a line in `upgrade-guide.md` if any advisory survives - an operator taking a host to 2.0.0 is entitled to know what is knowingly unfixed. Nothing is written down as an advisory count in a non-hop entry, per the rule above.
+  - Expected changes: an audit result in the release-candidate report, a `composer.json` policy block that is either empty or explained, and possibly one `upgrade-guide.md` line.
 
 - [ ] **TODO 74: Bring documentation back in sync**
   - Needed:
