@@ -55,7 +55,7 @@ trait MustVerifyNewEmail
      * already have: there is nothing to confirm. The same request from an
      * unverified user is meaningful - that is the "resend the first mail" path.
      */
-    public function newEmail(string $email, callable $withMailable = null): ?Model
+    public function newEmail(string $email, ?callable $withMailable = null): ?Model
     {
         if ($this->getEmailForVerification() === $email && $this->hasVerifiedEmail()) {
             return null;
@@ -131,7 +131,7 @@ trait MustVerifyNewEmail
      * verified: on a freshly registered account this is the first confirmation,
      * not an address change.
      */
-    public function sendPendingEmailVerificationMail(Model $pendingUserEmail, callable $withMailable = null)
+    public function sendPendingEmailVerificationMail(Model $pendingUserEmail, ?callable $withMailable = null)
     {
         $mailableClass = $pendingUserEmail->user->hasVerifiedEmail()
             ? config('verify-new-email.mailable_for_new_email')
