@@ -5,6 +5,7 @@ namespace Tests\Feature\Groups;
 use App\Http\Livewire\Groups\UpdateGroupForm;
 use App\Models\Group;
 use App\Models\GroupDay;
+use App\Models\GroupFutureChange;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -215,5 +216,85 @@ class GroupDayTimeRangeTest extends FeatureTestCase
         $this->assertSame('00:00', $days[$this->dayNumber]['end_time']);
 
         $component->call('updateGroup')->assertHasNoErrors();
+    }
+
+    /**
+     * THE ONE PATH ON WHICH UpdateGroupForm:249-251 WAS NOT DEAD.
+     *
+     * mount():158-163 replaces $this->state with
+     * updateGroupFutureChanges::getState(), and that class loads the group as
+     * Group::where(...)->with(['days'])->first() (:28) before calling
+     * toArray() (:30) - so with ?show_future=1 the state HAS a `days` key, the
+     * wildcard expands, and `before_or_equal:days.*.end_time` runs for real
+     * (Validator::validateAttribute() substitutes the concrete index into the
+     * dependent parameter). GroupDay's H:i accessors make date_format pass
+     * first, so the comparison is reached rather than short-circuited. It then
+     * rejects the 18:00-00:00 template that TimeCheck exists to allow, because
+     * before_or_equal reads 00:00 as the START of the day.
+     *
+     * HOW REACHABLE, measured rather than assumed, because the answer is
+     * narrower than it first looks. The save block is inside
+     * `@if (!isset($future_changes))` (update-group-form.blade.php:613), so a
+     * group with a pending change renders NO submit button - ?show_future=1 on
+     * its own is a read-only screen. The second entry point is
+     * ?remove_future_changes=1 (mount():171-175), which deletes the row and
+     * calls updateGroup() from inside mount(); removeFutureChanges():452
+     * redirects there WITHOUT show_future, and on that URL the state carries
+     * no `days` key, so the rules stay dead. Only the two parameters TOGETHER
+     * make them run, and nothing in the application renders that link - it has
+     * to be composed by hand from the redirect URL. That is why this defect
+     * survived: it is real, it is not theoretical, and it is behind a URL no
+     * click produces.
+     *
+     * The error key was `days.0.start_time` - the RELATION INDEX, not the day
+     * number - so the view's prefixed is-invalid check would have lit up
+     * Sunday for a Wednesday row.
+     *
+     * Recorded, not asserted: on this path $this->state['days'] holds the
+     * STORED days while $this->days holds the pending ones
+     * (updateGroupFutureChanges:69), so the rules measured the wrong array
+     * even when they passed.
+     */
+    public function test_the_pending_changes_screen_can_save_a_midnight_template(): void
+    {
+        Notification::fake();
+
+        // The STORED template is the midnight one, because the dead rules
+        // validate $this->state['days'] - the stored days - and that is what
+        // has to trip them.
+        $stored = $this->storedDay();
+        $stored->update(['start_time' => '18:00', 'end_time' => '00:00']);
+
+        // The PENDING template differs from it, so the assertions below can
+        // tell "the save ran" apart from "the save was rejected and the stored
+        // row simply never moved". updateGroup() writes $this->days, which is
+        // the pending array (updateGroupFutureChanges:69).
+        GroupFutureChange::create([
+            'group_id' => $this->group->id,
+            'change_date' => today()->addDay()->toDateString(),
+            'group' => [],
+            'days' => [
+                $this->dayNumber => [
+                    'day_number' => (string) $this->dayNumber,
+                    'start_time' => '19:00',
+                    'end_time' => '00:00',
+                ],
+            ],
+            'disabled_slots' => [],
+            'user_id' => $this->editor->id,
+        ]);
+
+        // updateGroup() runs from inside mount() on this URL, so a rejection
+        // surfaces out of the mount itself rather than as a component error
+        // bag - which is why this test asserts on the stored row instead of
+        // with assertHasNoErrors().
+        Livewire::withQueryParams(['show_future' => 1, 'remove_future_changes' => 1])
+            ->actingAs($this->editor)
+            ->test(UpdateGroupForm::class, ['group' => $this->group]);
+
+        $day = $this->storedDay();
+
+        $this->assertSame('19:00', $day->start_time);
+        $this->assertSame('00:00', $day->end_time);
     }
 }

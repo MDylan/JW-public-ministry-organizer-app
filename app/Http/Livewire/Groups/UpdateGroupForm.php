@@ -246,9 +246,6 @@ class UpdateGroupForm extends AppComponent
             'color_someone' => ['sometimes', 'regex:'.$pattern],
             'color_minimum' => ['sometimes', 'regex:'.$pattern],
             'color_maximum' => ['sometimes', 'regex:'.$pattern],
-            'days.*.start_time' => 'required|date_format:H:i|before_or_equal:days.*.end_time',
-            'days.*.end_time' => 'required|date_format:H:i|after_or_equal:days.*.start_time',
-            'days.*.day_number' => 'required',
             'signs' => 'sometimes',
             'languages' => 'sometimes',
             // `email:filter`, not plain `email`: this value goes into the
@@ -265,6 +262,19 @@ class UpdateGroupForm extends AppComponent
 
         $validatedData = $v->validate();
 
+        // THE ONLY GUARD ON THE SERVICE-DAY TIMES, since TODO 42.1 removed the
+        // three `days.*` rules that used to sit on the validator above. Those
+        // expanded to nothing on the ordinary edit path (mount() fills $state
+        // from a Group whose `days` relation is not loaded), but they DID run
+        // on ?show_future=1, where updateGroupFutureChanges loads the relation
+        // - and there they rejected the legitimate 18:00-00:00 template,
+        // because before_or_equal reads 00:00 as the START of the day. That is
+        // what TimeCheck exists to express; see app/Rules/TimeCheck.php:14-19.
+        //
+        // $this->days is handed in as the WHOLE data set, so the error keys are
+        // bare - `3.start_time`, not `days.3.start_time`. The Blade view keys
+        // its @error and is-invalid checks off the same shape; see the $dayKey
+        // line in livewire/groups/update-group-form.blade.php.
         $validatedDays = Validator::make($this->days, [
             '*.day_number' => 'required',
             '*.start_time' => ['required','date_format:H:i', new TimeCheck('end_time', 'before_or_midnight') ], //|before_or_equal:*.end_time',
