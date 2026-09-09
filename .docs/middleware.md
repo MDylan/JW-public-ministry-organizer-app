@@ -49,7 +49,7 @@ unmeasured, which is worth knowing before deleting a line from `$middleware`.
 - `throttle:api`
 - `SubstituteBindings`
 
-## Route Middleware Aliases (`$routeMiddleware`)
+## Route Middleware Aliases (`$middlewareAliases`)
 
 | Alias | Class | Purpose |
 |---|---|---|
