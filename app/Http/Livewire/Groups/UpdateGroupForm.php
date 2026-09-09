@@ -568,6 +568,16 @@ class UpdateGroupForm extends AppComponent
     public function render()
     {
         $group_times = $this->generateTimeArray();
+        // BOTH arrays are rebuilt from scratch below, and both are public, so
+        // both survive a request unless they are cleared. day_selects was not,
+        // which is why a day whose lists stopped being written kept rendering
+        // the previous request's options. The reset and the $day_key keying
+        // below had to arrive together (TODO 42.1): with the old
+        // $day['day_number'] keying, clearing this array would have made an
+        // unchecked day's entry ABSENT rather than stale, and
+        // `@if(isset($day_selects[$day]))` would have dropped its two selects
+        // out of the page.
+        $this->day_selects = [];
         $this->disabled_selects = [];
         foreach($this->days as $day_key => $day) {
             // Defaulted into LOCALS, deliberately: a row that carries a
@@ -601,18 +611,18 @@ class UpdateGroupForm extends AppComponent
             // an oversight. The start list ascends from 00:00 and the end list
             // ascends from the start, so both extremes widen the day as far as
             // the counterpart allows.
-            $this->day_selects[$day['day_number']]['start'] = $starts;
-            $this->day_selects[$day['day_number']]['end'] = $ends;
+            $this->day_selects[$day_key]['start'] = $starts;
+            $this->day_selects[$day_key]['end'] = $ends;
 
-            $this->disabled_selects[$day['day_number']] = $this->generateTimeArray(
+            $this->disabled_selects[$day_key] = $this->generateTimeArray(
                                                             date("H:i", strtotime($end) - ($this->state['min_time'] * 60)),
                                                             date("H:i", strtotime($start) + ($this->state['min_time'] * 60)), 
                                                             $this->state['min_time']);
             //remove old time slots if needed
-            if(isset($this->disabled_slots[$day['day_number']])) {
-                foreach($this->disabled_slots[$day['day_number']] as $key => $slot) {
-                    if(!in_array($key, $this->disabled_selects[$day['day_number']])) {
-                        $this->disabled_slots[(int)$day['day_number']][$key] = false;
+            if(isset($this->disabled_slots[$day_key])) {
+                foreach($this->disabled_slots[$day_key] as $key => $slot) {
+                    if(!in_array($key, $this->disabled_selects[$day_key])) {
+                        $this->disabled_slots[$day_key][$key] = false;
                     }
                 }
             }

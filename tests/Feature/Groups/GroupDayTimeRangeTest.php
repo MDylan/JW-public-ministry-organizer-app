@@ -397,4 +397,52 @@ class GroupDayTimeRangeTest extends FeatureTestCase
         $this->assertSame(self::STORED_START, $day->start_time);
         $this->assertSame(self::STORED_END, $day->end_time);
     }
+
+    /**
+     * UNCHECKING A DAY USED TO OVERWRITE SUNDAY'S OPTION LISTS.
+     *
+     * render() keyed day_selects and disabled_selects by $day['day_number'],
+     * and an unchecked day carries day_number === false (that is what
+     * updateGroup():332 tests for). PHP casts false to the array key 0 - so
+     * the moment a user unchecked Wednesday, Wednesday's option lists were
+     * written into Sunday's slot, and Wednesday's own entry was left behind
+     * from the previous render, because day_selects was the one array render()
+     * never reset.
+     *
+     * Keying by $day_key is correct without exception: mount():97 keys
+     * $this->days by day number, and the view binds days.{{$day}}.*, so
+     * $day_key === $day always.
+     *
+     * THE RESET AND THE KEYING HAD TO SHIP TOGETHER. Adding the missing
+     * day_selects reset on its own would have been a regression: with the old
+     * keying, Wednesday's entry would then be absent rather than stale, and
+     * `@if(isset($day_selects[$day]))` would drop its two selects out of the
+     * page entirely.
+     */
+    public function test_unchecking_a_day_leaves_the_other_days_option_lists_alone(): void
+    {
+        GroupDay::factory()->create([
+            'group_id' => $this->group->id,
+            'day_number' => 0,
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ]);
+
+        $component = $this->form()
+            ->set('days.'.$this->dayNumber.'.day_number', false);
+
+        $daySelects = $component->get('day_selects');
+
+        // Sunday's end options start at Sunday's own start time. Wednesday's
+        // would start at 08:00, which is how the overwrite showed itself.
+        $this->assertSame('09:00', $daySelects[0]['end'][0]);
+        $this->assertSame('10:30', end($daySelects[0]['start']));
+
+        // The unchecked day keeps its own entry, so its selects stay on the
+        // page instead of vanishing or freezing on a previous render.
+        $this->assertArrayHasKey($this->dayNumber, $daySelects);
+        $this->assertSame('08:00', $daySelects[$this->dayNumber]['end'][0]);
+
+        $this->assertArrayHasKey($this->dayNumber, $component->get('disabled_selects'));
+    }
 }
