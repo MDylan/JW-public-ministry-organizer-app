@@ -28,6 +28,7 @@ class EventEdit extends AppComponent
     public $editEvent = null;
     public $original_day_data = [];
     public $group_data = [];
+    public $service_days = [];
     public $listeners = [
         'setStart',
         'createForm',

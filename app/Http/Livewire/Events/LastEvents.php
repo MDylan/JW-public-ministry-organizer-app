@@ -18,6 +18,8 @@ class LastEvents extends AppComponent
     public $year = 0;
     public $month = 0;
     public $current_month = 0;
+    public $first_day = null;
+    public $last_day = null;
     public $reports = [];
     private $eventFormDisabled = false;
     public $eventId;

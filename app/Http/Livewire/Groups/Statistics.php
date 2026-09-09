@@ -20,6 +20,8 @@ class Statistics extends AppComponent
     public $period = null;
     public $startDate = null;
     public $endDate = null;
+    public $first_day = null;
+    public $last_day = null;
 
     public function mount($group) {
         $this->groupId = $group;

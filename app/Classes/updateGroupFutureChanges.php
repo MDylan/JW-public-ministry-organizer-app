@@ -20,6 +20,9 @@ class updateGroupFutureChanges {
     private $literatures = [];
     private $changes = [];
     private $disabled_slots = [];
+    private $default_colors = [];
+    private $days_original = [];
+    private $parent_group = [];
 
     public function getChanges($group_id) {
         $group = Group::where('id', $group_id)->with(['days'])->first();

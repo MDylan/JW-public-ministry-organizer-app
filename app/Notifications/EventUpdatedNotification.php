@@ -72,7 +72,7 @@ class EventUpdatedNotification extends Notification implements ShouldQueue
         $new_end = $e->format(__('app.format.time'));
 
         return (new MailMessage)
-            ->replyTo( strlen(trim($this->data['replyTo'])) > 0 ? $this->data['replyTo'] : config('mail.from.address') )
+            ->replyTo( strlen(trim($this->data['replyTo'] ?? '')) > 0 ? $this->data['replyTo'] : config('mail.from.address') )
             ->subject(__('email.event.modified.subject', [
                 'date' => $date,
                 'groupName' => $this->data['groupName']

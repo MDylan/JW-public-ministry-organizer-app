@@ -27,6 +27,7 @@ class GenerateStatProcess implements ShouldQueue
     private $day_stat = [];
     private $service_days = [];
     private $date_data = [];
+    private $group_data = [];
     private $forceReset = false;
     /**
      * Delete the job if its models no longer exist.

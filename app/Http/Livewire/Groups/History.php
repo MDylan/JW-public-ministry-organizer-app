@@ -16,6 +16,8 @@ class History extends AppComponent
     public $year = 0;
     public $month = 0;
     public $current_month = 0;
+    public $first_day = null;
+    public $last_day = null;
 
     public function mount($group) {
         $this->groupId = $group;

@@ -644,7 +644,7 @@ class ListUsers extends AppComponent
                 $user_sync = [];
                 foreach($new_users as $new_user) {
                     $user_sync[$new_user['id']] = [
-                        'note' => strip_tags(trim($new_user['pivot']['note'])),
+                        'note' => strip_tags(trim($new_user['pivot']['note'] ?? '')),
                         'hidden' => $new_user['pivot']['hidden'] == 1 ? 1 : 0,
                         'deleted_at' => null, //because maybe we try to reattach logged out user
                         //automatically accept invitation if user is already member of the parent group
@@ -1023,7 +1023,7 @@ class ListUsers extends AppComponent
                             }
                         }
                     })->get(); 
-        if(strlen($this->searchTerm) > 0) {
+        if(strlen($this->searchTerm ?? '') > 0) {
             //search in user's name and email. This is because we store user's name encrypted
             $users = collect($users)->filter(function($user) {
                 if(

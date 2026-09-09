@@ -125,7 +125,7 @@ class ListUsers extends AppComponent
     {
         $users = User::query()
             ->where(function($query) {
-                if(strlen(trim($this->searchTerm)) == 0) {
+                if(strlen(trim($this->searchTerm ?? '')) == 0) {
                     $query->whereIn('users.role', ['mainAdmin', 'translator', 'groupCreator']);
                 }  else {
                     $query->where('users.email', 'LIKE', '%'.$this->searchTerm.'%');
