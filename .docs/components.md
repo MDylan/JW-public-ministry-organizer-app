@@ -35,11 +35,41 @@ These are mounted directly from `routes/web.php`.
 | `Admin\Translation` | `/admin/translate` | **The translation editor** (TODO 33.3 grew it from an 18-line link-out shim when `joedixon/laravel-translation` was removed). Source/target locale and group selectors, search, missing-only filter, per-key and per-page save, add key. Writes through `App\Support\Translation\LangFiles`. See the notes below. |
 | `Groups\ListUsers` | `/groups/{group}/users` | Group membership management, role/sign controls, linking/detaching child-parent groups. |
 | `Groups\NewsList` | `/groups/{group}/news` | Group news listing. |
-| `Groups\UpdateGroupForm` | `/groups/{group}/edit` | Group configuration editor (rules, service days, literature, weather, future changes). **The only component that makes an outbound API call**, and it makes it synchronously - see the note below. |
+| `Groups\UpdateGroupForm` | `/groups/{group}/edit` | Group configuration editor (rules, service days, literature, weather, future changes). **The only component that makes an outbound API call**, and it makes it synchronously - see the note below. The service-day rows correct themselves as you edit them; that has its own note too. |
 | `Groups\DeleteGroup` | `/groups/{group}/delete` | Group delete confirmation/action UI. |
 | `Groups\NewsEdit` | `/groups/{group}/news/create`, `/groups/{group}/news/edit/{new}` | Group news create/edit, localized fields, attachments. |
 | `Groups\Statistics` | `/groups/{group}/statistics` | Per-group stats and monthly analytics. |
 | `Groups\History` | `/groups/{group}/history` | Per-group history/audit-style timeline UI. |
+
+### The service-day template in `Groups\UpdateGroupForm`
+
+The seven service-day rows are not an ordinary bound form: `render()` rebuilds
+each day's start and end option lists on every request and **rewrites values
+that no longer fit**, so the component corrects the user rather than rejecting
+them. Livewire re-renders after every property update, so this happens between
+keystrokes, before anything is submitted.
+
+- **The end list is built from the start as clamped**, so only the field the
+  user got wrong moves. Until TODO 42.1 it was built from the start the loop
+  was handed, and a mis-clicked start dragged the stored end along with it -
+  what survived was `00:00 - 00:00`, the "no service" template, with nothing
+  telling the user the day had been emptied.
+- **The order of updates is significant.** Widening the end of the day is what
+  makes a later start reachable; setting the start first clamps it straight
+  back. Tests that drive this form have to set `end_time` before `start_time`.
+- **The clamp is not a complete guard.** With `min_time = 120` and a start of
+  `23:00` the end option list has exactly one entry, so the clamp produces the
+  zero-length pair `23:00 - 23:00`, which `App\Rules\TimeCheck` then rejects on
+  both fields. A group in that configuration cannot be saved at all - an open
+  defect, not a fixed one.
+- **The option lists are keyed by the day**, not by `day_number`, which is
+  `false` for an unchecked day and therefore the array key `0`. Both
+  `day_selects` and `disabled_selects` are reset at the top of `render()`;
+  they are public properties and would otherwise carry stale entries across
+  requests.
+- **The day times have exactly one validator**, and its error keys are bare
+  (`3.start_time`). See `.docs/validation.md` for the key shape and for why
+  the first validator's `days.*` rules were deleted rather than repaired.
 
 ### The weather call in `Groups\UpdateGroupForm`
 

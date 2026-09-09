@@ -72,7 +72,7 @@ allowing the pair to span midnight.
 |---|---|
 | Constructor | `new TimeCheck($otherField, $type)`, `$type` being `after_or_midnight` or `before_or_midnight` |
 | Messages | `validation.after` / `validation.before` with a `:date` replacement (`lang/{de,en,fr,hu,ro,sk}/validation.php`) |
-| Call site | `app/Http/Livewire/Groups/UpdateGroupForm.php:270-271`, on the **second** validator, which validates `$this->days` directly |
+| Call site | `app/Http/Livewire/Groups/UpdateGroupForm.php`, on the day validator, which is handed `$this->days` directly and is the only guard on those times since TODO 42.1 |
 
 **Why it exists at all, given `before_or_equal` / `after_or_equal`.** A
 group's service day may end at `00:00`, meaning midnight at the *end* of the
@@ -93,41 +93,97 @@ it. Before TODO 42 this path failed with no error key set, so `message()`
 resolved `trans('validation.')` and the literal string `validation.` was
 attached to the field that was fine.
 
-## Two traps in the service-day form
+## The service-day form: one guard, one key shape
 
-Both found while delivering TODO 42, both **inactive defects rather than
-behaviour this item changed**, and both owned by roadmap TODO 42.1.
+Both halves of this were found while delivering TODO 42 and settled by
+TODO 42.1.
 
-1. **`UpdateGroupForm:249-251` declares three `days.*` rules that compile to
-   nothing.** `mount()` sets `$this->state = $group->toArray()` (`:88`) before
-   it first touches `$group->days` (`:96`), `Group` declares no `$with`, and
-   `toArray()` serialises only loaded relations — so `$this->state` has no
-   `days` key, and Laravel expands a wildcard rule whose root is absent into
-   zero rules. `TimeCheck`, on the second validator, is the only live guard on
-   these times. **Repairing those dead rules would break the midnight
-   template**, because `before_or_equal` reads `00:00` as the start of the
-   day; the two have to be settled together.
+### The first validator's `days.*` rules are gone
 
-2. **Half of the day-time error keys do not match the view.** The second
-   validator is handed `$this->days` as its whole data set, so its keys are
-   `3.start_time`, not `days.3.start_time`. The message block at
-   `resources/views/livewire/groups/update-group-form.blade.php:522-529` uses
-   the bare key and renders correctly; the `is-invalid` class at `:494` and
-   `:512` looks for the prefixed key and never fires, and the `@error` at
-   `:518` is passed uninterpolated Blade as a PHP argument.
+`UpdateGroupForm` used to declare `days.*.start_time`, `days.*.end_time` and
+`days.*.day_number` on the validator that checks `$this->state`. **They were
+dead on one path and actively wrong on the other**, which is why deleting
+them was the fix rather than repairing them.
+
+On the ordinary edit path they expanded to zero rules: `mount()` sets
+`$this->state = $group->toArray()` before it first touches `$group->days`,
+`Group` declares no `$with`, and Laravel expands a wildcard rule whose root
+is absent into nothing.
+
+With `?show_future=1` the state is replaced by
+`updateGroupFutureChanges::getState()`, and that class loads the group as
+`Group::where(...)->with(['days'])->first()` before calling `toArray()` — so
+there the `days` key exists, the wildcard expands, and
+`before_or_equal:days.*.end_time` runs for real. It then **rejected the
+18:00–00:00 template**, because `before_or_equal` reads `00:00` as the start
+of the day. That is precisely what `TimeCheck` exists to express.
+
+Two details worth keeping:
+
+- Even when they passed, they measured the wrong array: `$this->state['days']`
+  holds the **stored** days while `$this->days` holds the pending ones.
+- The error key was `days.0.start_time` — the relation index, not the day
+  number — so a prefixed lookup in the view would have flagged Sunday for a
+  Wednesday row.
+
+Reaching them took both `?show_future=1` **and** `?remove_future_changes=1`:
+the first alone renders no submit button (the save block is inside
+`@if (!isset($future_changes))`), and the second alone leaves the state
+without a `days` key. Nothing in the application renders that combination.
+
+**`TimeCheck` on `$this->days` is now the only guard on the day times, on
+every path.**
+
+### The error keys are bare, and the view says so once
+
+The day validator is handed `$this->days` as its whole data set, so its
+attributes are `3.start_time`, not `days.3.start_time`. The Blade view names
+that shape once, in a `@php($dayKey = $day)` at the top of the day loop, and
+both `is-invalid` checks and both `@error` blocks read it.
+
+Before TODO 42.1 the four checks disagreed: two looked for the prefixed key
+and never fired, one was passed `'{{$day}}.end_time'` — `@error` compiles its
+argument as raw PHP, so it searched for an attribute with that literal name —
+and only a `<small class="text-danger">` block under the row used the bare
+key. That block is gone; keeping it beside the fixed `@error` blocks would
+render the same sentence two or three times.
+
+`lang/{hu,en,de}/validation.php` define the attribute name under **both**
+shapes, so the key choice is locale-neutral. The other locales define
+neither and fall back to the humanised attribute.
 
 ## What the user actually meets: the component clamps
 
-`UpdateGroupForm::render()` (`:559-580`) regenerates each day's start and end
-option lists from the counterpart on every request, and rewrites any value
-that has fallen out of its list. Livewire runs `render()` after every property
-update, so **a reversed range cannot be assembled through the form at all** —
-the offending field is corrected before anything is submitted.
+`UpdateGroupForm::render()` regenerates each day's start and end option lists
+on every request and rewrites any value that has fallen out of its list.
+Livewire runs `render()` after every property update, so **a reversed range
+cannot be assembled through the form at all** — the offending field is
+corrected before anything is submitted. It also makes the update *order*
+significant: widening the end of the day is what makes a later start
+reachable.
 
-`TimeCheck`'s rejection branch is therefore a server-side backstop against a
-forged payload, not the guard an ordinary user meets. It also makes the update
-*order* significant: widening the end of the day is what makes a later start
-reachable. `tests/Feature/Groups/GroupDayTimeRangeTest` asserts both halves.
+**Only the field the user got wrong moves.** The end list is built from the
+start *as clamped*. Until TODO 42.1 it was built from the start the loop was
+handed, so a mis-clicked start dragged the stored end out of range too and
+what survived was `00:00–00:00`, the "no service" template — the day was
+emptied, silently. Two invariants are stated in the code: neither option list
+can ever be empty, and the `[0]` / last-element asymmetry is deliberate,
+because both extremes widen the day as far as the counterpart allows.
+
+**The clamp is not a complete guard, and `TimeCheck` is not merely a backstop
+against a forged payload.** With `min_time = 120` and a start of `23:00` the
+end option list is `['23:00']` and nothing else, so the clamp produces the
+zero-length pair `23:00–23:00`, which `TimeCheck` rejects on both fields. A
+group in that configuration cannot be saved at all — a separate defect,
+recorded rather than fixed, and the reason the error now has to be visible on
+the field.
+
+The option lists are keyed by the day, not by the checkbox. They used to be
+keyed by `$day['day_number']`, which is `false` for an unchecked day and
+therefore the array key `0` — so unchecking Wednesday wrote Wednesday's lists
+into Sunday's slot.
+
+`tests/Feature/Groups/GroupDayTimeRangeTest` asserts all of it.
 
 ## Tests
 
@@ -136,5 +192,5 @@ reachable. `tests/Feature/Groups/GroupDayTimeRangeTest` asserts both halves.
 | `tests/Unit/Rules/TimeCheckTest.php` | The rule at `Validator::make()` level: accepted ranges including both midnight variants, rejections with their exact messages, the `failed()` key, and the skipped-comparison path. |
 | `tests/Unit/Rules/ThrottleTest.php` | Budget exhaustion, the translated message, the `failed()` key, the increment placement, and per-key budgets. |
 | `tests/Unit/Rules/DeprecatedValidationContractTest.php` | No class under `app/` uses `Rule`, `ImplicitRule` or `InvokableRule`. |
-| `tests/Feature/Groups/GroupDayTimeRangeTest.php` | The midnight template through the real form, and the clamp described above. |
+| `tests/Feature/Groups/GroupDayTimeRangeTest.php` | The midnight template through the real form and through `?show_future=1`; the clamp, including which field moves and which does not; the `min_time = 120` pair the clamp cannot repair, asserted down to the `is-invalid` class and the rendered sentence; and the option-list keying when a day is unchecked. |
 | `tests/Feature/Livewire/GroupMessagesTest.php` | The throttle through `Groups\Messages`, including the rendered message. |

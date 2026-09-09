@@ -10,46 +10,43 @@ use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;
-
 /**
- * TODO 42: the service-day time range, through the real edit form.
+ * The service-day time range, through the real edit form. Started by TODO 42
+ * and finished by TODO 42.1, which closed the three findings below.
  *
  * TimeCheckTest addresses the rule in isolation. This file answers the
  * question that one cannot: what does the form actually let a user submit?
  *
- * THREE MEASURED FACTS ABOUT THIS FORM, all found while writing this file.
- * The first is what the tests below assert; the other two are recorded as
- * TODO 42.1 rather than fixed here.
+ * 1. THE COMPONENT CLAMPS, IT DOES NOT REJECT. render() regenerates the start
+ *    and end option lists on every request and rewrites any value that has
+ *    fallen out of its list. Livewire runs render() after every property
+ *    update, so a reversed range cannot be assembled through the component at
+ *    all - the offending field is corrected before anything is submitted. It
+ *    also means the ORDER of the two updates matters, which is why the helper
+ *    below sets end_time first: on the stored 08:00-16:00 template, setting
+ *    start_time to 18:00 first clamps it straight back to 00:00.
  *
- * 1. THE COMPONENT CLAMPS, IT DOES NOT REJECT. render() (UpdateGroupForm.php
- *    :559-580) regenerates the start and end option lists from the day's
- *    CURRENT counterpart on every request, and rewrites any value that is no
- *    longer in its list to the first (or last) option that is. Livewire runs
- *    render() after every property update, so a reversed range cannot be
- *    assembled through the component at all - the second field is corrected
- *    before anything is submitted. TimeCheck's rejection branch is therefore
- *    a server-side backstop against a payload the UI does not produce, not
- *    the guard the user meets. It also means the ORDER of the two updates
- *    matters, which is why the helper below sets end_time first: with the
- *    stored 08:00-16:00 template, setting start_time to 18:00 first clamps it
- *    straight back to 00:00.
+ *    TimeCheck is NOT merely a backstop against a forged payload, and this
+ *    file used to say it was. The clamp itself produces a pair the validator
+ *    rejects whenever min_time is large enough - see
+ *    test_a_template_the_clamp_cannot_repair_is_reported_on_the_field.
  *
- * 2. UpdateGroupForm:249-251 declares days.*.start_time, days.*.end_time and
- *    days.*.day_number on the FIRST validator, and those three rules compile
- *    to nothing. mount() sets $this->state = $group->toArray() (:88) before
- *    it first touches $group->days (:96), Group declares no $with, and
- *    toArray() serialises only loaded relations - so $this->state has no
- *    `days` key, and Laravel expands a wildcard rule whose root is absent
- *    into zero rules. Anyone who "repairs" those dead rules will break the
- *    midnight case below, because before_or_equal reads 00:00 as the start of
- *    the day; the two have to be settled together.
+ * 2. THE FIRST VALIDATOR'S days.* RULES WERE NOT DEAD EVERYWHERE, which is
+ *    the opposite of what this docblock claimed before TODO 42.1. On the
+ *    ordinary edit path they expanded to zero rules, because mount() fills
+ *    $state from a Group whose `days` relation is not loaded. But
+ *    ?show_future=1 replaces $state with updateGroupFutureChanges::getState(),
+ *    which loads the relation - and there `before_or_equal` rejected the
+ *    midnight template outright. The rules are gone; TimeCheck is the single
+ *    guard on both paths. See
+ *    test_the_pending_changes_screen_can_save_a_midnight_template.
  *
- * 3. The second validator's error keys are `3.start_time`, NOT
- *    `days.3.start_time`, because it is handed $this->days as its whole data
- *    set. The message block at update-group-form.blade.php:522-529 uses the
- *    bare key and does render; the is-invalid class at :494 and :512 looks
- *    for the prefixed key and never fires, and the @error at :518 is passed
- *    uninterpolated Blade as a PHP argument.
+ * 3. THE ERROR KEYS ARE BARE - `3.start_time`, not `days.3.start_time` -
+ *    because the day validator is handed $this->days as its whole data set.
+ *    The view now reads that one shape through a single `$dayKey` variable,
+ *    so both selects turn red and each carries its own message. Before
+ *    TODO 42.1 two of the four checks looked for the prefixed key and one was
+ *    passed uninterpolated Blade as a PHP argument.
  */
 class GroupDayTimeRangeTest extends FeatureTestCase
 {
