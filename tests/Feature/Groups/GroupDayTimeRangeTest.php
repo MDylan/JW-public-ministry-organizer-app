@@ -187,16 +187,16 @@ class GroupDayTimeRangeTest extends FeatureTestCase
      * start is corrected to the first still-valid option before the form is
      * ever submitted, so TimeCheck never sees it. If someone later removes
      * the clamp from render(), this fails and points at TimeCheck as the only
-     * remaining guard - which is exactly the conversation TODO 42.1 wants.
+     * remaining guard.
      *
-     * BOTH FIELDS MOVE, and the second one is a consequence of the first.
-     * render() rebuilds the end options from the start value it was HANDED
-     * (18:00), producing 18:00...00:00, and the stored 16:00 is not in that
-     * list either - so the end is pulled to the last option while the start
-     * is pulled to the first. The pair that survives is 00:00-00:00, the
-     * "no service" template. That is a rough edge worth knowing about, and
-     * it is TODO 42.1's business, not this item's; pinning it here means a
-     * future change to the clamp cannot move it unnoticed.
+     * ONLY THE FIELD THE USER GOT WRONG MOVES, and that is what TODO 42.1
+     * changed here. render() used to build the end option list from the start
+     * value it was HANDED (18:00), producing 18:00...00:00, so the stored
+     * 16:00 fell out of that list too and the end was pulled to its last
+     * option while the start was pulled to its first - the pair that survived
+     * was 00:00-00:00, the "no service" template. A mis-clicked start emptied
+     * the whole day, silently. The end list is now built from the start AS
+     * CLAMPED (00:00), which contains 16:00, so the end stays put.
      */
     public function test_the_component_corrects_a_reversed_range_instead_of_submitting_it(): void
     {
@@ -213,9 +213,54 @@ class GroupDayTimeRangeTest extends FeatureTestCase
             'render() should have pulled the start back inside the day.'
         );
         $this->assertSame('00:00', $days[$this->dayNumber]['start_time']);
-        $this->assertSame('00:00', $days[$this->dayNumber]['end_time']);
+        $this->assertSame(
+            self::STORED_END,
+            $days[$this->dayNumber]['end_time'],
+            'The end was not the field at fault and must not have been dragged along.'
+        );
 
         $component->call('updateGroup')->assertHasNoErrors();
+    }
+
+    /**
+     * The mirror of the case above, which had no coverage at all before
+     * TODO 42.1: an end BEFORE the stored start. The start list is bounded by
+     * the end (06:00), so the stored 08:00 falls out of it and is pulled to
+     * 00:00; the end list is then rebuilt from that 00:00 and contains 06:00,
+     * so the end the user actually chose survives.
+     */
+    public function test_an_end_before_the_start_moves_only_the_start(): void
+    {
+        Notification::fake();
+
+        $component = $this->form()
+            ->set('days.'.$this->dayNumber.'.end_time', '06:00');
+
+        $days = $component->get('days');
+
+        $this->assertSame('00:00', $days[$this->dayNumber]['start_time']);
+        $this->assertSame('06:00', $days[$this->dayNumber]['end_time']);
+
+        $component->call('updateGroup')->assertHasNoErrors();
+    }
+
+    /**
+     * The "no service" template is load-bearing - TimeCheck.php:109-111 lets
+     * it through as a non-range, and updateGroupFutureChanges::initChanges()
+     * reads a false day_number as a deletion - but nothing pinned that the
+     * clamp leaves it alone. It has to survive a render untouched, or every
+     * disabled day would drift on its own.
+     */
+    public function test_the_no_service_template_survives_a_render(): void
+    {
+        GroupDay::where('group_id', $this->group->id)
+            ->where('day_number', $this->dayNumber)
+            ->update(['start_time' => '00:00', 'end_time' => '00:00']);
+
+        $days = $this->form()->get('days');
+
+        $this->assertSame('00:00', $days[$this->dayNumber]['start_time']);
+        $this->assertSame('00:00', $days[$this->dayNumber]['end_time']);
     }
 
     /**

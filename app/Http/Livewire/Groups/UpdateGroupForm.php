@@ -570,22 +570,44 @@ class UpdateGroupForm extends AppComponent
         $group_times = $this->generateTimeArray();
         $this->disabled_selects = [];
         foreach($this->days as $day_key => $day) {
-            if(!isset($day['start_time'])) $day['start_time'] = "00:00";
-            if(!isset($day['end_time'])) $day['end_time'] = "00:00";
-            $this->day_selects[$day['day_number']]['start'] = $this->generateTimeArray($day['end_time'], false);
-            $ends = $this->generateTimeArray(false, $day['start_time'], $this->state['min_time']);
+            // Defaulted into LOCALS, deliberately: a row that carries a
+            // day_number but no times keeps them unset, and several tests
+            // pass through exactly that intermediate state.
+            $start = $day['start_time'] ?? "00:00";
+            $end = $day['end_time'] ?? "00:00";
+
+            // The end of the day bounds the start...
+            $starts = $this->generateTimeArray($end, false);
+            if(!in_array($start, $starts)) {
+                $this->days[$day_key]['start_time'] = $start = $starts[0];
+            }
+
+            // ...and the start AS CLAMPED bounds the end. Building this list
+            // from the start we were HANDED is what used to pull BOTH fields
+            // to 00:00 (TODO 42.1): a mis-clicked start took the stored end
+            // down with it, and what survived was the "no service" template,
+            // with nothing telling the user the day had just been emptied.
+            $ends = $this->generateTimeArray(false, $start, $this->state['min_time']);
+            if(!in_array($end, $ends)) {
+                $this->days[$day_key]['end_time'] = $end = $ends[array_key_last($ends)];
+            }
+
+            // Neither list can be empty, so [0] and array_key_last() cannot
+            // fail: generateTimeArray($end,false) always starts at 00:00 and
+            // pushes at least once, and generateTimeArray(false,$start,$step)
+            // pushes $start before any break can fire (see :188-192).
+            //
+            // The [0] / array_key_last() asymmetry is deliberate rather than
+            // an oversight. The start list ascends from 00:00 and the end list
+            // ascends from the start, so both extremes widen the day as far as
+            // the counterpart allows.
+            $this->day_selects[$day['day_number']]['start'] = $starts;
             $this->day_selects[$day['day_number']]['end'] = $ends;
+
             $this->disabled_selects[$day['day_number']] = $this->generateTimeArray(
-                                                            date("H:i", strtotime($day['end_time']) - ($this->state['min_time'] * 60)),
-                                                            date("H:i", strtotime($day['start_time']) + ($this->state['min_time'] * 60)), 
+                                                            date("H:i", strtotime($end) - ($this->state['min_time'] * 60)),
+                                                            date("H:i", strtotime($start) + ($this->state['min_time'] * 60)), 
                                                             $this->state['min_time']);
-            if(!in_array($day["start_time"], $this->day_selects[$day['day_number']]['start'])) {
-                $this->days[$day_key]['start_time'] = $this->day_selects[$day['day_number']]['start'][0];
-            }
-            if(!in_array($day["end_time"], $this->day_selects[$day['day_number']]['end'])) {
-                $last_key = array_key_last($this->day_selects[$day['day_number']]['end']);
-                $this->days[$day_key]['end_time'] = $this->day_selects[$day['day_number']]['end'][$last_key];
-            }
             //remove old time slots if needed
             if(isset($this->disabled_slots[$day['day_number']])) {
                 foreach($this->disabled_slots[$day['day_number']] as $key => $slot) {
