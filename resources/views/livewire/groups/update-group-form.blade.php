@@ -473,6 +473,14 @@
                                     {{-- {{ dd($days) }} --}}
                                     {{-- {{ var_dump($disabled_slots) }} --}}
                                     @foreach ($group_days as $day => $translate) 
+                                        {{-- THE ERROR-KEY SHAPE FOR THIS DAY, in one place. The day
+                                             times are validated by their own Validator, which is handed
+                                             $this->days as its WHOLE data set (UpdateGroupForm:265), so
+                                             its attributes are bare - `3.start_time`, not
+                                             `days.3.start_time`. Before TODO 42.1 the four checks below
+                                             disagreed about that, and two of them looked for a key the
+                                             bag never carries. --}}
+                                        @php($dayKey = $day)
                                         <div class="row alert alert-light p-1 mb-2">
                                             <div class="col-lg-3">
                                                 <label>@lang('statistics.day')</label>
@@ -491,12 +499,13 @@
                                                         data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.start_time" 
                                                             name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
                                                             class="timeselect start_time form-control 
-                                                            @if ($errors->has('days.' .$day. '.start_time')) is-invalid @endif">
+                                                            @if ($errors->has($dayKey.'.start_time')) is-invalid @endif">
 
                                                             @foreach ($day_selects[$day]['start'] as $time)
                                                                 <option value="{{$time}}">{{ $time }}</option>
                                                             @endforeach
                                                         </select>
+                                                        @error($dayKey.'.start_time')<div class="invalid-feedback" role="alert">{{ $message }}</div>@enderror
                                                     </div>
                                                 @endif
                                             </div>
@@ -509,24 +518,16 @@
                                                         data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.end_time" 
                                                             name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
                                                             class="timeselect end_time form-control 
-                                                            @if ($errors->has('days.' .$day. '.end_time')) is-invalid @endif">
+                                                            @if ($errors->has($dayKey.'.end_time')) is-invalid @endif">
 
                                                             @foreach ($day_selects[$day]['end'] as $time)
                                                                 <option value="{{$time}}">{{ $time }}</option>
                                                             @endforeach
                                                         </select>
-                                                        @error('{{$day}}.end_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
+                                                        @error($dayKey.'.end_time')<div class="invalid-feedback" role="alert">{{ $message }}</div>@enderror
                                                     </div> 
                                                 @endif
                                             </div>
-                                            @if ($errors->has('' .$day. '.start_time') || $errors->has('' .$day. '.end_time'))
-                                                <div class="col-lg-12">
-                                                    <small class="text-danger">
-                                                    {{ $errors->first('' .$day. '.start_time') }}
-                                                    {{ $errors->first('' .$day. '.end_time') }}
-                                                    </small>
-                                                </div>
-                                            @endif
                                             @if(isset($day_selects[$day]))
                                                 <div class="col-lg-12">
                                                     <label for="disabled_slots_{{$day}}">

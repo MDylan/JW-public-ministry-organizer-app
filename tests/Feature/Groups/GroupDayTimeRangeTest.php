@@ -297,4 +297,59 @@ class GroupDayTimeRangeTest extends FeatureTestCase
         $this->assertSame('19:00', $day->start_time);
         $this->assertSame('00:00', $day->end_time);
     }
+
+    /**
+     * THE CLAMP ITSELF PRODUCES A PAIR THE VALIDATOR REJECTS, so this test
+     * needs no forged payload and no bypass - it reaches TimeCheck through
+     * the ordinary form.
+     *
+     * With min_time = 120 (legal: UpdateGroupForm:239 allows in:30,60,90,120)
+     * and a start of 23:00, generateTimeArray(false,'23:00',120) returns
+     * ['23:00'] and nothing else: the first iteration pushes 23:00, the next
+     * $current is 01:00 the following day, which is > $midnight, and :189
+     * breaks. render() therefore clamps the end to the only option there is,
+     * producing the zero-length pair 23:00-23:00 - which TimeCheck rejects on
+     * BOTH fields, because $time === $other and neither is midnight, so no
+     * branch returns early (TimeCheck.php:109-135).
+     *
+     * That is a defect in its own right, recorded rather than fixed here: a
+     * group configured with min_time = 120 and a day ending at midnight
+     * cannot be saved at all. What TODO 42.1 fixes is that the user can now
+     * SEE which field is being complained about.
+     *
+     * The three assertions after the save are the item: the error keys are
+     * bare (`3.start_time`), the is-invalid class actually reaches the markup
+     * - before TODO 42.1 the class was keyed off `days.3.start_time`, which
+     * the bag never carries - and the sentence resolves rather than rendering
+     * a raw lang key. The suite runs with APP_LANG=hu (.env.testing), so the
+     * quoted sentences are the Hungarian ones; `szolgálat kezdete` comes from
+     * lang/hu/validation.php:140, which maps the bare `*.start_time`.
+     */
+    public function test_a_template_the_clamp_cannot_repair_is_reported_on_the_field(): void
+    {
+        Notification::fake();
+
+        $component = $this->form()->set('state.min_time', 120);
+        $this->setDay($component, '23:00', '00:00');
+
+        // The clamp produced the zero-length pair. Asserted, not assumed:
+        // this is the mechanism the rest of the test depends on.
+        $days = $component->get('days');
+        $this->assertSame('23:00', $days[$this->dayNumber]['start_time']);
+        $this->assertSame('23:00', $days[$this->dayNumber]['end_time']);
+
+        $component->call('updateGroup')
+            ->assertHasErrors([
+                $this->dayNumber.'.start_time',
+                $this->dayNumber.'.end_time',
+            ])
+            ->assertSee('is-invalid')
+            ->assertSee('A(z) szolgálat kezdete 23:00 előtti dátum kell, hogy legyen!')
+            ->assertSee('A(z) szolgálat vége 23:00 utáni dátum kell, hogy legyen!');
+
+        // Blocked, not half-applied.
+        $day = $this->storedDay();
+        $this->assertSame(self::STORED_START, $day->start_time);
+        $this->assertSame(self::STORED_END, $day->end_time);
+    }
 }
