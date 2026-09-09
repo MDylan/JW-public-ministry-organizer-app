@@ -15,6 +15,9 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/notifications.md`: Notification catalog, delivery channels, and trigger points.
 - `.docs/observers.md`: Observer registration status and side-effect mapping.
 - `.docs/middleware.md`: HTTP middleware stacks, aliases, and custom behavior.
+- `.docs/validation.md`: the two custom rule objects in `app/Rules`, the
+  `ValidationRule` contract and the `$fail()->translate()` trap, and the two
+  traps around the service-day time validators.
 - `.docs/assets.md`: CSS/JS delivery - the `pwbs_asset()` helper that replaced `laravel-packer`, the dead Mix pipeline, and the traps in both.
 - `upgrade-roadmap.md`: the developer's framework-upgrade plan, Laravel 8 -> 13.
 - `upgrade-guide.md`: the **operator's** counterpart - what a deployed host has
