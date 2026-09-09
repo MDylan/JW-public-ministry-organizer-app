@@ -2,11 +2,12 @@
 
 namespace App\Rules;
 
-use Illuminate\Http\Request;
+use Closure;
 use Illuminate\Cache\RateLimiter;
-use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Http\Request;
 
-class Throttle implements Rule
+class Throttle implements ValidationRule
 {
    /**
      * The throttle key.
@@ -46,32 +47,36 @@ class Throttle implements Rule
     }
 
     /**
-     * Determine if the validation rule passes.
+     * Run the validation rule.
      *
-     * @param string $attribute
-     * @param mixed  $value
+     * THE ATTEMPT COUNTER IS INCREMENTED HERE, as a side effect of a passing
+     * check, exactly as it was under the `passes()` this replaced. That is
+     * what makes this a throttle rather than a predicate: no caller has to
+     * record the attempt itself. Once the budget is spent the counter is
+     * deliberately NOT incremented again, so a blocked user cannot extend
+     * their own lockout by retrying.
      *
-     * @return bool
+     * `->translate()` IS LOAD-BEARING. `$fail('group.messages.limit')` on its
+     * own puts the raw key into the error bag - PotentiallyTranslatedString
+     * returns the string it was given when no translation was requested - and
+     * the form would render `group.messages.limit` to the user with nothing
+     * anywhere reporting a problem. ThrottleTest asserts the resolved
+     * sentence for exactly that reason.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @return void
      */
-    public function passes($attribute, $value)
+    public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if ($this->hasTooManyAttempts()) {
-            return false;
+            $fail('group.messages.limit')->translate();
+
+            return;
         }
 
         $this->incrementAttempts();
-
-        return true;
-    }
-
-    /**
-     * Get the validation error message.
-     *
-     * @return string
-     */
-    public function message()
-    {
-        return __('group.messages.limit');
     }
 
     /**
