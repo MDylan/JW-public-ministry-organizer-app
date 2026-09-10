@@ -12,7 +12,7 @@ Each item is intentionally small enough to complete and mark independently.
 - **No additional PHP runtime needs to be installed.** Laravel 11 and 12 declare `php: ^8.2`, which the installed PHP 8.3 satisfies, and Laravel 13 declares `^8.3`. `php81` served Laravel 8 and 9 and is now unused; the default `php` (8.3) carries the rest of the path.
 - Composer is 2.10.2 and enforces `config.allow-plugins`. TODO 24 added an explicit **empty** block, i.e. deny-by-default; the Laravel 9 resolution introduced no plugin, so it is still empty after TODO 34.
 - **`config.platform.php` is gone.** TODO 24 raised it to `8.1.30` rather than removing it, because Composer ran on 8.3 while the application ran on 8.1 and an unpinned resolution could lock versions the real runtime could not execute. That rule said to delete the key once the two coincide, and the interpreter switch is when they do.
-- **`composer audit` runs at the framework hops and once at the end (TODO 73.1) - not per item.** An item that touches no `composer.json`, no `composer.lock` and no `vendor/` cannot change this project's exposure, so running the audit inside one measures the **upstream advisory database**, not the work. That database moves on its own: entries are published, merged, withdrawn and re-classified between two runs of an unchanged lock, in both directions. Recording a count in a non-hop entry therefore produces a figure that drifts by itself and reads, later, as if the item had caused it. Delivered non-hop entries state that no composer file moved and stop there. Where an advisory **does** arrive mid-item and forces a lock bump, that is a composer change like any other and gets its own commit and its own entry - TODO 39.2 is the worked example. The `config.policy.advisories.ignore-id` block is re-evaluated at each hop, which is the practice TODO 24 established and TODO 34 followed.
+- **`composer audit` runs at the framework hops and once at the end (TODO 73.1) - not per item.** An item that touches no `composer.json`, no `composer.lock` and no `vendor/` cannot change this project's exposure, so running the audit inside one measures the **upstream advisory database**, not the work. That database moves on its own: entries are published, merged, withdrawn and re-classified between two runs of an unchanged lock, in both directions. Recording a count in a non-hop entry therefore produces a figure that drifts by itself and reads, later, as if the item had caused it. Delivered non-hop entries state that no composer file moved and stop there. Where an advisory **does** arrive mid-item and forces a lock bump, that is a composer change like any other and gets its own commit and its own entry - TODO 39.2 is the worked example. The `config.policy.advisories.ignore-id` block is re-evaluated at each hop, which is the practice TODO 24 established and TODO 34 followed. **The rule keys on the LOCK, not on the word "framework" (clarified at TODO 43).** Phase 6 is not a framework hop and it still moved `composer.lock`, so the audit ran there and its result is in that entry; an item that leaves all three untouched still runs none. Read "hop" here as "the commit where the lock moves".
 
 ## Status Convention
 
@@ -78,28 +78,38 @@ Each item is intentionally small enough to complete and mark independently.
 
 ### Livewire 2 -> 3 migration size (this is the largest single item)
 
-| Metric | Count |
-| --- | --- |
-| Component classes (`app/Http/Livewire/**`) | 28 |
-| Livewire Blade views | 30 |
-| Blade files with any `livewire`/`wire:` directive | 22 |
-| `emitTo()` / `emitUp()` in PHP | 21 / 6 |
-| `$emit*` in Blade | 13 |
-| `Livewire.emit*` in JS | 9 |
-| `dispatchBrowserEvent()` | 93 |
-| `$listeners` arrays | 19 components |
-| `wire:model.defer` / plain `wire:model` / `.lazy` | 85 / 28 / 8 |
-| `wire:ignore` / `wire:ignore.self` | 24 / 31 |
-| `@this.set()` / `@this.call()` | 12 |
+**RE-MEASURED BY TODO 43 (2026-09-10), and five of the eleven rows were wrong.** The counts below were taken when Phase 6 was written and the tree has moved since - TODO 42.1 says in its own entry that it avoided adding a 94th `dispatchBrowserEvent`, which is the clue that the 93 had already been overtaken. The measured column is what the tree carried on the day the bump landed; where a Phase 6 item quotes an old number, it is corrected in that item too.
 
-Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the 93 browser events), `resources/views/layouts/app.blade.php:113,125` (`livewire:load` -> `livewire:init`, `Livewire.emit` -> `Livewire.dispatch`, `onPageExpired`), the dynamic emit target in `app/Http/Livewire/Events/Modal.php:60,419`, `AppComponent`'s `$paginationTheme`, `Groups\NewsEdit`'s `WithFileUploads`, and camelCase attributes on unclosed `<livewire:...>` tags.
+| Metric | Written here | Measured (TODO 43) |
+| --- | --- | --- |
+| Component classes (`app/Http/Livewire/**`) | 28 | 28 - 15 extend `AppComponent`, 12 extend `Livewire\Component` |
+| Livewire Blade views | 30 | 30 |
+| Blade files with any `livewire`/`wire:` directive | 22 | 27 |
+| `emitTo()` / `emitUp()` in PHP | 21 / 6 | 21 / 6, and **zero** `$this->emit(` - which this table never said |
+| `$emit*` in Blade | 13 | **14** - 8 `$emitSelf(`, 4 `$emitTo(`, 2 `$emitUp(`, 0 `$emit(` |
+| `Livewire.emit*` in JS | 9 | **11 textually, 10 live** - one is commented out |
+| `dispatchBrowserEvent()` | 93 | **102**, of which **98 carry a second argument** |
+| `$listeners` arrays | 19 components | 19 - 13 `public`, 6 `protected` |
+| `wire:model.defer` / plain `wire:model` / `.lazy` | 85 / 28 / 8 | **88 / 32 / 8** (131 `wire:model` in total) |
+| `wire:model.ignore` | 2 | 2 |
+| **`wire:model.debounce.400ms`** | absent | **1** |
+| **`wire:submit.prevent`** | absent | **19** |
+| `wire:ignore` / `wire:ignore.self` | 24 / 31 | **25** / 31 |
+| `@this.set()` / `@this.call()` | 12 | 12 |
+| `@entangle` / `wire:click.prefetch` / `forgetComputed` | absent | **0 / 0 / 0** - three upgrade-tool steps are no-ops here |
+
+**The second-argument count is the one that changes an item's shape.** `dispatch()` in Livewire 3 takes named parameters where `dispatchBrowserEvent()` took an array, so 98 of the 102 need a decision rather than a rename - see TODO 47.
+
+Critical hotspots: `public/js/modal.js` (the generic modal bridge driving the ~~93~~ **102** browser events), ~~`resources/views/layouts/app.blade.php:113,125`~~ **`:107,119-120`** (`livewire:load` -> `livewire:init`, `Livewire.emit` -> `Livewire.dispatch`, `onPageExpired`), the dynamic emit target in `app/Http/Livewire/Events/Modal.php:60,419`, `AppComponent`'s `$paginationTheme`, `Groups\NewsEdit`'s `WithFileUploads`, and camelCase attributes on unclosed `<livewire:...>` tags. **Every line number in this paragraph and in the Phase 6 items was 3 to 6 lines out**, because TODO 33.8 removed the packer tags from both layouts after they were written; TODO 43 corrected them against the tree.
+
+**And the hotspot list was missing its own biggest entry.** `resources/views/layouts/app.blade.php:65` binds `:wire:key="events_modal"` - a *bound* attribute holding an unquoted bare word, which Livewire 3's tag compiler evaluates as a PHP expression and rejects with `Undefined constant "events_modal"`. That is a 500 on every page rendered through the application layout, which is why the bump's failure list is full of tests that have no Livewire content of their own. Measured at TODO 43: **it alone accounts for 59 of the 286 tests the bump turned red**, and it is the argument for doing TODO 50 first rather than seventh.
 
 ### Frontend
 
 - **The real asset pipeline was `eusonlito/laravel-packer`, not Mix** - 16 call sites across `layouts/app.blade.php`, `layouts/setup.blade.php` and `livewire/groups/poster-edit-modal.blade.php`, concatenating hand-placed files under `public/` at request time. Measured in **TODO 21**, which decided to remove it; **executed in TODO 33.8**, so today the same three files carry 21 `pwbs_asset()` tags and nothing is generated at request time.
 - **The Mix pipeline is dead.** `webpack.mix.js` and `laravel-mix ^6.0.6` are present, but there are **zero `mix()` calls** in the project, `resources/css/app.css` is 0 bytes, `resources/js/app.js` is the 25-byte default, and the outputs `public/js/app.js` / `public/css/app.css` do not exist. No `vite.config.js`, no `package-lock.json`, no `node_modules/`.
 - Local Node is **24.18.0**, and Mix 6 / webpack 5 will not build on it - but since nothing builds today and nothing consumes the output, **that is not what makes a Vite migration necessary**. See the Phase 7 preamble.
-- `composer.json` `post-autoload-dump` publishes Livewire assets, which breaks under Livewire 3.
+- ~~`composer.json` `post-autoload-dump` publishes Livewire assets, which breaks under Livewire 3.~~ **The line is gone (TODO 43, 2026-09-10), and the reason given here was wrong.** Measured against the real v3.8.8 tree, `vendor:publish --force --tag=livewire:assets` prints `INFO Publishing [livewire:assets] assets.` and **exits 0** - the tag is still registered (`FrontendAssets.php:40`). It was removed because a `post-autoload-dump` hook that writes **tracked** files is a hazard in a repository whose release archive is built from a git diff, and `tests/Feature/Assets/LivewirePublishedAssetsTest.php` now asserts what the hook used to accomplish as a side effect.
 
 ---
 
@@ -2266,45 +2276,118 @@ Three things moved with it, and two of them this document never mentioned:
 
 Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a framework hop.
 
-- [ ] **TODO 43: Run the official upgrade tooling and take stock**
+**HOW THIS PHASE IS DELIVERED, decided at TODO 43 and stated here so it is not rediscovered eight items later.** Phase 6 is **one green unit**, not eight. TODO 43 installs Livewire 3 on `v2-dev` and the suite is **knowingly red from that commit until TODO 51 closes**; every item in between reports the red count it started and finished at instead of the `Suite: X -> Y, green` line every other delivered entry in this document carries. The cost is real and is written down rather than discovered: for the duration, `composer test` cannot speak about an *unrelated* regression, `git bisect` is useless across the largest change in the roadmap, and `v2-dev` is not releasable - so a security patch arriving mid-phase, which is exactly what TODO 39.2 was, has nowhere to land. **The phase's opening measurement is 286 red of 1507** (192 errors, 94 failures), and that number is the baseline every item below reports against.
+
+**DO TODO 50 FIRST.** It is written seventh and it is worth 59 of the 286 on its own - one bound attribute in `layouts/app.blade.php:65` that 500s every page rendered through the application layout. Measuring TODO 44 through 49 through a layout that throws is needlessly hard, and the measurement that says so is in TODO 43's entry below.
+
+- [x] **TODO 43: Run the official upgrade tooling and take stock** - DONE
+  - **Delivered on 2026-09-10, in four commits plus this documentation one:** the guard, the composer hook, the bump, and the upgrade tool's behaviour-preserving output. **Suite: 1503 -> 1507 tests, 4182 -> 4200 assertions, green before the bump; 1507 tests / 3398 assertions / 192 errors / 94 failures after it.** The lock moved, so `composer audit` ran here and is reported below.
+  - **THE ITEM'S THREE INSTRUCTIONS WERE ALL CARRIED OUT AND ONE OF THEM RESTED ON A FALSE PREMISE.** `vendor:publish --force --tag=livewire:assets` does **not** break under Livewire 3. The tag is still registered (`Mechanisms/FrontendAssets/FrontendAssets.php:40`), `livewire:publish --assets` calls it, and against the real v3.8.8 tree the command prints `INFO Publishing [livewire:assets] assets.` and **exits 0**. Even for a tag that did not exist it would exit 0, because `VendorPublishCommand::handle()` returns void. The line was removed anyway, for a reason this document had not noticed.
+  - **THE REAL FINDING IS THAT `public/vendor/livewire/` IS LOAD-BEARING, AND NOTHING IN THIS REPOSITORY COULD SEE IT.** `LivewireManager::styles()` (`LivewireManager.php:266-276`) tests `file_exists(public_path('vendor/livewire/manifest.json'))` **first**, and when that file is present it serves the published copy and never touches the package route. The manifest is present here and committed, so the published copy is what every browser loads. When it disagrees with the installed package, Livewire's entire response is a `console.warn`: the page renders, every route answers 200, and a PHP suite cannot notice, because it executes no JavaScript. Livewire 3 keeps the same rule under a different name (`FrontendAssets::usePublishedAssetsIfAvailable()`). **That is why the composer line had to go:** a `post-autoload-dump` hook writing tracked files into the web root, in a repository whose release archive is built from a git diff, kept the two sides in step only as a side effect of installing and reported nothing when they drifted for any other reason. `tests/Feature/Assets/LivewirePublishedAssetsTest.php` replaces it with an assertion.
+  - **THE GUARD FIRED ON THE FIRST BUMP, WHICH IS THE WHOLE ARGUMENT FOR WRITING IT FIRST.** With the hook gone, nothing republished, and the tree was serving version 2 JavaScript against a version 3 backend within one commit. The guard answered with three red cases naming the exact file list. **The v3 `dist/` ships six files and `livewire.js.map` is not one of them**, so the version 2 map survived the copy as an orphan and was deleted by hand.
+  - **THE RESOLUTION WAS SMALLER THAN THE PHASE SUGGESTS: `0 installs, 1 update, 0 removals`, v2.12.8 -> v3.8.8.** Livewire 3 declares `laravel/prompts`, `symfony/console`, `symfony/http-kernel`, `league/mime-type-detection` and four `illuminate/*` packages, and every one was already locked; `illuminate/routing` is a new direct requirement over v2 and arrives with the framework this project already has. The churn is confined to `vendor/livewire/livewire` - 391 of the 405 files in the bump commit.
+  - **`composer audit`, which belongs here because this is where the lock moved.** Three advisories affecting one package, and the package is `laravel/framework`, **not `livewire/livewire`** - zero Livewire advisories. All three are already carried in `config.policy.advisories.ignore-id` with `on-audit: false`, and all three name Phase 9 (TODO 61) as the hop that retires them, so the block is unchanged. The 2024 Livewire file-upload RCE that `v1-patch H` closed inside the `^2.10.4` constraint (Appendix A) does not reappear on the v3 line.
+  - **WHAT THE TOOL DID, and it is less than the item's phrasing implies.** `livewire:upgrade` is present in v3.8.8 (`SupportConsoleCommands.php:30`), its signature is `livewire:upgrade {--run-only=}`, and it registers 20 steps. **Five were applied**, each addressed individually so the diff is attributable to the tool and to nothing else: `add-live-modifier-to-wire-model-directives` (35), `remove-defer-modifier-from-wire-model-directives` (88), `change-lazy-to-blur-modifier-on-wire-model-directives` (8), `remove-prevent-modifier-from-wire-submit-directive` (19), `change-wire-load-directive-to-wire-init` (1). 19 Blade files, 151 lines, all behaviour-preserving: v2's plain `wire:model` was live and v3's is deferred, so `.live` restores it; v2's `.defer` **is** v3's default; v3 made `.prevent` implicit on `wire:submit`. The one approximation is `.lazy` -> `.blur`, which fires on blur where v2 fired on change - TODO 45's to judge.
+  - **`--run-only` IS THE ONLY REASON THE RESERVED DECISIONS SURVIVED.** `handle()` filters the pipeline by the kebab-case of each step's class basename. **`livewire:upgrade --no-interaction` across the whole pipeline would have taken every default**, and two of those defaults are `migrate`: `ChangeDefaultNamespace` moves `app/Http/Livewire` to `app/Livewire` and rewrites the 19 imports in `routes/web.php` (TODO 51's decision), and `ChangeDefaultLayoutView` rewrites `config/livewire.php`'s `layout` key to `components.layouts.app` **without moving the layout file**, which breaks all 19 route-mounted components. Both were refused.
+  - **PIPELINE ORDER IS LOAD-BEARING.** `AddLiveModifierToWireModelDirectives`' pattern is `/wire:model(?!\.(?:defer|lazy|live))/`, so it must run **before** `RemoveDeferModifierFromWireModelDirectives`; reversed, the 88 deferred bindings would first lose `.defer` and then be marked `.live`, turning the whole form layer eager.
+  - **THE 35 IS THE FINDING, AND IT IS NOT THE 28 THIS DOCUMENT PREDICTED.** 131 `wire:model` occurrences, minus 88 `.defer`, minus 8 `.lazy`, leaves 35 - the 32 plain ones plus three the tool decided on our behalf. `admin/settings.blade.php:353,357` were `wire:model.ignore`, **which has never been a real modifier in either version**, and are now `wire:model.live.ignore`: behaviour preserved, latent bug carried across intact. `admin/translation.blade.php:63` was `wire:model.debounce.400ms` and is now the correct v3 `wire:model.live.debounce.400ms`. Neither modifier appears anywhere else in this document. **The two service-day bindings TODO 42.1 pinned came out right, and this was checked rather than assumed**: `update-group-form.blade.php:488`, `:499` and `:518` are all `wire:model.live`.
+  - **THE TOOL'S 151 LINE CHANGES MOVED THE SUITE BY NOTHING - identical counts before and after.** The tests that assert on these directives never reach the assertion: `LivewireComponentInteractionTest` checks 18 literal `wire:model.defer` strings at `:177-194`, and the case dies at `:162` on a 403 where it expected a 302. The Blade layer is downstream of the request layer, and the request layer is what v3 changed. Recorded because "the codemod ran and the suite did not improve" reads like a failure and is not one.
+  - **WHERE THE 286 COME FROM, grouped by the exception each case reports.** This is the phase's real work breakdown, and it is not the one the item order implies: `dispatchBrowserEvent` does not exist, across 12 components, **~127** (TODO 47); the `layouts/app.blade.php:65` 500, **59** (TODO 50); `emitUp` / `emitTo` do not exist, **21** (TODO 44); `Property [$page] not found`, **17** (TODO 48, and exactly what TODO 08 predicted); the `TestableLivewire` return type, **7** (TODO 43.1); `[$lastErrorBag]` / `[$lastRenderedDom]`, **4** (TODO 43.1); `array_intersect_key()` on a string, **4**, unattributed; the route contract, **1** (TODO 51.1). Cases reporting more than one cause are counted more than once, so these do not sum to 286.
+  - **CONTROL EXPERIMENTS, as run.** Restored after each, `git diff` empty.
+    - Deleting `public/vendor/livewire/manifest.json` on Livewire 2 fails all four of the new guard's cases and **leaves the other 1503 tests green** - measured on a full run, not a filtered one. That green is the argument for the guard: with the manifest gone Livewire falls back to its own route in silence and every page in the suite keeps working.
+    - Appending five bytes to the published `livewire.js` fails **exactly one** case. The guard compares content, not existence.
+    - Restoring the `vendor:publish` line and running `composer dump-autoload` produces the `Copying directory` block and leaves `git status --porcelain public/vendor/livewire` **empty**. The hook had had nothing to do for as long as the package was pinned - the falsification of "the hook is keeping something in step".
+    - `livewire:upgrade --run-only=add-live-modifier-to-wire-model-directives` reports **35**, not 32. The falsification of this document's "28 plain `wire:model`" framing.
+    - **Changing `:wire:key` to `wire:key` on `layouts/app.blade.php:65` and re-running the whole suite reports 3669 assertions, 193 errors, 34 failures - 227 red instead of 286.** One character is worth **59 tests and 271 assertions**, and the errors went *up* by one because pages that used to 500 now render far enough to reach a missing `dispatchBrowserEvent`. Reverted; the fix is TODO 50's.
+  - **A SEPARATE FINDING THE THIRD EXPERIMENT SURFACED.** The committed `vendor/composer/autoload_classmap.php` was **stale**: last regenerated at TODO 39, so every test-only item since - TODO 40, 41, 42, 42.1 - added test classes without dumping the autoloader, and `Tests\Concerns\FailsOnApplicationDeprecations` was missing from it. Nothing broke, which is why nobody noticed: there is no `classmap-authoritative` setting, so Composer falls back to PSR-4, and `tests/` never reaches a host (`EXCLUDE_PREFIXES`). The bump commit absorbed the drift.
+  - **What is deliberately NOT here, all measured and all owned elsewhere:** `replace-emit-with-dispatch` (**TODO 44 and 47** - it is not behaviour-preserving; see the correction inside TODO 47), `change-test-assertion-methods` (**TODO 43.1** - it handles 8 of the suite's 74 v2 assertions and would leave the test layer half-migrated), `replace-temporary-uploaded-file-namespace` (**TODO 49**, 1 site), `config/livewire.php` (**TODO 51** - `UpgradeStep::publishConfigIfMissing()` publishes only when the file is *absent*, so none of v3's eight new keys arrived and `manifest_path` is now a dead key), and `AppComponent`'s `$paginationTheme` (**TODO 48**).
+  - **What no step in the tool can reach:** every directive step defaults to `resources/views`, and the emit step adds `app`, `tests` and `resources`. **`public/js` is in none of them**, so `public/js/modal.js` is outside the tool entirely (TODO 46).
+  - **The measurements themselves are in `upgrade-notes/livewire3-upgrade-tool.md`** - the 20 steps with their `--run-only` names, their prompts and defaults, the per-step predicted and measured counts, and the console output quoted verbatim. That directory is in `release/build-update.php`'s `EXCLUDE_PREFIXES`, so none of it ships.
+  - Files: `composer.json`, `composer.lock`, `vendor/livewire/livewire/**`, `vendor/composer/**`, `public/vendor/livewire/**` (`livewire.js.map` **deleted**, four files added, two rewritten), `tests/Feature/Assets/LivewirePublishedAssetsTest.php` (new), 19 files under `resources/views/`, `upgrade-notes/livewire3-upgrade-tool.md` (new), `.docs/assets.md`, `.docs/components.md`, `upgrade-guide.md` and this roadmap. **`config/livewire.php` did not move, no file under `app/` moved, and no test other than the new one was touched.**
+  - **Deployed hosts: the first Phase 6 entry with real work.** No package orphans - `vendor/livewire/livewire` is replaced in place and no vendor namespace empties, unlike the framework hops. No `.env` key changes and there is no migration. But **`public/vendor/livewire/livewire.js.map` is deleted from the repository and a deployed host cannot be made to delete it** (`LaraUpdaterController::install()` adds and overwrites, never removes), so it becomes a manual cleanup in `upgrade-guide.md` section 3 rather than a line in `release/upgrade.php`, frozen since TODO 34. A host serving these assets from a CDN through `livewire.asset_url` needs re-checking, which section 5 now says.
+  - **Everything below is the entry as it stood before delivery, apart from the `vendor:publish` bullet the delivery corrected in place.**
   - Needed:
     - Bump `livewire/livewire` to `^3.0` and run `artisan livewire:upgrade`.
     - Treat its output as a starting point only; every item below needs manual review.
-    - Remove the `vendor:publish --tag=livewire:assets` line from `composer.json` `post-autoload-dump` - it breaks under v3.
-  - Expected changes: composer updates, an inventory of what the tool did and did not handle.
+    - ~~Remove the `vendor:publish --tag=livewire:assets` line from `composer.json` `post-autoload-dump` - it breaks under v3.~~ **Removed, but not for that reason - it exits 0 under v3. See the delivered entry above.**
+  - Expected changes: composer updates, an inventory of what the tool did and did not handle. **Actual:** those two, plus a guard test, a deleted published asset, 19 Blade files, and four new sub-items.
+
+- [ ] **TODO 43.1: Bring the test harness onto the Livewire 3 API**
+  - **Phase 6 had no item for the test layer at all**, and it is measurably large. Found while delivering TODO 43; split out because it belongs to no single item below, and because the mechanical half wants to move as one change rather than in eight pieces.
+  - Needed:
+    - **74 v2-only assertions across 15 files**: `assertDispatchedBrowserEvent` x63 -> `assertDispatched`, `assertNotDispatchedBrowserEvent` x3 -> `assertNotDispatched`, `assertEmitted` x3 -> `assertDispatched`, `assertEmittedTo` x5 -> `assertDispatchedTo`. **The upgrade tool handles only the last two families - 8 of the 74** - because `ChangeTestAssertionMethods` has no pattern for the browser-event spellings. Running it would leave the layer half-migrated, which is why TODO 43 skipped it.
+    - `tests/Feature/Livewire/PartialComponentsTest.php:144` calls `->emit('refresh')` on the testable.
+    - **`tests/Feature/Groups/GroupDayTimeRangeTest.php:110,129` type-hint `\Livewire\Testing\TestableLivewire`**, which does not exist in v3 (`Livewire\Features\SupportTesting\Testable`). This is the suite's only v2 internal in a type position, and it accounts for 7 of the phase's red tests.
+    - `[$lastErrorBag]` and `[$lastRenderedDom]` are read as component properties in a few places; both are v2 internals. 4 red tests.
+    - Confirm `Livewire::actingAs()` survives with its semantics intact: **257 call sites** depend on it, and nothing else in the suite would report a change.
+  - **Not in scope, deliberately:** `AdminTranslationEditorTest`'s raw HTTP posts to the wire endpoint. That is a rewrite rather than a rename, and it has its own item (TODO 46.1).
+  - Expected changes: 15 test files plus `GroupDayTimeRangeTest`; no application code.
 
 - [ ] **TODO 44: Convert the event system from `emit` to `dispatch`**
+  - **Corrected by TODO 43 (2026-09-10), measured on the tree rather than on this document.** The Blade count is **14**, not 13 (8 `$emitSelf(`, 4 `$emitTo(`, 2 `$emitUp(`, and **zero** `$emit(`), and the JS count is **11 textually / 10 live** rather than 9. `app/Http/Livewire` also contains **zero** `$this->emit(` calls, which this item never said and which matters: the upgrade tool's first pattern has nothing to match here.
+  - **THE TOOL COVERS 19 OF THE 21 `emitTo()` CALLS AND NOTHING ELSE IN THIS ITEM**, and the two it misses are the two this item already flagged. `ReplaceEmitWithDispatch`'s pattern requires a **quoted lowercase literal** as the first argument, so `Modal.php:60` and `:419` - the runtime-property targets - fall out of it by construction. That is the roadmap's "special case" arrived at from the regex instead of from the documentation. The 6 `emitUp()` calls are replaced by the literal string `<removed>`, i.e. a manual-action warning, not a rewrite; the 14 Blade `$emit*` calls match no pattern at all, because the Blade pattern is `/\$emit\((.*)\)/` and none of the three spellings here is a bare `$emit(`.
+  - **This item is worth 21 of the phase's 286 red tests** (`emitUp` x17 on `Events\EventEdit`, `emitTo` x2 on `Events\Events`, x2 on `Admin\AdminNewsletters`).
   - Needed:
-    - 21 `emitTo()` + 6 `emitUp()` in PHP, 13 `$emit*` in Blade, 9 `Livewire.emit*` in JS.
+    - ~~21 `emitTo()` + 6 `emitUp()` in PHP, 13 `$emit*` in Blade, 9 `Livewire.emit*` in JS.~~ **21 + 6 in PHP, 14 in Blade, 10 live in JS.**
     - Special case: `app/Http/Livewire/Events/Modal.php:60,419` uses a **runtime property** as the emit target (`$this->emitTo($this->refreshUp, 'refresh')`); v3's `dispatch()->to()` needs care here.
-    - Convert the 19 `$listeners` arrays (mixed `public`/`protected`) to the v3 form or `#[On]` attributes.
+    - Convert the 19 `$listeners` arrays (mixed `public`/`protected` - **13 and 6**, measured) to the v3 form or `#[On]` attributes.
   - Expected changes: broad but mechanical changes across `app/Http/Livewire/**` and `resources/views/livewire/**`.
 
 - [ ] **TODO 45: Resolve the `wire:model` semantic inversion**
+  - **Largely delivered by TODO 43, and the numbers were wrong in three places.** The upgrade tool's behaviour-preserving steps already ran: 88 `.defer` modifiers removed, 35 bindings marked `.live`, 8 `.lazy` changed to `.blur`. **What is left is review, not conversion** - which is a different and much smaller job than this item describes.
+  - **THE COUNT WAS 88 / 32 / 8, NOT 85 / 28 / 8** - and the tool's own pattern, `/wire:model(?!\.(?:defer|lazy|live))/`, matched **35** rather than 32, because it also swept up the 2 `wire:model.ignore` and the 1 `wire:model.debounce.400ms`. Those three are the judgement calls the tool made on our behalf and they are this item's to ratify:
+    - `admin/settings.blade.php:353,357` are now `wire:model.live.ignore`. Behaviour is preserved - an unknown modifier is ignored in both versions, so both spellings resolve to a live binding - but **the latent bug crossed the version boundary intact** and should be spelled `wire:model.live` here.
+    - `admin/translation.blade.php:63` is now `wire:model.live.debounce.400ms`, which is the correct v3 spelling of what it meant in v2.
+  - **`.lazy` -> `.blur` is the one approximation in the tool's output**: v2's `.lazy` fired on `change`, v3's `.blur` fires on blur. 8 occurrences, in `admin/settings.blade.php` (7) and `groups/poster-edit-modal.blade.php` (1).
+  - **The verification this item asks for is currently unavailable and that is worth knowing before starting.** `LivewireComponentInteractionTest:177-194` asserts 18 literal `wire:model.defer` strings, and the case dies at `:162` before reaching them. Those assertions have to be re-pointed (TODO 43.1) before they can verify anything here.
   - Needed:
     - **This is the least mechanical and highest-risk item in the whole roadmap.** In v3, `wire:model` is deferred by default, `wire:model.defer` is removed, and eager binding becomes `wire:model.live`.
-    - Remove the modifier from the 85 `wire:model.defer` occurrences (behavior preserved).
-    - Judge each of the **28 plain `wire:model`** occurrences individually: keep as `wire:model` (now deferred) or convert to `wire:model.live`. Getting this wrong produces forms that look fine but silently stop updating.
-    - Review the 8 `wire:model.lazy` occurrences and the 2 invalid `wire:model.ignore` occurrences (not a real modifier in v2 either - a latent bug).
-  - Expected changes: ~120 Blade edits, each verified against the TODO 07 interaction tests.
+    - ~~Remove the modifier from the 85 `wire:model.defer` occurrences (behavior preserved).~~ **Done at TODO 43: 88 of them.**
+    - Judge each of the ~~**28 plain `wire:model`**~~ **35 now-`.live`** occurrences individually: revert to plain `wire:model` (now deferred) or keep `wire:model.live`. Getting this wrong produces forms that look fine but silently stop updating. **`update-group-form.blade.php:488`, `:499` and `:518` must stay `.live`** - TODO 42.1's forward note explains why.
+    - ~~Review the 8 `wire:model.lazy` occurrences and the 2 invalid `wire:model.ignore` occurrences~~ **Both converted at TODO 43; the review is what remains.**
+  - Expected changes: ~~~120 Blade edits~~ **a review pass over 43 bindings**, verified against the TODO 07 interaction tests once TODO 43.1 has re-pointed them.
+
+- [ ] **TODO 45.1: The two modifiers this roadmap never counted**
+  - Found while delivering TODO 43. Neither appears in the Phase 6 inventory, and the upgrade tool has a step for one of them.
+  - Needed:
+    - **19 `wire:submit.prevent` occurrences**, in 14 files. `.prevent` is implicit on `wire:submit` in v3, and TODO 43 already ran `remove-prevent-modifier-from-wire-submit-directive`, so this is a review of what the tool did rather than a conversion. One test asserts the literal string `wire:submit.prevent` and needs re-pointing (TODO 43.1).
+    - **1 `wire:model.debounce.400ms`** at `admin/translation.blade.php:63`, now `.live.debounce.400ms`. Confirm the debounce still applies on the `.live` path.
+    - Recorded so the next reader does not go looking: `@entangle`, `wire:click.prefetch` and `forgetComputed` are all **0** here, so three of the tool's steps are no-ops.
+  - Expected changes: a review pass; probably no edit at all.
 
 - [ ] **TODO 46: Rewrite the JavaScript bridge and layout hooks**
+  - **Line numbers corrected by TODO 43** - every one in this item was 3 to 6 lines out, because TODO 33.8 removed the packer tags from both layouts after it was written.
+  - **`livewire:load` -> `livewire:init` is already done** (TODO 43 ran `change-wire-load-directive-to-wire-init`; 1 occurrence). Everything else here is untouched, and **`public/js/modal.js` is beyond the reach of every step in the upgrade tool**: the directive steps default to `resources/views` and the emit step adds `app`, `tests` and `resources`, so `public/js` is in none of them.
   - Needed:
-    - `public/js/modal.js:14,20` uses `Livewire.emitTo(...)` for `hideModal`/`hiddenModal`. This generic bridge drives the 93 `dispatchBrowserEvent` calls and must be rewritten wholesale.
-    - `resources/views/layouts/app.blade.php:113` `Livewire.emit(...)` -> `Livewire.dispatch(...)`; `:125-126` `livewire:load` -> `livewire:init`, and `Livewire.onPageExpired` changed.
-    - `@livewireStyles` becomes a no-op in v3; review `layouts/app.blade.php:17,123` and `layouts/setup.blade.php:17,49`.
+    - `public/js/modal.js:14,20` uses `Livewire.emitTo(...)` for `hideModal`/`hiddenModal`. This generic bridge drives the ~~93~~ **102** `dispatchBrowserEvent` calls and must be rewritten wholesale. **It is also a bare `$(document).ready` handler, not gated on Livewire's boot event** - worth deciding while rewriting it, because v3 injects its script tag rather than having it placed by `@livewireScripts`.
+    - ~~`resources/views/layouts/app.blade.php:113`~~ **`:107`** `Livewire.emit(...)` -> `Livewire.dispatch(...)`; ~~`:125-126`~~ **`:119` (done) and `:120`** `livewire:load` -> `livewire:init`, and `Livewire.onPageExpired` changed.
+    - `@livewireStyles` becomes a no-op in v3; review ~~`layouts/app.blade.php:17,123`~~ **`:14,117`** and ~~`layouts/setup.blade.php:17,49`~~ **`:14,46`**. Note `setup.blade.php` mounts **no** Livewire component at all - it only emits the two directives - so deleting both lines there is the likely answer.
+    - **`tests/Feature/Assets/AssetPipelineKnownGapsTest:260-264` asserts `assertCount(21, $callSites)` for `pwbs_asset(` in `resources/`.** Any layout edit here moves that number.
   - Expected changes: `public/js/modal.js`, both layout files.
 
-- [ ] **TODO 47: Convert `dispatchBrowserEvent` calls**
+- [ ] **TODO 46.1: Rewrite the raw-HTTP Livewire endpoint test**
+  - Found while delivering TODO 43. `tests/Feature/Livewire/AdminTranslationEditorTest` is the **only** test in the suite that exercises a Livewire endpoint over real HTTP, which is exactly why it must survive rather than be deleted: TODO 33.3 used it to prove that a Livewire action does not travel over the route it was rendered from, and that the component's own gate is what refuses an unprivileged caller.
   - Needed:
-    - 93 occurrences move to the v3 `dispatch()` browser-event form.
-    - Re-verify the 31 `wire:ignore.self` and 24 `wire:ignore` regions, whose DOM-diffing behavior changed.
+    - `:370-380` posts to `/livewire/message/{name}` with a v2 `fingerprint` / `serverMemo` / `updates` envelope. v3's endpoint is `/livewire/update` and its payload is `components[]` with `snapshot` / `updates` / `calls`. **This is a rewrite, not a rename.**
+    - `:339-341` scrapes `wire:initial-data` out of rendered HTML and JSON-decodes `$decoded['fingerprint']['name']`. v3 emits `wire:snapshot` and `wire:effects` instead.
+    - `:465-481` asserts `Illuminate\Auth\Middleware\Authorize` is in `Livewire::getPersistentMiddleware()`. **v3 reworks persistent middleware**, so decide whether the equivalent assertion exists at all, or whether the 403 case alone now carries the guarantee. `.docs/components.md:196-209` documents this and predicted the change.
+  - Expected changes: `tests/Feature/Livewire/AdminTranslationEditorTest.php`, `.docs/components.md`.
+
+- [ ] **TODO 47: Convert `dispatchBrowserEvent` calls**
+  - **THE COUNT IS 102, NOT 93 - AND THE NUMBER THAT SIZES THIS ITEM IS 98.** Measured at TODO 43: **98 of the 102 calls carry a second argument**, and v3's `dispatch($event, ...$params)` takes **named parameters** where `dispatchBrowserEvent($event, $array)` took an array. So all but four of these need a decision about parameter naming, and the receiving end has to move with them - `public/js/modal.js` reads `event.detail.livewire` and `event.detail.parameters_back`. **This is not the mechanical item the entry describes.**
+  - **The upgrade tool's `replace-emit-with-dispatch` would rename all 102 and leave 98 of them semantically wrong**, which is why TODO 43 measured it and did not run it.
+  - **This is the phase's largest item by red count: roughly 127 of the 286**, spread across 12 components - `Groups\ListUsers` (46), `Events\Modal` (20), `Groups\ListGroups` (17), `Groups\PosterEditModal` (13), `Admin\Settings` (10), `Groups\SpecialDateModal` (9), and single figures on `Groups\NewsEdit`, `Events\EventEdit`, `Home`, `Events\LastEvents`, `Admin\Users\ListUsers`.
+  - Needed:
+    - ~~93~~ **102** occurrences move to the v3 `dispatch()` browser-event form.
+    - Re-verify the 31 `wire:ignore.self` and ~~24~~ **25** `wire:ignore` regions, whose DOM-diffing behavior changed.
     - Re-verify the 12 `@this.set()` / `@this.call()` sites and the 5 `wire:poll` usages.
+    - **The 63 `assertDispatchedBrowserEvent` assertions that verify these calls belong to TODO 43.1** and should move first, or this item has nothing to measure itself against.
   - Expected changes: `app/Http/Livewire/**` and the Blade views paired with each event.
 
 - [ ] **TODO 48: Migrate pagination off `$paginationTheme`**
+  - **TODO 08's prediction is confirmed by the bump: 17 red tests report `Property [$page] not found on component`.** The mechanism it described is exactly what happens.
   - Needed:
-    - `app/Http/Livewire/AppComponent.php` sets `protected $paginationTheme = 'bootstrap'`; v3 replaces it with `paginationView()` and the `WithoutUrlPagination` split.
+    - `app/Http/Livewire/AppComponent.php` sets `protected $paginationTheme = 'bootstrap'`; v3 replaces it with `paginationView()` and the `WithoutUrlPagination` split. **v3 also adds a `pagination_theme` key to `config/livewire.php`**, which this project's config does not carry, because the upgrade tool publishes a config only when the file is absent - coordinate with TODO 51.
     - One base class to fix, but every subclass inherits it. TODO 08's assertions are the verification: `paginationView()` must keep returning `livewire::bootstrap`, and the rendered markup must stay bootstrap rather than falling back to the v3 tailwind default.
     - **This is not only a theme swap. `Groups\ListUsers` needs a second, independent fix**, found by TODO 08. Its `render()` builds a `LengthAwarePaginator` by hand from `$this->page` (`:915-921`). In Livewire 2 the `WithPagination` trait keeps `$page` in step with `$paginators` because `setPage()` writes both; **Livewire 3 removes the trait property and that second write**. The component declares its own `public $page = 1` (`:36`), so the property survives but is never updated again - `gotoPage()` sets `paginators`, `render()` reads `$page`, and the list sits on page 1 **with no error**. Switch it to `$this->getPage()` (or rebuild it on `paginate()`), and re-run `GroupUserListPaginationTest`, whose page-2/page-3 content assertions are the tripwire.
     - Only three components actually paginate: `Admin\Users\ListUsers`, `Groups\ListGroups` and `Groups\ListUsers`. The first two go through the framework's `paginate()` and should migrate on the theme change alone.
@@ -2312,6 +2395,7 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
   - Expected changes: `AppComponent`, `app/Http/Livewire/Groups/ListUsers.php`, possibly published pagination views.
 
 - [ ] **TODO 49: Re-verify file uploads**
+  - **One mechanical piece is measured and waiting**: `replace-temporary-uploaded-file-namespace` has exactly **1** site here. TODO 43 left it to this item rather than splitting a one-line change away from the review it belongs to.
   - Needed:
     - `app/Http/Livewire/Groups/NewsEdit.php` is the only `WithFileUploads` component. Temporary-upload signing and configuration changed in v3.
     - Re-test `updatedFiles()` validation at `:161`, `temporaryUrl()` at `:172`, and `->store('/', 'news_files')` at `:109` against the private `news_files` disk.
@@ -2319,17 +2403,32 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
   - Expected changes: verified upload flow, possibly `config/livewire.php` temporary-upload settings.
 
 - [ ] **TODO 50: Fix component tag syntax**
+  - **DO THIS ITEM FIRST. It is worth 59 of the phase's 286 red tests, and the entry below does not say so because the cause was not the one it names.**
+  - **The defect is not camelCase and it is not the missing close tag.** `resources/views/layouts/app.blade.php:65` binds `:wire:key="events_modal"` - a **bound** attribute whose value is an unquoted bare word. Livewire 3's tag compiler evaluates it as a PHP expression and raises `Undefined constant "events_modal"`, which is **a 500 on every page rendered through the application layout**. That is why the bump's failure list is full of tests with no Livewire content of their own: `SetLocaleTest`, `SetupFlowTest`, `CalendarRouteTest`, `StaticPageAccessTest`, `AssetPipelineTest`.
+  - **Measured at TODO 43:** changing that one attribute to `wire:key` and re-running the suite gives 227 red instead of 286 - **59 tests and 271 assertions for one character**. The other two tags are not affected: `livewire/events/modal.blade.php:246` and `livewire/home.blade.php:109` both bind quoted PHP expressions.
   - Needed:
-    - camelCase attributes on tag syntax resolve differently in v3: `resources/views/layouts/app.blade.php:68` (`<livewire:events.modal :groupId="0" ...>`), `resources/views/livewire/events/modal.blade.php:246`, `resources/views/livewire/home.blade.php:109`.
+    - camelCase attributes on tag syntax resolve differently in v3: ~~`resources/views/layouts/app.blade.php:68`~~ **`:65`** (`<livewire:events.modal :groupId="0" ...>`), `resources/views/livewire/events/modal.blade.php:246`, `resources/views/livewire/home.blade.php:109`.
+    - **The `:wire:key` binding on all three** - decide whether the key is a literal (`wire:key="..."`) or an expression (`:wire:key="'x-'.$id"`). Only the first tag is currently broken, but all three are spelled the same way.
     - These tags are also **unclosed** (no `/>`, no matching close tag) - fix while touching them.
     - 8 `@livewire(...)` directives and 3 `<livewire:...>` tags total.
   - Expected changes: Blade fixes, verified by the nested-component tests.
 
 - [ ] **TODO 51: Decide the Livewire namespace and finalize config**
+  - **TODO 43 refused the upgrade tool's two migration steps so that both halves of this decision are still open**, and measured what taking them would have cost: `change-default-namespace` copies 28 classes into `app/Livewire`, deletes the originals and rewrites `App\Http\Livewire\...` across `app`, `resources/views`, `routes` and `tests` - including the 19 imports in `routes/web.php`; `change-default-layout-view` rewrites the `layout` key to `components.layouts.app` **without moving the layout file**, which breaks all 19 route-mounted components.
+  - **`config/livewire.php` is still the untouched Livewire 2 stub, and that is a decision waiting rather than a state.** `UpgradeStep::publishConfigIfMissing()` publishes only when the file is **absent**, so none of v3's new keys arrived: `app_url`, `inject_assets`, `inject_morph_markers`, `back_button_cache`, `render_on_redirect`, `legacy_model_binding`, `pagination_theme`, `lazy_placeholder`. **`manifest_path` (`:112`) is now a dead key**, and `pagination_theme` is the one TODO 48 needs.
   - Needed:
     - v3's default namespace is `App\Livewire`; the project uses `App\Http\Livewire` via `config/livewire.php`. Either keep the override (cheap, non-standard) or move all 28 classes (clean, touches every test).
     - Confirm `'layout' => 'layouts.app'` still applies; the project has no `->layout()` calls anywhere, so this key is the only layout mechanism.
+    - Publish or hand-write the eight new keys, and delete `manifest_path`.
   - Expected changes: decision recorded, `config/livewire.php` finalized, `.docs/components.md` updated.
+
+- [ ] **TODO 51.1: Re-pin the vendor route contract**
+  - Found while delivering TODO 43, and `RouteContractSnapshotTest:83-88` predicted it in its own comment: *"Livewire 3 renames the message endpoint (livewire.update) and reworks uploads, so this snapshot WILL CERTAINLY fail in Phase 6 - that is exactly why it is here: let the routing change be an explicit diff."*
+  - Needed:
+    - `tests/Fixtures/vendor-route-contracts.json:38,46,54,63` pins four v2 names - `livewire.message`, `livewire.message-localized`, `livewire.preview-file`, `livewire.upload-file`. Regenerate against v3.
+    - **A second-order effect the roadmap does not mention: v3 NAMES its asset routes, which v2 left unnamed.** TODO 14 recorded that `livewire/livewire.js` and `livewire/livewire.js.map` were outside any name-keyed snapshot "even though Livewire 3 changes them too"; under v3 they are inside it. So the `livewire.` prefix slice gains entries as well as losing them, and `test_every_named_route_is_accounted_for` fails as a **separate** case. Two tests, not one.
+    - Re-check that `livewire.upload-file`'s `throttle:60,1` middleware survived; TODO 14 measured it as the only Livewire route carrying more than `web`.
+  - Expected changes: `tests/Fixtures/vendor-route-contracts.json`, `.docs/routes.md`.
 
 ---
 
@@ -2696,6 +2795,7 @@ Deliberately scheduled **after** the Laravel 13 upgrade is released and stable. 
 - Keep tests green at every hop before moving forward. A red suite is a stop condition, not a known issue.
 - **Phase 1 (test coverage) is a hard gate.** No framework version changes until it is complete - it is the only thing that makes the later phases verifiable.
 - Phase 6 (Livewire 3) and Phase 7 (Vite) are **standalone releases**, deliberately separated from framework hops so that a regression can be attributed to one cause.
+- **Phase 6 is delivered as ONE green unit, and the suite is knowingly red inside it (decided at TODO 43).** TODO 43 installs Livewire 3 on `v2-dev` and TODO 51 closes the phase; the eight items in between report the red count they started and finished at rather than the `Suite: X -> Y, green` line every other delivered entry carries. The opening measurement is **286 red of 1507**. This is the one deliberate exception to "keep tests green at every hop", and it is written here rather than only inside TODO 43 so that a reader who finds a red `v2-dev` knows whether it is expected. The costs were accepted with the decision: no independent-regression signal, no usable `git bisect` across the phase, and no releasable head - so if a security advisory lands mid-phase, close the phase or branch for the patch.
 - The interpreter switches exactly once, in Phase 5: `php81` for Laravel 8 and 9, the default `php` (8.3) from Laravel 10 through 13. No PHP install is required. Update the *Execution Environment* section in the same commit as the switch.
 - Update the relevant `.docs/` files in the same change set as the behavior change, per the rules in `AGENTS.md`.
 - **`release/upgrade.php` is frozen from TODO 34 onwards; deployed-host cleanup goes into `upgrade-guide.md`.** The hook removes one orphaned path per line, which worked while a Phase 3 release dropped one or two vendor trees. The framework hops replace essentially the whole `vendor/` tree, so listing every orphan hop by hop in one `main()` would be neither reviewable nor exercised until the single release that needs it. Each hop therefore appends its orphaned paths, moved files, `.env` changes and per-install repairs to the new **`upgrade-guide.md`**, and the 2.0.0 release decides in one place what to do with the accumulated list. This reverses, for Phase 4 onwards only, the "extend `release/upgrade.php`" instruction in the TODO 33.5 and 33.8 entries; the hook stays in the tree and keeps serving the 1.x line.

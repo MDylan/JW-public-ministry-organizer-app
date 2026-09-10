@@ -116,6 +116,65 @@ The same hook removes `vendor/eusonlito`, `vendor/imagecow`, `config/packer.php`
 
 It does not run, it never ran here, and nothing consumes its output. Roadmap Phase 7 has been re-scoped accordingly: a Vite migration is a choice about whether to bring the hand-placed vendor assets under a build graph, not a repair of something broken. TODO 52 would replace the `pwbs_asset()` tags with `@vite` in the same three files.
 
+## Livewire's own JavaScript is not served by the helper
+
+`pwbs_asset()` has nothing to do with it, and neither does any build step. It
+is worth its own section because the mechanism is not the one the paths
+suggest.
+
+`public/vendor/livewire/` holds a **published copy** of the files the installed
+`livewire/livewire` package ships in its `dist/` directory, and all of them are
+committed. It looks like a cache. It is not:
+
+- Livewire checks `file_exists(public_path('vendor/livewire/manifest.json'))`
+  **before** it considers its own `livewire/livewire.js` route, and when that
+  file is present it emits a `<script src="/vendor/livewire/livewire.js?id=...">`
+  built from the published manifest instead. This is the same rule in both
+  versions - `LivewireManager::styles()` in version 2,
+  `FrontendAssets::usePublishedAssetsIfAvailable()` in version 3.
+- **When the published copy disagrees with the installed package, the only
+  symptom is a `console.warn`.** Pages render, every route answers 200, and
+  nothing server-side reports a problem. A PHP test suite cannot see it either,
+  because it executes no JavaScript.
+
+That combination - authoritative, committed, and silent when wrong - is why it
+carries a guard rather than a convention.
+
+### The composer hook that used to keep it in step
+
+`composer.json`'s `post-autoload-dump` used to run:
+
+```
+@php artisan vendor:publish --force --tag=livewire:assets --ansi
+```
+
+It was removed in roadmap TODO 43. **Not because it breaks** - the tag is still
+registered in Livewire 3 and the command exits 0 - but because a hook that
+writes **tracked** files into the web root is a hazard in this repository: the
+release archive is built from a git diff, so any developer's `composer install`
+could change what ships. It also only ever synchronised the two sides as a side
+effect of installing, and said nothing when they drifted for any other reason.
+
+`tests/Feature/Assets/LivewirePublishedAssetsTest.php` replaces it with four
+assertions: the published manifest is byte-identical to the package's own,
+every file the package ships is published with a matching hash, the directory
+carries nothing the package does not ship, and every path the manifest names
+exists. It fails loudly at the moment the two sides separate.
+
+**So after any change to `livewire/livewire`, republish by hand:**
+
+```
+php artisan vendor:publish --force --tag=livewire:assets
+```
+
+and commit the result. If the new version stops shipping a file the old one
+did, delete the leftover - publishing only ever writes.
+
+**What the guard cannot see:** it compares two directories on disk. A host
+serving these files from a CDN through `livewire.asset_url`, or one whose
+`public/vendor/livewire/` was edited after deployment, is outside anything this
+repository can assert. `upgrade-guide.md` sections 3 and 5 own that half.
+
 ## Covered by
 
 | Area | Test |
@@ -125,5 +184,6 @@ It does not run, it never ran here, and nothing consumes its output. Roadmap Pha
 | That rendering writes nothing into the web root | `tests/Feature/Assets/AssetPipelineTest.php` |
 | That no served stylesheet carries an absolute URL or a mangled `data:` URI | `tests/Feature/Assets/AssetPipelineTest.php` |
 | The nine closed gaps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
+| The published Livewire assets against the package's own `dist/` | `tests/Feature/Assets/LivewirePublishedAssetsTest.php` |
 
 The layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. The two stylesheet guards start from the **rendered HTML** rather than a hand-written list, so if a generating pipeline ever returns, they inspect its output rather than the untouched source.

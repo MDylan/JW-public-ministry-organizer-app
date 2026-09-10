@@ -4,6 +4,18 @@
 
 UI logic is primarily implemented with **Livewire components**, supported by class-based and anonymous Blade components.
 
+> **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
+> package is on `v3.8.8` since TODO 43, and the test suite is **knowingly red**
+> until TODO 51 closes the phase. Two things in this document are therefore
+> pinned to Livewire 2 internals and are being carried across rather than
+> relied on: the `AppComponent` pagination note below (`$paginationTheme`
+> becomes `paginationView()` - TODO 48), and the persistent-middleware
+> paragraph near the end, which asserts on `Livewire::getPersistentMiddleware()`
+> - a version 2 internal that version 3 reworks (TODO 46.1). The component
+> inventory itself is unchanged: no class moved, and `config/livewire.php`
+> still declares `App\Http\Livewire` as the namespace, which is TODO 51's
+> decision to confirm or reverse.
+
 - Livewire classes: `app/Http/Livewire`
 - Class-based Blade components: `app/View/Components`
 - Blade templates: `resources/views/livewire` and `resources/views/components`

@@ -223,7 +223,17 @@ the dev tree too - see the TODO 34 entry above for why.
 **TODO 41: none.** The deprecation sweep changed no dependency at all - no
 `composer.json` edit, no lock movement - so nothing orphans and nothing arrives.
 
-*Last updated: TODO 41.*
+**TODO 43 (Livewire 2 -> 3): none, and that is worth stating rather than
+skipping.** The lock moved - `livewire/livewire` v2.12.8 -> v3.8.8 - but the
+resolution is a single entry: 0 installs, 1 update, 0 removals. Every package
+Livewire 3 requires was already locked, so no vendor namespace empties and no
+vendor package directory is left behind. `vendor/livewire/livewire` is
+**replaced in place**, which is the one shape this section has not carried
+before: a major version change that orphans nothing.
+
+The file it does orphan is not under `vendor/` at all, and section 3 has it.
+
+*Last updated: TODO 43.*
 
 ## 3. Application files that move or disappear
 
@@ -355,7 +365,38 @@ moves, no file disappears, and none of them is editable from inside the
 application the way the `validation.php` files above are. An archive that
 overwrites them is the whole of the change.
 
-*Last updated: TODO 41.*
+### TODO 43: `public/vendor/livewire/livewire.js.map`, and why this one matters
+
+**One file is deleted from the repository and a host cannot be made to delete
+it.** `LaraUpdaterController::install()` adds and overwrites; it never removes.
+So after the 2.0.0 archive lands, a deployed host keeps a 485 KB
+`public/vendor/livewire/livewire.js.map` that belongs to Livewire 2 and that
+nothing references any more.
+
+**It is safe to leave and safe to delete.** Nothing loads it: a browser fetches
+a source map only when devtools are open and only when the JavaScript file
+names it, and the Livewire 3 `livewire.js` names its own. Delete it by hand if
+you would rather not carry it:
+
+```
+rm public/vendor/livewire/livewire.js.map
+```
+
+**What this directory is, because it is not what its path suggests.** It is not
+a cache and it is not optional. Livewire checks whether
+`public/vendor/livewire/manifest.json` exists *before* it considers its own
+`livewire/livewire.js` route, and when the file is there it serves the
+published copy instead. That is true in both versions
+(`LivewireManager::styles()` in 2, `FrontendAssets::usePublishedAssetsIfAvailable()`
+in 3). **If the published copy and the installed package disagree, the only
+symptom is a `console.warn`** - pages render, routes answer 200, and the
+application quietly behaves as though half of it had not been upgraded.
+
+The 2.0.0 archive ships the correct version 3 files, so an ordinary install
+needs no action. The case to watch is a host where this directory was edited by
+hand, or where a deployment process regenerates it.
+
+*Last updated: TODO 43.*
 
 ## 4. `.env` changes
 
@@ -410,7 +451,14 @@ reads `LOG_DEPRECATIONS_WHILE_TESTING` to decide whether to log deprecations
 under test, and TODO 41 solved that inside the test suite instead, so no
 deployed `.env` gains a key that only ever mattered to a test run.
 
-*Last updated: TODO 41.*
+**TODO 43: none.** The Livewire 3 upgrade adds, renames and reinterprets no
+environment variable. `config/livewire.php` is deliberately untouched by that
+item, so not even an indirect key changes; when it is finalised (roadmap
+TODO 51) this section gets re-checked, because Livewire 3 introduces an
+`app_url` key and an `asset_url` that a host behind a CDN may already be
+setting.
+
+*Last updated: TODO 43.*
 
 ## 5. Per-install state to repair
 
@@ -488,8 +536,23 @@ State that lives on the host and is not expressible in a release archive.
   `bootstrap/cache` manifest goes stale on its account; there is no migration;
   and no per-install state changes. The usual `optimize:clear` at step 10 is
   enough, for the ordinary reason that `config:cache` predates the release.
+- **TODO 43 adds two checks, both about served JavaScript rather than about
+  state on disk.**
+  - **`optimize:clear` at step 10 is not optional for this release.** Livewire
+    2 and 3 compile Blade differently, and every `wire:` directive in the
+    application went through a rewrite; a warm `bootstrap/cache` serving
+    version 2 compiled views against a version 3 runtime produces errors that
+    look like application bugs.
+  - **If this install sets `LIVEWIRE_ASSET_URL`, or serves
+    `public/vendor/livewire/` from a CDN or a reverse proxy, re-check it after
+    the upgrade.** Section 3 explains why: the published copy wins over the
+    package's own route, and a stale copy announces itself only in the
+    browser console. Clear the CDN's cache for that path, or confirm the host
+    is serving the files the archive delivered.
+  - No package leaves or arrives, so no `bootstrap/cache` manifest goes stale
+    on Livewire's account, and there is no migration.
 
-*Last updated: TODO 41.*
+*Last updated: TODO 43.*
 
 ## 6. The upgrade procedure
 
@@ -556,3 +619,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 41 | **Every section says "none", and the reason is worth more than the rows.** TODO 41 was supposed to be a small refactor; the sweep that was meant to confirm nothing was left instead found that the test suite had never been able to see a PHP deprecation at all - Laravel's own error handler drops them under test, and PHPUnit's handler steps aside once Laravel's is installed. Sixteen deprecation sites in the application's own code were closed as a result, all of them behaviour-neutral, none of them visible to an operator. Nothing orphans, nothing moves, no `.env` key changes and there is no migration - the first delivered item in this guide that costs a deployed host nothing at all. |
 | (no framework hop) | 42 | **Every section says "none" again, and for a duller reason than TODO 41.** No package moves, no file is deleted or relocated, no `.env` key changes, and there is no migration. The two custom validation rules move off a contract that carries only an `@deprecated` docblock - no runtime deprecation, so the guard TODO 41 installed never had anything to report and this is purely preventive. The one operator-visible change is a message that stops appearing, and only for a request the form itself cannot produce: a service-day row submitted without its counterpart time used to attach the literal string `validation.` to the field that was fine. Nothing that used to be blocked now saves. |
 | (no framework hop) | 42.1 | **Every section still says "none", and this is the first such row that is nevertheless not invisible to an operator.** No package moves, no file is deleted or relocated, no `.env` key changes and there is no migration. Three behaviour changes a user can meet, all in the group edit form's service-day rows: a `18:00 - 00:00` template becomes savable on the pending-changes URL, where a dead-looking wildcard rule had been rejecting it and discarding the pending change with it; a mis-clicked start time no longer drags the day's end down with it and leaves the "no service" template behind; and a group configured with `min_time = 120` and a day ending at midnight now shows a blocking error **on the field it belongs to** where it previously saved a silently emptied day. The last one is an open defect rather than a fixed one - that configuration cannot be saved at all, and this row exists so an operator meeting it recognises it. Nothing here needs an action on a deployed host beyond the `optimize:clear` step section 6 already runs: a warm `bootstrap/cache` holds compiled Blade, and the day rows are Blade. |
+| (no framework hop) | 43 | **The first Phase 6 row, and the first one that reports a red test suite as an intended state.** Livewire 2.12.8 -> 3.8.8. Section 2 says none - the resolution is 0 installs, 1 update, 0 removals and `vendor/livewire/livewire` is replaced in place, so a major version change orphans no vendor path at all. Section 3 gains one file that is not under `vendor/`: the Livewire 2 `livewire.js.map`, deleted here and undeletable on a host. That entry carries the finding the whole item turned on - `public/vendor/livewire/` is served **in preference to** the package's own route whenever its `manifest.json` exists, in both versions, and a mismatch announces itself only as a `console.warn`. Section 4 says none. Section 5 gains two checks, both about served JavaScript: `optimize:clear` stops being optional because every `wire:` directive was rewritten, and a host serving these assets from a CDN has to be re-pointed. Nothing else here is operator-visible yet: the application is mid-migration until roadmap TODO 51 closes the phase, and no 2.x release can be cut before then. |

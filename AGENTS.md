@@ -27,7 +27,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 ## Project Stack Snapshot
 
 - Framework: Laravel 10
-- UI architecture: Livewire + Blade views/components
+- UI architecture: **Livewire 3** + Blade views/components (migrated from Livewire 2 at roadmap TODO 43; see the warning below)
 - Auth stack: Laravel Fortify (custom route registration)
 - Background processing: Laravel queue jobs + scheduler (`app/Console/Kernel.php`)
 - Data layer: Eloquent models with observers and notification-driven workflows
@@ -81,4 +81,13 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite is green on 8.3 with its numbers unmoved.
+- **THE TEST SUITE IS KNOWINGLY RED RIGHT NOW, AND THAT IS EXPECTED.** The
+  Livewire 2 -> 3 migration (`upgrade-roadmap.md`, Phase 6) is delivered as one
+  green unit: TODO 43 installed Livewire 3 and TODO 51 closes the phase. Until
+  then `composer test` reports failures - the opening measurement was **286 red
+  of 1507**, and each Phase 6 item records the count it started and finished at.
+  Two consequences while this lasts: the suite cannot tell you about an
+  *unrelated* regression, and `v2-dev` is not releasable. If you need a green
+  baseline, take it from the commit before the bump.
+
+- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite was green on 8.3 with its numbers unmoved when the interpreter switched. (For its state today, see the Phase 6 note above.)
