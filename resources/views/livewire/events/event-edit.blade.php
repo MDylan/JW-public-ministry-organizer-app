@@ -1,7 +1,7 @@
 <div>
     <div>
     <h4>{{$formText['title']}}</h4>
-    <form wire:submit.prevent="saveEvent">
+    <form wire:submit="saveEvent">
         @csrf
         @if (in_array($role, ['admin', 'roler', 'helper']))
             <div class="form-group row">
@@ -10,7 +10,7 @@
                 </label>
                 <div class="col-md-9">
                     @if ($eventId === null)
-                    <select wire:model.defer="state.user_id" wire:change="change_user" class="form-control @error('user_id') is-invalid @enderror"">
+                    <select wire:model="state.user_id" wire:change="change_user" class="form-control @error('user_id') is-invalid @enderror"">
                         <option value="0">@lang('event.choose_publisher')</option>
                         @if (!empty($users))
                             @foreach ($users as $user)
@@ -31,7 +31,7 @@
                 @lang('event.service_start')
             </label>
             <div class="col-md-9">
-            <select wire:model.defer="state.start" wire:change="change_end" class="form-control @error('start') is-invalid @enderror"">
+            <select wire:model="state.start" wire:change="change_end" class="form-control @error('start') is-invalid @enderror"">
                 <option value="0">@lang('event.choose_time')</option>
                 @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['start'] as $time => $option)
@@ -47,7 +47,7 @@
                 @lang('event.service_end')
             </label>
             <div class="col-md-9">
-                <select wire:model.defer="state.end" wire:change="change_start" id="" class="form-control @error('end') is-invalid @enderror"">
+                <select wire:model="state.end" wire:change="change_start" id="" class="form-control @error('end') is-invalid @enderror"">
                     <option value="0">@lang('event.choose_time')</option>
                     @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['end'] as $time => $option)
@@ -63,7 +63,7 @@
                 @lang('event.comment.label')
             </label>
             <div class="col-md-9">
-                <input wire:model.defer="state.comment" aria-describedby="commentHelpBlock" type="text" class="form-control @error('comment') is-invalid @enderror" />
+                <input wire:model="state.comment" aria-describedby="commentHelpBlock" type="text" class="form-control @error('comment') is-invalid @enderror" />
                 @error('comment')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                 <small id="commentHelpBlock" class="form-text text-muted">
                     @lang('event.comment.helper')
@@ -93,7 +93,7 @@
                         @lang('event.status')
                     </label>
                     <div class="col-md-9">
-                        <select wire:model.defer="state.status" id="" class="form-control @error('status') is-invalid @enderror">
+                        <select wire:model="state.status" id="" class="form-control @error('status') is-invalid @enderror">
                             <option value="0">@lang('event.status_0')</option>
                             <option value="1">@lang('event.status_1')</option>
                             @if($eventId !== null)

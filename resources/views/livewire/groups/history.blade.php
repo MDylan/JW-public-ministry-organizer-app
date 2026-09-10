@@ -35,7 +35,7 @@
                             <div class="input-group-prepend">
                             <div class="input-group-text">@lang('statistics.month')</div>
                             </div>
-                            <select wire:model.defer="state.month" class="form-control" id="inlineFormInputGroupUsername2">
+                            <select wire:model="state.month" class="form-control" id="inlineFormInputGroupUsername2">
                                 @foreach ($months as $month => $translate)
                                     <option value="{{$month}}">{{ $translate }}</option>
                                 @endforeach

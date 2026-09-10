@@ -61,7 +61,7 @@
                 </div>
                 <div class="col-md-3 align-self-end">            
                     <div class="d-flex justify-content-end align-items-center border border rounded bg-white pr-2">
-                        <input wire:model="searchTerm" type="text" placeholder="@lang('Search')" class="form-control border-0" />
+                        <input wire:model.live="searchTerm" type="text" placeholder="@lang('Search')" class="form-control border-0" />
                         
                         <div wire:loading.delay wire:target="searchTerm">
                             <div class="la-ball-clip-rotate la-dark la-sm">
@@ -316,7 +316,7 @@
         </div>
     
         @isset($state)
-            <form autocomplete="off" wire:submit.prevent="updateUser">
+            <form autocomplete="off" wire:submit="updateUser">
                 <x-modal modalId="UserModal">
                     <x-slot name="title">
                         @lang('app.edit')
@@ -328,7 +328,7 @@
                                 @lang('Full name'): 
                             </div>
                             <div class="col-8">
-                                <input wire:model.defer="state.user.name" wire:ignore
+                                <input wire:model="state.user.name" wire:ignore
                                     type="text" class="form-control" name="name" id="" aria-describedby="name_help">
                                 <small id="name_help" class="form-text text-muted">
                                    @lang('app.user_will_be_notified')
@@ -340,7 +340,7 @@
                                 @lang('user.congregation'): 
                             </div>
                             <div class="col-8">
-                                <input wire:model.defer="state.user.congregation" wire:ignore
+                                <input wire:model="state.user.congregation" wire:ignore
                                     type="text" class="form-control" name="congregation" id="" aria-describedby="congregation_help">
                                 <small id="congregation_help" class="form-text text-muted">
                                    @lang('app.user_will_be_notified')
@@ -352,7 +352,7 @@
                                 @lang('user.phone'): 
                             </div>
                             <div class="col-8">
-                                <input wire:model.defer="state.user.phone_number" wire:ignore
+                                <input wire:model="state.user.phone_number" wire:ignore
                                     type="number" class="form-control" name="phone_number" id="" aria-describedby="phone_help">
                                 <small id="phone_help" class="form-text text-muted">
                                    @lang('app.user_will_be_notified')
@@ -368,7 +368,7 @@
                             <div class="col-4 text-bold text-right">@lang('app.role'):</div>
                             <div class="col-8">
                                 <div class="input-group">
-                                    <select wire:model.defer="state.group_role" wire:ignore.self name="group_role" class="form-control">
+                                    <select wire:model="state.group_role" wire:ignore.self name="group_role" class="form-control">
                                         @foreach ($group_roles as $role => $translate) 
                                             <option value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
                                         @endforeach
@@ -394,7 +394,7 @@
                             <div class="col-4 text-bold text-right">@lang('group.note'):</div>
                             <div class="col-8">
                                 <div class="input-group">
-                                    <input wire:model.defer="state.note" wire:ignore
+                                    <input wire:model="state.note" wire:ignore
                                     type="text" class="form-control" name="note" id="">
                                     <div class="input-group-append">
                                         <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseNote" role="button" aria-expanded="false" aria-controls="collapseNote">
@@ -413,7 +413,7 @@
                             <div class="row mb-2">
                                 <div class="col-4 text-bold text-right"></div>
                                 <div class="col-8">
-                                    <input wire:model.defer="state.finish_guest_registration" name="finish_guest_registration" wire:ignore.self type="checkbox" id="finish_guest_registration" value="1">
+                                    <input wire:model="state.finish_guest_registration" name="finish_guest_registration" wire:ignore.self type="checkbox" id="finish_guest_registration" value="1">
                                     <label for="finish_guest_registration">
                                         @lang('group.finish_guest_registration.label')
                                         <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseGuestHelp" role="button" aria-expanded="false" aria-controls="collapseGuestHelp">
@@ -432,7 +432,7 @@
                         <div class="row mb-2">
                             <div class="col-4"></div>
                             <div class="col-8">
-                                <input wire:model.defer="state.hidden" name="hidden" wire:ignore.self type="checkbox" id="user" value="1">
+                                <input wire:model="state.hidden" name="hidden" wire:ignore.self type="checkbox" id="user" value="1">
                                     <label for="user">
                                         @lang('group.hidden') 
                                         <button class="btn btn-outline-secondary" type="button" id="button-addon2" data-toggle="collapse" href="#collapseHidden" role="button" aria-expanded="false" aria-controls="collapseHidden">
@@ -451,14 +451,14 @@
                                 <div class="row">
                                     <div class="form-group col-12">
                                         <label for="message_use">@lang('group.messages.user.when_use')</label>
-                                        <select wire:model.defer="state.message_use" id="message_use" class="form-control">
+                                        <select wire:model="state.message_use" id="message_use" class="form-control">
                                             <option value="0">@lang('group.messages.user.default')</option>
                                             <option value="1">@lang('group.messages.user.cant_write')</option>
                                             <option value="2">@lang('group.messages.user.can_write')</option>
                                         </select>
                                     </div>
                                     <div class="col-12">
-                                        <input wire:model.defer="state.message_send_priority" name="hidden" wire:ignore.self type="checkbox" id="message_send_priority" value="1">
+                                        <input wire:model="state.message_send_priority" name="hidden" wire:ignore.self type="checkbox" id="message_send_priority" value="1">
                                         <label for="message_send_priority">
                                             @lang('group.messages.user.catch_urgent') 
                                         </label>
@@ -494,7 +494,7 @@
         {{-- New user modal --}}
 
         @if($editor)
-            <form autocomplete="off" wire:submit.prevent="createUser">
+            <form autocomplete="off" wire:submit="createUser">
                 <x-modal modalId="UserAddModal">
                     <x-slot name="title">
                         @lang('group.user.add.title')
@@ -514,7 +514,7 @@
                                     </div>
                                 </div> 
                                 <div class="form-group">
-                                    <textarea wire:model.defer="new_users" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
+                                    <textarea wire:model="new_users" id="userAddField" class="form-control" name="" placeholder="{{__('group.search_placeholder')}}"
                                     cols="30" rows="4"></textarea>
                                     @error('email.*')
                                         <p class="text-danger mt-2">{{$message}}</p>
@@ -523,7 +523,7 @@
                                 @if (count(Config('available_languages')) > 1)
                                     <div class="form-group">
                                         <label for="email_language">@lang('group.user.add.email_language')</label>
-                                        <select wire:model.defer="email_language" class="form-control" id="email_language">
+                                        <select wire:model="email_language" class="form-control" id="email_language">
                                             @foreach (Config('available_languages') as $code => $value)
                                             @if (!$value['visible'] && (auth()->user()->role !== "mainAdmin" && auth()->user()->role !== "translator"))
                                               @continue
@@ -552,7 +552,7 @@
 
             {{-- Inactive user profile renewal modal --}}
 
-            <form autocomplete="off" wire:submit.prevent="userRenewal">
+            <form autocomplete="off" wire:submit="userRenewal">
                 <x-modal modalId="userRenewalModal">
                     <x-slot name="title">
                         <i class="fas fa-user-clock mr-1"></i> 
@@ -591,7 +591,7 @@
         @endif
 
         @if ($admin)
-            <form autocomplete="off" wire:submit.prevent="linkToGroup">
+            <form autocomplete="off" wire:submit="linkToGroup">
                 <x-modal modalId="LinkToModal">
                     <x-slot name="title">
                         @lang('group.link.button')
@@ -601,7 +601,7 @@
                         <div class="row">
                             <div class="col-12">
                                 <label class="mr-sm-2">@lang('group.link.child.parent_group_name'):</label>
-                                <select wire:model="new_parent_group_id" name="new_parent_group_id" id="" class="form-control">
+                                <select wire:model.live="new_parent_group_id" name="new_parent_group_id" id="" class="form-control">
                                     <option value="0">@lang('Choose')</option>
                                     @foreach ($user_admin_groups as $group)
                                         @if ($group->id == $groupId)
@@ -620,7 +620,7 @@
                         <div class="alert alert-light">@lang('group.link.child.copy_data')
                             @foreach ($copy_datas as $field => $translate)
                                 <div class="ml-2 form-check">
-                                    <input wire:model.defer="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
+                                    <input wire:model="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
                                     <label class="form-check-label" for="calendar_{{ $field }}" role="button">
                                         {{ $translate }}
                                     </label>
@@ -681,7 +681,7 @@
                 </x-slot>
             </x-modal>
             {{-- End of ChildGroupsModal --}}
-            <form autocomplete="off" wire:submit.prevent="setCopyInfo">
+            <form autocomplete="off" wire:submit="setCopyInfo">
                 <x-modal modalId="ParentGroupModal">
                     <x-slot name="title">
                         @lang('group.link.child.detach.button')
@@ -707,7 +707,7 @@
                         <div class="alert alert-light">@lang('group.link.child.copy_data')
                             @foreach ($copy_datas as $field => $translate)
                                 <div class="ml-2 form-check">
-                                    <input wire:model.defer="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
+                                    <input wire:model="copy_fields.{{$field}}" class="form-check-input" type="checkbox" value="1" id="calendar_{{ $field }}">
                                     <label class="form-check-label" for="calendar_{{ $field }}" role="button">
                                         {{ $translate }}
                                     </label>

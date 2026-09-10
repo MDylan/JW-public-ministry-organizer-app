@@ -33,7 +33,7 @@
 
                 <div class="col-md-3 align-self-end mb-2">            
                     <div class="d-flex justify-content-end align-items-center border border rounded bg-white pr-2">
-                        <input wire:model="searchTerm" type="text" placeholder="@lang('Search')" class="form-control border-0" />
+                        <input wire:model.live="searchTerm" type="text" placeholder="@lang('Search')" class="form-control border-0" />
                         
                         <div wire:loading.delay wire:target="searchTerm">
                             <div class="la-ball-clip-rotate la-dark la-sm">
@@ -151,7 +151,7 @@
     <!-- Modal -->
     <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog">
-            <form autocomplete="off" wire:submit.prevent="{{ $showEditModal ? 'updateUser' : 'createUser' }}">
+            <form autocomplete="off" wire:submit="{{ $showEditModal ? 'updateUser' : 'createUser' }}">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">
@@ -171,7 +171,7 @@
                         <div class="form-group row">
                             <label for="name" class="col-sm-4 col-form-label text-right">@lang('Full name')</label>
                             <div class="col-sm-8">
-                                <input type="text" wire:model.defer="state.name" name="name" class="form-control @error('name') is-invalid @enderror" id="name" placeholder="@lang('Full name')">
+                                <input type="text" wire:model="state.name" name="name" class="form-control @error('name') is-invalid @enderror" id="name" placeholder="@lang('Full name')">
                                 @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                             </div>
                         </div>
@@ -179,14 +179,14 @@
                         <div class="form-group row">
                             <label for="InputEmail" class="col-sm-4 col-form-label text-right">@lang('Email')</label>
                             <div class="col-sm-8">
-                                <input type="email" wire:model.defer="state.email" name="email" class="form-control @error('email') is-invalid @enderror" id="InputEmail" placeholder="@lang('Email')">
+                                <input type="email" wire:model="state.email" name="email" class="form-control @error('email') is-invalid @enderror" id="InputEmail" placeholder="@lang('Email')">
                                 @error('email')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                             </div>
                         </div>
                         <div class="form-group row">
                             <label for="InputPhone" class="col-sm-4 col-form-label text-right">@lang('user.phone')</label>
                             <div class="col-sm-8">
-                                <input type="number" wire:model.defer="state.phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
+                                <input type="number" wire:model="state.phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" id="InputPhone" placeholder="@lang('user.phone')" aria-describedby="phoneHelpBlock">
                                 @error('phone_number')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 <small id="phoneHelpBlock" class="form-text text-muted">
                                     {{__('app.justNumber')}}
@@ -198,7 +198,7 @@
                                 <div class="form-group row">
                                     <label for="inputRole" class="col-sm-4 col-form-label">{{__('app.userRole')}}</label>
                                     <div class="col-sm-8">
-                                        <select name="role" wire:model.defer="state.role" id="inputRole" class="form-control @error('role') is-invalid @enderror">
+                                        <select name="role" wire:model="state.role" id="inputRole" class="form-control @error('role') is-invalid @enderror">
                                             @foreach ($roles as $field => $translate) 
                                                 <option value="{{$translate}}">{{ __('roles.'.$translate)}}</option>
                                             @endforeach

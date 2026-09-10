@@ -58,9 +58,9 @@
             </div>
             <div class="card-footer">
                 @if($privilege['write'])
-                    <form autocomplete="off" wire:submit.prevent="sendMessage">
+                    <form autocomplete="off" wire:submit="sendMessage">
                         <div class="input-group">
-                            <input wire:model.defer="message" type="text" name="message" placeholder="@lang('group.messages.type') ..." class="form-control @error('message') is-invalid @enderror">
+                            <input wire:model="message" type="text" name="message" placeholder="@lang('group.messages.type') ..." class="form-control @error('message') is-invalid @enderror">
                             <span class="input-group-append">
                                 @if($group_priority ?? 0)
                                 <button class="btn @if($message_priority == 1) btn-danger @else btn-secondary @endif" type="button" wire:click="changePriority">

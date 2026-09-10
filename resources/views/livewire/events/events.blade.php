@@ -31,11 +31,11 @@
                             <div class="row mx-0">
                                 <div class="col-12 col-md-6 ">
                                     @if (count($groups) > 1)
-                                    <form wire:submit.prevent="changeGroup" class="form-inline m-0 justify-content-center justify-content-md-start">
+                                    <form wire:submit="changeGroup" class="form-inline m-0 justify-content-center justify-content-md-start">
                                         @csrf
                                         <div class="input-group">
                                             <div class="custom-file">
-                                                <select wire:model.defer="form_groupId" class="form-control" id="inlineForm">
+                                                <select wire:model="form_groupId" class="form-control" id="inlineForm">
                                                     @foreach ($groups as $group)
                                                         <option value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
                                                     @endforeach

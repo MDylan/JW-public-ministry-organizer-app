@@ -31,7 +31,7 @@
                             <div class="input-group-prepend">
                             <div class="input-group-text">@lang('statistics.month')</div>
                             </div>
-                            <select wire:model.defer="state.month" class="form-control" id="inlineFormInputGroupUsername2">
+                            <select wire:model="state.month" class="form-control" id="inlineFormInputGroupUsername2">
                                 @foreach ($months as $month => $translate)
                                     <option value="{{$month}}">{{ $translate }}</option>
                                 @endforeach
@@ -110,7 +110,7 @@
 <!-- Modal -->
 <div class="modal fade" id="ReportForm" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
     <div class="modal-dialog modal-lg reportModal">
-        <form autocomplete="off" wire:submit.prevent="saveReport">
+        <form autocomplete="off" wire:submit="saveReport">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="ModalLabel">
@@ -141,7 +141,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_placements">@lang('event.service.placements'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.placements" type="number" class="form-control @if ($errors->has($literature->id. '.placements')) is-invalid @endif" id="{{$literature->id}}_placements" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model="reports.{{$literature->id}}.placements" type="number" class="form-control @if ($errors->has($literature->id. '.placements')) is-invalid @endif" id="{{$literature->id}}_placements" />
                                         </div>
                                     </div>
                                 </div>
@@ -149,7 +149,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_videos">@lang('event.service.videos'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.videos" type="number" class="form-control @if ($errors->has($literature->id. '.videos')) is-invalid @endif" id="{{$literature->id}}_videos" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model="reports.{{$literature->id}}.videos" type="number" class="form-control @if ($errors->has($literature->id. '.videos')) is-invalid @endif" id="{{$literature->id}}_videos" />
                                         </div>
                                     </div>
                                 </div>
@@ -157,7 +157,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_return_visits">@lang('event.service.return_visits'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.return_visits" type="number" class="form-control @if ($errors->has($literature->id. '.return_visits')) is-invalid @endif" id="{{$literature->id}}_return_visits" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model="reports.{{$literature->id}}.return_visits" type="number" class="form-control @if ($errors->has($literature->id. '.return_visits')) is-invalid @endif" id="{{$literature->id}}_return_visits" />
                                         </div>
                                     </div>
                                 </div>
@@ -165,7 +165,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_bible_studies">@lang('event.service.bible_studies'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input @if($eventFormDisabled) disabled @endif wire:model.defer="reports.{{$literature->id}}.bible_studies" type="number" class="form-control @if ($errors->has($literature->id. '.bible_studies')) is-invalid @endif" id="{{$literature->id}}_bible_studies" />
+                                            <input @if($eventFormDisabled) disabled @endif wire:model="reports.{{$literature->id}}.bible_studies" type="number" class="form-control @if ($errors->has($literature->id. '.bible_studies')) is-invalid @endif" id="{{$literature->id}}_bible_studies" />
                                         </div>
                                     </div>
                                 </div>
@@ -173,7 +173,7 @@
                                     <div class="form-group row m-0 mb-sm-2">
                                         <label class="d-md-none col-sm-4 col-form-label" for="{{$literature->id}}_note">@lang('event.service.note'):</label>
                                         <div class="col-sm-8 col-md-12">
-                                            <input wire:model.defer="reports.{{$literature->id}}.note" type="text" class="form-control @if ($errors->has($literature->id. '.note')) is-invalid @endif" id="{{$literature->id}}_note" />
+                                            <input wire:model="reports.{{$literature->id}}.note" type="text" class="form-control @if ($errors->has($literature->id. '.note')) is-invalid @endif" id="{{$literature->id}}_note" />
                                         </div>
                                     </div>
                                 </div> --}}

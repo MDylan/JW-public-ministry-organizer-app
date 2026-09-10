@@ -35,7 +35,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form wire:submit.prevent="editNews">
+            <form wire:submit="editNews">
                 @csrf
                 <div class="row">                    
                     <div class="col-md-8">
@@ -59,12 +59,12 @@
                                         <div wire:ignore.self class="tab-pane fade @if ($lang == reset($languages )) show active @endif " id="custom-tabs-{{ $code }}" role="tabpanel" aria-labelledby="custom-tabs-{{ $code }}">
                                             <div class="form-group">
                                                 <label for="form_title">@lang('news.title')</label>
-                                                <input wire:model.defer="state.lang.{{$code}}.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
+                                                <input wire:model="state.lang.{{$code}}.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
                                                 @error('title')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                             </div>
                                             <div class="form-group" wire:ignore>
                                                 <label for="form_content">@lang('news.content')</label>
-                                                <textarea data-lang="{{$code}}" wire:model.defer="state.lang.{{$code}}.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
+                                                <textarea data-lang="{{$code}}" wire:model="state.lang.{{$code}}.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
                                             </div>
                                             @error('content')<code>{{$message}}</code>@enderror
                                         </div>
@@ -78,7 +78,7 @@
                             <div class="card-body">
                                 <div class="form-group">
                                     <label for="form_date">@lang('news.date')</label>
-                                    <input wire:model.defer="state.date" type="date" class="form-control @error('date') is-invalid @enderror" id="form_date" placeholder="" aria-describedby="date_helper">
+                                    <input wire:model="state.date" type="date" class="form-control @error('date') is-invalid @enderror" id="form_date" placeholder="" aria-describedby="date_helper">
                                     <small id="date_helper" class="form-text text-muted">
                                         @lang('news.date_helper')
                                     </small>
@@ -86,7 +86,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="form_status">@lang('news.status')</label>
-                                    <select wire:model.defer="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
+                                    <select wire:model="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
                                         @foreach (trans('news.statuses') as $id => $translate) 
                                             <option value="{{ $id }}">{{ $translate }}</option>      
                                         @endforeach
@@ -124,7 +124,7 @@
                                             x-on:livewire-upload-finish="isUploading = false; progress: 3"
                                             x-on:livewire-upload-error="isUploading = false"
                                             x-on:livewire-upload-progress="progress = $event.detail.progress">
-                                            <input wire:model="files" type="file" class="custom-file-input" id="customFile" aria-describedby="filesHelpText" multiple>
+                                            <input wire:model.live="files" type="file" class="custom-file-input" id="customFile" aria-describedby="filesHelpText" multiple>
                                             <label data-browse="@lang('news.file.browse')" class="custom-file-label" for="customFile">@lang('news.file.choose')</label>
                                             <div x-show="isUploading">
                                                 <progress class="w-100" max="100" x-bind:value="progress"></progress>

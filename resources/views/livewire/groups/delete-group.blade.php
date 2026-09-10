@@ -30,7 +30,7 @@
                             <h4><i class="fas fa-exclamation-triangle mr-1"></i> @lang('group.areYouSureDelete', ['groupName' => $group->name])</h4>
                             <div class="alert alert-warning">
                                 <div class="form-check">
-                                    <input wire:model.defer="deleteUsers" value="1" type="checkbox" id="deleteUsers" />
+                                    <input wire:model="deleteUsers" value="1" type="checkbox" id="deleteUsers" />
                                     <label class="form-check-label" for="deleteUsers">
                                         @lang('group.deleteUsers')
                                     </label>

@@ -24,7 +24,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form wire:submit.prevent="updateGroup">
+            <form wire:submit="updateGroup">
                 @csrf
                 <div class="row">
                     {{-- @dump($future_changes) --}}
@@ -74,7 +74,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="inputName">{{__('group.name')}}</label>
-                                                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="inputName" wire:model.defer="state.name" value="" placeholder="" />
+                                                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="inputName" wire:model="state.name" value="" placeholder="" />
                                                     @error('name')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
                                             </div>
@@ -83,7 +83,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="inputName">{{__('group.replyToAddress')}}</label>
-                                                    <input type="email" class="form-control @error('replyTo') is-invalid @enderror" id="replyTo" wire:model.defer="state.replyTo" value="" placeholder=""  aria-describedby="replyToHelper" />
+                                                    <input type="email" class="form-control @error('replyTo') is-invalid @enderror" id="replyTo" wire:model="state.replyTo" value="" placeholder=""  aria-describedby="replyToHelper" />
                                                     <small id="replyToHelper" class="form-text text-muted">
                                                         @lang('group.replyToHelper', ['defaultMail' => config('mail.from.address')])
                                                     </small>
@@ -95,7 +95,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="max_extend_days">{{__('group.max_extend_days')}}</label>
-                                                    <input type="number" class="form-control @error('max_extend_days') is-invalid @enderror" id="max_extend_days" wire:model.defer="state.max_extend_days" value="" placeholder="{{__('group.max_extend_days_placeholder')}}" />
+                                                    <input type="number" class="form-control @error('max_extend_days') is-invalid @enderror" id="max_extend_days" wire:model="state.max_extend_days" value="" placeholder="{{__('group.max_extend_days_placeholder')}}" />
                                                     @error('max_extend_days')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
                                             </div>
@@ -105,7 +105,7 @@
                                                     <small id="approval_help" class="form-text text-muted">
                                                         @lang('group.need_approval_help')
                                                     </small>
-                                                    <select class="form-control @error('need_approval') is-invalid @enderror" id="need_approval" wire:model="state.need_approval" aria-describedby="approval_help">
+                                                    <select class="form-control @error('need_approval') is-invalid @enderror" id="need_approval" wire:model.live="state.need_approval" aria-describedby="approval_help">
                                                         <option value="0">@lang('No')</option>
                                                         <option value="1">@lang('Yes')</option>
                                                     </select>
@@ -122,7 +122,7 @@
                                                         <small id="auto_approval_help" class="form-text text-muted">
                                                             @lang('group.auto_approval_help')
                                                         </small>
-                                                        <select class="form-control @error('auto_approval') is-invalid @enderror" id="auto_approval" wire:model.defer="state.auto_approval" aria-describedby="auto_approval_help">
+                                                        <select class="form-control @error('auto_approval') is-invalid @enderror" id="auto_approval" wire:model="state.auto_approval" aria-describedby="auto_approval_help">
                                                             <option value="0">@lang('No')</option>
                                                             <option value="1">@lang('Yes')</option>
                                                         </select>
@@ -135,7 +135,7 @@
                                                         <small id="auto_back_help" class="form-text text-muted">
                                                             @lang('group.auto_back_help')
                                                         </small>
-                                                        <select class="form-control @error('auto_back') is-invalid @enderror" id="auto_back" wire:model.defer="state.auto_back" aria-describedby="auto_back_help">
+                                                        <select class="form-control @error('auto_back') is-invalid @enderror" id="auto_back" wire:model="state.auto_back" aria-describedby="auto_back_help">
                                                             <option value="0">@lang('No')</option>
                                                             <option value="1">@lang('Yes')</option>
                                                         </select>
@@ -149,14 +149,14 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="min_publishers">{{__('group.min_publishers')}}</label>
-                                                    <input type="number" class="form-control @error('min_publishers') is-invalid @enderror" id="min_publishers" wire:model.defer="state.min_publishers" value="" placeholder="{{__('group.min_publishers_placeholder')}}" />
+                                                    <input type="number" class="form-control @error('min_publishers') is-invalid @enderror" id="min_publishers" wire:model="state.min_publishers" value="" placeholder="{{__('group.min_publishers_placeholder')}}" />
                                                     @error('min_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>
                                             </div>
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="max_publishers">{{__('group.max_publishers')}}</label>
-                                                    <input type="number" class="form-control @error('max_publishers') is-invalid @enderror" id="max_publishers" wire:model.defer="state.max_publishers" value="" placeholder="{{__('group.max_publishers_placeholder')}}" />
+                                                    <input type="number" class="form-control @error('max_publishers') is-invalid @enderror" id="max_publishers" wire:model="state.max_publishers" value="" placeholder="{{__('group.max_publishers_placeholder')}}" />
                                                     @error('max_publishers')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 </div>  
                                             </div>
@@ -165,7 +165,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="min_time">{{__('group.min_time')}}</label>
-                                                    <select wire:model="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
+                                                    <select wire:model.live="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
                                                         @foreach ($min_time_options as $field => $translate) 
                                                             <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                         @endforeach
@@ -176,7 +176,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <label for="max_time">{{__('group.max_time')}}</label>
-                                                    <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model.defer="state.max_time">
+                                                    <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model="state.max_time">
                                                         @foreach ($max_time_options as $field => $translate) 
                                                             <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
                                                         @endforeach
@@ -195,7 +195,7 @@
                                                 <div class="form-group">
                                                     <label>@lang('group.color_default')</label>
                                                     <div class="input-group">
-                                                        <input wire:model.defer="state.color_default" data-fallbackColor="{{ $default_colors['color_default'] }}" type="text" class="form-control group-colorpicker" id="color_default" />
+                                                        <input wire:model="state.color_default" data-fallbackColor="{{ $default_colors['color_default'] }}" type="text" class="form-control group-colorpicker" id="color_default" />
                                                         <div class="input-group-append">
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_default']) style="color: {{ $state['color_default'] }};" @endif></i></span>
                                                         </div>
@@ -206,7 +206,7 @@
                                                 <div class="form-group">
                                                     <label>@lang('group.color_empty')</label>
                                                     <div class="input-group">
-                                                        <input wire:model.defer="state.color_empty" data-fallbackColor="{{ $default_colors['color_empty'] }}" type="text" class="form-control group-colorpicker" id="color_empty" />
+                                                        <input wire:model="state.color_empty" data-fallbackColor="{{ $default_colors['color_empty'] }}" type="text" class="form-control group-colorpicker" id="color_empty" />
                                                         <div class="input-group-append">
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_empty']) style="color: {{ $state['color_empty'] }};" @endif></i></span>
                                                         </div>
@@ -217,7 +217,7 @@
                                                 <div class="form-group">
                                                     <label>@lang('group.color_someone')</label>
                                                     <div class="input-group">
-                                                        <input wire:model.defer="state.color_someone" data-fallbackColor="{{ $default_colors['color_someone'] }}" type="text" class="form-control group-colorpicker" id="color_someone" />
+                                                        <input wire:model="state.color_someone" data-fallbackColor="{{ $default_colors['color_someone'] }}" type="text" class="form-control group-colorpicker" id="color_someone" />
                                                         <div class="input-group-append">
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_someone']) style="color: {{ $state['color_someone'] }};" @endif></i></span>
                                                         </div>
@@ -230,7 +230,7 @@
                                                 <div class="form-group">
                                                     <label>@lang('group.color_minimum')</label>
                                                     <div class="input-group">
-                                                        <input wire:model.defer="state.color_minimum" data-fallbackColor="{{ $default_colors['color_minimum'] }}" type="text" class="form-control group-colorpicker" id="color_minimum" />
+                                                        <input wire:model="state.color_minimum" data-fallbackColor="{{ $default_colors['color_minimum'] }}" type="text" class="form-control group-colorpicker" id="color_minimum" />
                                                         <div class="input-group-append">
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_minimum']) style="color: {{ $state['color_minimum'] }};" @endif></i></span>
                                                         </div>
@@ -241,7 +241,7 @@
                                                 <div class="form-group">
                                                     <label>@lang('group.color_maximum')</label>
                                                     <div class="input-group">
-                                                        <input wire:model.defer="state.color_maximum" data-fallbackColor="{{ $default_colors['color_maximum'] }}" type="text" class="form-control group-colorpicker" id="color_maximum" />
+                                                        <input wire:model="state.color_maximum" data-fallbackColor="{{ $default_colors['color_maximum'] }}" type="text" class="form-control group-colorpicker" id="color_maximum" />
                                                         <div class="input-group-append">
                                                             <span class="input-group-text"><i class="fas fa-square" @if ($state['color_maximum']) style="color: {{ $state['color_maximum'] }};" @endif></i></span>
                                                         </div>
@@ -254,7 +254,7 @@
                                                     <small id="showPhone_help" class="form-text text-muted">
                                                         @lang('group.showPhone_help')
                                                     </small>
-                                                    <select class="form-control @error('showPhone') is-invalid @enderror" id="showPhone" wire:model.defer="state.showPhone" aria-describedby="showPhone_help">
+                                                    <select class="form-control @error('showPhone') is-invalid @enderror" id="showPhone" wire:model="state.showPhone" aria-describedby="showPhone_help">
                                                         <option value="0">@lang('No')</option>
                                                         <option value="1">@lang('Yes')</option>
                                                     </select>
@@ -273,7 +273,7 @@
                                                     @endif
 
                                                     <div class="form-check">
-                                                        <input wire:model.defer="state.languages.{{$code}}" value="1" type="checkbox" id="language_{{ $code }}" />
+                                                        <input wire:model="state.languages.{{$code}}" value="1" type="checkbox" id="language_{{ $code }}" />
                                                         <label class="form-check-label" for="language_{{ $code }}">
                                                             {{ $value['name'] }}
                                                         </label>
@@ -310,17 +310,17 @@
                                     <div class="input-group mb-1">
                                         <div class="input-group-prepend">
                                             <div class="input-group-text">
-                                                <input wire:model="state.signs.{{$sign}}.checked" type="checkbox" />
+                                                <input wire:model.live="state.signs.{{$sign}}.checked" type="checkbox" />
                                             </div>
                                             <button class="btn btn-outline-success" style="width:45px;" type="button">
                                                 <i class="fa {{$sign}}"></i>
                                             </button>
                                         </div>
                                         @if($state['signs'][$sign]['checked'] ?? false)
-                                            <input type="text" wire:model.defer="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
+                                            <input type="text" wire:model="state.signs.{{$sign}}.name" class="form-control" placeholder="@lang('group.signs.name')">
                                             <div class="input-group-append">
                                                 <span class="input-group-text">@lang('group.signs.change')</span>
-                                                <select wire:model.defer="state.signs.{{$sign}}.change_self" class="form-control">
+                                                <select wire:model="state.signs.{{$sign}}.change_self" class="form-control">
                                                     <option value="0">@lang('No')</option>
                                                     <option value="1">@lang('Yes')</option>
                                                 </select>
@@ -344,7 +344,7 @@
                             <div class="card-body">
                                 <div class="row mb-3">
                                     <div class="col-md-8">
-                                        <input wire:model.defer="state.literatureAdd" type="text" class="form-control" placeholder="@lang('group.literature.language')" />
+                                        <input wire:model="state.literatureAdd" type="text" class="form-control" placeholder="@lang('group.literature.language')" />
                                     </div>
                                     <div class="col-md-4">
                                         <button type="button" class="btn btn-primary" wire:click="literatureAdd" wire:loading.attr="disabled">
@@ -359,7 +359,7 @@
                                     <div class="row p-2">
                                         @if($editedLiteratureType == $type && $editedLiteratureId == $id)
                                             <div class="col-md-6 my-auto">
-                                                <input wire:model.defer="state.editedLiterature" type="text" class="form-control" value="{{ $language }}" />
+                                                <input wire:model="state.editedLiterature" type="text" class="form-control" value="{{ $language }}" />
                                             </div>
                                             <div class="col-md-6 text-right my-auto">
                                                 <button type="button" class="btn btn-primary btn-sm mr-2" wire:click="literatureEditSave()" wire:loading.attr="disabled">
@@ -416,7 +416,7 @@
                                     <div class="form-group row">
                                         <label for="weather_enabled" class="col-md-6 col-form-label">@lang('group.weather.enable')</label>
                                         <div class="col-md-6">
-                                            <select wire:model="state.weather_enabled" id="weather_enabled" class="form-control">
+                                            <select wire:model.live="state.weather_enabled" id="weather_enabled" class="form-control">
                                                 <option value="0">@lang('No')</option>
                                                 <option value="1">@lang('Yes')</option>
                                             </select>
@@ -426,7 +426,7 @@
                                         <div class="form-group row">
                                             <label for="weather_city" class="col-md-6 col-form-label">@lang('group.weather.city')</label>
                                             <div class="col-md-6">
-                                                <input type="text" wire:model.defer="weather.city" id="weather_city" class="form-control @error('city') is-invalid @enderror @error('city_id') is-invalid @enderror" />
+                                                <input type="text" wire:model="weather.city" id="weather_city" class="form-control @error('city') is-invalid @enderror @error('city_id') is-invalid @enderror" />
                                                 @error('city')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                                 @error('city_id')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                             </div>
@@ -434,7 +434,7 @@
                                         <div class="form-group row">
                                             <label for="weather_country" class="col-md-6 col-form-label">@lang('group.weather.country')</label>
                                             <div class="col-md-6">
-                                                <select wire:model.defer="weather.country" id="weather_country" class="form-control @error('country') is-invalid @enderror">
+                                                <select wire:model="weather.country" id="weather_country" class="form-control @error('country') is-invalid @enderror">
                                                     @foreach($countries as $code => $country)
                                                         <option value="{{ $code }}" @if ($code == $default_country) selected @endif>{{ $country }}</option>
                                                     @endforeach
@@ -485,7 +485,7 @@
                                             <div class="col-lg-3">
                                                 <label>@lang('statistics.day')</label>
                                                 <div class="form-group">                                                        
-                                                    <input data-day="{{$day}}" wire:model="days.{{$day}}.day_number" type="checkbox" 
+                                                    <input data-day="{{$day}}" wire:model.live="days.{{$day}}.day_number" type="checkbox" 
                                                         class="day-enable" id="day_{{$day}}" name="days[{{$day}}][day_number]" value="{{$day}}">
                                                     <label class="form-check-label" for="day_{{$day}}">{{__('group.days.'.$translate)}}</label>
                                                 </div>
@@ -496,7 +496,7 @@
                                                         <label for="day_{{$day}}_start_time">{{__('group.start_time')}}</label>
                                                         <select 
                                                         @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                        data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.start_time" 
+                                                        data-day="{{$day}}" wire:ignore.self wire:model.live="days.{{$day}}.start_time" 
                                                             name="days[{{$day}}][start_time]" id="day_{{$day}}_start_time" 
                                                             class="timeselect start_time form-control 
                                                             @if ($errors->has($dayKey.'.start_time')) is-invalid @endif">
@@ -515,7 +515,7 @@
                                                         <label for="day_{{$day}}_end_time">{{__('group.end_time')}}</label>
                                                         <select 
                                                         @if (!isset($days[$day]['day_number'])) disabled @endif
-                                                        data-day="{{$day}}" wire:ignore.self wire:model="days.{{$day}}.end_time" 
+                                                        data-day="{{$day}}" wire:ignore.self wire:model.live="days.{{$day}}.end_time" 
                                                             name="days[{{$day}}][end_time]" id="day_{{$day}}_end_time" 
                                                             class="timeselect end_time form-control 
                                                             @if ($errors->has($dayKey.'.end_time')) is-invalid @endif">
@@ -542,7 +542,7 @@
                                                     <div class="ml-2 w-100 border  @if  (count(array_filter($disabled_slots[$day] ?? [])) > 0) border-warning @else border-secondary @endif rounded" style="height:100px;overflow-y:auto;">
                                                         @foreach ($disabled_selects[$day] ?? [] as $key => $time)
                                                         <div class="ml-2 form-check">
-                                                            <input wire:model="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}">
+                                                            <input wire:model.live="disabled_slots.{{$day}}.{{ $time }}" class="form-check-input" type="checkbox" id="disabled_{{ $day }}_{{ $time }}">
                                                             <label class="form-check-label" for="disabled_{{ $day }}_{{ $time }}" role="button">
                                                                 {{ $time }}
                                                             </label>
@@ -575,7 +575,7 @@
                                     <div class="form-group row">
                                         <label for="messages_on" class="col-md-6 col-form-label">@lang('group.messages.admin.activate')</label>
                                         <div class="col-md-6">
-                                            <select wire:model="state.messages_on" id="messages_on" class="form-control">
+                                            <select wire:model.live="state.messages_on" id="messages_on" class="form-control">
                                                 <option value="0">@lang('No')</option>
                                                 <option value="1">@lang('Yes')</option>
                                             </select>
@@ -585,7 +585,7 @@
                                         <div class="form-group row">
                                             <label for="messages_write" class="col-md-6 col-form-label">@lang('group.messages.admin.who_can_write')</label>
                                             <div class="col-md-6">
-                                                <select id="messages_write" wire:model.defer="state.messages_write" class="form-control">
+                                                <select id="messages_write" wire:model="state.messages_write" class="form-control">
                                                     <option value="0">@lang('group.messages.admin.anyone')</option>
                                                     <option value="1">@lang('group.messages.admin.authorized_only')</option>
                                                 </select>
@@ -594,7 +594,7 @@
                                         <div class="form-group row">
                                             <label for="messages_priority" class="col-md-6 col-form-label">@lang('group.messages.admin.priority')</label>
                                             <div class="col-md-6">
-                                                <select wire:model.defer="state.messages_priority" id="messages_priority" class="form-control" aria-describedby="priority_help">
+                                                <select wire:model="state.messages_priority" id="messages_priority" class="form-control" aria-describedby="priority_help">
                                                     <option value="0">@lang('No')</option>
                                                     <option value="1">@lang('Yes')</option>
                                                 </select>
@@ -619,7 +619,7 @@
                                     @lang('group.update.info')
                                     <div class="form-inline">
                                         <label for="date_from">@lang('group.update.from'):</label>
-                                        <input wire:model="change_date" type="date" class="form-control @error('change_date') is-invalid @enderror" id="date_from" value="" />
+                                        <input wire:model.live="change_date" type="date" class="form-control @error('change_date') is-invalid @enderror" id="date_from" value="" />
                                         @error('change_date')
                                             <div class="invalid-feedback" role="alert">{{$message}}</div>
                                         @enderror

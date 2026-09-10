@@ -150,7 +150,7 @@
         <!-- Modal -->
         <div class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true" wire:ignore.self>
             <div class="modal-dialog">
-                <form autocomplete="off" wire:submit.prevent="requestGroupCreatorPrivilege">
+                <form autocomplete="off" wire:submit="requestGroupCreatorPrivilege">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="ModalLabel">
@@ -166,7 +166,7 @@
                             
                                 <div class="form-group">
                                     <label for="congregation">@lang('group.request.congregation')</label>
-                                    <input wire:model.defer="state.congregation" name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" placeholder="">
+                                    <input wire:model="state.congregation" name="congregation" type="text" class="form-control @error('congregation') is-invalid @enderror" id="congregation" placeholder="">
                                     @error('congregation')
                                     <div class="invalid-feedback">
                                         {{ __($message) }}.
@@ -175,7 +175,7 @@
                                 </div>
                                 <div class="form-group">
                                 <label for="reason">@lang('group.request.reason')</label>
-                                <textarea wire:model.defer="state.reason" name="reason" class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" placeholder="@lang('group.request.reason_helper')"></textarea>
+                                <textarea wire:model="state.reason" name="reason" class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" placeholder="@lang('group.request.reason_helper')"></textarea>
                                 @error('reason')
                                     <div class="invalid-feedback">
                                         {{ __($message) }}.
@@ -230,7 +230,7 @@
     </div>
 
     @can('is-groupcreator')
-        <form autocomplete="off" wire:submit.prevent="createGroup">
+        <form autocomplete="off" wire:submit="createGroup">
             <x-modal modalId="createGroup">
                 <x-slot name="title">
                     @lang('group.addNew')
@@ -241,7 +241,7 @@
                     <div class="row">
                         <div class="col-12">
                             <label for="groupName">@lang('group.name')</label>
-                            <input wire:model.defer="state.name" type="text" class="form-control" name="groupName" id="groupName">
+                            <input wire:model="state.name" type="text" class="form-control" name="groupName" id="groupName">
                         </div>                        
                         @error('email')
                         <p class="text-danger mt-2">{{$message}}</p>

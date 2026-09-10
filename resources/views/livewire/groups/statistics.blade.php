@@ -46,11 +46,11 @@
                              nothing left to show. The `min` is only
                              advisory, the real limit is the component's
                              clampToRetentionFloor() method. --}}
-                            <input wire:model.defer="startDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_from')" />
+                            <input wire:model="startDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_from')" />
                             <div class="input-group-prepend">
                                 <div class="input-group-text">-</div>
                             </div>
-                            <input wire:model.defer="endDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_to')" />
+                            <input wire:model="endDate" type="date" min="{{ $picker['minDate'] }}" class="form-control" placeholder="@lang('statistics.date_to')" />
                         </div>
                         <button wire:loading.attr="disabled" wire:click="applyDateRange" type="submit" class="btn btn-primary mb-2">
                             <i class="fa fa-check-square mr-1"></i>
@@ -201,7 +201,7 @@
                                 <div wire:ignore.self class="tab-pane fade" id="tabs-publishers_data" role="tabpanel" aria-labelledby="tabs-publishers_data-tab">
                                     @if($childs > 0)
                                         <div class="form-check">
-                                            <input wire:model="filter_sub_group" class="form-check-input" type="checkbox" value="1" id="subCheck">
+                                            <input wire:model.live="filter_sub_group" class="form-check-input" type="checkbox" value="1" id="subCheck">
                                             <label class="form-check-label" for="subCheck">
                                                 @lang('statistics.filter_sub_group')
                                             </label>
@@ -209,7 +209,7 @@
                                     @endif
                                     @if($need_approval)
                                         <div class="form-check">
-                                            <input wire:model="filter_all_event" class="form-check-input" type="checkbox" value="1" id="allEvent">
+                                            <input wire:model.live="filter_all_event" class="form-check-input" type="checkbox" value="1" id="allEvent">
                                             <label class="form-check-label" for="allEvent">
                                                 @lang('statistics.filter_all_event')
                                             </label>

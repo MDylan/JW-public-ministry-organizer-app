@@ -1,5 +1,5 @@
 <div>
-    <form autocomplete="off" wire:submit.prevent="savePoster">
+    <form autocomplete="off" wire:submit="savePoster">
         <x-modal modalId="PosterEditModal" modalSize="modal-xl">
             <x-slot name="title">
                 @lang('group.poster.title')
@@ -23,7 +23,7 @@
                         <div class="form-group row">
                             <label for="field_show_date" class="col-sm-4 col-form-label">@lang('group.poster.field_show_date')</label>
                             <div class="col-sm-8">
-                                <input wire:model.defer="state.show_date" type="date" class="form-control @error('show_date') is-invalid @enderror" id="field_show_date" aria-describedby="show_date_helpBlock">
+                                <input wire:model="state.show_date" type="date" class="form-control @error('show_date') is-invalid @enderror" id="field_show_date" aria-describedby="show_date_helpBlock">
                                 @error('show_date')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 <small id="show_date_helpBlock" class="form-text text-muted">
                                     @lang('group.poster.show_date_helpBlock')
@@ -35,7 +35,7 @@
                         <div class="form-group row">
                             <label for="field_hide_date" class="col-sm-4 col-form-label">@lang('group.poster.field_hide_date')</label>
                             <div class="col-sm-8">
-                                <input wire:model.defer="state.hide_date" type="date" class="form-control @error('hide_date') is-invalid @enderror" id="field_hide_date" aria-describedby="hide_date_helpBlock">
+                                <input wire:model="state.hide_date" type="date" class="form-control @error('hide_date') is-invalid @enderror" id="field_hide_date" aria-describedby="hide_date_helpBlock">
                                 @error('hide_date')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                 <small id="hide_date_helpBlock" class="form-text text-muted">
                                     @lang('group.poster.hide_date_helpBlock')
@@ -47,7 +47,7 @@
                 @if($openModal) 
                     <div class="form-group" id="poster_info_{{ $state['id'] }}" wire:ignore>
                         <label for="field_info">@lang('group.poster.field_info')</label>
-                        <textarea wire:model.lazy="state.info" class="summernote form-control @error('content') is-invalid @enderror" rows="3" name="info">
+                        <textarea wire:model.blur="state.info" class="summernote form-control @error('content') is-invalid @enderror" rows="3" name="info">
                             {{-- {{ $state['info'] ?? '' }} --}}
                         </textarea>                        
                     </div>

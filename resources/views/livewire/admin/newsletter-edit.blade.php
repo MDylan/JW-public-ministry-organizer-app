@@ -23,7 +23,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form wire:submit.prevent="editNewsletter">
+            <form wire:submit="editNewsletter">
                 @csrf
                 <div class="row">                    
                     <div class="col-md-8">
@@ -47,12 +47,12 @@
                                         <div wire:ignore.self class="tab-pane fade @if ($lang == reset($languages )) show active @endif " id="custom-tabs-{{ $code }}" role="tabpanel" aria-labelledby="custom-tabs-{{ $code }}">
                                             <div class="form-group">
                                                 <label for="form_title">@lang('news.title') (@lang('app.newsletter.subject'))</label>
-                                                <input wire:model.defer="state.lang.{{$code}}.subject" name="title" type="text" class="form-control @error('subject') is-invalid @enderror" id="form_title" placeholder="">
+                                                <input wire:model="state.lang.{{$code}}.subject" name="title" type="text" class="form-control @error('subject') is-invalid @enderror" id="form_title" placeholder="">
                                                 @error('subject')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                             </div>
                                             <div class="form-group" wire:ignore>
                                                 <label for="form_content">@lang('news.content')</label>
-                                                <textarea data-lang="{{$code}}" wire:model.defer="state.lang.{{$code}}.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
+                                                <textarea data-lang="{{$code}}" wire:model="state.lang.{{$code}}.content" class="summernote form-control @error('content') is-invalid @enderror" rows="10" name="content"></textarea>
                                             </div>
                                             @error('content')<code>{{$message}}</code>@enderror
                                         </div>
@@ -66,7 +66,7 @@
                             <div class="card-body">
                                 <div class="form-group">
                                     <label for="form_date">@lang('news.date')</label>
-                                    <input wire:model.defer="state.date" type="date" class="form-control @error('date') is-invalid @enderror" id="form_date" placeholder="" aria-describedby="date_helper">
+                                    <input wire:model="state.date" type="date" class="form-control @error('date') is-invalid @enderror" id="form_date" placeholder="" aria-describedby="date_helper">
                                     <small id="date_helper" class="form-text text-muted">
                                         @lang('app.newsletter.send_date_helper')
                                     </small>
@@ -74,7 +74,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="form_status">@lang('news.status')</label>
-                                    <select wire:model.defer="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
+                                    <select wire:model="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
                                         @foreach (trans('news.statuses') as $id => $translate) 
                                             <option value="{{ $id }}">{{ $translate }}</option>      
                                         @endforeach
@@ -83,7 +83,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="send_to">@lang('app.newsletter.show_to')</label>
-                                    <select wire:model.defer="state.send_to" class="form-control @error('send_to') is-invalid @enderror" id="send_to">
+                                    <select wire:model="state.send_to" class="form-control @error('send_to') is-invalid @enderror" id="send_to">
                                         <option value="groupCreators">@lang('roles.groupCreator')</option>
                                         <option value="groupAdmins">@lang('group.roles.admin')</option>
                                         <option value="groupServants">@lang('group.roles.admin') + @lang('group.roles.roler')</option>
@@ -92,7 +92,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="send_newsletter">@lang('app.newsletter.send_newsletter')</label>
-                                    <select wire:model.defer="state.send_newsletter" class="form-control @error('send_newsletter') is-invalid @enderror" id="send_newsletter" aria-describedby="send_newsletter_helper">
+                                    <select wire:model="state.send_newsletter" class="form-control @error('send_newsletter') is-invalid @enderror" id="send_newsletter" aria-describedby="send_newsletter_helper">
                                         <option value="0">@lang('No')</option>
                                         <option value="1">@lang('Yes')</option>
                                     </select>

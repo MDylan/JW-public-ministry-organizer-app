@@ -41,7 +41,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form wire:submit.prevent="editPage">
+            <form wire:submit="editPage">
                 @csrf
                 <div class="row">                    
                     <div class="col-md-8">
@@ -65,12 +65,12 @@
                                         <div wire:ignore.self class="tab-pane fade @if ($lang == reset($languages )) show active @endif " id="custom-tabs-{{ $code }}" role="tabpanel" aria-labelledby="custom-tabs-{{ $code }}">
                                             <div class="form-group">
                                                 <label for="form_title">@lang('staticpage.title')</label>
-                                                <input wire:model.defer="state.lang.{{$code}}.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
+                                                <input wire:model="state.lang.{{$code}}.title" name="title" type="text" class="form-control @error('title') is-invalid @enderror" id="form_title" placeholder="">
                                                 @error('title')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                             </div>
                                             <div class="form-group" wire:ignore>
                                                 <label for="form_content">@lang('staticpage.content')</label>
-                                                <textarea data-lang="{{$code}}" wire:model.defer="state.lang.{{ $code }}.content" class="form-control summernote @error('content') is-invalid @enderror" rows="10" id="summernote-{{ $code }}" name="{{$code}}[content]"></textarea>
+                                                <textarea data-lang="{{$code}}" wire:model="state.lang.{{ $code }}.content" class="form-control summernote @error('content') is-invalid @enderror" rows="10" id="summernote-{{ $code }}" name="{{$code}}[content]"></textarea>
                                             </div>
                                             @error('content')<code>{{$message}}</code>@enderror
                                         </div>
@@ -84,7 +84,7 @@
                             <div class="card-body">
                                 <div class="form-group">
                                     <label for="slug">@lang('staticpage.slug')</label>
-                                    <input wire:model.defer="state.slug" wire:keydown.debounce.1000ms="checkSlug" type="text" 
+                                    <input wire:model="state.slug" wire:keydown.debounce.1000ms="checkSlug" type="text" 
                                     name="slug" class="form-control @error('slug') is-invalid @enderror" id="slug"  aria-describedby="slugHelp" />
                                     @error('slug')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                     <small id="slugHelp" class="form-text text-muted">
@@ -93,7 +93,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="form_status">@lang('staticpage.status')</label>
-                                    <select wire:model="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
+                                    <select wire:model.live="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
                                         @foreach ($statuses as $id) 
                                             <option value="{{ $id }}">{{ __('staticpage.statuses.'.$id) }}</option>      
                                         @endforeach
@@ -102,7 +102,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="formposition">@lang('staticpage.position')</label>
-                                    <select wire:model="state.position" class="form-control @error('position') is-invalid @enderror" id="form_status" aria-describedby="positions_helper">
+                                    <select wire:model.live="state.position" class="form-control @error('position') is-invalid @enderror" id="form_status" aria-describedby="positions_helper">
                                         @foreach ($positions as $translate) 
                                             <option value="{{ $translate }}">{{ __('staticpage.positions.'.$translate) }}</option>      
                                         @endforeach
@@ -123,7 +123,7 @@
                                                 @endif
                                                 </span>
                                             </div>
-                                            <input class="form-control" wire:model="state.icon" type="text" name="icon" class="form-group" id="icon" placeholder="fa fa-file" aria-describedby="iconHelp" />
+                                            <input class="form-control" wire:model.live="state.icon" type="text" name="icon" class="form-group" id="icon" placeholder="fa fa-file" aria-describedby="iconHelp" />
                                         </div>
                                         @error('icon')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
                                         <small id="iconHelp" class="form-text text-muted">
