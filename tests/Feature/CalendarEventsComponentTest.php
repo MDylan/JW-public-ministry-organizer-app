@@ -111,7 +111,10 @@ class CalendarEventsComponentTest extends FeatureTestCase
         Livewire::actingAs($user)
             ->test(Events::class)
             ->call('changeGroup')
-            ->assertDispatchedTo('events.modal', 'setGroup', $group2->id);
+            ->assertDispatchedTo('events.modal', 'setGroup', $group2->id)
+            // TODO 47.3: the weather widget's scroll buttons are bound by this
+            // event, because Livewire 3 does not run the <script> a re-render adds.
+            ->assertDispatched('calendar-group-changed');
     }
 
     // =========================================================================

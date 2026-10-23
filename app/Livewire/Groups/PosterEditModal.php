@@ -69,6 +69,8 @@ class PosterEditModal extends AppComponent
                 'fromDate' => $this->fromDate
             ]
         );
+        // Starts summernote on the textarea this render adds (TODO 47.3).
+        $this->dispatch('poster-editor-opened', id: $this->state['id']);
     }
 
     public function openModalFromDate($groupId, $date, $posterId = 0) {

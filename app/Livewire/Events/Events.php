@@ -134,7 +134,10 @@ class Events extends AppComponent
             session(['groupId' => $this->form_groupId]);
             $this->dispatch('setGroup', $this->form_groupId)->to('events.modal');
             $this->dispatch('setGroup', $this->form_groupId)->to('groups.special-date-modal');
-        }         
+            // The weather widget may arrive with this render; Livewire 3
+            // does not run the <script> that binds it, this event does (TODO 47.3).
+            $this->dispatch('calendar-group-changed');
+        }
     }
     
     public function getGroupData() {

@@ -163,10 +163,14 @@ Components talk to page scripts through window events: toasts, SweetAlert dialog
 | `show-modal` | `id`, optionally `livewire` and `parameters_back` | `public/js/modal.js`; with `livewire` set, closing the modal calls back `hideModal` / `hiddenModal` on that component through `Livewire.dispatchTo(..., { parameters_back })` (only `hiddenModal` has listeners: `Events\Modal`, and `Groups\PosterEditModal`, which takes `parameters_back` by that name) |
 | `hide-modal` | `id`, optionally `message` and `savedMessage` | `public/js/modal.js` |
 | `show-*-confirmation` (`logout`, `reject`, `languageRemove`, `literature`, `newsDelete`, `pageDelete`, `fileDelete`) | per event (`groupId`, `lang`, `fileName`, or none) | a script in the component's own view |
+| `poster-editor-opened` | `id` | `livewire/groups/poster-edit-modal.blade.php`; starts summernote on the textarea `Groups\PosterEditModal::openModal()` just rendered |
+| `calendar-group-changed` | none | `livewire/events/events.blade.php`; binds the weather widget's scroll buttons after `Events\Events::changeGroup()` |
 
 **Always pass named parameters.** `dispatch('success', ['message' => $m])` is legal PHP and dispatches an event of the right name, but Livewire 3 treats the array as one positional parameter: the browser receives `event.detail = [{message: ...}]`, every `event.detail.message` is undefined, and nothing reports an error. Component tests that assert only the event name pass either way. `tests/Feature/Livewire/BrowserEventContractTest` is what fails: it reads the receiver names from the views and `public/js`, and rejects any `dispatch()` of those events that is not named-parameter only. Livewire-to-Livewire events are not browser events and are not covered by this rule. Until TODO 47 this was `dispatchBrowserEvent($name, $array)`, which Livewire 3 removed.
 
 **`error` shares its name with the browser's own event.** The browser fires an `ErrorEvent` named `error` on `window` for every uncaught exception, with no `detail`; the toast listener therefore returns early unless the event is a `CustomEvent` (TODO 47.2, pinned by `JavaScriptBridgeContractTest`).
+
+**A `<script>` that a re-render adds never runs.** Livewire 2 `eval()`-ed every script element a morph added; Livewire 3 does not. A script in the component's first render still runs (the browser parses it with the page), so the rule is: in component markup, outside `@section` / `@push`, no inline `<script>` inside `@if`, `@foreach` or any other Blade block. Code that has to run when markup appears is started by a browser event the component dispatches - dispatched events are processed after the morph, unlike `$this->js()`, which runs before it. `poster-editor-opened` and `calendar-group-changed` above are the two cases (TODO 47.3); `InlineScriptContractTest` enforces the rule.
 
 ### Polling and the root element
 

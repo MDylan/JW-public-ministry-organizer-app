@@ -25,6 +25,23 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->assertDispatched('show-modal', id: 'PosterEditModal', livewire: 'groups.poster-edit-modal');
     }
 
+    public function test_opening_the_modal_starts_the_editor_on_the_rendered_textarea(): void
+    {
+        // TODO 47.3: Livewire 3 does not run the inline <script> that used to
+        // start summernote when the textarea arrived; this browser event does,
+        // and it carries the id of the poster being edited.
+        $editor = $this->createUser(['email' => 'poster-editor-js@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($editor, $group, 'roler', true);
+        $poster = $this->createGroupPoster($group);
+
+        Livewire::actingAs($editor)
+            ->test(PosterEditModal::class)
+            ->call('openModal', $group->id, $poster->id)
+            ->assertDispatched('poster-editor-opened', id: $poster->id)
+            ->assertSeeHtml('class="summernote form-control');
+    }
+
     public function test_member_cannot_open_modal(): void
     {
         $member = $this->createUser(['email' => 'poster-member@example.test']);

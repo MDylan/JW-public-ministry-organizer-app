@@ -203,13 +203,11 @@
             @endforelse
             <!-- /.col-md-6 -->
         </div>
-        @if(count($groups) > 0)
-            <script>
-                function modal(groupId, date) {
-                    @this.call('openEventsModal', groupId,  date);
-                }
-            </script>
-        @endif
+        <script>
+            function modal(groupId, date) {
+                @this.call('openEventsModal', groupId,  date);
+            }
+        </script>
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->

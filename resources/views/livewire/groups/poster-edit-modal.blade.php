@@ -52,9 +52,9 @@
                         </textarea>                        
                     </div>
                     @error('info')<div class="alert alert-danger">{{$message}}</div>@enderror
-                    <script>
-                        openSummernote('{{ $state['id'] }}');            
-                    </script>
+                    {{-- TODO 47.3: the editor is started by the poster-editor-opened
+                         event openModal() dispatches. Livewire 3 does not run a
+                         <script> a re-render adds, which is what used to start it. --}}
                 @endif
             </x-slot>
         
@@ -111,6 +111,12 @@
                     }
             });
         }
+
+        // Dispatched browser events run after Livewire 3 has morphed the
+        // response in, so the textarea exists by now (TODO 47.3).
+        window.addEventListener('poster-editor-opened', event => {
+            openSummernote(event.detail.id);
+        });
       </script>
 @endsection
 

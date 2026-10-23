@@ -178,66 +178,79 @@
                                         </div>
                                     </div>
                                 </div>
-                                <script>
-                                    const widget = document.querySelector('.weather-widget');
-                                    const leftBtn = document.querySelector('.scroll-btn.left');
-                                    const rightBtn = document.querySelector('.scroll-btn.right');
-
-                                    // Scroll by arrows
-                                    leftBtn.addEventListener('click', () => {
-                                        widget.scrollBy({ left: -200, behavior: 'smooth' });
-                                        updateButtons();
-                                    });
-
-                                    rightBtn.addEventListener('click', () => {
-                                        widget.scrollBy({ left: 200, behavior: 'smooth' });
-                                        updateButtons();
-                                    });
-
-                                    // Update after scroll
-                                    widget.addEventListener('scroll', updateButtons);
-
-                                    // Arrows visibility update
-                                    function updateButtons() {
-                                        const maxScrollLeft = widget.scrollWidth - widget.clientWidth;
-
-                                        if (widget.scrollLeft <= 0) {
-                                            leftBtn.style.display = 'none';
-                                        } else {
-                                            leftBtn.style.display = 'block';
-                                        }
-
-                                        if (widget.scrollLeft >= maxScrollLeft) {
-                                            rightBtn.style.display = 'none';
-                                        } else {
-                                            rightBtn.style.display = 'block';
-                                        }
-                                    }
-
-                                    // Touch events
-                                    let startX = 0;
-                                    let scrollLeft = 0;
-
-                                    widget.addEventListener('touchstart', (e) => {
-                                        startX = e.touches[0].pageX;
-                                        scrollLeft = widget.scrollLeft;
-                                    });
-
-                                    widget.addEventListener('touchmove', (e) => {
-                                        const x = e.touches[0].pageX;
-                                        const walk = startX - x;
-                                        widget.scrollLeft = scrollLeft + walk;
-                                        updateButtons();
-                                    });
-
-                                    // Update arrows at startup
-                                    updateButtons();
-                                    //Update after window resize
-                                    window.addEventListener('resize', updateButtons);
-
-                                </script>
-                                
                             @endif
+                            {{-- TODO 47.3: outside the @if on purpose. Livewire 3 does not run a
+                                 <script> a re-render adds, and a group switch (changeGroup) renders
+                                 the widget through Livewire; it dispatches calendar-group-changed,
+                                 which runs the binding again. The binding is idempotent per element. --}}
+                            <script>
+                                function weatherWidgetParts() {
+                                    const widget = document.querySelector('.weather-widget');
+                                    if (! widget) {
+                                        return null;
+                                    }
+                                    return {
+                                        widget: widget,
+                                        leftBtn: document.querySelector('.scroll-btn.left'),
+                                        rightBtn: document.querySelector('.scroll-btn.right'),
+                                    };
+                                }
+
+                                // Arrows visibility update
+                                function updateWeatherButtons() {
+                                    const parts = weatherWidgetParts();
+                                    if (! parts) {
+                                        return;
+                                    }
+                                    const maxScrollLeft = parts.widget.scrollWidth - parts.widget.clientWidth;
+                                    parts.leftBtn.style.display = parts.widget.scrollLeft <= 0 ? 'none' : 'block';
+                                    parts.rightBtn.style.display = parts.widget.scrollLeft >= maxScrollLeft ? 'none' : 'block';
+                                }
+
+                                function initWeatherWidget() {
+                                    const parts = weatherWidgetParts();
+                                    if (! parts) {
+                                        return;
+                                    }
+                                    if (! parts.widget.__scrollBound) {
+                                        parts.widget.__scrollBound = true;
+                                        const widget = parts.widget;
+
+                                        // Scroll by arrows
+                                        parts.leftBtn.addEventListener('click', () => {
+                                            widget.scrollBy({ left: -200, behavior: 'smooth' });
+                                            updateWeatherButtons();
+                                        });
+                                        parts.rightBtn.addEventListener('click', () => {
+                                            widget.scrollBy({ left: 200, behavior: 'smooth' });
+                                            updateWeatherButtons();
+                                        });
+
+                                        // Update after scroll
+                                        widget.addEventListener('scroll', updateWeatherButtons);
+
+                                        // Touch events
+                                        let startX = 0;
+                                        let scrollLeft = 0;
+                                        widget.addEventListener('touchstart', (e) => {
+                                            startX = e.touches[0].pageX;
+                                            scrollLeft = widget.scrollLeft;
+                                        });
+                                        widget.addEventListener('touchmove', (e) => {
+                                            const x = e.touches[0].pageX;
+                                            widget.scrollLeft = scrollLeft + (startX - x);
+                                            updateWeatherButtons();
+                                        });
+                                    }
+                                    // Update arrows at startup
+                                    updateWeatherButtons();
+                                }
+
+                                initWeatherWidget();
+                                //Update after window resize
+                                window.addEventListener('resize', updateWeatherButtons);
+                                window.addEventListener('calendar-group-changed', initWeatherWidget);
+                            </script>
                         </div>
                         <div class="card-body p-2">
                             <table class="table table-bordered eventsTable">
