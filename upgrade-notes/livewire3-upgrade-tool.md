@@ -337,6 +337,22 @@ acting as one of them failed. Fixed to `[]`, and pinned by the static
 | raw-HTTP Livewire endpoint | 3 | TODO 46.1 |
 | route contract snapshots | 3 | TODO 51.1 |
 
+### TODO 46.1, as delivered (2026-10-23)
+
+No upgrade-tool step touches tests that speak the endpoint protocol by hand.
+`AdminTranslationEditorTest` now scrapes `wire:snapshot` and posts it, unchanged,
+to `/livewire/update` with `updates` and `calls`. Persistent middleware turned
+out **not** to be reworked: `Authorize` is still on the list, and on its own it
+answers 403 to a non-translator - as does the component's own gate on its own.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 50.1 | 1526 | 4321 | 0 | 6 | 6 |
+| after TODO 46.1 | 1526 | 4324 | 0 | 3 | 3 |
+
+**3 green, 0 newly red, no reason changed.** What is left: the 3 route contract
+snapshots, TODO 51.1's.
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
