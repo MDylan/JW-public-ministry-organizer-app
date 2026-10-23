@@ -44,7 +44,7 @@ These are mounted directly from `routes/web.php`.
 | `Groups\NewsList` | `/groups/{group}/news` | Group news listing. |
 | `Groups\UpdateGroupForm` | `/groups/{group}/edit` | Group configuration editor (rules, service days, literature, weather, future changes). **The only component that makes an outbound API call**, and it makes it synchronously - see the note below. The service-day rows correct themselves as you edit them; that has its own note too. |
 | `Groups\DeleteGroup` | `/groups/{group}/delete` | Group delete confirmation/action UI. |
-| `Groups\NewsEdit` | `/groups/{group}/news/create`, `/groups/{group}/news/edit/{new}` | Group news create/edit, localized fields, attachments. |
+| `Groups\NewsEdit` | `/groups/{group}/news/create`, `/groups/{group}/news/edit/{new}` | Group news create/edit, localized fields, attachments. **The only `WithFileUploads` component.** Every accepted file gets a `temporaryUrl()` preview link, which Livewire 3 refuses for an extension missing from `livewire.temporary_file_upload.preview_mimes` - so that list must keep `pdf, doc, docx, xls, xlsx` on top of the package default, or every non-image upload is a 500. `GroupNewsEditTest` checks each of the eight `$file_types` and that the list covers them. |
 | `Groups\Statistics` | `/groups/{group}/statistics` | Per-group stats and monthly analytics. |
 | `Groups\History` | `/groups/{group}/history` | Per-group history/audit-style timeline UI. |
 

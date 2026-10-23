@@ -20,6 +20,11 @@ use Tests\Feature\FeatureTestCase;
  * temporary upload signing, the `mimes` rule and `temporaryUrl()` all change.
  * It also writes to the private `news_files` disk, whose Flysystem behaviour
  * changes in Laravel 9 (TODO 37).
+ *
+ * TODO 49 re-verified it on Livewire 3: the upload, validation, storing and
+ * removal tests below pass unchanged, and the one real risk - temporaryUrl()
+ * refusing an extension missing from preview_mimes - is pinned per file type
+ * and against the configuration.
  */
 class GroupNewsEditTest extends FeatureTestCase
 {
@@ -146,6 +151,59 @@ class GroupNewsEditTest extends FeatureTestCase
         $this->assertCount(1, $attached);
         $this->assertSame('dokumentum.pdf', $attached[0]['name']);
         $this->assertTrue($attached[0]['new']);
+    }
+
+    /**
+     * TODO 49: updatedFiles() calls temporaryUrl() on every accepted file, and
+     * Livewire 3 throws FileNotPreviewableException when the file's guessed
+     * extension is missing from livewire.temporary_file_upload.preview_mimes.
+     * The package default lists images and media only, so without the
+     * project's additions every PDF and Office upload would be a 500. In a
+     * test the extension is guessed from the declared MIME type; in production
+     * from the content - the same guess the `mimes:` rule makes, which is why
+     * the configuration test below is the general guarantee.
+     *
+     * @dataProvider allowedFileTypes
+     */
+    public function test_every_allowed_file_type_gets_a_preview_url(string $name, string $mime): void
+    {
+        $file = UploadedFile::fake()->create($name, 10, $mime);
+
+        $attached = Livewire::actingAs($this->editor)
+            ->test(NewsEdit::class, ['group' => $this->group->id])
+            ->set('files', [$file])
+            ->assertHasNoErrors()
+            ->get('attached_files');
+
+        $this->assertCount(1, $attached);
+        $this->assertStringContainsString('/livewire/preview-file/', $attached[0]['url']);
+    }
+
+    public static function allowedFileTypes(): array
+    {
+        return [
+            'jpg' => ['kep.jpg', 'image/jpeg'],
+            'jpeg' => ['kep.jpeg', 'image/jpeg'],
+            'png' => ['kep.png', 'image/png'],
+            'pdf' => ['dokumentum.pdf', 'application/pdf'],
+            'doc' => ['dokumentum.doc', 'application/msword'],
+            'docx' => ['dokumentum.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'xls' => ['tablazat.xls', 'application/vnd.ms-excel'],
+            'xlsx' => ['tablazat.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        ];
+    }
+
+    public function test_every_allowed_file_type_is_previewable_by_configuration(): void
+    {
+        // A file passes the `mimes:` rule only when its guessed extension is in
+        // $file_types, and temporaryUrl() accepts it only when the same guess
+        // is in preview_mimes - so the first list must be inside the second.
+        // Republishing Livewire's config would silently drop pdf/doc/docx/xls/xlsx.
+        $allowed = (new NewsEdit())->file_types;
+        $previewable = config('livewire.temporary_file_upload.preview_mimes');
+
+        $this->assertCount(8, $allowed, 'The data provider above lists eight types; keep it in step.');
+        $this->assertSame([], array_values(array_diff($allowed, $previewable)));
     }
 
     public function test_uploading_a_disallowed_file_type_is_rejected(): void
