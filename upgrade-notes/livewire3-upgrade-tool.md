@@ -288,6 +288,32 @@ is left:
 | route contract snapshots | 3 | TODO 51.1 |
 | `array_intersect_key()` in a calendar view | 4 | unattributed |
 
+### TODO 48, as delivered (2026-10-23)
+
+No upgrade-tool step touches pagination. Two findings change what the tool's
+missing config would have meant: Livewire 3 **still reads `$paginationTheme`**
+(the component's `paginationView()` method wins, then the property, then
+`config('livewire.pagination_theme')`), so the unpublished config key was never
+the blocker; and the package's v3 `livewire::bootstrap` view is **Bootstrap 5**
+markup, which a published config could not have fixed. The project now
+overrides that view with the Livewire 2 template under
+`resources/views/vendor/livewire/`.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 44 | 1523 | 4258 | 25 | 16 | 41 |
+| after TODO 48 | 1525 | 4311 | 4 | 6 | 10 |
+
+**31 green, 0 newly red.** The three raw-HTTP cases changed reason, from a 500
+on the rendered page to `No Livewire payload found` - TODO 46.1's own. What is
+left:
+
+| cause | count | owner |
+|---|---|---|
+| raw-HTTP Livewire endpoint | 3 | TODO 46.1 |
+| route contract snapshots | 3 | TODO 51.1 |
+| `array_intersect_key()` in a calendar view | 4 | unattributed |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
