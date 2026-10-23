@@ -223,6 +223,18 @@ unbound attribute value, so `wire:key="events_modal"` compiles to
 `key('events_modal')`. Self-closing the tags changes nothing measurable: the
 v3 tag pattern matches an unclosed opening tag too.
 
+### TODO 43.1, as delivered (2026-10-23)
+
+`change-test-assertion-methods` was still not run: its patterns cover
+`assertEmitted` and `assertEmittedTo` (8 sites) and nothing else. All 74
+assertions were renamed by hand instead, together with the four v2 internals the tool has
+no step for (`TestableLivewire`, `lastErrorBag`, `lastRenderedDom`, `->emit()`).
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 50 | 1507 | 3712 | 193 | 21 | 214 |
+| after TODO 43.1 | 1507 | 3758 | 178 | 21 | 199 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
