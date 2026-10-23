@@ -38,8 +38,28 @@ class GroupPosterEditModalTest extends FeatureTestCase
         Livewire::actingAs($editor)
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id, $poster->id)
-            ->assertDispatched('poster-editor-opened', id: $poster->id)
+            ->assertDispatched('poster-editor-opened', id: $poster->id, info: $poster->info)
             ->assertSeeHtml('class="summernote form-control');
+    }
+
+    public function test_reopening_after_cancel_refills_the_editor_with_the_stored_text(): void
+    {
+        // The editor sits in wire:ignore and survives a Cancel. Without the
+        // text in the event it kept showing the abandoned edit on reopen,
+        // while the component - and so a save - held the stored text.
+        $editor = $this->createUser(['email' => 'poster-editor-reopen@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($editor, $group, 'roler', true);
+        $poster = $this->createGroupPoster($group);
+
+        Livewire::actingAs($editor)
+            ->test(PosterEditModal::class)
+            ->call('openModal', $group->id, $poster->id)
+            ->set('state.info', 'Félbehagyott, el nem mentett szöveg')
+            // Cancel only closes the Bootstrap modal; nothing reaches the server.
+            ->call('openModal', $group->id, $poster->id)
+            ->assertSet('state.info', $poster->info)
+            ->assertDispatched('poster-editor-opened', id: $poster->id, info: $poster->info);
     }
 
     public function test_member_cannot_open_modal(): void

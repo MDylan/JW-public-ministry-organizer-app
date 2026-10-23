@@ -69,8 +69,11 @@ class PosterEditModal extends AppComponent
                 'fromDate' => $this->fromDate
             ]
         );
-        // Starts summernote on the textarea this render adds (TODO 47.3).
-        $this->dispatch('poster-editor-opened', id: $this->state['id']);
+        // Starts summernote on the textarea this render adds (TODO 47.3), and
+        // fills it with what this component holds: a modal reopened after
+        // Cancel keeps its editor (wire:ignore), which would otherwise still
+        // show the abandoned edit while the stored text is what gets saved.
+        $this->dispatch('poster-editor-opened', id: $this->state['id'], info: $this->state['info'] ?? '');
     }
 
     public function openModalFromDate($groupId, $date, $posterId = 0) {

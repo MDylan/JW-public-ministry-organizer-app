@@ -116,6 +116,9 @@
         // response in, so the textarea exists by now (TODO 47.3).
         window.addEventListener('poster-editor-opened', event => {
             openSummernote(event.detail.id);
+            // A reopened modal keeps its editor (wire:ignore), so load the
+            // text the component holds rather than whatever was left in it.
+            $('#poster_info_' + event.detail.id + ' .summernote').summernote('code', event.detail.info);
         });
       </script>
 @endsection
