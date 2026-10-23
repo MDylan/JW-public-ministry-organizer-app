@@ -368,6 +368,20 @@ red count could not move.
 | after TODO 46.1 | 1526 | 4324 | 0 | 3 | 3 |
 | after TODO 46 | 1530 | 4336 | 0 | 3 | 3 |
 
+### TODO 45 and 45.1, as delivered (2026-10-23)
+
+The review of what the tool's four `wire:model` / `wire:submit` steps produced.
+Kept: all 35 `.live` (the tool's behaviour-preserving choice). Corrected: the two
+`.live.ignore` it carried over to `.live`, and its 8 `.lazy` -> `.blur` to
+`.change`, which is the exact equivalent of v2's `.lazy` - the tool's one
+approximation. `WireModelBindingContractTest` pins the 23 bindings that must
+stay live and the allowed modifiers.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 46 | 1530 | 4336 | 0 | 3 | 3 |
+| after TODO 45 / 45.1 | 1532 | 4340 | 0 | 3 | 3 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
