@@ -47,7 +47,7 @@
                 @if($openModal) 
                     <div class="form-group" id="poster_info_{{ $state['id'] }}" wire:ignore>
                         <label for="field_info">@lang('group.poster.field_info')</label>
-                        <textarea wire:model.blur="state.info" class="summernote form-control @error('content') is-invalid @enderror" rows="3" name="info">
+                        <textarea wire:model.change="state.info" class="summernote form-control @error('content') is-invalid @enderror" rows="3" name="info">
                             {{-- {{ $state['info'] ?? '' }} --}}
                         </textarea>                        
                     </div>

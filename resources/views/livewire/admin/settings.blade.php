@@ -256,7 +256,7 @@
                                             @lang('settings.mail_info')
                                             <div class="form-group">
                                                 <label for="mail_from_address">@lang('settings.mail_from_address'):</label>
-                                                <input wire:model.blur="state.env.MAIL_FROM_ADDRESS" type="email" class="form-control" id="mail_from_address">
+                                                <input wire:model.change="state.env.MAIL_FROM_ADDRESS" type="email" class="form-control" id="mail_from_address">
                                             </div>
 
                                             <div class="form-group">
@@ -271,15 +271,15 @@
                                             @if($state['env']['MAIL_MAILER'] == "smtp")
                                                 <div class="form-group">
                                                     <label for="mail_host">@lang('settings.mail_host'):</label>
-                                                    <input wire:model.blur="state.env.MAIL_HOST" type="text" class="form-control" id="mail_host">
+                                                    <input wire:model.change="state.env.MAIL_HOST" type="text" class="form-control" id="mail_host">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="mail_port">@lang('settings.mail_port'):</label>
-                                                    <input wire:model.blur="state.env.MAIL_PORT" type="number" class="form-control" id="mail_port">
+                                                    <input wire:model.change="state.env.MAIL_PORT" type="number" class="form-control" id="mail_port">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="mail_encryption">@lang('settings.mail_encryption'):</label>
-                                                    <select wire:model.blur="state.env.MAIL_ENCRYPTION" class="form-control" id="mail_encryption">
+                                                    <select wire:model.change="state.env.MAIL_ENCRYPTION" class="form-control" id="mail_encryption">
                                                         <option value="null">@lang('settings.no_encryption')</option>
                                                         <option value="tls">TLS</option>
                                                         <option value="ssl">SSL</option>
@@ -287,11 +287,11 @@
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="mail_username">@lang('settings.mail_username'):</label>
-                                                    <input wire:model.blur="state.env.MAIL_USERNAME" type="text" class="form-control" id="mail_username">
+                                                    <input wire:model.change="state.env.MAIL_USERNAME" type="text" class="form-control" id="mail_username">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="mail_password">@lang('settings.mail_password'):</label>
-                                                    <input wire:model.blur="state.env.MAIL_PASSWORD" type="text" class="form-control" id="mail_password">
+                                                    <input wire:model.change="state.env.MAIL_PASSWORD" type="text" class="form-control" id="mail_password">
                                                 </div>                                            
                                             @endif
 
@@ -350,11 +350,11 @@
                                                     <a href="https://g.co/recaptcha/v3" target="_blank">Google reCaptcha <i class="fas fa-external-link-alt"></i></a>
                                                     <div class="form-group">
                                                         <label for="site_key">SITE KEY:</label>
-                                                        <input wire:model.live.ignore="state.recaptcha.site_key" type="text" class="form-control" id="site_key">
+                                                        <input wire:model.live="state.recaptcha.site_key" type="text" class="form-control" id="site_key">
                                                     </div>
                                                     <div class="form-group">
                                                         <label for="secret_key">SECRET KEY:</label>
-                                                        <input  wire:model.live.ignore="state.recaptcha.secret_key" type="text" class="form-control" id="secret_key">
+                                                        <input  wire:model.live="state.recaptcha.secret_key" type="text" class="form-control" id="secret_key">
                                                     </div>
                                                 </div>
                                             @endif
@@ -368,7 +368,7 @@
                                                 <div class="col-md-12">
                                                     <div class="form-group" wire:ignore>
                                                         <label for="weather_api_key">@lang('settings.weather_api_key')</label><br/>
-                                                        <input wire:model.blur="state.env.OPENWEATHER_API_KEY" type="text" class="form-control" id="weather_api_key">
+                                                        <input wire:model.change="state.env.OPENWEATHER_API_KEY" type="text" class="form-control" id="weather_api_key">
                                                     </div>
                                                 </div>
                                             </div>

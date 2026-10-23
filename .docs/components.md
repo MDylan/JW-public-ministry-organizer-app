@@ -168,6 +168,18 @@ Four components paginate. `Admin\Users\ListUsers` and `Groups\ListGroups` use th
 - **The markup is the project's own.** `livewire::bootstrap` resolves to `resources/views/vendor/livewire/bootstrap.blade.php` before the package's view. It is the Livewire 2 template, kept because Livewire 3's bootstrap view targets Bootstrap 5 (the application runs Bootstrap 4.6 under AdminLTE), adds a "Showing X to Y of Z results" line that `lang/hu.json` renders as nonsense, and scrolls to the top of the page on every click. `PaginationBehaviorTest` fails if the package view comes back. The buttons call `previousPage('page')`, `nextPage('page')` and `gotoPage(N, 'page')`, so those method names are part of the view contract.
 - `simplePaginate()` is not used anywhere, so `simple-bootstrap` is the package's view, unchanged.
 
+## Form Bindings (`wire:model`)
+
+Livewire 3 inverted the default: a plain `wire:model` is **deferred** - the value travels with the next action (a `wire:click`, a `wire:submit`) - and `wire:model.live` sends every change at once. Livewire 2 was the other way round.
+
+- **Plain `wire:model`** (88) - every form field that is only read when the form is submitted.
+- **`wire:model.live`** (35) - every binding that was live under Livewire 2. **23 of them must stay live**, because the view reacts to the value: an `@if` on it, a `render()` that rebuilds option lists from it (the group form's day and time selects, the special-date modal), or an `updated*()` hook that resets the page of a filtered list (search boxes, the translation editor's filters). The other 12 are only read by an action and were kept live on purpose: it is exactly the old behaviour. A text field on `.live` is debounced by 150 ms; `admin/translation`'s search sets its own `.debounce.400ms`.
+- **`wire:model.change`** (8, the mail and API-key fields in `admin/settings` and the poster text) - commits on the `change` event, which is what Livewire 2's `.lazy` did. Not `.blur`: a select bound with `.blur` sends nothing until focus leaves it.
+- `wire:submit` needs no `.prevent` in Livewire 3; none is left.
+- A file input ignores every modifier - Livewire uploads it on selection - and a field hidden behind summernote syncs through `@this.set()`, not through its binding.
+
+`tests/Feature/Livewire/WireModelBindingContractTest` lists the 23 with the reason each needs to be live, and allows only `.live`, `.change` and `.debounce.Nms` as modifiers. Livewire 3 hands any other modifier to Alpine, which ignores it, so a typo such as `.ignore` would otherwise pass silently.
+
 ## Class-Based Blade Components
 
 Located in `app/View/Components`.
