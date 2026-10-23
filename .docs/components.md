@@ -6,12 +6,11 @@ UI logic is primarily implemented with **Livewire components**, supported by cla
 
 > **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
 > package is on `v3.8.8` since TODO 43, and the test suite is **knowingly red**
-> until TODO 51 closes the phase. Two things in this document are therefore
-> pinned to Livewire 2 internals and are being carried across rather than
-> relied on: the `AppComponent` pagination note below (`$paginationTheme`
-> becomes `paginationView()` - TODO 48), and the persistent-middleware
-> paragraph near the end, which asserts on `Livewire::getPersistentMiddleware()`
-> - a version 2 internal that version 3 reworks (TODO 46.1). The component
+> until TODO 51 closes the phase. One thing in this document is therefore
+> pinned to a Livewire 2 internal and is being carried across rather than
+> relied on: the persistent-middleware paragraph near the end, which asserts
+> on `Livewire::getPersistentMiddleware()` - a version 2 internal that
+> version 3 reworks (TODO 46.1). The component
 > inventory itself is unchanged: no class moved, and `config/livewire.php`
 > still declares `App\Http\Livewire` as the namespace, which is TODO 51's
 > decision to confirm or reverse.
@@ -24,7 +23,7 @@ A shared Livewire base class exists:
 
 - `App\Http\Livewire\AppComponent`
   - Uses `WithPagination`
-  - Sets Bootstrap pagination theme
+  - Declares `paginationView()` / `paginationSimpleView()` (`livewire::bootstrap`, `livewire::simple-bootstrap`) - see Pagination below
   - Provides shared `state` array and `showEditModal` flag
 
 ## Route-Level Livewire Components
@@ -162,6 +161,14 @@ Components also signal each other - a partial re-rendering after a save, the day
 **There is no `emitUp()` in Livewire 3, and its replacement names the parent.** `Events\EventEdit` sends `refresh` to `events.modal`, `Groups\SpecialDateModal` sends `pollingOn` to `events.events`, and `Groups\PosterEditModal` - nested both in the calendar and on the home page - sends to both through `dispatchToParent()`; the one not on the page receives nothing. Nesting one of these somewhere new means adding the new parent there. `Events\Modal` passes `refresh` on to whichever component opened it (`$refreshUp`, set by `openModal()`; only `home` does today). Note that Livewire 3 resolves a `to()` name when the response is built and **throws on a name that is not a component**, where `emitTo()` quietly delivered nothing.
 
 The tests pin the targets with `assertDispatchedTo()`, which also proves the event is not a page-wide broadcast.
+
+## Pagination
+
+Four components paginate. `Admin\Users\ListUsers` and `Groups\ListGroups` use the framework's `paginate(20)`; `Groups\ListUsers` (10 per page, `onEachSide(1)`) and `Admin\Translation` (25 per page) build a `LengthAwarePaginator` by hand.
+
+- **The cursor is `$paginators['page']`, and nothing else.** Livewire 3's `setPage()` - behind `gotoPage()`, `nextPage()`, `previousPage()` and `resetPage()` - writes only that array; Livewire 2 also wrote a `$page` property. A hand-built paginator therefore reads `max(1, (int) $this->getPage())`: `getPage()` falls back to the `?page=` query string on the first render, and the clamp is needed because `$paginators` is public state the browser can rewrite. **Do not declare a `public $page`** - it would never move, and the list would sit on page 1 without an error (`GroupUserListPaginationTest` pins its absence). The `?page=` URL binding is Livewire's own; no component lists `page` in `$queryString`.
+- **The markup is the project's own.** `livewire::bootstrap` resolves to `resources/views/vendor/livewire/bootstrap.blade.php` before the package's view. It is the Livewire 2 template, kept because Livewire 3's bootstrap view targets Bootstrap 5 (the application runs Bootstrap 4.6 under AdminLTE), adds a "Showing X to Y of Z results" line that `lang/hu.json` renders as nonsense, and scrolls to the top of the page on every click. `PaginationBehaviorTest` fails if the package view comes back. The buttons call `previousPage('page')`, `nextPage('page')` and `gotoPage(N, 'page')`, so those method names are part of the view contract.
+- `simplePaginate()` is not used anywhere, so `simple-bootstrap` is the package's view, unchanged.
 
 ## Class-Based Blade Components
 

@@ -34,11 +34,9 @@ class ListUsers extends AppComponent
     public $selected_user;
     public $searchTerm = null;
     public $filter = [];
-    public $page = 1;
     //for search with an url string
     protected $queryString = [
         'searchTerm' => ['except' => ''],
-        'page' => ['except' => '']
     ];
     private $group = null;
     private $role = null;
@@ -1036,8 +1034,9 @@ class ListUsers extends AppComponent
         //create pagination
         $total = count($users);
         $per_page = 10;
-        $current_page = $this->page; 
-        if($current_page < 1) $current_page = 1;
+        // The cursor lives in $paginators under Livewire 3; the client can write it,
+        // so it is clamped to a positive integer (TODO 48).
+        $current_page = max(1, (int) $this->getPage());
         $itemsForCurrentPage = $users->slice(($current_page - 1) * $per_page, $per_page);
         $users = new LengthAwarePaginator($itemsForCurrentPage, $total, $per_page, $current_page, [
                 'path' => $request->url(),

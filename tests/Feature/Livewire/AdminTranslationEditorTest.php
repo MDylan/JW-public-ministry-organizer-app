@@ -184,6 +184,24 @@ class AdminTranslationEditorTest extends FeatureTestCase
         $this->assertSame(['save'], $this->keysOf($component));
     }
 
+    public function test_the_second_page_holds_the_next_slice_of_keys(): void
+    {
+        // The list is a hand-built paginator of 25 rows. Under Livewire 3 it
+        // reads the cursor through getPage(), since the WithPagination trait
+        // no longer keeps a $page property in step (TODO 48).
+        $keys = [];
+        for ($i = 1; $i <= 30; $i++) {
+            $keys[sprintf('key%02d', $i)] = 'Érték '.$i;
+        }
+        $this->writeGroup('hu', 'app', $keys);
+
+        $component = $this->editor()->set('group', 'app');
+        $this->assertSame(array_slice(array_keys($keys), 0, 25), $this->keysOf($component));
+
+        $component->call('gotoPage', 2);
+        $this->assertSame(array_slice(array_keys($keys), 25), $this->keysOf($component));
+    }
+
     public function test_only_missing_hides_the_translated_rows(): void
     {
         $this->writeGroup('hu', 'app', ['title' => 'Cím', 'save' => 'Mentés']);

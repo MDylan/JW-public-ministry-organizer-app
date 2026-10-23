@@ -14,9 +14,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 /**
  * TODO 08: the AppComponent pagination contract.
  *
- * The AppComponent.php:12 line `protected $paginationTheme = 'bootstrap'` does NOT
- * exist in Livewire 3; TODO 48 will rewrite it as a paginationView()
- * override. This file measures what TODO 48 needs to reproduce.
+ * Under Livewire 2, AppComponent set `protected $paginationTheme = 'bootstrap'`
+ * and the WithPagination trait provided paginationView(). Livewire 3 still
+ * reads the property, but moved the two methods onto its pagination hook, so
+ * TODO 48 declared them on AppComponent instead. The markup behind
+ * livewire::bootstrap is the project's Bootstrap 4 override
+ * (resources/views/vendor/livewire/bootstrap.blade.php), not the package's
+ * Bootstrap 5 view.
  *
  * The roadmap TODO 08 text names five components (Admin\StaticPages,
  * Admin\AdminNewsletters, Groups\NewsList, Groups\History, Groups\ListUsers).
@@ -36,11 +40,9 @@ class PaginationBehaviorTest extends FeatureTestCase
 
     public function test_the_base_component_resolves_the_bootstrap_pagination_views(): void
     {
-        // WithPagination::paginationView() prepends the 'livewire::' prefix to
-        // $paginationTheme, which resolves to the vendor views/pagination/
-        // directory (LivewireServiceProvider:123-126). This is the most direct
-        // measurement of the $paginationTheme property, and this is exactly the value
-        // that TODO 48 needs to supply via a paginationView() override.
+        // Livewire 3's pagination hook asks the component for these views
+        // (SupportPagination::paginationView()). 'livewire::' resolves to
+        // resources/views/vendor/livewire first, then to the package.
         $component = new AppComponent();
 
         $this->assertSame('livewire::bootstrap', $component->paginationView());
@@ -102,7 +104,12 @@ class PaginationBehaviorTest extends FeatureTestCase
             ->assertSee('page-link', false)
             ->assertSee('<nav>', false)
             // The tailwind template's characteristic class:
-            ->assertDontSee('relative inline-flex', false);
+            ->assertDontSee('relative inline-flex', false)
+            // Livewire 3's own bootstrap view: Bootstrap 5 classes, a
+            // "Showing X to Y of Z results" line and a scroll to the top on
+            // every click. Seeing either means the project override is gone.
+            ->assertDontSee('fw-semibold', false)
+            ->assertDontSee('scrollIntoView', false);
     }
 
     public function test_the_pagination_buttons_call_the_livewire_methods_directly(): void

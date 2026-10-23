@@ -13,27 +13,21 @@ use Tests\Feature\FeatureTestCase;
  * TODO 08: Groups\ListUsers's pagination - and TODO 48's riskiest point.
  *
  * This component does NOT use the framework's paginate(); instead it
- * manually builds a LengthAwarePaginator (:915-921):
+ * manually builds a LengthAwarePaginator in render():
  *
- *     $current_page = $this->page;
- *     if($current_page < 1) $current_page = 1;
+ *     $current_page = max(1, (int) $this->getPage());
  *     $users = new LengthAwarePaginator($itemsForCurrentPage, $total, 10, $current_page, [...]);
  *
- * $this->page is the Livewire 2 WithPagination trait's public $page
- * property, which setPage() writes TOGETHER WITH the $paginators array:
+ * Under Livewire 2 it read $this->page, which the WithPagination trait's
+ * setPage() wrote TOGETHER WITH the $paginators array. Livewire 3 removed
+ * that second write: setPage() only moves $paginators['page']. The component
+ * also declared its own public $page = 1, so under v3 the property survived
+ * but nothing updated it - the list sat on page 1 WITHOUT AN ERROR MESSAGE.
  *
- *     $this->paginators[$pageName] = $page;
- *     $this->{$pageName} = $page;      // <-- this line disappears in v3
- *
- * In Livewire 3, the trait's $page property is removed, and setPage() only
- * writes $paginators from then on. The component does also declare its own
- * public $page = 1 (:36), so the property does not disappear - but nobody
- * will update it. The pagination buttons call gotoPage(), which sets
- * paginators, while render() reads $page instead: the list would get stuck
- * on page 1 WITHOUT AN ERROR MESSAGE.
- *
- * The tests here measure exactly this coupling, so that they fail under
- * TODO 48 if the sync is lost.
+ * TODO 48 switched render() to getPage() and removed the dead property (and
+ * its query-string entry; v3 binds ?page= to the cursor itself). The tests
+ * here read the cursor from $paginators, and pin that the page contents
+ * follow it.
  */
 class GroupUserListPaginationTest extends FeatureTestCase
 {
@@ -72,6 +66,14 @@ class GroupUserListPaginationTest extends FeatureTestCase
         return $component->viewData('users')->pluck('email')->values()->all();
     }
 
+    /**
+     * The page cursor. Livewire 3 keeps it in $paginators only.
+     */
+    private function cursor($component): int
+    {
+        return $component->get('paginators')['page'];
+    }
+
     private function expectedEmails(int $from, int $to): array
     {
         $emails = [];
@@ -101,13 +103,13 @@ class GroupUserListPaginationTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 2. The coupling between $this->page and the page's contents - the v3 risk
+    // 2. The coupling between the cursor and the page's contents - the v3 risk
     // =========================================================================
 
     public function test_going_to_the_second_page_actually_shows_the_second_ten(): void
     {
-        // THIS TEST FAILS UNDER LIVEWIRE 3 if $this->page's synchronization
-        // is lost: the list would return page 1's contents.
+        // THIS TEST FAILS if render() stops reading the cursor that
+        // gotoPage() moves: the list would return page 1's contents.
         //
         // The sort order is deterministic (name_index = 0 everywhere, then
         // email), so we can also assert on a specific order here.
@@ -134,21 +136,30 @@ class GroupUserListPaginationTest extends FeatureTestCase
         );
     }
 
-    public function test_goto_page_writes_both_the_page_property_and_the_paginators_array(): void
+    public function test_goto_page_moves_the_paginators_cursor_and_no_page_property_is_left(): void
     {
-        // CHARACTERIZATION TEST for the hidden precondition.
-        //
-        // WithPagination::setPage() writes to TWO PLACES in v2, and the
-        // component's behavior rests on this duality: render() reads $page,
-        // while the pagination view works off $paginators. v3's setPage()
-        // only writes $paginators from then on - this test makes that
-        // difference measurable.
+        // Under v2, setPage() wrote $page AND $paginators, and render() read
+        // $page. Under v3 only $paginators moves (TODO 48). A public $page on
+        // the component would be dead, client-writable state that the list
+        // silently ignores - so it must not come back.
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 2);
 
-        $this->assertSame(2, $component->get('page'));
         $this->assertSame(['page' => 2], $component->get('paginators'));
+        $this->assertFalse(property_exists(ListUsers::class, 'page'));
+    }
+
+    public function test_a_tampered_cursor_falls_back_to_the_first_page(): void
+    {
+        // $paginators is a public property, so the browser can send any
+        // value for the cursor. getPage() hands it over unvalidated; render()
+        // clamps it to a positive integer instead of slicing with a string.
+        $this->attachManyUsersToGroup($this->group, 25);
+
+        $component = $this->list()->set('paginators.page', 'abc');
+
+        $this->assertSame($this->expectedEmails(1, 10), $this->emailsOnPage($component));
     }
 
     public function test_next_and_previous_page_move_through_the_list(): void
@@ -159,7 +170,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
         $this->assertSame($this->expectedEmails(11, 20), $this->emailsOnPage($component));
 
         $component->call('nextPage');
-        $this->assertSame(3, $component->get('page'));
+        $this->assertSame(3, $this->cursor($component));
 
         $component->call('previousPage');
         $this->assertSame($this->expectedEmails(11, 20), $this->emailsOnPage($component));
@@ -168,14 +179,13 @@ class GroupUserListPaginationTest extends FeatureTestCase
     public function test_a_page_number_below_one_is_clamped_to_the_first_page(): void
     {
         // Two safeguards run one after another: setPage() raises a
-        // non-positive value to 1, and render() (:916) checks it again. The
-        // second one is dead code today, but it is justified to remain
-        // because of the manual paginator.
+        // non-positive value to 1, and render() clamps it again. The second
+        // one is what catches a cursor that did not come through setPage().
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 0);
 
-        $this->assertSame(1, $component->get('page'));
+        $this->assertSame(1, $this->cursor($component));
         $this->assertSame($this->expectedEmails(1, 10), $this->emailsOnPage($component));
     }
 
@@ -202,11 +212,11 @@ class GroupUserListPaginationTest extends FeatureTestCase
         $this->attachManyUsersToGroup($this->group, 25);
 
         $component = $this->list()->call('gotoPage', 3);
-        $this->assertSame(3, $component->get('page'));
+        $this->assertSame(3, $this->cursor($component));
 
         $component->set('searchTerm', 'page-0');
 
-        $this->assertSame(1, $component->get('page'));
+        $this->assertSame(1, $this->cursor($component));
     }
 
     public function test_filter_myself_resets_the_cursor(): void
@@ -215,7 +225,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
         $component = $this->list()->call('gotoPage', 3)->call('filterMyself');
 
-        $this->assertSame(1, $component->get('page'));
+        $this->assertSame(1, $this->cursor($component));
         $this->assertSame(['zzz-actor@example.test'], $this->emailsOnPage($component));
     }
 
@@ -225,7 +235,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
         $component = $this->list()->call('gotoPage', 3)->call('filterOff');
 
-        $this->assertSame(1, $component->get('page'));
+        $this->assertSame(1, $this->cursor($component));
         $this->assertSame($this->expectedEmails(1, 10), $this->emailsOnPage($component));
     }
 
@@ -245,7 +255,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
         $component = $this->list()->call('gotoPage', 3)->call('filterOnline');
 
-        $this->assertSame(1, $component->get('page'), 'A szűrés visszaáll az első oldalra.');
+        $this->assertSame(1, $this->cursor($component), 'A szűrés visszaáll az első oldalra.');
 
         $paginator = $component->viewData('users');
         $this->assertSame(1, $paginator->total(), 'Egy online tag van.');
@@ -260,7 +270,7 @@ class GroupUserListPaginationTest extends FeatureTestCase
 
         $component = $this->list()->call('gotoPage', 3)->call('filterInactive');
 
-        $this->assertSame(1, $component->get('page'), 'A szűrés visszaáll az első oldalra.');
+        $this->assertSame(1, $this->cursor($component), 'A szűrés visszaáll az első oldalra.');
     }
 
     // =========================================================================

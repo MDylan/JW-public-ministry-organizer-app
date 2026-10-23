@@ -310,7 +310,7 @@ class Translation extends AppComponent
         $entries = $this->filter($all);
 
         $perPage = 25;
-        $page = max(1, (int) $this->page);
+        $page = max(1, (int) $this->getPage());
         $slice = array_slice($entries, ($page - 1) * $perPage, $perPage);
 
         $token = md5(serialize([
