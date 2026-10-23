@@ -313,6 +313,10 @@ Notes that matter:
   record of the old state.
 - `laraupdater.update` writes raw HTML with `echo` and ends in `exit`, outside the response
   lifecycle. It cannot be covered by a feature test that asserts on a response body.
+- **The fork declares the framework range it supports** (`illuminate/support`
+  `^8.12|^9.0|^10.0|^11.0|^12.0|^13.0` in v2.0.0), so unlike the upstream 1.0.2 it can block a
+  hop. `tests/Feature/Updater/UpdaterForkCompatibilityTest.php` (TODO 58) asserts that it admits
+  the installed framework major and the roadmap's remaining ones (12, 13).
 - `laraupdater.currentVersion` reads `base_path().'/version.txt'` on every call. The same read
   happens on every admin page render through `layouts/partials/footer.blade.php:32` and
   `livewire/admin/settings.blade.php:40`.
