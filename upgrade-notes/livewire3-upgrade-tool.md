@@ -382,6 +382,19 @@ stay live and the allowed modifiers.
 | after TODO 46 | 1530 | 4336 | 0 | 3 | 3 |
 | after TODO 45 / 45.1 | 1532 | 4340 | 0 | 3 | 3 |
 
+### TODO 49, as delivered (2026-10-23)
+
+`replace-temporary-uploaded-file-namespace` had nothing to do here after all: no
+file imports the class. The upload flow passes on v3 unchanged; what is new is a
+guard that `preview_mimes` covers `NewsEdit::$file_types`, because v3's
+`temporaryUrl()` throws for anything else and the package default would drop
+every Office and PDF type.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 45 / 45.1 | 1532 | 4340 | 0 | 3 | 3 |
+| after TODO 49 | 1541 | 4366 | 0 | 3 | 3 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
