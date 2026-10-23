@@ -16,7 +16,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 /**
  * TODO 09: a SetLocale middleware.
  *
- * It is a member of the web group (Kernel.php:45), so it runs on EVERY web
+ * It is a member of the web group (bootstrap/app.php), so it runs on EVERY web
  * request - and performs four separate side effects in a single handle():
  *
  *   1. language selection from the ?lang= parameter, written into the session

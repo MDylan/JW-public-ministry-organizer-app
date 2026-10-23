@@ -6,9 +6,10 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
 
 /**
- * TODO 12: the installer branch of Exceptions\Handler.
+ * TODO 12: the installer branch of the exception handler.
  *
- * Handler::register() (:56) catches every QueryException, and if there is no
+ * bootstrap/app.php's withExceptions() (App\Exceptions\Handler::register()
+ * until TODO 56) catches every QueryException, and if there is no
  * installed.txt, redirects to the installer's opening page. This is what,
  * after a fresh unpacking - when there is no database yet - steers the user
  * into setup instead of showing a raw error.
@@ -46,8 +47,9 @@ class InstallerExceptionHandlerTest extends SetupTestCase
     public function test_the_redirect_target_exists_precisely_because_the_sentinel_is_missing(): void
     {
         // The two conditions build on the same file: routes/web.php:104
-        // registers the route, and Handler:57 redirects here. If the sentinel
-        // appeared, the handler would try to redirect to a non-existent route -
+        // registers the route, and the QueryException handler
+        // (bootstrap/app.php) redirects here. If the sentinel appeared, the
+        // handler would try to redirect to a non-existent route -
         // which is why it is important that the two branches always move together.
         $this->assertTrue(Route::has('setup.welcome'));
 

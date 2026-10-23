@@ -91,7 +91,7 @@ class FilesystemDiskContractTest extends TestCase
     /**
      * The default disk is what the bare Storage:: facade calls land on, and
      * two of this application's sentinels are exactly that: the installer's
-     * installed.txt (routes/web.php:104, app/Exceptions/Handler.php:60,
+     * installed.txt (routes/web.php:104, bootstrap/app.php withExceptions(),
      * Setup/MetaController.php:89) and EnsureInstallerToken's token file
      * (:78-89). Both therefore live under storage/app.
      */

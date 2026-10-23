@@ -15,7 +15,9 @@ use Tests\Feature\FeatureTestCase;
  * before this file: the two route snapshots read `$route->gatherMiddleware()`,
  * which returns route and group middleware only - the kernel's GLOBAL
  * `$middleware` stack is invisible to them. So `HandleCors` could have been
- * deleted from `app/Http/Kernel.php` outright and all 1361 tests would have
+ * deleted from the global stack (`app/Http/Kernel.php` then,
+ * `bootstrap/app.php` since TODO 56 - MiddlewareStackContractTest now pins
+ * the stack too) outright and all 1361 tests would have
  * stayed green.
  *
  * These assertions were therefore written and run against the OLD package
@@ -47,7 +49,7 @@ class CorsHeadersTest extends FeatureTestCase
      *
      * `paths` is `['api/*', 'sanctum/csrf-cookie']`; Sanctum is not installed,
      * and `routes/api.php` holds exactly one route, mounted under the `api`
-     * prefix by RouteServiceProvider.
+     * prefix by bootstrap/app.php's withRouting().
      */
     private const CORS_PATH = '/api/user';
 

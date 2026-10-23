@@ -50,8 +50,8 @@ use Illuminate\Support\Facades\Storage;
 |--------------------------------------------------------------------------
 |
 | Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| routes are loaded by bootstrap/app.php's withRouting() within a group
+| which contains the "web" middleware group. Now create something great!
 |
 */
 
@@ -172,13 +172,14 @@ Route::middleware(['auth'])->group(function () {
     //
     // A SECOND definition previously sat here on the same method+URI pair,
     // with a closure. Route::get() overwrites by method+domain+URI, and
-    // Fortify loads AFTER routes/web.php (config/app.php provider order),
-    // so the closure never made it into the routing table - TODO 03
-    // verified this empirically. Removed, with zero runtime effect. The
-    // boot order is guarded by
-    // RouteContractSnapshotTest::test_the_winner_depends_on_the_service_provider_boot_order,
-    // because a provider-order swap would silently tip it back onto the
-    // dead branch.
+    // Fortify loads AFTER routes/web.php (bootstrap/app.php's
+    // withRouting(then:) since TODO 56; the config/app.php provider order
+    // before that), so the closure never made it into the routing table -
+    // TODO 03 verified this empirically. Removed, with zero runtime effect.
+    // The load order is guarded by
+    // RouteContractSnapshotTest::test_routes_web_is_loaded_before_routes_fortify,
+    // because swapping it would let a shared method + URI tip onto the
+    // other file's definition.
 
     Route::get('/profile/resend-new-email-verification', [Profile::class, 'resendNewEmailVerification'])->name('user.resendNewEmailVerification');
 
@@ -187,7 +188,7 @@ Route::middleware(['auth'])->group(function () {
     // LogicException on the second route of the same name. By Laravel
     // convention, `password.confirm` is the GET branch that shows the
     // form - the redirect from the `password.confirm` middleware alias
-    // (app/Http/Kernel.php:68) also points here.
+    // (bootstrap/app.php withMiddleware()) also points here.
     Route::get('/confirm-password', function () {
         return view('auth.confirm-password');
     })->name('password.confirm');

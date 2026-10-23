@@ -10,7 +10,7 @@ Observer classes are located in `app/Observers` and are used mainly for:
 
 ## Registration Status
 
-From `app/Providers/EventServiceProvider.php`.
+From `AppServiceProvider::registerObservers()` - `app/Providers/EventServiceProvider.php` until TODO 56, which deleted that provider because Laravel 11 always registers the framework's own event provider next to it (two providers would run every listener twice). `tests/Feature/Events/EventListenerContractTest.php` pins the full observer map, one row per `eloquent.*` registration.
 
 ### Registered (active)
 

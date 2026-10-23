@@ -261,7 +261,7 @@ class RouteContractSnapshotTest extends TestCase
     {
         // REVERSED by the v1-patch A7 fix. Previously the LAST definition in
         // the nameList won - i.e. the POST one - and the `password.confirm`
-        // middleware alias (app/Http/Kernel.php:68) redirected to a POST
+        // middleware alias (bootstrap/app.php) redirected to a POST
         // route's name. It only worked because the two URIs were identical.
         // The name now points, per Laravel's convention, to the GET branch
         // that shows the form, so RequirePassword's redirect finally lands on

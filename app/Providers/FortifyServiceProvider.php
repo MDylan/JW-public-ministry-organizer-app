@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
-use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Actions\AttemptToAuthenticate;
 use Laravel\Fortify\Actions\EnsureLoginIsNotThrottled;
 use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
@@ -122,22 +121,7 @@ class FortifyServiceProvider extends ServiceProvider
             }
         );
         
-        $this->configureRoutes();
-    }
-
-        /**
-     * Configure the routes offered by the application.
-     *
-     * @return void
-     */
-    protected function configureRoutes()
-    {
-        Route::group([
-            'namespace' => 'Laravel\Fortify\Http\Controllers',
-            'domain' => config('fortify.domain', null),
-            'prefix' => config('fortify.prefix'),
-        ], function () {
-            $this->loadRoutesFrom(base_path('routes/fortify.php'));
-        });  
+        // routes/fortify.php is loaded by bootstrap/app.php's withRouting()
+        // since TODO 56, after routes/web.php - see the comment there.
     }
 }

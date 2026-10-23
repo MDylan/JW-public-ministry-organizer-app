@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use Illuminate\Auth\Events\Login;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -20,10 +21,13 @@ class LoginListener
     /**
      * Handle the event.
      *
-     * @param  object  $event
+     * Typed since TODO 56: Laravel 11 discovers listeners from app/Listeners
+     * by the type of handle()'s parameter, and an untyped one is skipped.
+     *
+     * @param  \Illuminate\Auth\Events\Login  $event
      * @return void
      */
-    public function handle($event)
+    public function handle(Login $event)
     {
         $event->user->update([
             'last_login_time' => now(),

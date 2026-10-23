@@ -79,6 +79,11 @@ class MiddlewareStackContractTest extends TestCase
         $this->assertSame([
             'auth' => 'App\Http\Middleware\Authenticate',
             'auth.basic' => 'Illuminate\Auth\Middleware\AuthenticateWithBasicAuth',
+            // TODO 56: Laravel 11's own default aliases are always added
+            // under the application's, and cannot be taken away. These two
+            // are the ones the old kernel did not declare; no route uses
+            // either (route-contracts.json).
+            'auth.session' => 'Illuminate\Session\Middleware\AuthenticateSession',
             'cache.headers' => 'Illuminate\Http\Middleware\SetCacheHeaders',
             'can' => 'Illuminate\Auth\Middleware\Authorize',
             'checkRecaptcha' => 'App\Http\Middleware\CheckRecaptcha',
@@ -88,6 +93,7 @@ class MiddlewareStackContractTest extends TestCase
             'installer' => 'App\Http\Middleware\EnsureInstallerToken',
             'password.confirm' => 'Illuminate\Auth\Middleware\RequirePassword',
             'password.confirm.impersonation' => 'App\Http\Middleware\RequirePasswordForImpersonation',
+            'precognitive' => 'Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests',
             'profileFull' => 'App\Http\Middleware\ProfileFull',
             'setGuestLanguage' => 'App\Http\Middleware\SetGuestLanguage',
             'signed' => 'Illuminate\Routing\Middleware\ValidateSignature',

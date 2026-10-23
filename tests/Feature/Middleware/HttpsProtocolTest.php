@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 /**
  * TODO 09: the HttpsProtocol middleware.
  *
- * It is a member of the web group (Kernel.php:47), so it runs on EVERY web
+ * It is a member of the web group (bootstrap/app.php), so it runs on EVERY web
  * request - its body, however, sits behind three conditions, and with the
  * current configuration not one of them is unconditionally satisfied:
  *

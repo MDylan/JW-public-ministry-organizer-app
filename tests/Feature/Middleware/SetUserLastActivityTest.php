@@ -10,7 +10,7 @@ use Tests\Feature\FeatureTestCase;
 /**
  * TODO 09: the SetUserLastActivity middleware.
  *
- * It is a member of the web group (Kernel.php:46), so it runs on EVERY web
+ * It is a member of the web group (bootstrap/app.php), so it runs on EVERY web
  * request, and it maintains the users.last_activity field. This field
  * underlies Groups\ListUsers's "online" and "inactive" filters, as well as
  * GDPR's inactivity-based anonymization - if it silently stops working, both

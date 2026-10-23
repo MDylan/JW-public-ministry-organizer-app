@@ -4,14 +4,22 @@
 
 Middleware is defined in:
 
-- `app/Http/Kernel.php` (registration and stacking)
+- `bootstrap/app.php` `withMiddleware()` (registration and stacking; `app/Http/Kernel.php` until TODO 56)
 - `app/Http/Middleware/*` (implementation classes)
 
 The app combines Laravel defaults with custom authorization, locale/session behavior, HTTPS enforcement, and anti-bot checks.
 
 ## Kernel Stacks
 
-## Global Middleware (`$middleware`)
+**TODO 56 ported the old kernel faithfully, not onto Laravel 11's defaults:** `$middleware->use()` and
+`group()` list the same classes in the same order, including the application's own thin subclasses
+(`TrustProxies`, `TrimStrings`, `EncryptCookies`, `VerifyCsrfToken`, `PreventRequestsDuringMaintenance`,
+`Authenticate`, `RedirectIfAuthenticated`). `tests/Feature/Middleware/MiddlewareStackContractTest.php`
+pins what the stacks **resolve** to - global, both groups, aliases, priority - including what the packages
+push at boot (Debugbar's injector into the global stack and `web`, Livewire's back-button middleware into
+the global stack). The route snapshots cannot do that: they record the names a route carries.
+
+## Global Middleware (`$middleware->use()`)
 
 Executed on every HTTP request:
 
@@ -29,9 +37,9 @@ and `RouteMiddlewareRegressionTest` read `$route->gatherMiddleware()`, which ret
 route and group middleware only - so until TODO 35 nothing in the suite would have
 noticed a class disappearing from here. `CorsHeadersTest` and `TrustProxiesTest`
 close that gap for the two entries TODO 35 replaced; the other four are still
-unmeasured, which is worth knowing before deleting a line from `$middleware`.
+unmeasured as behaviour - `MiddlewareStackContractTest` now notices the line going, but not what that costs.
 
-## Web Group (`$middlewareGroups['web']`)
+## Web Group (`$middleware->group('web', ...)`)
 
 - `EncryptCookies`
 - `AddQueuedCookiesToResponse`
@@ -44,17 +52,17 @@ unmeasured, which is worth knowing before deleting a line from `$middleware`.
 - `SetUserLastActivity` (custom)
 - `HttpsProtocol` (custom)
 
-## API Group (`$middlewareGroups['api']`)
+## API Group (`$middleware->group('api', ...)`)
 
 - `throttle:api`
 - `SubstituteBindings`
 
-## Route Middleware Aliases (`$middlewareAliases`)
+## Route Middleware Aliases (`$middleware->alias()`)
 
 | Alias | Class | Purpose |
 |---|---|---|
 | `auth` | `Authenticate` | Redirect unauthenticated users to login route. |
-| `guest` | `RedirectIfAuthenticated` | Redirect already-authenticated users to `RouteServiceProvider::HOME`. |
+| `guest` | `RedirectIfAuthenticated` | Redirect already-authenticated users to `/home` (`RouteServiceProvider::HOME` until TODO 56). |
 | `groupAdmin` | `GroupAdmin` | Restrict route to group editors/admins. |
 | `groupMember` | `GroupMember` | Restrict route to accepted group members. |
 | `profileFull` | `ProfileFull` | Require non-empty profile name before protected area access. |
@@ -65,6 +73,8 @@ unmeasured, which is worth knowing before deleting a line from `$middleware`.
 | `password.confirm.impersonation` | `RequirePasswordForImpersonation` | Require recent password confirmation on the impersonation POST while returning to the admin user list instead of replaying the POST URL as GET. |
 
 Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed`, `throttle`, `verified`) use default Laravel middleware classes.
+
+Since TODO 56 the map also holds `auth.session` and `precognitive`: Laravel 11 always adds its own default aliases underneath the declared ones, with no way to remove them. No route uses either.
 
 ## Middleware Class Catalog
 

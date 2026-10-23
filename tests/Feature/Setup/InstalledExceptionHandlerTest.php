@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Feature\FeatureTestCase;
 
 /**
- * TODO 12.1: the installed branch of Exceptions\Handler.
+ * TODO 12.1: the installed branch of the exception handler (bootstrap/app.php
+ * withExceptions() since TODO 56, App\Exceptions\Handler before).
  *
  * Its counterpart is InstallerExceptionHandlerTest, which measures the branch
  * WITHOUT the sentinel (there it redirects into the installer). This file

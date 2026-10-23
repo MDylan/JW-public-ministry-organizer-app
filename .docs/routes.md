@@ -4,18 +4,20 @@
 
 Route loading is split across providers/files:
 
-- `app/Providers/RouteServiceProvider.php`
-  - Loads `routes/web.php` under `web` middleware
+- `bootstrap/app.php` `withRouting()` (since TODO 56; `app/Providers/RouteServiceProvider.php` before)
   - Loads `routes/api.php` under `api` prefix + `api` middleware
+  - Loads `routes/web.php` under `web` middleware
+  - Then (`then:`) loads `routes/fortify.php` under Fortify's controller namespace and domain/prefix config - after `routes/web.php`, see `RouteContractSnapshotTest::test_routes_web_is_loaded_before_routes_fortify`
+  - Loads `routes/console.php` (`commands:`); there is no `/up` health route
 - `app/Providers/FortifyServiceProvider.php`
-  - Calls `Fortify::ignoreRoutes()`
-  - Manually loads `routes/fortify.php` under Fortify domain/prefix config
+  - Calls `Fortify::ignoreRoutes()` (until TODO 56 it also loaded `routes/fortify.php` from `boot()`)
+- The `api` rate limiter (`throttle:api`) is defined in `AppServiceProvider::boot()`
 - `routes/channels.php`
   - Broadcast channel authorization callbacks
 
 ## Middleware Layers
 
-From `app/Http/Kernel.php`:
+From `bootstrap/app.php` `withMiddleware()` (see `.docs/middleware.md`):
 
 - `web` group includes session, CSRF, bindings, locale and last-activity tracking.
 - `api` group includes API throttle and bindings.
@@ -375,11 +377,12 @@ Behaviour is pinned by `tests/Feature/NewEmail/` (53 tests, roadmap TODO 19.1 an
     before `FortifyServiceProvider` in `config/app.php`, therefore **the Fortify definition wins
     and the closure in `routes/web.php` never executes**. The effective middleware stack is
     `web, auth:web, signed, throttle:6,1`. Note that this outcome depends purely on service
-    provider order.
+    provider order. *(Since TODO 56 it depends on `bootstrap/app.php` loading `routes/fortify.php`
+    in `withRouting(then:)`, after `routes/web.php`.)*
   - `password.confirm` used to be defined twice in `routes/web.php`, as a GET and as a POST
     route. They differ by HTTP method, so **both survived**, but the name look-up table keeps
     the last registration, so `route('password.confirm')` resolved to the POST definition -
-    and the `password.confirm` middleware alias (`app/Http/Kernel.php`), which issues a GET
+    and the `password.confirm` middleware alias (then `app/Http/Kernel.php`), which issues a GET
     redirect, therefore pointed at a POST route. It only worked because the two URIs are
     identical.
 

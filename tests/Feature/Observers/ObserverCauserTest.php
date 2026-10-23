@@ -259,7 +259,8 @@ class ObserverCauserTest extends FeatureTestCase
     public function test_the_group_day_observer_is_still_not_registered(): void
     {
         // GroupDayObserver did get the causer handling, but it is NOT
-        // registered in EventServiceProvider.
+        // registered (AppServiceProvider::registerObservers() since TODO 56,
+        // EventServiceProvider before).
         //
         // This is a deliberate decision (TODO 10.1). The TODO 10 note still
         // said that enabling it would fill in a missing capability; this was

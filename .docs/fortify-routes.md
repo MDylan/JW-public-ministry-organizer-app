@@ -155,10 +155,14 @@ left `/register` and `/forgot-password` with no bot protection at all.
 - Fortify email verification prompt view route is intentionally commented out in `routes/fortify.php`.
 - An identical `/email/verify/{id}/{hash}` route is also defined in `routes/web.php` as an inline
   closure. Because `RouteCollection` keys routes by `method + domain + uri`, only one survives, and
-  `FortifyServiceProvider` is listed after `RouteServiceProvider` in `config/app.php`, so **the
-  Fortify definition above wins and the `routes/web.php` closure is dead code**. This is verified by
-  `tests/Feature/RouteContractSnapshotTest.php`, which also guards the provider order the outcome
-  depends on.
+  `routes/fortify.php` loads after `routes/web.php`, so **the Fortify definition above wins and the
+  `routes/web.php` closure is dead code** (it was deleted in v1-patch A4). This is verified by
+  `tests/Feature/RouteContractSnapshotTest.php`, which also guards the load order the outcome
+  depends on. **Where that order comes from changed at TODO 56:** it used to be the provider order
+  in `config/app.php` (`RouteServiceProvider` before `FortifyServiceProvider`, whose `boot()` loaded
+  the file); now `bootstrap/app.php` loads `routes/fortify.php` in `withRouting(then: ...)`, which runs
+  after `web:`. Loading it from the provider again would put it BEFORE `routes/web.php`, because
+  Laravel 11's own route provider boots last.
 - The default Fortify confirm-password GET view route is disabled in `routes/fortify.php`; this app uses a custom `/confirm-password` flow in `routes/web.php`.
 - **`POST /user/confirm-password` was removed in v1-patch H.** It carried `auth:web`
   and no rate limit at all, so a stolen session allowed unlimited guessing of the

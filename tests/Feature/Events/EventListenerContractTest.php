@@ -25,8 +25,11 @@ class EventListenerContractTest extends TestCase
 {
     public function test_each_auth_event_has_exactly_its_one_listener(): void
     {
-        $this->assertSame(['App\Listeners\LoginListener'], $this->listenersOf('Illuminate\Auth\Events\Login'));
-        $this->assertSame(['App\Listeners\UserVerified'], $this->listenersOf('Illuminate\Auth\Events\Verified'));
+        // `@handle` since TODO 56: discovery registers the method it found
+        // by its parameter type, where the old $listen map named the class.
+        // Same call either way.
+        $this->assertSame(['App\Listeners\LoginListener@handle'], $this->listenersOf('Illuminate\Auth\Events\Login'));
+        $this->assertSame(['App\Listeners\UserVerified@handle'], $this->listenersOf('Illuminate\Auth\Events\Verified'));
 
         // TODO 55.3: the framework's listener is the one sender of the
         // registration mail - see RegistrationVerificationMailTest.

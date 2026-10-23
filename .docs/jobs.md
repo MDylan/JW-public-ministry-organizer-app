@@ -29,7 +29,7 @@ All jobs in this folder implement `ShouldQueue`. One job is unique.
 
 ### Observer-dependent dispatch
 
-`GroupDayUpdatedProcess` is dispatched by `GroupDayObserver`, but that observer is **not registered** in `EventServiceProvider`, so the job does not trigger. See `.docs/observers.md` for why the registration is a deliberate decision.
+`GroupDayUpdatedProcess` is dispatched by `GroupDayObserver`, but that observer is **not registered** (`AppServiceProvider::registerObservers()` since TODO 56, `EventServiceProvider` before), so the job does not trigger. See `.docs/observers.md` for why the registration is a deliberate decision.
 
 ### Removed
 

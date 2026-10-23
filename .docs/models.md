@@ -289,7 +289,7 @@ into the column undetectably.
 
 ## Observer Bindings (Active)
 
-Registered in `app/Providers/EventServiceProvider.php`:
+Registered in `AppServiceProvider::registerObservers()` (`app/Providers/EventServiceProvider.php` until TODO 56; `EventListenerContractTest` pins the map):
 
 - `User` -> `UserObserver`
 - `Event` -> `EventObserver`
@@ -301,4 +301,4 @@ Registered in `app/Providers/EventServiceProvider.php`:
 
 ### Important note
 
-`GroupDayObserver` exists in `app/Observers/GroupDayObserver.php`, but is **not currently registered** in `EventServiceProvider`. Any logic there (including queue dispatches) will not run unless observer registration is added.
+`GroupDayObserver` exists in `app/Observers/GroupDayObserver.php`, but is **not currently registered** (see above). Any logic there (including queue dispatches) will not run unless observer registration is added.

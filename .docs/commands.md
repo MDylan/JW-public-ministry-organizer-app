@@ -5,8 +5,8 @@
 Command-related behavior is split between:
 
 - `app/Console/Commands/` (the application's own Artisan commands)
-- `app/Console/Kernel.php` (package command registration + scheduler wiring)
-- `routes/console.php` (closure-based Artisan commands)
+- `routes/console.php` (closure-based Artisan commands, and the schedule since TODO 56 - it was `App\Console\Kernel::schedule()` before; `SchedulerRegressionTest` pins every entry)
+- `bootstrap/app.php` (`withRouting(commands: ...)` loads `routes/console.php`; the commands under `app/Console/Commands/` are discovered by Laravel 11's default)
 
 The scheduler contains **no anonymous closures**. Every scheduled task is a named
 Artisan command, so `php artisan schedule:list` is a complete and readable

@@ -14,7 +14,8 @@ use Tests\Feature\FeatureTestCase;
  * TODO 05: real handle() execution for GroupDayUpdatedProcess.
  *
  * It is dispatched exclusively from GroupDayObserver, which is NOT registered
- * in EventServiceProvider - so it does not run in production today. It is
+ * (AppServiceProvider::registerObservers() since TODO 56) - so it does not
+ * run in production today. It is
  * covered anyway, because its handle() delegates to CalculateDatesEvents,
  * which IS on the live path.
  *
