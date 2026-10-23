@@ -32,6 +32,14 @@ use Tests\Feature\FeatureTestCase;
  * hours (00, 03, 06, 09, 12, 15, 18, 21 UTC), this means exactly TWO slots:
  * 06:00 and 09:00. That is why this file uses timestamps given in UTC, and
  * why the 12:00 UTC slot does not fall inside the window.
+ *
+ * EVERY NUMBER IS ASSERTED WITH ITS UNIT (TODO 52 diagnosed, fixed after it).
+ * The assertions search the whole rendered component, and that HTML carries a
+ * random 20-character `wire:id`. A bare `assertDontSee('56')` therefore failed
+ * whenever the id happened to contain those two digits - observed with
+ * `yWqxCqMwI56KKGqx2r5d` - and a bare `assertSee('14')` could pass on the id
+ * alone. A number followed by the degree sign, the Celsius entity, `%` or the
+ * translated km/h is markup the view writes and a random id cannot contain.
  */
 class WeatherRenderTest extends FeatureTestCase
 {
@@ -119,11 +127,11 @@ class WeatherRenderTest extends FeatureTestCase
         $this->createEventDate($group, self::DAY_ONE);
 
         $this->calendar($group)
-            ->assertSee('21.5')                             // number_format(temp, 1)
+            ->assertSee('21.5&#8451;', false)               // number_format(temp, 1)
             ->assertSee('Szeged')
             ->assertSee('/images/wt_icons/01d@2x.png', false)
             ->assertSee('derült égbolt')
-            ->assertSee('60');                              // humidity %
+            ->assertSee('60%');                             // humidity
     }
 
     // =========================================================================
@@ -143,7 +151,7 @@ class WeatherRenderTest extends FeatureTestCase
         $this->calendar($group)
             ->assertSee('19°')       // number_format(max_temp = 18.6)
             ->assertSee('12°')       // number_format(min_temp = 12.4)
-            ->assertSee('14')        // (min_wind 2.0 + max_wind 6.0) / 2 * 3.6 = 14.4
+            ->assertSee('14 '.__('group.weather.km_h'))  // (min_wind 2.0 + max_wind 6.0) / 2 * 3.6 = 14.4
             ->assertSee('08.12');    // the day's label, in m.d format
     }
 
@@ -180,7 +188,8 @@ class WeatherRenderTest extends FeatureTestCase
 
         $this->calendar($group)
             ->assertSee('12°')
-            ->assertDontSee('47');
+            ->assertDontSee('47°')
+            ->assertDontSee('hőség');
     }
 
     public function test_forecast_entries_on_days_without_a_service_date_are_ignored(): void
@@ -196,7 +205,8 @@ class WeatherRenderTest extends FeatureTestCase
         $this->calendar($group)
             ->assertSee('08.12')
             ->assertDontSee('08.13')
-            ->assertDontSee('56');
+            ->assertDontSee('56°')
+            ->assertDontSee('hőség');
     }
 
     // =========================================================================
@@ -244,7 +254,7 @@ class WeatherRenderTest extends FeatureTestCase
             ->assertSet('weather.country', 'HU')
             ->call('checkWeatherSettings')
             ->assertSet('weather_messages.main.humidity', 60)
-            ->assertSee('19')                                   // temp_min
-            ->assertSee('24');                                  // temp_max
+            ->assertSee('19&#8451;', false)                     // temp_min
+            ->assertSee('24&#8451;', false);                    // temp_max
     }
 }
