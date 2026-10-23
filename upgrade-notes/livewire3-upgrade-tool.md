@@ -234,6 +234,7 @@ no step for (`TestableLivewire`, `lastErrorBag`, `lastRenderedDom`, `->emit()`).
 |---|---|---|---|---|---|
 | after TODO 50 | 1507 | 3712 | 193 | 21 | 214 |
 | after TODO 43.1 | 1507 | 3758 | 178 | 21 | 199 |
+| after TODO 43.2 | 1519 | 3802 | 178 | 16 | 194 |
 
 ## `vendor:publish --tag=livewire:assets` under version 3
 
