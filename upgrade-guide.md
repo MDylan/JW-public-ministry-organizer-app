@@ -87,7 +87,7 @@ whose PHP cannot be raised cannot take 2.0.0 at all.
 | 1.2.0 (current release) | 8.83.x | `^8.0` | - |
 | after Phase 4 | 9.52.x | **`^8.0.2`** | TODO 34 |
 | after Phase 5 | **10.50.x** | **`^8.1`** | TODO 39 |
-| after Phase 8 | 11.x | `^8.2` (planned) | TODO 55 |
+| after Phase 8 | **11.57.x** | **`^8.2`** | TODO 55 |
 | after Phase 10 | 13.x | `^8.3` (planned) | TODO 64 |
 
 Rows marked *planned* come from the roadmap's *Runtime and Version Matrix* and
@@ -103,6 +103,10 @@ Note for Phase 4 specifically: `^8.0` -> `^8.0.2` excludes only PHP 8.0.0 and
 all is likely to be pinned to those two patch releases.
 
 TODO 35 raised nothing here: removing two packages cannot raise a floor.
+
+**TODO 55 raised it to `^8.2`**, Laravel 11's own floor. It does not change the
+answer above - 2.0.0 needs 8.3 regardless - but from this hop on a host on PHP
+8.1 cannot run the tree at all.
 
 *Last updated: TODO 35.*
 
@@ -268,7 +272,14 @@ before: a major version change that orphans nothing.
 
 The file it does orphan is not under `vendor/` at all, and section 3 has it.
 
-*Last updated: TODO 54.*
+**TODO 55 (Laravel 10 -> 11): none.** 5 installs, 46 updates, **0 removals**:
+no vendor namespace or package directory empties. Files inside updated packages
+come and go - `laravel/framework` alone changed shape considerably - which a
+full `vendor/` replacement (section 6, Branch B) handles and an incremental
+overwrite would not; that is the general argument for Branch B again, not a new
+path to list.
+
+*Last updated: TODO 55.*
 
 ## 3. Application files that move or disappear
 
@@ -583,7 +594,16 @@ TODO 51) this section gets re-checked, because Livewire 3 introduces an
 `app_url` key and an `asset_url` that a host behind a CDN may already be
 setting.
 
-*Last updated: TODO 43.*
+**TODO 55: none - and do not take Laravel 11's `.env.example` as a guide.** The
+Laravel 11 skeleton renamed several keys (`CACHE_STORE` for `CACHE_DRIVER`,
+among others) and changed defaults (`SESSION_DRIVER=database`, sqlite as the
+default connection). None of that reaches this application: its config files
+are the complete Laravel 10 ones, they still read the old names, and the
+framework's own config is deliberately **not** merged underneath them
+(`bootstrap/app.php`). A deployed `.env` keeps working unchanged; renaming its
+keys to the Laravel 11 spelling would make them silently ignored.
+
+*Last updated: TODO 55.*
 
 ## 5. Per-install state to repair
 
@@ -707,8 +727,13 @@ State that lives on the host and is not expressible in a release archive.
   The script is served from `/livewire/livewire.min.js` when `APP_DEBUG` is off,
   unless the published copy under `public/vendor/livewire/` takes over (see
   section 3, TODO 43).
+- **TODO 55 triggers the `bootstrap/cache` rule above** - five packages
+  arrived and the framework crossed a major - so delete both manifests before
+  the first request. The PHP floor is now `^8.2` (section 1). The republished
+  `public/vendor/livewire/` files ship in the archive and overwrite in place;
+  nothing to do beyond the usual step 10 `optimize:clear`.
 
-*Last updated: TODO 54.*
+*Last updated: TODO 55.*
 
 ## 6. The upgrade procedure
 
@@ -783,3 +808,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 54 | **The 1.x hook's Phase 3 half never shipped, so this guide now carries it - including the one leftover that breaks Artisan.** The last 1.x release (1.2.0) predates Phase 3, and 2.x never reaches `install()`, so the packer, GDPR, translation and pending-email removals have run on no host. Section 2 gains eight vendor paths from before TODO 34 (TODO 23, 24 and 33.x). Section 3 gains the Phase 3 application files, one of them load-bearing: the 1.x `PackageAnonymizeInactiveUsers.php` makes every Artisan command fatal once `vendor/dialect` is gone, while web pages keep working. Section 5 says the `public/storage` repair applies to every production host and adds the packer's generated files. Section 4 says none. |
 | (no framework hop) | 55.1 | **Nothing for an operator: the date arithmetic is made to survive Carbon 3 before the hop brings it.** Four call sites now return the same values on Carbon 2 and 3; on the installed Carbon 2 nothing changes. No package, file, `.env` key or per-install state moves. Compiled code only - the usual step 10 `optimize:clear` covers it. |
 | (no framework hop) | 57.1 | **Nothing for an operator: the installer's "database already has data" check stops using doctrine/dbal before Laravel 11 removes the call it relied on.** No package, file, `.env` key or per-install state moves; the check behaves as before. |
+| **Laravel 10 -> 11** | **55** | **The second framework hop, and the PHP floor moves with it: `^8.2`.** `laravel/framework` 11.57.0; 5 packages in, 46 updated, 0 out, so section 2 says none. Section 3 says none: `bootstrap/app.php` and the republished Livewire assets ship and overwrite in place. Section 4 says none, with a warning not to adopt Laravel 11's renamed `.env` keys - the application's config still reads the old ones, and the framework's defaults are deliberately not merged in. Section 5: the `bootstrap/cache` manifests must go. A fourth `laravel/framework` advisory (PKSA-d5tc-s1qs-h781, low, debug-mode only, fixed in 12.69.0) is exempted from resolution like the other three; `composer audit` still reports all four. |

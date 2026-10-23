@@ -1,6 +1,6 @@
 # AGENTS Guide
 
-This repository contains a Laravel 10 application for organizing congregation public ministry activity.
+This repository contains a Laravel 11 application for organizing congregation public ministry activity.
 
 This file is the root documentation entrypoint. Detailed technical docs are under `.docs/`.
 
@@ -26,7 +26,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Project Stack Snapshot
 
-- Framework: Laravel 10
+- Framework: Laravel 11 (on the Laravel 10 application structure until roadmap TODO 56; the framework's config merging is switched off in `bootstrap/app.php`)
 - UI architecture: **Livewire 3** + Blade views/components (migrated from Livewire 2 at roadmap TODO 43; see the warning below)
 - Auth stack: Laravel Fortify (custom route registration)
 - Background processing: Laravel queue jobs + scheduler (`app/Console/Kernel.php`)
@@ -90,4 +90,4 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
   no `wire:key` on a component root, no inline `<script>` inside a Blade block,
   `wire:key` on looped `<option>`s, no `@if` in `@section('title')`.
 
-- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite was green on 8.3 with its numbers unmoved when the interpreter switched. (For its state today, see the Phase 6 note above.)
+- The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 11 as of TODO 55 (Laravel 10 from TODO 39) and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite was green on 8.3 with its numbers unmoved when the interpreter switched. (For its state today, see the Phase 6 note above.)
