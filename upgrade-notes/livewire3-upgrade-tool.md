@@ -264,6 +264,30 @@ that has a `window` receiver. Where the 80 now sit:
 | route contract snapshots | 3 | TODO 51.1 |
 | `array_intersect_key()` in a calendar view | 4 | unattributed |
 
+### TODO 44, as delivered (2026-10-23)
+
+`replace-emit-with-dispatch` was still not run. Its `emitTo` pattern produces
+`dispatch(...)->to(...)`, which is right, but it covers 19 of the 21 PHP calls,
+turns the six `emitUp()` into the literal `<removed>`, matches none of the 14
+Blade calls and none of the JavaScript. All of it was converted by hand or by
+one-off scripts instead. JavaScript held **12** live calls, not 10: two use the
+lowercase `livewire` global, which Livewire 3 no longer defines.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 47 | 1521 | 4137 | 64 | 16 | 80 |
+| after TODO 44 | 1523 | 4258 | 25 | 16 | 41 |
+
+**39 green, 0 newly red** - the 39 attributed to this item at TODO 47. What
+is left:
+
+| cause | count | owner |
+|---|---|---|
+| `Property [$page]`, `paginationView`, pagination content, `admin.translate` 500 | 31 | TODO 48 |
+| raw-HTTP Livewire endpoint | 3 | TODO 46.1 |
+| route contract snapshots | 3 | TODO 51.1 |
+| `array_intersect_key()` in a calendar view | 4 | unattributed |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
