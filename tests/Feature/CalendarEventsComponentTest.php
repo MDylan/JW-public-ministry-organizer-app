@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Events\Events;
+use App\Livewire\Events\Events;
 use App\Models\Event;
 use App\Models\GroupDate;
 use Livewire\Livewire;

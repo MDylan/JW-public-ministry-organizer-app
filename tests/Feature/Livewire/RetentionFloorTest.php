@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Events\Events;
-use App\Http\Livewire\Events\LastEvents;
-use App\Http\Livewire\Groups\Statistics;
+use App\Livewire\Events\Events;
+use App\Livewire\Events\LastEvents;
+use App\Livewire\Groups\Statistics;
 use App\Models\Group;
 use App\Models\User;
 use App\Support\Retention\RetentionWindow;

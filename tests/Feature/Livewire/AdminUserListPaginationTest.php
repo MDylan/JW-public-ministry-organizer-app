@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Admin\Users\ListUsers;
+use App\Livewire\Admin\Users\ListUsers;
 use App\Models\User;
 use Livewire\Livewire;
 use Tests\Feature\FeatureTestCase;

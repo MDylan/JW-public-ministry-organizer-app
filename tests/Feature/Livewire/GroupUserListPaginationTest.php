@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Groups\ListUsers;
+use App\Livewire\Groups\ListUsers;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;

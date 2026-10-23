@@ -72,7 +72,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 ## Source-of-Truth Paths
 
 - Models: `app/Models`
-- Livewire components: `app/Http/Livewire`
+- Livewire components: `app/Livewire`
 - Blade class components: `app/View/Components`
 - Routes: `routes/*.php`
 - Scheduler/console: `app/Console/Kernel.php`, `routes/console.php`

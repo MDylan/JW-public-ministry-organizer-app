@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Avatar;
 
-use App\Http\Livewire\Groups\Messages;
+use App\Livewire\Groups\Messages;
 use App\Models\GroupMessage;
 use App\Models\GroupUser;
 use App\Support\Avatar\InitialsAvatar;

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Events;
 
-use App\Http\Livewire\Events\EventEdit;
+use App\Livewire\Events\EventEdit;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\User;

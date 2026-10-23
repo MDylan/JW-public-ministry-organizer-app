@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Groups;
 
-use App\Http\Livewire\Groups\ListUsers;
+use App\Livewire\Groups\ListUsers;
 use App\Models\Group;
 use App\Models\LogHistory;
 use App\Models\User;

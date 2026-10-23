@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Groups;
 
-use App\Http\Livewire\Groups\ListUsers;
+use App\Livewire\Groups\ListUsers;
 use App\Models\Group;
 use App\Models\User;
 use App\Notifications\LoginData;
@@ -461,7 +461,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
         // $fillable list. If this filtering is missing, a raw pivot write
         // fails with an "Unknown column" error - so we assert the source
         // too, not just the end result.
-        $source = file_get_contents(app_path('Http/Livewire/Groups/ListUsers.php'));
+        $source = file_get_contents(app_path('Livewire/Groups/ListUsers.php'));
 
         $this->assertStringContainsString(
             "unset(\$validatedData['finish_guest_registration']);",

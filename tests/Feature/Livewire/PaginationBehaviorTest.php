@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Admin\Users\ListUsers as AdminUserList;
-use App\Http\Livewire\AppComponent;
-use App\Http\Livewire\Groups\ListGroups;
-use App\Http\Livewire\Groups\ListUsers as GroupUserList;
+use App\Livewire\Admin\Users\ListUsers as AdminUserList;
+use App\Livewire\AppComponent;
+use App\Livewire\Groups\ListGroups;
+use App\Livewire\Groups\ListUsers as GroupUserList;
 use Livewire\Livewire;
 use Livewire\WithPagination;
 use Tests\Feature\FeatureTestCase;

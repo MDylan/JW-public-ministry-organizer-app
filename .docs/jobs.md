@@ -10,7 +10,7 @@ All jobs in this folder implement `ShouldQueue`. One job is unique.
 
 | Job | Primary Purpose | Dispatch Source(s) | Notes |
 |---|---|---|---|
-| `CalculateDateProcess` | Recalculate date/event compatibility and optional cleanup for specific group dates. | `App\Helpers\GroupDateHelper::recalculateDates`, `App\Http\Livewire\Groups\SpecialDateModal` | Calls `CalculateDatesEvents::generate`, can delete disabled dates/stat rows after recalc. |
+| `CalculateDateProcess` | Recalculate date/event compatibility and optional cleanup for specific group dates. | `App\Helpers\GroupDateHelper::recalculateDates`, `App\Livewire\Groups\SpecialDateModal` | Calls `CalculateDatesEvents::generate`, can delete disabled dates/stat rows after recalc. |
 | `CalulcateUserNameIndexProcess` | Rebuild sortable `name_index` for users. | `UserObserver` (`created`, `updated(name)`, `deleted`, `forceDeleted`) | Implements `ShouldBeUnique` (`uniqueId = CalculateUserNameIndex`). Name contains typo (`Calulcate`). |
 | `DeleteGroupDataProcess` | Remove group-owned data and optionally anonymize users with no memberships left. | `App\Http\Controllers\GroupDelete` | Deletes events, dates, days, stats, news, surveys, memberships, messages, future changes. |
 | `GenerateStatProcess` | Generate slot-level `DayStat` records for a group/day. | `App\Classes\GenerateStat::generate` | Uses `run_job` flag on `GroupDate` to avoid parallel duplication. |

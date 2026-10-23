@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Groups\NewsEdit;
+use App\Livewire\Groups\NewsEdit;
 use App\Models\Group;
 use App\Models\GroupNews;
 use App\Models\GroupNewsFile;

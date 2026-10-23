@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Events\Modal as EventsModal;
-use App\Http\Livewire\Groups\PosterEditModal;
-use App\Http\Livewire\Home;
+use App\Livewire\Events\Modal as EventsModal;
+use App\Livewire\Groups\PosterEditModal;
+use App\Livewire\Home;
 use App\Models\Event;
 use App\Models\GroupDay;
 use App\Models\GroupDate;

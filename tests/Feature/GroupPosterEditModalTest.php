@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Groups\PosterEditModal;
+use App\Livewire\Groups\PosterEditModal;
 use App\Models\GroupPosters;
 use Livewire\Livewire;
 class GroupPosterEditModalTest extends FeatureTestCase

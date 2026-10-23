@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Events\LastEvents;
-use App\Http\Livewire\Partials\EventsBar;
-use App\Http\Livewire\Partials\NavBar;
-use App\Http\Livewire\Partials\SideMenu;
+use App\Livewire\Events\LastEvents;
+use App\Livewire\Partials\EventsBar;
+use App\Livewire\Partials\NavBar;
+use App\Livewire\Partials\SideMenu;
 use App\Models\AdminNewsletter;
 use App\Models\AdminNewsletterRead;
 use App\Models\Event;

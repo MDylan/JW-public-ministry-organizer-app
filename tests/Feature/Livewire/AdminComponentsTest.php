@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Admin\AdminNewsletters;
-use App\Http\Livewire\Admin\NewsletterEdit;
-use App\Http\Livewire\Admin\StaticPageEdit;
-use App\Http\Livewire\Admin\StaticPages;
-use App\Http\Livewire\Admin\Statistics;
-use App\Http\Livewire\Admin\Translation;
+use App\Livewire\Admin\AdminNewsletters;
+use App\Livewire\Admin\NewsletterEdit;
+use App\Livewire\Admin\StaticPageEdit;
+use App\Livewire\Admin\StaticPages;
+use App\Livewire\Admin\Statistics;
+use App\Livewire\Admin\Translation;
 use App\Models\AdminNewsletter;
 use App\Models\AdminNewsletterRead;
 use App\Models\StaticPage;

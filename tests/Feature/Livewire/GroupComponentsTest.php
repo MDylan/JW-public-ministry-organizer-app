@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Groups\DeleteGroup;
-use App\Http\Livewire\Groups\History;
-use App\Http\Livewire\Groups\NewsList;
-use App\Http\Livewire\Groups\Statistics;
+use App\Livewire\Groups\DeleteGroup;
+use App\Livewire\Groups\History;
+use App\Livewire\Groups\NewsList;
+use App\Livewire\Groups\Statistics;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupNews;

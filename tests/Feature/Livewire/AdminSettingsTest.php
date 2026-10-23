@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Admin\Settings;
+use App\Livewire\Admin\Settings;
 use App\Models\Settings as SettingsModel;
 use App\Models\User;
 use App\Notifications\TestNotification;

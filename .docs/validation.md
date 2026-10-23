@@ -53,7 +53,7 @@ Rate-limits a field by IP.
 | Constructor | `new Throttle($key, $maxAttempts, $decayInMinutes)` |
 | Limiter key | `$key . '|' . request()->ip()` |
 | Message | `group.messages.limit` (`lang/{en,hu,de}/group.php`) |
-| Call site | `app/Http/Livewire/Groups/Messages.php:56` — `new Throttle('group-message-'.$this->group_id, 3, 1)` |
+| Call site | `app/Livewire/Groups/Messages.php:56` — `new Throttle('group-message-'.$this->group_id, 3, 1)` |
 
 **The attempt counter is incremented inside the rule, on the passing branch
 only.** That is what makes it a throttle rather than a predicate — no caller
@@ -72,7 +72,7 @@ allowing the pair to span midnight.
 |---|---|
 | Constructor | `new TimeCheck($otherField, $type)`, `$type` being `after_or_midnight` or `before_or_midnight` |
 | Messages | `validation.after` / `validation.before` with a `:date` replacement (`lang/{de,en,fr,hu,ro,sk}/validation.php`) |
-| Call site | `app/Http/Livewire/Groups/UpdateGroupForm.php`, on the day validator, which is handed `$this->days` directly and is the only guard on those times since TODO 42.1 |
+| Call site | `app/Livewire/Groups/UpdateGroupForm.php`, on the day validator, which is handed `$this->days` directly and is the only guard on those times since TODO 42.1 |
 
 **Why it exists at all, given `before_or_equal` / `after_or_equal`.** A
 group's service day may end at `00:00`, meaning midnight at the *end* of the

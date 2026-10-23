@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Admin\Translation;
+use App\Livewire\Admin\Translation;
 use App\Models\Settings;
 use App\Models\User;
 use App\Support\Settings\ApplicationSettings;

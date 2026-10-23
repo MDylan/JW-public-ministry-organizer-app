@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Events\EventEdit;
-use App\Http\Livewire\Events\Modal;
-use App\Http\Livewire\Groups\Messages;
-use App\Http\Livewire\Groups\PosterEditModal;
-use App\Http\Livewire\Groups\SpecialDateModal;
-use App\Http\Livewire\Partials\EventsBar;
-use App\Http\Livewire\Partials\NavBar;
-use App\Http\Livewire\Partials\SideMenu;
+use App\Livewire\Events\EventEdit;
+use App\Livewire\Events\Modal;
+use App\Livewire\Groups\Messages;
+use App\Livewire\Groups\PosterEditModal;
+use App\Livewire\Groups\SpecialDateModal;
+use App\Livewire\Partials\EventsBar;
+use App\Livewire\Partials\NavBar;
+use App\Livewire\Partials\SideMenu;
 use App\Models\Event;
 use Illuminate\Support\Facades\View;
 use Livewire\Livewire;

@@ -6,21 +6,45 @@ UI logic is primarily implemented with **Livewire components**, supported by cla
 
 > **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
 > package is on `v3.8.8` since TODO 43, and the test suite is **knowingly red**
-> until TODO 51.1 closes the phase. The component
-> inventory itself is unchanged so far: no class moved, and `config/livewire.php`
-> still declares `App\Http\Livewire` as the namespace. TODO 51 decided to move
-> it to `App\Livewire`; until that item lands, the paths below are current.
+> until TODO 51.1 closes the phase. Since TODO 51 the classes live in
+> `App\Livewire`, Livewire 3's default namespace; the component names
+> (`groups.list-users`) and the view paths did not change. See Configuration
+> below.
 
-- Livewire classes: `app/Http/Livewire`
+- Livewire classes: `app/Livewire`
 - Class-based Blade components: `app/View/Components`
 - Blade templates: `resources/views/livewire` and `resources/views/components`
 
 A shared Livewire base class exists:
 
-- `App\Http\Livewire\AppComponent`
+- `App\Livewire\AppComponent`
   - Uses `WithPagination`
   - Declares `paginationView()` / `paginationSimpleView()` (`livewire::bootstrap`, `livewire::simple-bootstrap`) - see Pagination below
   - Provides shared `state` array and `showEditModal` flag
+
+## Configuration (`config/livewire.php`)
+
+Every key Livewire 3 reads is written out, at the package default except
+for three project choices. Livewire merges its own defaults underneath, so a
+missing key would behave the same; the file is explicit for the reader.
+
+- `class_namespace` is **not** set: the classes are in `App\Livewire`, the
+  default. Livewire turns a dotted name into a class under this namespace, so
+  changing it breaks every `@livewire` / `<livewire:...>` tag.
+- `layout` is `layouts.app`, not the stub's `components.layouts.app`. No
+  component calls `->layout()`, so this key is what wraps every route-mounted
+  component.
+- `temporary_file_upload.preview_mimes` adds `pdf, doc, docx, xls, xlsx` to
+  the package list - see `Groups\NewsEdit` below.
+- `pagination_theme` is `bootstrap`. `AppComponent::paginationView()` wins over
+  it, so it only matters for a component outside `AppComponent`.
+- The Livewire 2 keys `middleware_group` and `manifest_path` are gone.
+
+`LivewireNamespaceContractTest` pins the namespace (no `App\Http\Livewire`
+left anywhere, every view tag resolving to a class, the tracked
+`vendor/composer/autoload_classmap.php` up to date) and the removed keys.
+After adding or moving a component class, run `composer dump-autoload`: the
+classmap is optimized and ships in the release archive.
 
 ## Route-Level Livewire Components
 

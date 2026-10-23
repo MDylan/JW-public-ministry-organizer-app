@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Groups\SpecialDateModal;
+use App\Livewire\Groups\SpecialDateModal;
 use App\Models\GroupDate;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;

@@ -1,50 +1,66 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| Livewire 3 configuration (TODO 51)
+|--------------------------------------------------------------------------
+|
+| Written out in full rather than left to Livewire's own defaults, which it
+| merges underneath this file: a missing key would mean the same thing, but
+| this way every value the application runs with is readable in one place.
+|
+| Three choices differ from the stub `livewire:publish --config` writes, and
+| each is load-bearing:
+|
+| - `layout` stays `layouts.app`. The stub's `components.layouts.app` does
+|   not exist here, and the 19 route-mounted components have no ->layout()
+|   call of their own, so this key is the only thing that wraps them.
+| - `temporary_file_upload.preview_mimes` carries pdf, doc, docx, xls and
+|   xlsx. temporaryUrl() throws for any extension outside this list, and
+|   Groups\NewsEdit previews every file it accepts (TODO 49; pinned by
+|   GroupNewsEditTest).
+| - `pagination_theme` is `bootstrap`. AppComponent::paginationView()
+|   overrides it for every paginating component, so it changes nothing
+|   today; it is set so a component outside AppComponent would still match
+|   the Bootstrap 4 front end.
+|
+| `class_namespace` is NOT set: the components live in App\Livewire, which is
+| Livewire 3's default. The Livewire 2 keys `middleware_group` and
+| `manifest_path` are gone - nothing reads them any more.
+|
+*/
+
 return [
 
     /*
-    |--------------------------------------------------------------------------
-    | Class Namespace
-    |--------------------------------------------------------------------------
-    |
-    | This value sets the root namespace for Livewire component classes in
-    | your application. This value affects component auto-discovery and
-    | any Livewire file helper commands, like `artisan make:livewire`.
-    |
-    | After changing this item, run: `php artisan livewire:discover`.
-    |
-    */
-
-    'class_namespace' => 'App\\Http\\Livewire',
-
-    /*
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
     | View Path
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
     |
-    | This value sets the path for Livewire component views. This affects
-    | file manipulation helper commands like `artisan make:livewire`.
+    | This value is used to specify where Livewire component Blade templates are
+    | stored when running file creation commands like `artisan make:livewire`.
+    | It is also used if you choose to omit a component's render() method.
     |
     */
 
     'view_path' => resource_path('views/livewire'),
 
     /*
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
     | Layout
-    |--------------------------------------------------------------------------
-    | The default layout view that will be used when rendering a component via
-    | Route::get('/some-endpoint', SomeComponent::class);. In this case the
-    | the view returned by SomeComponent will be wrapped in "layouts.app"
+    |---------------------------------------------------------------------------
+    | The view that will be used as the layout when rendering a single component
+    | as an entire page via `Route::get('/post/create', CreatePost::class);`.
+    | In this case, the view returned by CreatePost will render into $slot.
     |
     */
 
     'layout' => 'layouts.app',
 
     /*
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
     | Livewire Assets URL
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
     |
     | This value sets the path to Livewire JavaScript assets, for cases where
     | your app's domain root is not the correct path. By default, Livewire
@@ -57,58 +73,148 @@ return [
     'asset_url' => null,
 
     /*
-    |--------------------------------------------------------------------------
-    | Livewire Endpoint Middleware Group
-    |--------------------------------------------------------------------------
-    |
-    | This value sets the middleware group that will be applied to the main
-    | Livewire "message" endpoint (the endpoint that gets hit everytime
-    | a Livewire component updates). It is set to "web" by default.
+    |---------------------------------------------------------------------------
+    | Lazy Loading Placeholder
+    |---------------------------------------------------------------------------
+    | Livewire allows you to lazy load components that would otherwise slow down
+    | the initial page load. Every component can have a custom placeholder or
+    | you can define the default placeholder view for all components below.
     |
     */
 
-    'middleware_group' => 'web',
+    'lazy_placeholder' => null,
 
     /*
-    |--------------------------------------------------------------------------
-    | Livewire Temporary File Uploads Endpoint Configuration
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
+    | Temporary File Uploads
+    |---------------------------------------------------------------------------
     |
     | Livewire handles file uploads by storing uploads in a temporary directory
-    | before the file is validated and stored permanently. All file uploads
-    | are directed to a global endpoint for temporary storage. The config
-    | items below are used for customizing the way the endpoint works.
+    | before the file is stored permanently. All file uploads are directed to
+    | a global endpoint for temporary storage. You may configure this below:
     |
     */
 
     'temporary_file_upload' => [
-        'disk' => null,        // Example: 'local', 'news_files'      Default: 'default'
-        'rules' => null,       // Example: ['file', 'mimes:png,jpg']  Default: ['required', 'file', 'max:12288'] (12MB)
-        'directory' => null,   // Example: 'tmp'                      Default  'livewire-tmp'
-        'middleware' => null,  // Example: 'throttle:5,1'             Default: 'throttle:60,1'
-        'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs.
+        'disk' => null,        // Example: 'local', 'news_files'      | Default: 'default'
+        'rules' => null,       // Example: ['file', 'mimes:png,jpg']  | Default: ['required', 'file', 'max:12288'] (12MB)
+        'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
+        'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
+        'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
             'mov', 'avi', 'wmv', 'mp3', 'm4a',
             'jpg', 'jpeg', 'mpga', 'webp', 'wma',
-            'pdf', 'doc', 'docx', 'xls', 'xlsx'
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', // Groups\NewsEdit::$file_types - see the header
         ],
-        'max_upload_time' => 5, // Max duration (in minutes) before an upload gets invalidated.
+        'max_upload_time' => 5, // Max duration (in minutes) before an upload is invalidated...
+        'cleanup' => true, // Should cleanup temporary uploads older than 24 hrs...
     ],
 
     /*
-    |--------------------------------------------------------------------------
-    | Manifest File Path
-    |--------------------------------------------------------------------------
+    |---------------------------------------------------------------------------
+    | Render On Redirect
+    |---------------------------------------------------------------------------
     |
-    | This value sets the path to the Livewire manifest file.
-    | The default should work for most cases (which is
-    | "<app_root>/bootstrap/cache/livewire-components.php)", but for specific
-    | cases like when hosting on Laravel Vapor, it could be set to a different value.
-    |
-    | Example: for Laravel Vapor, it would be "/tmp/storage/bootstrap/cache/livewire-components.php".
+    | This value determines if Livewire will run a component's `render()` method
+    | after a redirect has been triggered using something like `redirect(...)`
+    | Setting this to true will render the view once more before redirecting
     |
     */
 
-    'manifest_path' => null,
+    'render_on_redirect' => false,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Eloquent Model Binding
+    |---------------------------------------------------------------------------
+    |
+    | Previous versions of Livewire supported binding directly to eloquent model
+    | properties using wire:model by default. However, this behavior has been
+    | deemed too "magical" and has therefore been put under a feature flag.
+    |
+    */
+
+    'legacy_model_binding' => false,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Auto-inject Frontend Assets
+    |---------------------------------------------------------------------------
+    |
+    | By default, Livewire automatically injects its JavaScript and CSS into the
+    | <head> and <body> of pages containing Livewire components. By disabling
+    | this behavior, you need to use @livewireStyles and @livewireScripts.
+    |
+    */
+
+    'inject_assets' => true,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Navigate (SPA mode)
+    |---------------------------------------------------------------------------
+    |
+    | By adding `wire:navigate` to links in your Livewire application, Livewire
+    | will prevent the default link handling and instead request those pages
+    | via AJAX, creating an SPA-like effect. Configure this behavior here.
+    |
+    */
+
+    'navigate' => [
+        'show_progress_bar' => true,
+        'progress_bar_color' => '#2299dd',
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | HTML Morph Markers
+    |---------------------------------------------------------------------------
+    |
+    | Livewire intelligently "morphs" existing HTML into the newly rendered HTML
+    | after each update. To make this process more reliable, Livewire injects
+    | "markers" into the rendered Blade surrounding @if, @class & @foreach.
+    |
+    */
+
+    'inject_morph_markers' => true,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Smart Wire Keys
+    |---------------------------------------------------------------------------
+    |
+    | Livewire uses loops and keys used within loops to generate smart keys that
+    | are applied to nested components that don't have them. This makes using
+    | nested components more reliable by ensuring that they all have keys.
+    |
+    */
+
+    'smart_wire_keys' => false,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Pagination Theme
+    |---------------------------------------------------------------------------
+    |
+    | When enabling Livewire's pagination feature by using the `WithPagination`
+    | trait, Livewire will use Tailwind templates to render pagination views
+    | on the page. If you want Bootstrap CSS, you can specify: "bootstrap"
+    |
+    */
+
+    'pagination_theme' => 'bootstrap',
+
+    /*
+    |---------------------------------------------------------------------------
+    | Release Token
+    |---------------------------------------------------------------------------
+    |
+    | This token is stored client-side and sent along with each request to check
+    | a users session to see if a new release has invalidated it. If there is
+    | a mismatch it will throw an error and prompt for a browser refresh.
+    |
+    */
+
+    'release_token' => 'a',
 
 ];

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Weather;
 
-use App\Http\Livewire\Events\Events;
+use App\Livewire\Events\Events;
 use App\Models\Group;
 use App\Models\WeatherCity;
 use Illuminate\Console\Scheduling\Schedule;

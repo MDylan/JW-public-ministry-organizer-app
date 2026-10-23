@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Groups;
 
-use App\Http\Livewire\Groups\ListGroups;
+use App\Livewire\Groups\ListGroups;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;

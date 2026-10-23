@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Groups;
 
-use App\Http\Livewire\Groups\UpdateGroupForm;
+use App\Livewire\Groups\UpdateGroupForm;
 use App\Models\Group;
 use App\Models\GroupDay;
 use App\Models\GroupFutureChange;

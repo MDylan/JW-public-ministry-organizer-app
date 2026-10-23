@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\Groups\Messages;
+use App\Livewire\Groups\Messages;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupMessage;

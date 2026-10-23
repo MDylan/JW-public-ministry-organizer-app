@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Weather;
 
-use App\Http\Livewire\Events\Events;
-use App\Http\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
+use App\Livewire\Events\Events;
+use App\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
 use App\Models\Group;
 use App\Models\WeatherCity;
 use Livewire\Livewire;
@@ -12,7 +12,7 @@ use Tests\Feature\FeatureTestCase;
 /**
  * TODO 20.1: the read path - what the publisher and the admin actually see.
  *
- * The calendar (app/Http/Livewire/Events/Events.php:287-345) is a PURE
+ * The calendar (app/Livewire/Events/Events.php:287-345) is a PURE
  * READER: it never calls the API, it only draws what is in the
  * `weather_cities` row. This file therefore works without a network, from a
  * hand-inserted cache row - exactly as it works in production between two

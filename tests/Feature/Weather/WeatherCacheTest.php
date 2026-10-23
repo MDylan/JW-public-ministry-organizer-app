@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Weather;
 
-use App\Http\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
+use App\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
 use App\Models\WeatherCity;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;

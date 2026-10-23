@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Admin\Users\ListUsers as AdminUserListComponent;
-use App\Http\Livewire\Groups\ListGroups as GroupListComponent;
-use App\Http\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
+use App\Livewire\Admin\Users\ListUsers as AdminUserListComponent;
+use App\Livewire\Groups\ListGroups as GroupListComponent;
+use App\Livewire\Groups\UpdateGroupForm as GroupEditComponent;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;

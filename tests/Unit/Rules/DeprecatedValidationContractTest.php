@@ -23,8 +23,8 @@ use Tests\TestCase;
  * Rule::notIn(), a completely different class, and it is legitimately
  * imported by app/Actions/Fortify/UpdateUserProfileInformation.php,
  * app/Actions/Fortify/CreateNewUser.php,
- * app/Http/Livewire/Groups/ListUsers.php and
- * app/Http/Livewire/Admin/Users/ListUsers.php. The `Contracts` segment in the
+ * app/Livewire/Groups/ListUsers.php and
+ * app/Livewire/Admin/Users/ListUsers.php. The `Contracts` segment in the
  * pattern below is load-bearing: without it this guard reports four false
  * positives, gets reverted, and the real rule is lost with it.
  *
