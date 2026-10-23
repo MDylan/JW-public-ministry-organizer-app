@@ -462,6 +462,18 @@ looped option of a bound select is now keyed by its value.
 | after TODO 47.3, editor refill | 1553 | 4527 | 0 | 0 | 0 |
 | after TODO 47.4 | 1554 | 4530 | 0 | 0 | 0 |
 
+### TODO 47.5, as delivered (2026-10-23)
+
+The fourth finding: v3's morph markers - HTML comments around every Blade
+conditional - are harmless in markup and visible in `<title>`, which renders
+its content as text. Two title sections chose their text with `@if`; they now
+use an expression, and the route-mounted render test checks every title.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 47.4 | 1554 | 4530 | 0 | 0 | 0 |
+| after TODO 47.5 | 1554 | 4572 | 0 | 0 | 0 |
+
 From 286 red of 1507 at the bump to 0 of 1547.
 
 ## `vendor:publish --tag=livewire:assets` under version 3
