@@ -172,6 +172,8 @@ Components talk to page scripts through window events: toasts, SweetAlert dialog
 
 **A `<script>` that a re-render adds never runs.** Livewire 2 `eval()`-ed every script element a morph added; Livewire 3 does not. A script in the component's first render still runs (the browser parses it with the page), so the rule is: in component markup, outside `@section` / `@push`, no inline `<script>` inside `@if`, `@foreach` or any other Blade block. Code that has to run when markup appears is started by a browser event the component dispatches - dispatched events are processed after the morph, unlike `$this->js()`, which runs before it. `poster-editor-opened` and `calendar-group-changed` above are the two cases (TODO 47.3); `InlineScriptContractTest` enforces the rule.
 
+**No Blade control structure inside `@section('title')`.** Livewire 3 wraps every `@if` / `@foreach` in a component view in morph-marker comments (`<!--[if BLOCK]><![endif]-->`). In the body they are invisible; the layout yields `title` into `<title>`, whose content is text, so the browser tab showed them literally. Choose the title with an expression instead - `{{ isset($state['id']) ? __('news.edit') : __('news.create') }}` (TODO 47.5). `LivewireRouteMountedComponentsTest` renders every route-mounted page and rejects markup in its `<title>`.
+
 ### Polling and the root element
 
 `Home`, `Events\Events` and `Events\Modal` poll every 30 seconds while `$polling` is on; opening the day modal switches the page's poll off and the modal's on, and `Home` switches back on when the modal closes (its `refresh` listener is `pollingOn`; the calendar's is `render`, so the calendar stays off until reloaded - unchanged since v1).

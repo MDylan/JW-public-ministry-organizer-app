@@ -1,10 +1,8 @@
 <div>
     @section('title')
-    @if (isset($state['id']))
-        @lang('staticpage.edit')
-    @else
-        @lang('staticpage.create_new')
-    @endif
+    {{-- TODO 47.5: no @if here - Livewire 3 wraps it in morph-marker
+         comments, and <title> shows comments as text. --}}
+    {{ isset($state['id']) ? __('staticpage.edit') : __('staticpage.create_new') }}
     @endsection
     <!-- Content Header (Page header) -->
     <div class="content-header">

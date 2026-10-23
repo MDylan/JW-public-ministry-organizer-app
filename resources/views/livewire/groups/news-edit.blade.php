@@ -1,10 +1,8 @@
 <div>
     @section('title')
-    @if (isset($state['id']))
-        @lang('news.edit')
-    @else
-        @lang('news.create')
-    @endif
+    {{-- TODO 47.5: no @if here - Livewire 3 wraps it in morph-marker
+         comments, and <title> shows comments as text. --}}
+    {{ isset($state['id']) ? __('news.edit') : __('news.create') }}
     ({{ $group->name }})
     @endsection
     <!-- Content Header (Page header) -->

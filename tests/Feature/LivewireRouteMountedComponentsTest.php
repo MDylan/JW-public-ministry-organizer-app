@@ -67,7 +67,15 @@ class LivewireRouteMountedComponentsTest extends FeatureTestCase
             $request = $request->withSession($this->passwordConfirmedSession());
         }
 
-        $request->get(route($routeName, $parameters))->assertStatus(200);
+        $html = $request->get(route($routeName, $parameters))->assertStatus(200)->getContent();
+
+        // TODO 47.5: Livewire 3 wraps every Blade @if in a component view in
+        // morph-marker comments. In the body they are invisible; in <title>,
+        // whose content is text, the browser tab showed them literally
+        // ("<!--[if BLOCK]><![endif]--> Hír létrehozása ...").
+        $this->assertMatchesRegularExpression('#<title>.*?</title>#s', $html);
+        preg_match('#<title>(.*?)</title>#s', $html, $title);
+        $this->assertStringNotContainsString('<!--', $title[1], "{$routeName}: the page title carries markup.");
     }
 
     public static function mountedRouteProvider(): array
