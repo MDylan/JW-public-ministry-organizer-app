@@ -62,6 +62,18 @@ in one place what to do with the accumulated list.
 The hook stays in the tree and stays shippable: it still serves the 1.x line,
 and its `bootstrap/cache` cleanup is needed by every release regardless.
 
+**Corrected by TODO 54: the Phase 3 half of the hook has never run on any
+host.** The paragraph above says the hook "worked" through TODO 33.8. It was
+written, but it never shipped: the last 1.x release is **1.2.0** (`v1` and the
+`v.1.2.0` tag are the same commit), and that release's hook stops at
+`vendor/rakibdevs`. Everything `main()` gained in Phase 3 - the packer, the GDPR,
+translation and pending-email packages, their published files, the packer's
+generated output and the `public/storage` repair - exists only on the 2.x
+branch, and 2.x never reaches `install()`. So every deployed host still runs
+those packages, and none of that cleanup has happened anywhere. Sections 2, 3
+and 5 now carry it as their **"Before TODO 34"** entries; it is not covered by
+the hook, whichever branch section 6 ends up taking.
+
 ---
 
 ## 1. Runtime requirements
@@ -104,6 +116,29 @@ If the 2.0.0 upgrade turns out to be a full `vendor/` replacement (see section
 6), this whole list is handled by that replacement and needs no separate action.
 It is kept anyway, because the list is also the evidence that a *partial*
 upgrade would leave the tree inconsistent.
+
+**Before TODO 34 - TODO 23, 24 and Phase 3, added by TODO 54.** This list used to
+start at TODO 34, on the assumption that what left earlier was handled by
+`release/upgrade.php`. It was not (see "Why `release/upgrade.php` is frozen"):
+these packages are on every 1.2.0 host today.
+
+```
+vendor/laravelcollective          (html; TODO 23)
+vendor/doctrine/cache             (TODO 24's re-resolution - NOT the whole vendor/doctrine)
+vendor/symfony/polyfill-php81     (TODO 24; dead weight on a PHP 8.1+ platform)
+vendor/dialect                    (gdpr-compliance; TODO 33.2)
+vendor/joedixon                   (laravel-translation; TODO 33.3)
+vendor/protonemedia               (laravel-verify-new-email; TODO 33.5)
+vendor/eusonlito                  (laravel-packer; TODO 33.8)
+vendor/imagecow                   (the packer's image library; TODO 33.8)
+```
+
+Derived by the method described below, against `v1`'s tree rather than a lock
+diff: every vendor namespace and package directory present in 1.2.0 and absent
+from this branch, minus the ones the later entries already list. `vendor/doctrine`
+stays (dbal lives there until TODO 57), and so does `vendor/symfony`.
+`vendor/dialect` is the one with a consequence outside `vendor/`: section 3's
+first "Before TODO 34" file extends a class from it.
 
 **TODO 34 (Laravel 8 -> 9):**
 
@@ -233,7 +268,7 @@ before: a major version change that orphans nothing.
 
 The file it does orphan is not under `vendor/` at all, and section 3 has it.
 
-*Last updated: TODO 43.*
+*Last updated: TODO 54.*
 
 ## 3. Application files that move or disappear
 
@@ -432,7 +467,61 @@ rm -r resources/js resources/css
 Leave `resources/views/` alone - it is the only directory `resources/` still
 needs.
 
-*Last updated: TODO 52.*
+**Before TODO 34 - the Phase 3 files, added by TODO 54. One of them stops every
+Artisan command.** Phase 3 replaced four packages with project code and deleted
+what they had put into the application. The 1.x hook was meant to remove those
+files and never shipped (see the preamble), so a 1.2.0 host has all of them.
+
+**`app/Console/Commands/PackageAnonymizeInactiveUsers.php` must be deleted
+before the first `php artisan` command** - in section 6's Branch B that is
+step 7, ahead of step 8's `migrate`. The console kernel loads every class it
+finds in `app/Console/Commands/`, and the 1.x copy of this file extends
+`Dialect\Gdpr\Commands\AnonymizeInactiveUsers`. Once `vendor/dialect` is gone,
+every Artisan command - `migrate`, `optimize:clear`, the scheduler's
+`schedule:run` - dies on boot with:
+
+```
+Class "Dialect\Gdpr\Commands\AnonymizeInactiveUsers" not found
+```
+
+Reproduced at TODO 54 by putting the 1.2.0 file back into a Laravel 10 tree:
+`php artisan list` fails exactly like that, and works again once the file is
+removed. **Web pages keep working**, because an HTTP request never loads the
+console kernel - so a host can look healthy while its scheduler, and with it
+the GDPR anonymization and every other scheduled job, has silently stopped. Do not
+rely on `vendor/dialect` still being there either: the file was a workaround
+for that package's scheduling, its command name is not the one the scheduler
+runs any more, and Branch B removes the package regardless.
+
+The rest are inert - nothing loads, renders or serves them for the application
+- and go for the reason given at TODO 39.1:
+
+- `app/Http/Middleware/RedirectIfUnansweredTerms.php` - never registered, and
+  the `gdpr-terms` route it redirects to no longer exists.
+- `config/packer.php`, `config/translation.php` - loaded into the configuration
+  on every request, like every file in `config/`, but neither runs code when
+  loaded and nothing reads their keys.
+- `resources/views/gdpr/`, `resources/views/vendor/translation/`,
+  `resources/views/vendor/verify-new-email/` - views of packages that no longer
+  register a namespace. The two e-mails moved to `resources/views/emails/`.
+- `public/vendor/translation/` - the old editor's compiled front-end, publicly
+  served and referenced by nothing.
+- `resources/lang/vendor/translation/` - already covered: TODO 38 deletes the
+  whole of `resources/lang/`.
+
+```
+rm app/Console/Commands/PackageAnonymizeInactiveUsers.php
+rm app/Http/Middleware/RedirectIfUnansweredTerms.php
+rm config/packer.php config/translation.php
+rm -r resources/views/gdpr resources/views/vendor/translation resources/views/vendor/verify-new-email
+rm -r public/vendor/translation
+```
+
+**Keep** `config/gdpr.php` and `config/verify-new-email.php` - both are
+project-owned now and still read - and the other directories under
+`resources/views/vendor/` (`cookie-consent`, `installer`, `livewire`).
+
+*Last updated: TODO 54.*
 
 ## 4. `.env` changes
 
@@ -526,6 +615,22 @@ State that lives on the host and is not expressible in a release archive.
   packer's `cache/` subtree. Anything else in there is somebody's data and the
   repair must refuse to run. `release/upgrade.php` implements exactly that
   guard; a manual procedure has to reproduce it, not shortcut it.
+  **"Any host that ever rendered a page" is every production host** (TODO 54):
+  1.2.0 still runs the packer, and its `ignore_environments` exempts only
+  `local`, and the hook's repair has never run anywhere. Expect the directory.
+- **The packer's generated files** sit next to the assets on the same hosts, for
+  the same reason, and keep being regenerated until the moment 1.2.0 stops
+  serving: a mirror under `public/cache/`, and `{filemtime}-cache_*` copies
+  beside the sources. After the upgrade nothing references them - the layouts
+  link the committed files through `pwbs_asset()` - so they are stale, publicly
+  served copies rather than a fault. The names differ per install; the
+  patterns are the ones the 1.x hook would have used:
+
+  ```
+  rm -r public/cache
+  rm -f public/dist/css/*-cache_* public/dist/js/*-cache_*
+  rm -f public/plugins/*/*-cache_* public/plugins/*/*/*-cache_*
+  ```
 - **`resources/lang/`** must be deleted after the archive is unpacked, because
   no archive can express a deletion. Section 3 has the mechanism and why it
   fails silently; it is repeated here because this is the list an operator
@@ -603,7 +708,7 @@ State that lives on the host and is not expressible in a release archive.
   unless the published copy under `public/vendor/livewire/` takes over (see
   section 3, TODO 43).
 
-*Last updated: TODO 51.1.*
+*Last updated: TODO 54.*
 
 ## 6. The upgrade procedure
 
@@ -675,3 +780,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 51.1 | **The test suite is green again, and the one route change is the one an operator can trip over.** Livewire's component endpoint moved from `/livewire/message/{name}` to `POST /livewire/update`; section 5 asks anyone filtering by URL in front of the application to follow it. Sections 2, 3 and 4 say none: no package, file or `.env` key moves. Phase 6 still waits on the browser walk (roadmap TODO 47.1) before a 2.x release can be cut. |
 | (no framework hop) | 47.1 - 47.5 | **Phase 6 closes; nothing here for an operator beyond what is already required.** The browser walk fixed four Livewire 3 behaviours in views, one component class and the layout - compiled views, so section 6 step 10 (`optimize:clear`) is what makes them take effect, as for every view change. No package, file, `.env` key or per-install state moves. One local finding is worth knowing for a Windows/Laragon install using mod_fcgid: a vhost without `FcgidMaxRequestLen` refuses any upload over 128 KB with a bare 500 before Laravel sees it. |
 | (no framework hop) | 52, 53 | **Phase 7 resolves to a removal, and the archive leaves four dead paths behind.** The Laravel Mix pipeline never built anything, so it was deleted rather than ported to Vite, and TODO 53's reproducible build went with it. Section 3 gains `webpack.mix.js`, `package.json`, `resources/js/` and `resources/css/` - inert on every host, with the two-line removal. Sections 2, 4 and 5 say none: no package, `.env` key or per-install state moves, and no host ever needed Node or `npm`, before or after. |
+| (no framework hop) | 54 | **The 1.x hook's Phase 3 half never shipped, so this guide now carries it - including the one leftover that breaks Artisan.** The last 1.x release (1.2.0) predates Phase 3, and 2.x never reaches `install()`, so the packer, GDPR, translation and pending-email removals have run on no host. Section 2 gains eight vendor paths from before TODO 34 (TODO 23, 24 and 33.x). Section 3 gains the Phase 3 application files, one of them load-bearing: the 1.x `PackageAnonymizeInactiveUsers.php` makes every Artisan command fatal once `vendor/dialect` is gone, while web pages keep working. Section 5 says the `public/storage` repair applies to every production host and adds the packer's generated files. Section 4 says none. |

@@ -38,6 +38,15 @@
 | per-release, so it stays useful for as long as any host might still carry the
 | directory the packer created.
 |
+| NO HOST HAS RUN THE PHASE 3 HALF (TODO 54)
+|
+| Items 5 to 7 below were written on the 2.x branch and never shipped. The last
+| 1.x release, 1.2.0, carries a hook that ends at item 4, and 2.x never reaches
+| install() (see FROZEN below). So "once the release has reached every install"
+| never happened for them: every deployed host still has those paths.
+| upgrade-guide.md sections 2, 3 and 5 carry the same list for the 2.0.0
+| upgrade, and UpgradeGuideHookCoverageTest keeps the two from drifting apart.
+|
 | FROZEN FROM TODO 34 ONWARDS
 |
 | main() does NOT grow any more. The framework hops of Phase 4 through Phase 10
