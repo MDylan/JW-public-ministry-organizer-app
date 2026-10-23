@@ -396,7 +396,25 @@ The 2.0.0 archive ships the correct version 3 files, so an ordinary install
 needs no action. The case to watch is a host where this directory was edited by
 hand, or where a deployment process regenerates it.
 
-*Last updated: TODO 43.*
+**TODO 51: `app/Http/Livewire/` disappears, and nothing breaks if it lingers.**
+The 28 Livewire component classes moved to `app/Livewire/` and the
+`App\Livewire` namespace, Livewire 3's default. The archive carries the new
+files; it cannot remove the old directory, so a host ends up with both.
+
+The old copy is inert. Livewire finds a component by turning its name into a
+class under `App\Livewire`, the routes name the new classes, and the archive's
+`vendor/composer/autoload_classmap.php` no longer lists the old ones - nothing
+resolves a class from that directory. Delete it anyway, for the reason given
+at TODO 39.1:
+
+```
+rm -r app/Http/Livewire
+```
+
+Leave the rest of `app/Http/` alone - `Controllers`, `Middleware`, `Requests`
+and `Kernel.php` stay where they are.
+
+*Last updated: TODO 51.*
 
 ## 4. `.env` changes
 
@@ -551,8 +569,13 @@ State that lives on the host and is not expressible in a release archive.
     is serving the files the archive delivered.
   - No package leaves or arrives, so no `bootstrap/cache` manifest goes stale
     on Livewire's account, and there is no migration.
+- **TODO 51 makes step 10 load-bearing once more.** A cached route table
+  (`route:cache`) names the 21 component routes by their old class names, and a
+  cached configuration (`config:cache`) still says `App\Http\Livewire`. Either
+  one left warm serves "class not found" or "Unable to find component" on the
+  first request. `optimize:clear` removes both; nothing else is needed.
 
-*Last updated: TODO 43.*
+*Last updated: TODO 51.*
 
 ## 6. The upgrade procedure
 
@@ -620,3 +643,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 42 | **Every section says "none" again, and for a duller reason than TODO 41.** No package moves, no file is deleted or relocated, no `.env` key changes, and there is no migration. The two custom validation rules move off a contract that carries only an `@deprecated` docblock - no runtime deprecation, so the guard TODO 41 installed never had anything to report and this is purely preventive. The one operator-visible change is a message that stops appearing, and only for a request the form itself cannot produce: a service-day row submitted without its counterpart time used to attach the literal string `validation.` to the field that was fine. Nothing that used to be blocked now saves. |
 | (no framework hop) | 42.1 | **Every section still says "none", and this is the first such row that is nevertheless not invisible to an operator.** No package moves, no file is deleted or relocated, no `.env` key changes and there is no migration. Three behaviour changes a user can meet, all in the group edit form's service-day rows: a `18:00 - 00:00` template becomes savable on the pending-changes URL, where a dead-looking wildcard rule had been rejecting it and discarding the pending change with it; a mis-clicked start time no longer drags the day's end down with it and leaves the "no service" template behind; and a group configured with `min_time = 120` and a day ending at midnight now shows a blocking error **on the field it belongs to** where it previously saved a silently emptied day. The last one is an open defect rather than a fixed one - that configuration cannot be saved at all, and this row exists so an operator meeting it recognises it. Nothing here needs an action on a deployed host beyond the `optimize:clear` step section 6 already runs: a warm `bootstrap/cache` holds compiled Blade, and the day rows are Blade. |
 | (no framework hop) | 43 | **The first Phase 6 row, and the first one that reports a red test suite as an intended state.** Livewire 2.12.8 -> 3.8.8. Section 2 says none - the resolution is 0 installs, 1 update, 0 removals and `vendor/livewire/livewire` is replaced in place, so a major version change orphans no vendor path at all. Section 3 gains one file that is not under `vendor/`: the Livewire 2 `livewire.js.map`, deleted here and undeletable on a host. That entry carries the finding the whole item turned on - `public/vendor/livewire/` is served **in preference to** the package's own route whenever its `manifest.json` exists, in both versions, and a mismatch announces itself only as a `console.warn`. Section 4 says none. Section 5 gains two checks, both about served JavaScript: `optimize:clear` stops being optional because every `wire:` directive was rewritten, and a host serving these assets from a CDN has to be re-pointed. Nothing else here is operator-visible yet: the application is mid-migration until roadmap TODO 51 closes the phase, and no 2.x release can be cut before then. |
+| (no framework hop) | 51 | **The Livewire components change namespace, and the archive cannot say so on its own.** `App\Http\Livewire` -> `App\Livewire` (28 classes). Section 2 says none: no package moves. Section 3 gains `app/Http/Livewire/`, left behind on every host and inert there, with the one-line removal. Section 4 says none. Section 5 records that a warm `route:cache` or `config:cache` names the old classes, so step 10's `optimize:clear` is what makes the move take effect. The archive also has to carry a regenerated `vendor/composer/autoload_classmap.php`, which this repository commits. |

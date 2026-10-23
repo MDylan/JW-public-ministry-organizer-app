@@ -395,6 +395,21 @@ every Office and PDF type.
 | after TODO 45 / 45.1 | 1532 | 4340 | 0 | 3 | 3 |
 | after TODO 49 | 1541 | 4366 | 0 | 3 | 3 |
 
+### TODO 51, as delivered (2026-10-23)
+
+The upgrade tool's `change-default-namespace` step, refused at TODO 43, was done
+by hand instead: `git mv` keeps the history, which the tool's copy-and-delete
+would not, and the tool would also have rewritten `layout` to a view that does
+not exist. The text replacement touched 126 occurrences in 63 files; three
+path references were fixed by hand. The tracked, optimized classmap had to be
+regenerated - the tool does not mention it, because a normal project does not
+commit `vendor/`.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 49 | 1541 | 4366 | 0 | 3 | 3 |
+| after TODO 51 | 1546 | 4481 | 0 | 3 | 3 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
