@@ -5,8 +5,9 @@
 UI logic is primarily implemented with **Livewire components**, supported by class-based and anonymous Blade components.
 
 > **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
-> package is on `v3.8.8` since TODO 43, and the test suite is **knowingly red**
-> until TODO 51.1 closes the phase. Since TODO 51 the classes live in
+> package is on `v3.8.8` since TODO 43, and the test suite is green again since
+> TODO 51.1; the browser walk (TODO 47.1) still has to close the phase. Since
+> TODO 51 the classes live in
 > `App\Livewire`, Livewire 3's default namespace; the component names
 > (`groups.list-users`) and the view paths did not change. See Configuration
 > below.

@@ -81,13 +81,12 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- **THE TEST SUITE IS KNOWINGLY RED RIGHT NOW, AND THAT IS EXPECTED.** The
-  Livewire 2 -> 3 migration (`upgrade-roadmap.md`, Phase 6) is delivered as one
-  green unit: TODO 43 installed Livewire 3 and TODO 51 closes the phase. Until
-  then `composer test` reports failures - the opening measurement was **286 red
-  of 1507**, and each Phase 6 item records the count it started and finished at.
-  Two consequences while this lasts: the suite cannot tell you about an
-  *unrelated* regression, and `v2-dev` is not releasable. If you need a green
-  baseline, take it from the commit before the bump.
+- **The test suite is green again since TODO 51.1** (1547 tests, 0 failures).
+  The Livewire 2 -> 3 migration (`upgrade-roadmap.md`, Phase 6) ran knowingly
+  red from TODO 43 (**286 red of 1507** at the bump) until then; a red test is
+  a regression again. **Phase 6 is still open:** TODO 47.1, a walk through the
+  application in a browser, remains - the suite runs no JavaScript, so modals,
+  `wire:ignore` regions, the `@this` bridges and the 419 prompt are unverified
+  until it has run, and `v2-dev` is not releasable before that.
 
 - The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite was green on 8.3 with its numbers unmoved when the interpreter switched. (For its state today, see the Phase 6 note above.)

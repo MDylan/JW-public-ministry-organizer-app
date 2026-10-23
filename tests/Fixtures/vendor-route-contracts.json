@@ -1,4 +1,12 @@
 {
+ "default.livewire.update": {
+  "methods": [
+   "POST"
+  ],
+  "middleware": [
+   "web"
+  ]
+ },
  "laraupdater.check": {
   "methods": [
    "GET",
@@ -32,22 +40,6 @@
    "App\\Http\\Middleware\\EnsureUpdateWithinBranch",
    "auth",
    "can:is-admin",
-   "web"
-  ]
- },
- "livewire.message": {
-  "methods": [
-   "POST"
-  ],
-  "middleware": [
-   "web"
-  ]
- },
- "livewire.message-localized": {
-  "methods": [
-   "POST"
-  ],
-  "middleware": [
    "web"
   ]
  },

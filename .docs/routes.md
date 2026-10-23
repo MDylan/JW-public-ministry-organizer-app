@@ -397,7 +397,20 @@ Behaviour is pinned by `tests/Feature/NewEmail/` (53 tests, roadmap TODO 19.1 an
     `mainAdmin` exists, so this is an operational wrinkle rather than an exposure — but the
     install instructions should say to run `optimize` *after* the installer finishes, not
     before.
-- The named Livewire routes (`livewire.message`, `livewire.upload-file`, `livewire.preview-file`)
-  are snapshotted separately in `tests/Fixtures/vendor-route-contracts.json`. The two Livewire
-  asset routes (`livewire/livewire.js`, `livewire/livewire.js.map`) are unnamed and therefore
-  outside any name-keyed snapshot.
+- The named Livewire 3 routes are snapshotted separately in
+  `tests/Fixtures/vendor-route-contracts.json`:
+  - `default.livewire.update` - `POST /livewire/update`, `web`. The single component endpoint,
+    replacing version 2's `livewire.message` and `livewire.message-localized`; the locale now
+    travels in the component's snapshot instead of the URL. Note the `default.` prefix: Livewire
+    finds its endpoint by the name *suffix* `livewire.update`, so `RouteContractSnapshotTest`
+    classifies Livewire routes by `livewire.` prefix **or** that suffix.
+  - `livewire.upload-file` - `POST`, `web` + `throttle:60,1` (the only Livewire route with more
+    than `web`; `livewire.temporary_file_upload.middleware` would change it).
+  - `livewire.preview-file` - `GET /livewire/preview-file/{filename}`, `web`.
+- The two Livewire script routes are **unnamed** and carry no middleware:
+  `livewire/livewire.min.js.map`, and the script itself, whose URI depends on `app.debug` at boot -
+  `livewire/livewire.js` with debug on, `livewire/livewire.min.js` in production. Being unnamed
+  they are outside the name-keyed snapshots, so
+  `test_the_unnamed_livewire_routes_are_the_two_script_routes` pins them by URI. While
+  `public/vendor/livewire/manifest.json` exists, pages load the published copy instead of these
+  routes (see `upgrade-guide.md` section 3, TODO 43).

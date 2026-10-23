@@ -80,22 +80,61 @@ class RouteContractSnapshotTest extends TestCase
 
     public function test_the_livewire_vendor_routes_match_the_snapshot(): void
     {
-        // Livewire 3 renames the message endpoint (livewire.update) and
-        // reworks uploads, so this snapshot WILL CERTAINLY fail in Phase 6 -
-        // that is exactly why it is here: let the routing change be an
-        // explicit diff.
+        // This snapshot was written to fail in Phase 6, and it did: TODO 51.1
+        // re-pinned it to Livewire 3. livewire.message and
+        // livewire.message-localized are gone - version 3 has ONE endpoint,
+        // and carries the locale in the component's memo instead of the URL
+        // (SupportLocales). The endpoint is named default.livewire.update,
+        // outside the `livewire.` prefix; see isLivewireRoute(). The upload
+        // routes kept their names, and upload-file kept its throttle:60,1.
         //
         // Debugbar deliberately stays out: it is a dev-only package that
         // TODO 25 removes from config/app.php anyway, so it would bring a
         // false coupling here.
-        $expected = $this->fixtureSubset('vendor-route-contracts.json', 'livewire.');
+        $expected = array_filter(
+            $this->fixture('vendor-route-contracts.json'),
+            fn (string $name) => $this->isLivewireRoute($name),
+            ARRAY_FILTER_USE_KEY
+        );
 
-        $this->assertNotEmpty($expected);
+        $this->assertSame(['default.livewire.update', 'livewire.preview-file', 'livewire.upload-file'], array_keys($expected));
         $this->assertSame(
             $expected,
-            $this->currentRouteContracts('livewire.'),
+            $this->currentRouteContracts(fn (string $name) => $this->isLivewireRoute($name)),
             'Livewire route contracts changed. Regenerate tests/Fixtures/vendor-route-contracts.json when the change is intentional.'
         );
+    }
+
+    public function test_the_unnamed_livewire_routes_are_the_two_script_routes(): void
+    {
+        // TODO 14 recorded that Livewire's script routes are unnamed, and so
+        // outside every name-keyed snapshot here. The roadmap expected
+        // Livewire 3 to name them; 3.8.8 does not (FrontendAssets::boot()),
+        // so this test pins them by URI instead.
+        //
+        // The script's URI depends on app.debug AT BOOT: livewire.js with
+        // debug on, livewire.min.js without - so a production host serves the
+        // second. Neither carries any middleware, not even `web`: they are
+        // static files, and a page must be able to load them before a session
+        // exists.
+        $script = config('app.debug') ? 'livewire/livewire.js' : 'livewire/livewire.min.js';
+        $unnamed = [];
+
+        foreach (app('router')->getRoutes() as $route) {
+            if ($route->getName() === null && str_starts_with($route->uri(), 'livewire/')) {
+                $unnamed[$route->uri()] = [
+                    'methods' => $route->methods(),
+                    'middleware' => $this->sortedMiddleware($route),
+                ];
+            }
+        }
+
+        ksort($unnamed);
+
+        $this->assertSame([
+            $script => ['methods' => ['GET', 'HEAD'], 'middleware' => []],
+            'livewire/livewire.min.js.map' => ['methods' => ['GET', 'HEAD'], 'middleware' => []],
+        ], $unnamed);
     }
 
     public function test_the_laraupdater_vendor_routes_match_the_snapshot(): void
@@ -111,7 +150,7 @@ class RouteContractSnapshotTest extends TestCase
         $this->assertNotEmpty($expected);
         $this->assertSame(
             $expected,
-            $this->currentRouteContracts('laraupdater.'),
+            $this->currentRouteContracts(fn (string $name) => str_starts_with($name, 'laraupdater.')),
             'LaraUpdater route contracts changed. Regenerate tests/Fixtures/vendor-route-contracts.json when the change is intentional.'
         );
     }
@@ -319,11 +358,12 @@ class RouteContractSnapshotTest extends TestCase
     /**
      * The current route contract, aggregated by name.
      *
-     * @param  string|null  $onlyPrefix  if given, only names starting with
-     *                                   this prefix; if null, then the
-     *                                   application's own routes (without vendor).
+     * @param  (callable(string): bool)|null  $only  if given, only the names it
+     *                                               accepts; if null, then the
+     *                                               application's own routes
+     *                                               (without vendor).
      */
-    private function currentRouteContracts(?string $onlyPrefix = null): array
+    private function currentRouteContracts(?callable $only = null): array
     {
         $contracts = [];
 
@@ -333,13 +373,13 @@ class RouteContractSnapshotTest extends TestCase
                 continue;
             }
 
-            if ($onlyPrefix === null) {
+            if ($only === null) {
                 if ($this->isDevOnlyRoute($name)
-                    || str_starts_with($name, 'livewire.')
+                    || $this->isLivewireRoute($name)
                     || str_starts_with($name, 'laraupdater.')) {
                     continue;
                 }
-            } elseif (! str_starts_with($name, $onlyPrefix)) {
+            } elseif (! $only($name)) {
                 continue;
             }
 
@@ -414,6 +454,20 @@ class RouteContractSnapshotTest extends TestCase
         }
 
         return $matches;
+    }
+
+    /**
+     * Is this one of Livewire's own routes?
+     *
+     * Livewire 3 registers its endpoint as `default.livewire.update` and finds
+     * it again by the SUFFIX `livewire.update` (HandleRequests, where a
+     * custom update route may carry any prefix). The upload routes keep the
+     * `livewire.` prefix. Both rules are needed; neither alone covers all
+     * three names.
+     */
+    private function isLivewireRoute(string $name): bool
+    {
+        return str_starts_with($name, 'livewire.') || str_ends_with($name, 'livewire.update');
     }
 
     /**
