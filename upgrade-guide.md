@@ -279,7 +279,22 @@ full `vendor/` replacement (section 6, Branch B) handles and an incremental
 overwrite would not; that is the general argument for Branch B again, not a new
 path to list.
 
-*Last updated: TODO 55.*
+**TODO 55.2 (ignition removed): five package paths, and the namespace stays.**
+
+```
+vendor/spatie/laravel-ignition
+vendor/spatie/ignition
+vendor/spatie/flare-client-php
+vendor/spatie/error-solutions
+vendor/spatie/backtrace
+```
+
+**`vendor/spatie` itself must survive** - `calendar-links`, `laravel-activitylog`,
+`laravel-cookie-consent`, `laravel-failed-job-monitor` and `laravel-package-tools`
+live there and are load-bearing. The same warning as `vendor/fruitcake` at
+TODO 35: delete the five directories, not their parent.
+
+*Last updated: TODO 55.2.*
 
 ## 3. Application files that move or disappear
 
@@ -732,8 +747,12 @@ State that lives on the host and is not expressible in a release archive.
   the first request. The PHP floor is now `^8.2` (section 1). The republished
   `public/vendor/livewire/` files ship in the archive and overwrite in place;
   nothing to do beyond the usual step 10 `optimize:clear`.
+- **TODO 55.2 makes the `bootstrap/cache` rule fatal again**: the manifests
+  name `Spatie\LaravelIgnition\IgnitionServiceProvider`, which no longer
+  exists. Delete both files before the first request - the same failure TODO 35
+  and TODO 39.1 describe above.
 
-*Last updated: TODO 55.*
+*Last updated: TODO 55.2.*
 
 ## 6. The upgrade procedure
 
@@ -809,3 +828,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 55.1 | **Nothing for an operator: the date arithmetic is made to survive Carbon 3 before the hop brings it.** Four call sites now return the same values on Carbon 2 and 3; on the installed Carbon 2 nothing changes. No package, file, `.env` key or per-install state moves. Compiled code only - the usual step 10 `optimize:clear` covers it. |
 | (no framework hop) | 57.1 | **Nothing for an operator: the installer's "database already has data" check stops using doctrine/dbal before Laravel 11 removes the call it relied on.** No package, file, `.env` key or per-install state moves; the check behaves as before. |
 | **Laravel 10 -> 11** | **55** | **The second framework hop, and the PHP floor moves with it: `^8.2`.** `laravel/framework` 11.57.0; 5 packages in, 46 updated, 0 out, so section 2 says none. Section 3 says none: `bootstrap/app.php` and the republished Livewire assets ship and overwrite in place. Section 4 says none, with a warning not to adopt Laravel 11's renamed `.env` keys - the application's config still reads the old ones, and the framework's defaults are deliberately not merged in. Section 5: the `bootstrap/cache` manifests must go. A fourth `laravel/framework` advisory (PKSA-d5tc-s1qs-h781, low, debug-mode only, fixed in 12.69.0) is exempted from resolution like the other three; `composer audit` still reports all four. |
+| (no framework hop) | 55.2 | **The debug error page changes hands; five vendor paths orphan.** `spatie/laravel-ignition` and the four packages only it required are removed - Laravel 11 renders the debug page itself. Section 2 gains the five paths under a `vendor/spatie` that must stay. Section 5: the `bootstrap/cache` manifests name the removed provider, so deleting them is mandatory. Sections 3 and 4 say none. |
