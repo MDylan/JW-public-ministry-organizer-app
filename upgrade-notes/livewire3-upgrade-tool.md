@@ -424,6 +424,18 @@ expectation, and are pinned by URI.
 | after TODO 51 | 1546 | 4481 | 0 | 3 | 3 |
 | after TODO 51.1 | 1547 | 4482 | 0 | 0 | **0** |
 
+### TODO 47.2, as delivered (2026-10-23)
+
+The browser walk's first finding, and one no upgrade tool could have flagged:
+Livewire 2 views that toggled `wire:key` on a component's root to restart
+`wire:poll`. Livewire 3's morph replaces a root whose key changes, and throws.
+PHPUnit never morphs - only a second render in a browser does.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 51.1 | 1547 | 4482 | 0 | 0 | 0 |
+| after TODO 47.2 | 1550 | 4519 | 0 | 0 | 0 |
+
 From 286 red of 1507 at the bump to 0 of 1547.
 
 ## `vendor:publish --tag=livewire:assets` under version 3
