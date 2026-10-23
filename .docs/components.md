@@ -166,6 +166,15 @@ Components talk to page scripts through window events: toasts, SweetAlert dialog
 
 **Always pass named parameters.** `dispatch('success', ['message' => $m])` is legal PHP and dispatches an event of the right name, but Livewire 3 treats the array as one positional parameter: the browser receives `event.detail = [{message: ...}]`, every `event.detail.message` is undefined, and nothing reports an error. Component tests that assert only the event name pass either way. `tests/Feature/Livewire/BrowserEventContractTest` is what fails: it reads the receiver names from the views and `public/js`, and rejects any `dispatch()` of those events that is not named-parameter only. Livewire-to-Livewire events are not browser events and are not covered by this rule. Until TODO 47 this was `dispatchBrowserEvent($name, $array)`, which Livewire 3 removed.
 
+**`error` shares its name with the browser's own event.** The browser fires an `ErrorEvent` named `error` on `window` for every uncaught exception, with no `detail`; the toast listener therefore returns early unless the event is a `CustomEvent` (TODO 47.2, pinned by `JavaScriptBridgeContractTest`).
+
+### Polling and the root element
+
+`Home`, `Events\Events` and `Events\Modal` poll every 30 seconds while `$polling` is on; opening the day modal switches the page's poll off and the modal's on, and `Home` switches back on when the modal closes (its `refresh` listener is `pollingOn`; the calendar's is `render`, so the calendar stays off until reloaded - unchanged since v1).
+
+- **Never put `wire:key` on a component's root element.** The root is keyed by its `wire:id`; Livewire 3's morph treats a changed root key as a different element and replaces the root, which leaves it outside the component and throws "Could not find Livewire component in DOM tree". The three views used to toggle `wire:key` together with `wire:poll` on the root (a Livewire 2 device to restart the poll). `ComponentRootElementContractTest` checks every component view.
+- **A poll on the root has to be there at load.** Livewire 3 registers `wire:poll` when an element initialises; afterwards removing the attribute pauses the poll and restoring it resumes it, but an attribute that first appears later never starts. `Home` and the calendar start with `$polling = true`, so their poll sits on the root; `Events\Modal` starts with `false`, so its poll is a keyed empty `<div>` inside the root, created and removed with `@if($polling)`.
+
 ## Component Events (Livewire -> Livewire)
 
 Components also signal each other - a partial re-rendering after a save, the day modal opening from the calendar. Each component declares what it answers to in a **`protected $listeners`** array (`'event'` or `'event' => 'method'`). All 19 are `protected` since TODO 44: Livewire 3 treats a `public` property declared on the component as client state, so a public `$listeners` was serialised into every snapshot and could be rewritten from the browser.

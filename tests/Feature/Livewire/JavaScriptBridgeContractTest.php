@@ -89,6 +89,21 @@ class JavaScriptBridgeContractTest extends FeatureTestCase
         $this->assertStringNotContainsString('@livewire', $sources['resources/views/layouts/setup.blade.php']);
     }
 
+    public function test_the_error_toast_ignores_the_browsers_own_error_event(): void
+    {
+        // TODO 47.2: the application dispatches a browser event named `error`,
+        // and the browser fires its own `error` event on window for every
+        // uncaught exception - an ErrorEvent with no detail. The toast handler
+        // read event.detail.message off it and threw a TypeError of its own on
+        // top of whatever had failed. The browser walk found it that way.
+        $layout = $this->sources()['resources/views/layouts/app.blade.php'];
+
+        $this->assertMatchesRegularExpression(
+            "/window\\.addEventListener\\('error', event => \\{\\s*if \\(! \\(event instanceof CustomEvent\\)\\) \\{\\s*return;\\s*\\}/",
+            $layout
+        );
+    }
+
     public function test_the_application_layout_handles_an_expired_page_with_the_translated_prompt(): void
     {
         $user = $this->createUser(['email' => 'js-bridge@example.test']);

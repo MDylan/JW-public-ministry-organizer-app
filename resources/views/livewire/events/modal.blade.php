@@ -1,4 +1,13 @@
-<div @if($polling) wire:poll.30000ms wire:key="modal-polling" @endif>
+<div>
+    {{-- TODO 47.2: the poll lives on its own keyed element, not on the root.
+         $polling starts false here, and Livewire 3 registers wire:poll only
+         when an element initialises - an attribute added to the root later
+         would never start. A fresh element does, and removing it stops the
+         poll. A conditional wire:key on the ROOT made v3's morph replace the
+         root itself, which threw "Could not find Livewire component". --}}
+    @if($polling)
+        <div wire:poll.30000ms wire:key="modal-polling"></div>
+    @endif
     @if($show_content)
         <div wire:ignore.self class="modal fade" id="form" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
             @php

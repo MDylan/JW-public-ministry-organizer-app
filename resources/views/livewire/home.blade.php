@@ -1,4 +1,4 @@
-<div @if($polling) wire:poll.30000ms wire:key="home-polling" @endif>
+<div @if($polling) wire:poll.30000ms @endif>
 @section('title')
 {{__('app.menu-home')}}
 @endsection

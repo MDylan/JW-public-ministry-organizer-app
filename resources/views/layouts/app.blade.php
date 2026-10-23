@@ -82,7 +82,12 @@
       window.addEventListener('success', event => {
           toastr.success(event.detail.message, '{{__('app.saved')}}');
       });
+      {{-- The browser fires its own `error` event on window for every
+           uncaught exception; only the application's dispatch carries a detail. --}}
       window.addEventListener('error', event => {
+          if (! (event instanceof CustomEvent)) {
+              return;
+          }
           toastr.error(event.detail.message, '{{__('app.errorWhileSaved')}}');
       });
       window.addEventListener('sweet-error', event => {
