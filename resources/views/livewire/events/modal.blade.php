@@ -243,7 +243,7 @@
                                                 'groupId' => $form_groupId, 
                                                 'date' => $date
                                             ], key('eventEdit-'.$form_groupId.'-'.$date)) --}}
-                                            <livewire:events.event-edit :groupId="$form_groupId" :date="$date" :wire:key="'eventEdit-'.$form_groupId.'-'.$date">
+                                            <livewire:events.event-edit :groupId="$form_groupId" :date="$date" :wire:key="'eventEdit-'.$form_groupId.'-'.$date" />
                                         @endif
                                 </div>
                             </div>

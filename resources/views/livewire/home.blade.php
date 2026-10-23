@@ -106,7 +106,7 @@
                             @endif
 
                             @if ($group['messages_on'])
-                                <livewire:groups.messages :group="$group['id']" :wire:key="'messages_'.$group['id']">
+                                <livewire:groups.messages :group="$group['id']" :wire:key="'messages_'.$group['id']" />
                             @endif                            
 
 
