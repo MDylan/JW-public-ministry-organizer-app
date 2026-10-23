@@ -219,37 +219,34 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
     }
 
     // =========================================================================
-    // 8-9. TODO 52 / 53 - correction of Phase 7's premise
+    // 8-9. TODO 52 / 53 - the dead Mix pipeline, removed rather than ported
     // =========================================================================
 
-    public function test_gap_the_mix_pipeline_is_dead_and_the_packer_is_the_only_asset_pipeline(): void
+    public function test_gap_the_mix_pipeline_is_removed_and_pwbs_asset_is_the_only_asset_pipeline(): void
     {
-        // According to the roadmap's Phase 7, the Vite migration is mandatory
-        // because Mix 6 does not build on Node 24, and per TODO 52, `mix()`
-        // helpers need to be replaced with `@vite` in the two layouts.
-        // Neither statement holds.
-        $this->assertSame(
-            [],
-            $this->grepProjectSources('mix('),
-            'There are ZERO `mix()` calls in the project - not in the layouts, not anywhere else.'
-        );
+        // Phase 7 once called the Vite migration mandatory, because Mix 6 does
+        // not build on Node 24. TODO 21 measured that the pipeline was dead:
+        // zero `mix()` calls, an empty CSS entry point, the untouched Laravel
+        // default as the JS one, and no output on disk. TODO 52 then chose to
+        // delete it instead of porting it, so no build step exists at all.
+        foreach (['webpack.mix.js', 'package.json', 'vite.config.js', 'resources/js', 'resources/css'] as $path) {
+            $this->assertFileDoesNotExist(
+                base_path($path),
+                "{$path} is back. A frontend build is a new decision (roadmap TODO 52), not a "
+                .'skeleton file to copy over during a framework hop.'
+            );
+        }
 
-        $this->assertSame(0, filesize(base_path('resources/css/app.css')), 'The CSS entry point is empty.');
-        $this->assertSame(
-            ["require('./bootstrap');"],
-            array_map('trim', file(base_path('resources/js/app.js'))),
-            'The JS entry point is the untouched Laravel default.'
-        );
+        $this->assertSame([], $this->grepProjectSources('mix('), 'No `mix()` call: there is no Mix manifest to read.');
+        $this->assertSame([], $this->grepProjectSources('@vite'), 'No `@vite` tag: there is no Vite manifest to read.');
+        $this->assertSame([], $this->grepProjectSources('Vite::'), 'No `Vite::` call: there is no Vite manifest to read.');
 
-        // And the Mix outputs don't even exist, so the build never ran here.
+        // The outputs the dead pipeline would have written never existed.
         $this->assertFileDoesNotExist(base_path('public/js/app.js'));
         $this->assertFileDoesNotExist(base_path('public/css/app.css'));
 
-        // Per TODO 21's ordering correction, Vite could NOT have made the
-        // Packer redundant, because the Packer was the application's only
-        // working asset pipeline, and TODO 52 didn't touch a single one of
-        // its 16 call sites. After TODO 33.8 the order reversed: TODO 52 now
-        // needs to replace `pwbs_asset()` tags with `@vite`, not `Packer::` calls.
+        // What does serve the assets: `pwbs_asset()`, which replaced the
+        // Packer's 16 call sites in TODO 33.8.
         $this->assertSame([], $this->grepProjectSources('Packer::'));
 
         $callSites = array_values(array_filter(

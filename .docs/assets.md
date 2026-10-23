@@ -8,7 +8,7 @@ There is **one** asset pipeline in this repository, and it is not a build step.
 |---|---|---|
 | `pwbs_asset()` (`app/Helpers/helpers.php`) | **live** | The authenticated application and the installer wizard, via 21 blade tags |
 | Raw `asset()` in `resources/views/public.blade.php` | **live** | The whole guest area - see below |
-| Laravel Mix (`webpack.mix.js`) | **dead** | Nothing - see below |
+| Laravel Mix (`webpack.mix.js`) | **removed** (roadmap TODO 52) | Nothing ever - see below |
 
 Nothing is compiled at deploy time and nothing is generated at request time. The application's CSS and JS are **hand-placed files committed under `public/`** (`public/dist/` for AdminLTE, `public/plugins/` for jQuery, bootstrap, toastr, sweetalert2, summernote and fullcalendar, `public/css/` and `public/js/` for the project's own four files). The browser receives those files **byte for byte**, with a cache-busting query appended to the URL.
 
@@ -105,16 +105,23 @@ Defects 1 to 3 are gone by construction: there is no rewrite, no generated file 
 
 The same hook removes `vendor/eusonlito`, `vendor/imagecow`, `config/packer.php` and the generated `*-cache_*` artifacts, because the updater's `install()` only ever adds and overwrites. `release/build-update.php` cross-checks every tracked deletion against the hook and warns about any it does not cover.
 
-## The dead pipeline: Laravel Mix
+## Laravel Mix, removed
 
-`webpack.mix.js` and `laravel-mix ^6.0.6` are present, and the roadmap once treated migrating them to Vite as mandatory. Measured state:
+Until roadmap TODO 52 the repository carried the Laravel skeleton's Mix setup: `webpack.mix.js`, a `package.json` with `laravel-mix ^6.0.6` and three more devDependencies, and `resources/js/` + `resources/css/` as entry points. The roadmap once treated migrating it to Vite as mandatory, because Mix 6 does not build on Node 24. Measured state before the removal:
 
 - **Zero `mix()` calls** anywhere in the project.
-- `resources/css/app.css` is **0 bytes**; `resources/js/app.js` is the untouched 25-byte Laravel default (`require('./bootstrap');`).
-- The outputs `public/js/app.js` and `public/css/app.css` **do not exist**, and nothing references them.
-- No `node_modules/`, no `package-lock.json`.
+- `resources/css/app.css` was **0 bytes**; `resources/js/app.js` was the untouched 25-byte Laravel default (`require('./bootstrap');`).
+- The outputs `public/js/app.js` and `public/css/app.css` **never existed**, and nothing referenced them.
+- No `node_modules/`, no lockfile.
 
-It does not run, it never ran here, and nothing consumes its output. Roadmap Phase 7 has been re-scoped accordingly: a Vite migration is a choice about whether to bring the hand-placed vendor assets under a build graph, not a repair of something broken. TODO 52 would replace the `pwbs_asset()` tags with `@vite` in the same three files.
+It did not run, it never ran here, and nothing consumed its output - so Node 24 being unable to build it broke nothing. Roadmap Phase 7 put the choice to the developer (port it to Vite and bring the hand-placed vendor assets under a real build graph, or delete it) and the answer was **delete**: all five files went in TODO 52, and with them the reason for TODO 53 (a reproducible build).
+
+What that means in practice:
+
+- **There is no build step, no Node requirement and no `npm` command** - for development, for tests or for a release. The assets are the committed files under `public/`.
+- **A future build is a new decision, not a restore.** Bringing one back means writing the entry points, wiring the vendor assets into it and replacing the 21 `pwbs_asset()` tags with `@vite`, and - because the release archive is built from a git diff and the host runs no `npm` - committing the build output. That is the scope the roadmap's Phase 7 describes as substantially more frontend work.
+- **The Laravel 11 skeleton ships `package.json` and `vite.config.js`.** Copying them over during a framework hop would quietly reintroduce a pipeline that builds nothing; `AssetPipelineKnownGapsTest` fails if either file, either entry-point directory, or any `mix(` / `@vite` / `Vite::` call appears.
+- `.gitignore` still lists `/node_modules`, `/public/hot`, `npm-debug.log` and `yarn-error.log` on purpose: if someone does run `npm` in a checkout, its output stays out of a commit - and therefore out of a release archive.
 
 ## Livewire's own JavaScript is not served by the helper
 
@@ -204,7 +211,7 @@ repository can assert. `upgrade-guide.md` sections 3 and 5 own that half.
 | The emitted tags, and that they are identical in every environment | `tests/Feature/Assets/AssetPipelineTest.php` |
 | That rendering writes nothing into the web root | `tests/Feature/Assets/AssetPipelineTest.php` |
 | That no served stylesheet carries an absolute URL or a mangled `data:` URI | `tests/Feature/Assets/AssetPipelineTest.php` |
-| The nine closed gaps, the dead Mix pipeline, the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
+| The nine closed gaps, the removed Mix pipeline (and that no other build appears), the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
 | The published Livewire assets against the package's own `dist/` | `tests/Feature/Assets/LivewirePublishedAssetsTest.php` |
 
 The layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. The two stylesheet guards start from the **rendered HTML** rather than a hand-written list, so if a generating pipeline ever returns, they inspect its output rather than the untouched source.
