@@ -1,0 +1,98 @@
+{
+    "generated_by": "the v1 release tree (git cee60d41), laravel/framework v8.83.29, PHP 8.3.16",
+    "fixture_ids": {
+        "group": 9001,
+        "member": 9002,
+        "date": "2030-01-15"
+    },
+    "rows": [
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"a9f59535-db6f-4815-bdba-5afbf15bb3d4\",\"displayName\":\"App\\\\Jobs\\\\CalculateDateProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\CalculateDateProcess\",\"command\":\"O:29:\\\"App\\\\Jobs\\\\CalculateDateProcess\\\":14:{s:39:\\\"\\u0000App\\\\Jobs\\\\CalculateDateProcess\\u0000group_id\\\";i:9001;s:35:\\\"\\u0000App\\\\Jobs\\\\CalculateDateProcess\\u0000date\\\";s:10:\\\"2030-01-15\\\";s:38:\\\"\\u0000App\\\\Jobs\\\\CalculateDateProcess\\u0000user_id\\\";i:9002;s:51:\\\"\\u0000App\\\\Jobs\\\\CalculateDateProcess\\u0000deleteAfterCalculate\\\";a:0:{}s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"72d6d73d-1a61-4cc5-b9da-20551b3566a7\",\"displayName\":\"App\\\\Jobs\\\\CalulcateUserNameIndexProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\CalulcateUserNameIndexProcess\",\"command\":\"O:38:\\\"App\\\\Jobs\\\\CalulcateUserNameIndexProcess\\\":10:{s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"88aeeef4-a904-4883-94c5-6a9de5b9819e\",\"displayName\":\"App\\\\Jobs\\\\DeleteGroupDataProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\DeleteGroupDataProcess\",\"command\":\"O:31:\\\"App\\\\Jobs\\\\DeleteGroupDataProcess\\\":12:{s:7:\\\"groupId\\\";i:9001;s:11:\\\"deleteUsers\\\";b:0;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"d04ba954-a2fd-4965-bdf2-eba5aca14614\",\"displayName\":\"App\\\\Jobs\\\\GenerateStatProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\GenerateStatProcess\",\"command\":\"O:28:\\\"App\\\\Jobs\\\\GenerateStatProcess\\\":17:{s:7:\\\"groupId\\\";i:9001;s:4:\\\"date\\\";s:10:\\\"2030-01-15\\\";s:38:\\\"\\u0000App\\\\Jobs\\\\GenerateStatProcess\\u0000day_stat\\\";a:0:{}s:42:\\\"\\u0000App\\\\Jobs\\\\GenerateStatProcess\\u0000service_days\\\";a:0:{}s:39:\\\"\\u0000App\\\\Jobs\\\\GenerateStatProcess\\u0000date_data\\\";a:0:{}s:40:\\\"\\u0000App\\\\Jobs\\\\GenerateStatProcess\\u0000forceReset\\\";b:0;s:23:\\\"deleteWhenMissingModels\\\";b:1;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"0059127d-b651-44b9-9c4e-5194edc342cc\",\"displayName\":\"App\\\\Jobs\\\\GroupDayUpdatedProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\GroupDayUpdatedProcess\",\"command\":\"O:31:\\\"App\\\\Jobs\\\\GroupDayUpdatedProcess\\\":16:{s:37:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000date\\\";s:10:\\\"2030-01-15\\\";s:41:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000group_id\\\";i:9001;s:43:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000day_number\\\";i:2;s:43:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000start_time\\\";s:5:\\\"08:00\\\";s:41:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000end_time\\\";s:5:\\\"12:00\\\";s:40:\\\"\\u0000App\\\\Jobs\\\\GroupDayUpdatedProcess\\u0000user_id\\\";i:9002;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"aca7e343-591f-4032-a15f-8887e349b9b9\",\"displayName\":\"App\\\\Jobs\\\\UserLogoutFromGroupProcess\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"App\\\\Jobs\\\\UserLogoutFromGroupProcess\",\"command\":\"O:35:\\\"App\\\\Jobs\\\\UserLogoutFromGroupProcess\\\":14:{s:42:\\\"\\u0000App\\\\Jobs\\\\UserLogoutFromGroupProcess\\u0000group\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:16:\\\"App\\\\Models\\\\Group\\\";s:2:\\\"id\\\";i:9001;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:41:\\\"\\u0000App\\\\Jobs\\\\UserLogoutFromGroupProcess\\u0000user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:9002;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:42:\\\"\\u0000App\\\\Jobs\\\\UserLogoutFromGroupProcess\\u0000start\\\";s:19:\\\"2026-10-23 21:23:50\\\";s:51:\\\"\\u0000App\\\\Jobs\\\\UserLogoutFromGroupProcess\\u0000logoutUserName\\\";s:10:\\\"Admin User\\\";s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"bfc37d3a-6e18-432b-a99d-e3092668ba65\",\"displayName\":\"App\\\\Notifications\\\\UserRegisteredNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":2880,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":\"60\",\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":16:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9002;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:12:\\\"notification\\\";O:44:\\\"App\\\\Notifications\\\\UserRegisteredNotification\\\":13:{s:5:\\\"tries\\\";i:2880;s:7:\\\"backoff\\\";i:60;s:2:\\\"id\\\";s:36:\\\"980d08e3-83cf-48cc-a599-86799163ce92\\\";s:6:\\\"locale\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"timeout\\\";N;s:17:\\\"shouldBeEncrypted\\\";b:0;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"7639d432-553c-40ce-a254-37b4024b9492\",\"displayName\":\"App\\\\Notifications\\\\EventCreatedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":2880,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":\"60\",\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":16:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9002;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\EventCreatedNotification\\\":14:{s:48:\\\"\\u0000App\\\\Notifications\\\\EventCreatedNotification\\u0000data\\\";a:6:{s:8:\\\"userName\\\";s:10:\\\"Admin User\\\";s:9:\\\"groupName\\\";s:7:\\\"Csoport\\\";s:7:\\\"replyTo\\\";s:0:\\\"\\\";s:4:\\\"date\\\";s:10:\\\"2030-01-15\\\";s:10:\\\"newService\\\";a:2:{s:5:\\\"start\\\";s:19:\\\"2030-01-15 09:00:00\\\";s:3:\\\"end\\\";s:19:\\\"2030-01-15 10:00:00\\\";}s:6:\\\"reason\\\";b:0;}s:5:\\\"tries\\\";i:2880;s:7:\\\"backoff\\\";i:60;s:2:\\\"id\\\";s:36:\\\"15810dfb-9b2f-4d80-8392-bc90d8697476\\\";s:6:\\\"locale\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"timeout\\\";N;s:17:\\\"shouldBeEncrypted\\\";b:0;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"7df4b7b0-06d8-47e0-a111-664ae3b52f72\",\"displayName\":\"App\\\\Notifications\\\\EventDeletedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":2880,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":\"60\",\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":16:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9002;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\EventDeletedNotification\\\":14:{s:48:\\\"\\u0000App\\\\Notifications\\\\EventDeletedNotification\\u0000data\\\";a:5:{s:8:\\\"userName\\\";s:10:\\\"Admin User\\\";s:9:\\\"groupName\\\";s:7:\\\"Csoport\\\";s:4:\\\"date\\\";s:10:\\\"2030-01-15\\\";s:10:\\\"oldService\\\";a:2:{s:5:\\\"start\\\";s:19:\\\"2030-01-15 09:00:00\\\";s:3:\\\"end\\\";s:19:\\\"2030-01-15 10:00:00\\\";}s:6:\\\"reason\\\";s:11:\\\"user_logout\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"backoff\\\";i:60;s:2:\\\"id\\\";s:36:\\\"935a7e6d-be9c-4073-9952-39ab203093c6\\\";s:6:\\\"locale\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"timeout\\\";N;s:17:\\\"shouldBeEncrypted\\\";b:0;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"9544afed-02c5-4355-af17-10e2f0345a68\",\"displayName\":\"App\\\\Notifications\\\\Newsletter\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":2880,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":\"60\",\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":16:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9002;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:12:\\\"notification\\\";O:28:\\\"App\\\\Notifications\\\\Newsletter\\\":14:{s:34:\\\"\\u0000App\\\\Notifications\\\\Newsletter\\u0000data\\\";a:4:{s:13:\\\"newsletter_id\\\";s:6:\\\"1_9002\\\";s:7:\\\"subject\\\";s:8:\\\"Hirlevel\\\";s:7:\\\"content\\\";s:17:\\\"Hirlevel tartalma\\\";s:10:\\\"recipients\\\";s:11:\\\"groupAdmins\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"backoff\\\";i:60;s:2:\\\"id\\\";s:36:\\\"0f5262c0-b654-49cb-9529-6562ed9068b8\\\";s:6:\\\"locale\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}s:5:\\\"tries\\\";i:2880;s:7:\\\"timeout\\\";N;s:17:\\\"shouldBeEncrypted\\\";b:0;s:3:\\\"job\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        },
+        {
+            "queue": "default",
+            "payload": "{\"uuid\":\"f493fcac-9cd4-4a4f-a10e-11565e57f9a3\",\"displayName\":\"ProtoneMedia\\\\LaravelVerifyNewEmail\\\\Mail\\\\VerifyNewEmail\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Mail\\\\SendQueuedMailable\",\"command\":\"O:34:\\\"Illuminate\\\\Mail\\\\SendQueuedMailable\\\":13:{s:8:\\\"mailable\\\";O:54:\\\"ProtoneMedia\\\\LaravelVerifyNewEmail\\\\Mail\\\\VerifyNewEmail\\\":29:{s:16:\\\"pendingUserEmail\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":4:{s:5:\\\"class\\\";s:27:\\\"App\\\\Models\\\\PendingUserEmail\\\";s:2:\\\"id\\\";i:9003;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";}s:6:\\\"locale\\\";N;s:4:\\\"from\\\";a:0:{}s:2:\\\"to\\\";a:1:{i:0;a:2:{s:4:\\\"name\\\";N;s:7:\\\"address\\\";s:29:\\\"queue-member-new@example.test\\\";}}s:2:\\\"cc\\\";a:0:{}s:3:\\\"bcc\\\";a:0:{}s:7:\\\"replyTo\\\";a:0:{}s:7:\\\"subject\\\";N;s:8:\\\"markdown\\\";N;s:7:\\\"\\u0000*\\u0000html\\\";N;s:4:\\\"view\\\";N;s:8:\\\"textView\\\";N;s:8:\\\"viewData\\\";a:0:{}s:11:\\\"attachments\\\";a:0:{}s:14:\\\"rawAttachments\\\";a:0:{}s:15:\\\"diskAttachments\\\";a:0:{}s:9:\\\"callbacks\\\";a:0:{}s:5:\\\"theme\\\";N;s:6:\\\"mailer\\\";s:4:\\\"smtp\\\";s:29:\\\"\\u0000*\\u0000assertionableRenderStrings\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:17:\\\"shouldBeEncrypted\\\";b:0;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}}\"}}",
+            "attempts": 0,
+            "reserved_at": null,
+            "available_at": 1761177600,
+            "created_at": 1761177600
+        }
+    ]
+}

@@ -137,6 +137,8 @@ All six now read `config('mail.from.address')` / `config('app.name')` — the sa
 
 The line is now `env('MAIL_FROM_ADDRESS') ?: 'email@example.com'`. `?:` rather than `??` on purpose: `env()` returns `''` for an empty value, and `??` would pass that through into an invalid address further down. `tests/Feature/Mail/FailedJobMonitorRouteTest.php` holds all three parts — the vendor's `TypeError` as a constraint, `env()`'s handling of the literal `"null"` string, and what the config file produces for both values that used to break it.
 
+**When it fires (TODO 60).** Only once a job's tries are exhausted - three attempts for the jobs in `app/Jobs`, 2880 for the queued notifications, which set their own `$tries`. `.docs/jobs.md` ("Runtime") has the measurement.
+
 ## Notes
 
 - All notifications currently use mail delivery; no database/broadcast channel implementations are present.
