@@ -353,6 +353,21 @@ answers 403 to a non-translator - as does the component's own gate on its own.
 **3 green, 0 newly red, no reason changed.** What is left: the 3 route contract
 snapshots, TODO 51.1's.
 
+### TODO 46, as delivered (2026-10-23)
+
+The upgrade tool's only JavaScript step was `livewire:load` -> `livewire:init`,
+and it left `Livewire.onPageExpired()` inside the renamed listener - an API
+version 3 removed, so the layout threw on every page load. It is now the
+`request` hook's `fail()` callback on a 419. The three unpkg Alpine tags, the
+setup layout's asset directives and `modal.js`'s implicit global are gone.
+`JavaScriptBridgeContractTest` pins it; the suite executes no JavaScript, so the
+red count could not move.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 46.1 | 1526 | 4324 | 0 | 3 | 3 |
+| after TODO 46 | 1530 | 4336 | 0 | 3 | 3 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
