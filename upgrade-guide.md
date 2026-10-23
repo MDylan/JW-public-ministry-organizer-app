@@ -414,7 +414,25 @@ rm -r app/Http/Livewire
 Leave the rest of `app/Http/` alone - `Controllers`, `Middleware`, `Requests`
 and `Kernel.php` stay where they are.
 
-*Last updated: TODO 51.*
+**TODO 52: the Laravel Mix files disappear, and nothing breaks if they linger.**
+`webpack.mix.js`, `package.json`, `resources/js/` and `resources/css/` were
+removed from the repository. They were a build pipeline that never produced
+anything - the application's CSS and JS were always the committed files under
+`public/`, and they still are. The archive cannot delete, so a host keeps the
+old copies.
+
+They are inert: no PHP code, view or configuration reads them, and a host never
+ran `npm` for this application. Delete them for the same reason as above:
+
+```
+rm webpack.mix.js package.json
+rm -r resources/js resources/css
+```
+
+Leave `resources/views/` alone - it is the only directory `resources/` still
+needs.
+
+*Last updated: TODO 52.*
 
 ## 4. `.env` changes
 
@@ -656,3 +674,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 51 | **The Livewire components change namespace, and the archive cannot say so on its own.** `App\Http\Livewire` -> `App\Livewire` (28 classes). Section 2 says none: no package moves. Section 3 gains `app/Http/Livewire/`, left behind on every host and inert there, with the one-line removal. Section 4 says none. Section 5 records that a warm `route:cache` or `config:cache` names the old classes, so step 10's `optimize:clear` is what makes the move take effect. The archive also has to carry a regenerated `vendor/composer/autoload_classmap.php`, which this repository commits. |
 | (no framework hop) | 51.1 | **The test suite is green again, and the one route change is the one an operator can trip over.** Livewire's component endpoint moved from `/livewire/message/{name}` to `POST /livewire/update`; section 5 asks anyone filtering by URL in front of the application to follow it. Sections 2, 3 and 4 say none: no package, file or `.env` key moves. Phase 6 still waits on the browser walk (roadmap TODO 47.1) before a 2.x release can be cut. |
 | (no framework hop) | 47.1 - 47.5 | **Phase 6 closes; nothing here for an operator beyond what is already required.** The browser walk fixed four Livewire 3 behaviours in views, one component class and the layout - compiled views, so section 6 step 10 (`optimize:clear`) is what makes them take effect, as for every view change. No package, file, `.env` key or per-install state moves. One local finding is worth knowing for a Windows/Laragon install using mod_fcgid: a vhost without `FcgidMaxRequestLen` refuses any upload over 128 KB with a bare 500 before Laravel sees it. |
+| (no framework hop) | 52, 53 | **Phase 7 resolves to a removal, and the archive leaves four dead paths behind.** The Laravel Mix pipeline never built anything, so it was deleted rather than ported to Vite, and TODO 53's reproducible build went with it. Section 3 gains `webpack.mix.js`, `package.json`, `resources/js/` and `resources/css/` - inert on every host, with the two-line removal. Sections 2, 4 and 5 say none: no package, `.env` key or per-install state moves, and no host ever needed Node or `npm`, before or after. |

@@ -18,7 +18,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - `.docs/validation.md`: the two custom rule objects in `app/Rules`, the
   `ValidationRule` contract and the `$fail()->translate()` trap, and the two
   traps around the service-day time validators.
-- `.docs/assets.md`: CSS/JS delivery - the `pwbs_asset()` helper that replaced `laravel-packer`, the dead Mix pipeline, and the traps in both.
+- `.docs/assets.md`: CSS/JS delivery - the `pwbs_asset()` helper that replaced `laravel-packer`, the removed Mix pipeline (TODO 52), and the traps in the helper.
 - `upgrade-roadmap.md`: the developer's framework-upgrade plan, Laravel 8 -> 13.
 - `upgrade-guide.md`: the **operator's** counterpart - what a deployed host has
   to do to reach 2.0.0. Filled one hop at a time and **not complete** until the

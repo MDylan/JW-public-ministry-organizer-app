@@ -2687,7 +2687,16 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
 
 **So this phase is a choice, not an obligation**, and its scope is an open question rather than a translation exercise: it is worth doing only if we want AdminLTE, jQuery, bootstrap, toastr, sweetalert2 and summernote under a real build graph, which is substantially more frontend work than the items below describe. **Decide that before starting**, and re-scope TODO 52 to whatever is decided. Nothing in Phases 4-13 depends on the answer.
 
-- [ ] **TODO 52: Migrate the build from Laravel Mix to Vite**
+**DECIDED ON 2026-10-23: delete, no build.** The developer chose the first branch: the pipeline is removed rather than ported, so TODO 52 is the deletion, TODO 53 disappears with it, and the assets stay hand-placed under `public/` behind `pwbs_asset()`. A real build remains possible later, but as a new decision with the scope described above, not as a restore.
+
+- [x] **TODO 52: Migrate the build from Laravel Mix to Vite** - DONE, as a removal
+  - **Delivered on 2026-10-23, by the "delete" branch of the decision above. Red: 0 -> 0** (1554 tests, 4572 -> 4577 assertions).
+  - **Removed:** `webpack.mix.js`, `package.json` (Mix scripts plus `laravel-mix`, `axios`, `lodash`, `postcss` as devDependencies - nothing else), `resources/js/app.js`, `resources/js/bootstrap.js` (lodash, axios and a commented-out Echo block) and the empty `resources/css/app.css`; both directories go with them. `.styleci.yml` lost its `webpack.mix.js` exclusion and now reads `js: true`. `.gitignore` is deliberately unchanged: its `/node_modules`, `/public/hot` and npm/yarn log patterns keep a stray `npm` run out of a commit, and so out of a release archive.
+  - **Guard:** `AssetPipelineKnownGapsTest`'s Mix case was rewritten from "the pipeline is dead" to "the pipeline is removed and `pwbs_asset()` is the only one": none of the five paths nor a `vite.config.js` may exist, and no `mix(`, `@vite` or `Vite::` may appear under `app/`, `config/`, `resources/` or `routes/`. The 21 `pwbs_asset()` tags and zero `Packer::` calls are still pinned. **Control experiment:** with `webpack.mix.js` restored from `HEAD~`, the case fails on its first assertion with the "is back" message; removed again, green.
+  - **Why the Vite half is pinned too:** the Laravel 11 skeleton ships `package.json` and `vite.config.js` (see TODO 55). Copied over during the hop they would reintroduce a pipeline that builds nothing - the exact state this item removed.
+  - **Full suite:** one failure in the first run, `WeatherRenderTest::test_forecast_entries_on_days_without_a_service_date_are_ignored`, green on three reruns. It is the flake TODO 47.1 recorded, and this run showed the mechanism: the case asserts `assertDontSee('56')` against the whole rendered component, and Livewire's random `wire:id` that run was `yWqxCqMwI56KKGqx2r5d`. Any two-digit `assertDontSee` on a Livewire render fails whenever the random id happens to contain those digits. Not touched here; it belongs to its own fix.
+  - **Deployed hosts:** the archive cannot delete, and `release/upgrade.php` is frozen, so the four paths stay on every host. They are inert - nothing at runtime reads them. `upgrade-guide.md` section 3 has the one-line removal.
+  - Files: the five deleted ones, `.styleci.yml`, `tests/Feature/Assets/AssetPipelineKnownGapsTest.php`, `.docs/assets.md`, `AGENTS.md`, `upgrade-guide.md`, this roadmap. No composer file moved, so no audit (see the rule at the top).
   - **Prerequisite: decide the scope above.** If the answer is "keep serving hand-placed assets", the honest version of this item is to **delete** `webpack.mix.js`, `resources/js/`, `resources/css/` and the `laravel-mix` devDependency, and stop there - removing a pipeline that produces nothing rather than porting it.
   - Needed, if a real build is wanted:
     - Replace `webpack.mix.js` with `vite.config.js`; add `vite` and `laravel-vite-plugin`, drop `laravel-mix`.
@@ -2696,7 +2705,8 @@ Gated by TODO 07 and TODO 08. Ship this as its own release, not bundled with a f
     - Rewrite `tests/Feature/Assets/` to the new emission, as TODO 33.8 leaves it.
   - Expected changes: `package.json`, `vite.config.js`, `resources/js/`, `resources/css/`, three blade files, `.docs/assets.md`.
 
-- [ ] **TODO 53: Establish a reproducible frontend build**
+- [x] **TODO 53: Establish a reproducible frontend build** - RESOLVED BY TODO 52
+  - **Closed on 2026-10-23 without work, as this item predicted:** TODO 52 deleted the pipeline, `package.json` went with it, and there is no build to make reproducible. No lockfile, no Node or npm version to record.
   - **Conditional on TODO 52.** If TODO 52 resolves to "delete the dead pipeline", there is no build to make reproducible and this item disappears with it - `package.json` goes too.
   - Needed, if a build exists:
     - Commit a `package-lock.json` (none exists today) and verify `npm ci && npm run build` on Node 24.
@@ -2722,6 +2732,7 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
   - Needed:
     - `laravel/framework` to `^11.0`; `laravel/fortify`, `nunomaduro/collision` (`^8.0`) to their Laravel 11 lines.
     - `spatie/laravel-ignition` is absorbed into the framework - remove it.
+    - **Do not take the skeleton's frontend files.** Laravel 11's skeleton carries `package.json` and `vite.config.js`; TODO 52 removed this project's build on purpose, and `AssetPipelineKnownGapsTest` fails if either file (or a `@vite` / `Vite::` call) arrives with the hop.
     - **Watch the Carbon 2 -> 3 jump, which Laravel 11 opens the door to.** Carbon 3 made `diffIn*` **signed**; in Carbon 2 (2.57 today) it returns an absolute value. `app/Http/Middleware/setUserLastActivity.php:24` reads `Carbon::now()->diffInSeconds($user->last_activity) >= 60`, so under Carbon 3 a past timestamp yields a negative number, the condition never holds, and **`users.last_activity` silently stops updating** - which in turn breaks the `Groups\ListUsers` online/inactive filters and the GDPR inactivity anonymization. `SetUserLastActivityTest::test_an_old_activity_is_refreshed` is the tripwire. Audit every other `diffIn*` call at the same time.
   - Expected changes: composer realignment; `artisan` boots under PHP 8.3.
 
