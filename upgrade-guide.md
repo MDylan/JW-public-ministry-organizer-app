@@ -472,8 +472,8 @@ at TODO 39.1:
 rm -r app/Http/Livewire
 ```
 
-Leave the rest of `app/Http/` alone - `Controllers`, `Middleware`, `Requests`
-and `Kernel.php` stay where they are.
+Leave the rest of `app/Http/` alone - `Controllers`, `Middleware` and
+`Requests` stay where they are. (So did `Kernel.php` until TODO 56, below.)
 
 **TODO 52: the Laravel Mix files disappear, and nothing breaks if they linger.**
 `webpack.mix.js`, `package.json`, `resources/js/` and `resources/css/` were
@@ -547,7 +547,33 @@ rm -r public/vendor/translation
 project-owned now and still read - and the other directories under
 `resources/views/vendor/` (`cookie-consent`, `installer`, `livewire`).
 
-*Last updated: TODO 54.*
+**TODO 56: the Laravel 10 skeleton classes disappear; they are inert if they
+linger.** The application moved to Laravel 11's slim skeleton:
+`bootstrap/app.php` now configures routing, middleware and exceptions, the
+application's service providers are listed in the new `bootstrap/providers.php`,
+and the schedule lives in `routes/console.php`. `bootstrap/app.php`,
+`bootstrap/providers.php`, `public/index.php`, `artisan`, `routes/console.php`
+and `config/app.php` all ship in the archive and overwrite in place - and they
+must all arrive together, which an unpack of the whole archive guarantees.
+
+Six class files were deleted. After an unpack they are still on disk, and
+nothing reads them: the kernels and the exception handler are now the
+framework's own classes, the provider list no longer names any of them, and
+the only directories Laravel 11 scans are `app/Console/Commands` and
+`app/Listeners`. **That holds only once the cached configuration is gone** -
+see section 5, TODO 56. Then remove them:
+
+```
+rm app/Http/Kernel.php app/Console/Kernel.php
+rm -r app/Exceptions
+rm app/Providers/RouteServiceProvider.php app/Providers/EventServiceProvider.php
+rm app/Providers/BroadcastServiceProvider.php
+```
+
+`app/Exceptions/` held nothing but `Handler.php`. **Keep** every other file
+under `app/Providers/` and `app/Http/`.
+
+*Last updated: TODO 56.*
 
 ## 4. `.env` changes
 
@@ -618,7 +644,10 @@ framework's own config is deliberately **not** merged underneath them
 (`bootstrap/app.php`). A deployed `.env` keeps working unchanged; renaming its
 keys to the Laravel 11 spelling would make them silently ignored.
 
-*Last updated: TODO 55.*
+**TODO 56: none.** The move to the slim skeleton kept the framework's config
+unmerged on purpose, so the warning above still stands word for word.
+
+*Last updated: TODO 56.*
 
 ## 5. Per-install state to repair
 
@@ -751,8 +780,21 @@ State that lives on the host and is not expressible in a release archive.
   name `Spatie\LaravelIgnition\IgnitionServiceProvider`, which no longer
   exists. Delete both files before the first request - the same failure TODO 35
   and TODO 39.1 describe above.
+- **TODO 56 adds the cached configuration, routes and events to that rule.**
+  A host that ever ran `php artisan optimize` or `config:cache` has a
+  `bootstrap/cache/config.php` whose `app.providers` still names
+  `App\Providers\RouteServiceProvider` and `EventServiceProvider`. While that
+  file exists, Laravel 11 does not even read `bootstrap/providers.php`. With
+  the two class files still on disk, the old route provider loads every route
+  file a second time and the old event provider runs each listener twice next
+  to the framework's; once section 3's `rm` has run, the first request dies on
+  "class not found". `routes-v7.php` and `events.php` are stale for the same
+  reason. **Delete `config.php`, `routes-v7.php` and `events.php` together with
+  the two manifests, before the first request and before `php artisan migrate`**
+  - Branch B's step 6, not step 10. `php artisan optimize:clear` removes all
+  five, provided it can still boot; deleting the files by hand always works.
 
-*Last updated: TODO 55.2.*
+*Last updated: TODO 56.*
 
 ## 6. The upgrade procedure
 
@@ -788,7 +830,9 @@ verified against a real host before it is published:
    1.x update and which the incremental updater therefore cannot name in a
    deletion list. TODO 35.1 fixed the repository so this cannot grow further;
    it could not retroactively fix the hosts.
-6. Delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php`.
+6. Delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php` -
+   and, from TODO 56 on, `config.php`, `routes-v7.php` and `events.php` in the
+   same directory (section 5).
 7. Apply sections 3 and 4 (moved files, `.env` keys).
 8. `php artisan migrate --force`.
 9. Section 5's `public/storage` repair, then `php artisan storage:link`.
@@ -800,7 +844,7 @@ Rollback is step 2's backup restored wholesale. A partial rollback is not safe
 once step 8 has run: `install()`'s own `restore()` brings back files but not
 migrations, which is the same reason the major ceiling exists.
 
-*Last updated: TODO 35.1.*
+*Last updated: TODO 56.*
 
 ---
 
@@ -830,3 +874,4 @@ migrations, which is the same reason the major ceiling exists.
 | **Laravel 10 -> 11** | **55** | **The second framework hop, and the PHP floor moves with it: `^8.2`.** `laravel/framework` 11.57.0; 5 packages in, 46 updated, 0 out, so section 2 says none. Section 3 says none: `bootstrap/app.php` and the republished Livewire assets ship and overwrite in place. Section 4 says none, with a warning not to adopt Laravel 11's renamed `.env` keys - the application's config still reads the old ones, and the framework's defaults are deliberately not merged in. Section 5: the `bootstrap/cache` manifests must go. A fourth `laravel/framework` advisory (PKSA-d5tc-s1qs-h781, low, debug-mode only, fixed in 12.69.0) is exempted from resolution like the other three; `composer audit` still reports all four. |
 | (no framework hop) | 55.2 | **The debug error page changes hands; five vendor paths orphan.** `spatie/laravel-ignition` and the four packages only it required are removed - Laravel 11 renders the debug page itself. Section 2 gains the five paths under a `vendor/spatie` that must stay. Section 5: the `bootstrap/cache` manifests name the removed provider, so deleting them is mandatory. Sections 3 and 4 say none. |
 | (no framework hop) | 55.3 | **Nothing for an operator: a new user gets one verification mail again, not two.** Laravel 11 started sending its own `VerifyEmail` on registration next to the application's mail; the application's mail is now the only one, and the verify-email page's resend button sends that same mail. No package, file, `.env` key or per-install state moves. |
+| (no framework hop) | 56 | **The Laravel 11 application skeleton; one new pre-first-request deletion.** Section 3: `bootstrap/app.php`, the new `bootstrap/providers.php`, `public/index.php`, `artisan`, `routes/console.php` and `config/app.php` overwrite in place; six deleted class files (`app/Http/Kernel.php`, `app/Console/Kernel.php`, `app/Exceptions/Handler.php`, the Route, Event and Broadcast service providers) linger inert and can be removed by hand. Section 4 says none: the framework config stays unmerged. Section 5 and Branch B step 6: a cached `bootstrap/cache/config.php` still lists the deleted providers and hides `bootstrap/providers.php`, so it goes - with `routes-v7.php` and `events.php` - together with the two manifests, before the first request. No package moves. |

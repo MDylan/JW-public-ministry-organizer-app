@@ -26,10 +26,10 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Project Stack Snapshot
 
-- Framework: Laravel 11 (on the Laravel 10 application structure until roadmap TODO 56; the framework's config merging is switched off in `bootstrap/app.php`)
+- Framework: Laravel 11, on the slim application skeleton since roadmap TODO 56: `bootstrap/app.php` configures routing, middleware and exceptions, `bootstrap/providers.php` lists the application's providers. There is no `app/Http/Kernel.php`, `app/Console/Kernel.php` or `app/Exceptions/Handler.php`. The framework's config merging stays switched off, so `config/` is complete and authoritative.
 - UI architecture: **Livewire 3** + Blade views/components (migrated from Livewire 2 at roadmap TODO 43; see the warning below)
 - Auth stack: Laravel Fortify (custom route registration)
-- Background processing: Laravel queue jobs + scheduler (`app/Console/Kernel.php`)
+- Background processing: Laravel queue jobs + scheduler (`routes/console.php`)
 - Data layer: Eloquent models with observers and notification-driven workflows
 
 ## Maintenance Rules For Contributors
@@ -75,7 +75,8 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 - Livewire components: `app/Livewire`
 - Blade class components: `app/View/Components`
 - Routes: `routes/*.php`
-- Scheduler/console: `app/Console/Kernel.php`, `routes/console.php`
+- Scheduler/console: `routes/console.php` (schedule and closure commands), `app/Console/Commands`
+- Middleware stacks, exception handling, route loading: `bootstrap/app.php`
 - Jobs: `app/Jobs`
 - Fortify customization: `app/Providers/FortifyServiceProvider.php`, `app/Actions/Fortify`, `routes/fortify.php`
 
