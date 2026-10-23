@@ -37,7 +37,7 @@
                                             <div class="custom-file">
                                                 <select wire:model="form_groupId" class="form-control" id="inlineForm">
                                                     @foreach ($groups as $group)
-                                                        <option value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
+                                                        <option wire:key="{{$group['id']}}" value="{{$group['id']}}" @if ($group['id'] != $cal_group_data['id']) selected @endif>{{ $group['name'] }}</option>
                                                     @endforeach
                                                 </select> 
                                             </div>

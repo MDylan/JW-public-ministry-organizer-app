@@ -115,7 +115,7 @@
                                     <select wire:model="state.default_language" class="form-control" id="default_lang">
                                         @if (isset($settings['languages']))
                                             @foreach (json_decode($settings['languages'], true) as $country_code => $value)
-                                                <option value="{{ $country_code }}">{{ $value['name'] }}</option>
+                                                <option wire:key="{{ $country_code }}" value="{{ $country_code }}">{{ $value['name'] }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -234,7 +234,7 @@
                                                 <label for="timezone">@lang('settings.timezone'):</label>
                                                 <select wire:model="state.env.TIMEZONE" class="form-control" id="timezone">
                                                     @foreach ($tzlist as $tz)
-                                                        <option value="{{ $tz }}">{{ $tz }}</option>
+                                                        <option wire:key="{{ $tz }}" value="{{ $tz }}">{{ $tz }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>

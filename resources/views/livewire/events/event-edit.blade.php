@@ -14,7 +14,7 @@
                         <option value="0">@lang('event.choose_publisher')</option>
                         @if (!empty($users))
                             @foreach ($users as $user)
-                                <option value="{{$user['id']}}">{{ $user['name'] }}</option>
+                                <option wire:key="{{$user['id']}}" value="{{$user['id']}}">{{ $user['name'] }}</option>
                             @endforeach
                         @endif
                     </select>
@@ -35,7 +35,7 @@
                 <option value="0">@lang('event.choose_time')</option>
                 @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['start'] as $time => $option)
-                        <option value="{{$time}}">{{ $option }}</option>
+                        <option wire:key="{{$time}}" value="{{$time}}">{{ $option }}</option>
                     @endforeach
                 @endif
             </select>
@@ -51,7 +51,7 @@
                     <option value="0">@lang('event.choose_time')</option>
                     @if (!empty($day_data['selects']))
                     @foreach ($day_data['selects']['end'] as $time => $option)
-                        <option value="{{$time}}">{{ $option }}</option>
+                        <option wire:key="{{$time}}" value="{{$time}}">{{ $option }}</option>
                     @endforeach
                     @endif
                 </select>

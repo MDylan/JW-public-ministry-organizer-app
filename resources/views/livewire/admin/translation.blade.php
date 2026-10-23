@@ -32,7 +32,7 @@
                             <label for="sourceLocale">@lang('translation.source_locale')</label>
                             <select wire:model.live="sourceLocale" id="sourceLocale" class="form-control">
                                 @foreach ($locales as $code => $locale)
-                                    <option value="{{ $code }}">{{ $locale['name'] }} ({{ $code }})</option>
+                                    <option wire:key="{{ $code }}" value="{{ $code }}">{{ $locale['name'] }} ({{ $code }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -41,7 +41,7 @@
                             <label for="targetLocale">@lang('translation.target_locale')</label>
                             <select wire:model.live="targetLocale" id="targetLocale" class="form-control">
                                 @foreach ($locales as $code => $locale)
-                                    <option value="{{ $code }}">{{ $locale['name'] }} ({{ $code }})</option>
+                                    <option wire:key="{{ $code }}" value="{{ $code }}">{{ $locale['name'] }} ({{ $code }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -50,7 +50,7 @@
                             <label for="group">@lang('translation.group')</label>
                             <select wire:model.live="group" id="group" class="form-control">
                                 @foreach ($groups as $availableGroup)
-                                    <option value="{{ $availableGroup }}">
+                                    <option wire:key="{{ $availableGroup }}" value="{{ $availableGroup }}">
                                         {{ $availableGroup === 'json' ? __('translation.json_group') : $availableGroup }}
                                     </option>
                                 @endforeach

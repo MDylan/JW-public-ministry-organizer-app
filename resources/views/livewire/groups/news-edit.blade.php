@@ -88,7 +88,7 @@
                                     <label for="form_status">@lang('news.status')</label>
                                     <select wire:model="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
                                         @foreach (trans('news.statuses') as $id => $translate) 
-                                            <option value="{{ $id }}">{{ $translate }}</option>      
+                                            <option wire:key="{{ $id }}" value="{{ $id }}">{{ $translate }}</option>      
                                         @endforeach
                                     </select>
                                     @error('status')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

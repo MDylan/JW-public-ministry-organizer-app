@@ -95,7 +95,7 @@
                                     <label for="form_status">@lang('staticpage.status')</label>
                                     <select wire:model.live="state.status" class="form-control @error('status') is-invalid @enderror" id="form_status">
                                         @foreach ($statuses as $id) 
-                                            <option value="{{ $id }}">{{ __('staticpage.statuses.'.$id) }}</option>      
+                                            <option wire:key="{{ $id }}" value="{{ $id }}">{{ __('staticpage.statuses.'.$id) }}</option>      
                                         @endforeach
                                     </select>
                                     @error('status')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -104,7 +104,7 @@
                                     <label for="formposition">@lang('staticpage.position')</label>
                                     <select wire:model.live="state.position" class="form-control @error('position') is-invalid @enderror" id="form_status" aria-describedby="positions_helper">
                                         @foreach ($positions as $translate) 
-                                            <option value="{{ $translate }}">{{ __('staticpage.positions.'.$translate) }}</option>      
+                                            <option wire:key="{{ $translate }}" value="{{ $translate }}">{{ __('staticpage.positions.'.$translate) }}</option>      
                                         @endforeach
                                     </select>
                                     <small id="positions_helper" class="form-text text-muted">

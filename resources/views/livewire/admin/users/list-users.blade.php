@@ -200,7 +200,7 @@
                                     <div class="col-sm-8">
                                         <select name="role" wire:model="state.role" id="inputRole" class="form-control @error('role') is-invalid @enderror">
                                             @foreach ($roles as $field => $translate) 
-                                                <option value="{{$translate}}">{{ __('roles.'.$translate)}}</option>
+                                                <option wire:key="{{$translate}}" value="{{$translate}}">{{ __('roles.'.$translate)}}</option>
                                             @endforeach
                                         </select>
                                         @error('role')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

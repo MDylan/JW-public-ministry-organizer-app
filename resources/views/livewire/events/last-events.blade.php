@@ -33,7 +33,7 @@
                             </div>
                             <select wire:model="state.month" class="form-control" id="inlineFormInputGroupUsername2">
                                 @foreach ($months as $month => $translate)
-                                    <option value="{{$month}}">{{ $translate }}</option>
+                                    <option wire:key="{{$month}}" value="{{$month}}">{{ $translate }}</option>
                                 @endforeach
                             </select>
                         </div>

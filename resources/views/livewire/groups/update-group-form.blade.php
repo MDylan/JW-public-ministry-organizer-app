@@ -167,7 +167,7 @@
                                                     <label for="min_time">{{__('group.min_time')}}</label>
                                                     <select wire:model.live="state.min_time" name="min_time" id="min_time" class="form-control @error('min_time') is-invalid @enderror">
                                                         @foreach ($min_time_options as $field => $translate) 
-                                                            <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
+                                                            <option wire:key="{{$translate}}" value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -178,7 +178,7 @@
                                                     <label for="max_time">{{__('group.max_time')}}</label>
                                                     <select name="max_time" id="max_time" class="form-control @error('max_time') is-invalid @enderror" wire:model="state.max_time">
                                                         @foreach ($max_time_options as $field => $translate) 
-                                                            <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
+                                                            <option wire:key="{{$translate}}" value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
                                                         @endforeach
                                                     </select>
                                                     @error('max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -436,7 +436,7 @@
                                             <div class="col-md-6">
                                                 <select wire:model="weather.country" id="weather_country" class="form-control @error('country') is-invalid @enderror">
                                                     @foreach($countries as $code => $country)
-                                                        <option value="{{ $code }}" @if ($code == $default_country) selected @endif>{{ $country }}</option>
+                                                        <option wire:key="{{ $code }}" value="{{ $code }}" @if ($code == $default_country) selected @endif>{{ $country }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -502,7 +502,7 @@
                                                             @if ($errors->has($dayKey.'.start_time')) is-invalid @endif">
 
                                                             @foreach ($day_selects[$day]['start'] as $time)
-                                                                <option value="{{$time}}">{{ $time }}</option>
+                                                                <option wire:key="{{$time}}" value="{{$time}}">{{ $time }}</option>
                                                             @endforeach
                                                         </select>
                                                         @error($dayKey.'.start_time')<div class="invalid-feedback" role="alert">{{ $message }}</div>@enderror
@@ -521,7 +521,7 @@
                                                             @if ($errors->has($dayKey.'.end_time')) is-invalid @endif">
 
                                                             @foreach ($day_selects[$day]['end'] as $time)
-                                                                <option value="{{$time}}">{{ $time }}</option>
+                                                                <option wire:key="{{$time}}" value="{{$time}}">{{ $time }}</option>
                                                             @endforeach
                                                         </select>
                                                         @error($dayKey.'.end_time')<div class="invalid-feedback" role="alert">{{ $message }}</div>@enderror

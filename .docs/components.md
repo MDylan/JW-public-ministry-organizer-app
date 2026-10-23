@@ -208,6 +208,8 @@ Four components paginate. `Admin\Users\ListUsers` and `Groups\ListGroups` use th
 
 ## Form Bindings (`wire:model`)
 
+**Key every looped `<option>` of a bound `<select>`** - `<option wire:key="{{ $value }}" value="{{ $value }}">`. When a re-render changes the option list (the group form's end times follow the start, the special-date and event-edit times likewise), Livewire 3's morph patches unkeyed options in place by position, and the browser keeps the selection on the same element - so the select shows a value the component does not hold (seen: 23:30 on screen, 19:00 on the server). `wire:model` only rewrites the select when its property changes. Livewire 2 rewrote every bound field after each response, which hid it. Keyed, the morph matches options by value. The rule covers all 28 bound selects with looped options, fixed lists included (TODO 47.4); `SelectOptionKeyContractTest` enforces it.
+
 Livewire 3 inverted the default: a plain `wire:model` is **deferred** - the value travels with the next action (a `wire:click`, a `wire:submit`) - and `wire:model.live` sends every change at once. Livewire 2 was the other way round.
 
 - **Plain `wire:model`** (88) - every form field that is only read when the form is submitted.

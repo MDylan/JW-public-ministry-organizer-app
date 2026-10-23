@@ -55,7 +55,7 @@
                                     <label for="state_min_time">{{__('group.min_time')}}</label>
                                     <select wire:model.live="state.date_min_time" @if(($state['date_status'] ?? 2) != 2) disabled @endif class="form-control @error('date_min_time') is-invalid @enderror" id="state_min_time">
                                         @foreach ($min_time_options as $field => $translate) 
-                                            <option value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
+                                            <option wire:key="{{$translate}}" value="{{$translate}}">{{__('group.min_time_options.'.$translate)}}</option>
                                         @endforeach
                                     </select>
                                     @error('date_min_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -66,7 +66,7 @@
                                     <label for="state_max_time">{{__('group.max_time')}}</label>
                                     <select wire:model.live="state.date_max_time" @if(($state['date_status'] ?? 2) != 2) disabled @endif id="state_max_time" class="form-control @error('date_max_time') is-invalid @enderror">
                                         @foreach ($max_time_options as $field => $translate) 
-                                            <option value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
+                                            <option wire:key="{{$translate}}" value="{{$translate}}">{{__('group.max_time_options.'.$translate)}}</option>
                                         @endforeach
                                     </select>
                                     @error('date_max_time')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -78,7 +78,7 @@
                                 <label for="state_start">@lang('group.start_time')</label>
                                 <select @if(($state['date_status'] ?? 2) != 2) disabled @endif  id="state_start" wire:model.live="state.date_start" class="form-control @error('date_start') is-invalid @enderror">
                                     @foreach ($starts as $field => $translate) 
-                                        <option value="{{$translate}}">{{ $translate }}</option>
+                                        <option wire:key="{{$translate}}" value="{{$translate}}">{{ $translate }}</option>
                                     @endforeach
                                 </select>
                                 @error('date_start')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror
@@ -87,7 +87,7 @@
                                 <label for="state_end">@lang('group.end_time')</label>
                                 <select @if(($state['date_status'] ?? 2) != 2) disabled @endif id="state_end" wire:model.live="state.date_end" class="form-control @error('date_end') is-invalid @enderror">
                                     @foreach ($ends as $field => $translate) 
-                                        <option value="{{$translate}}">{{ $translate }}</option>
+                                        <option wire:key="{{$translate}}" value="{{$translate}}">{{ $translate }}</option>
                                     @endforeach
                                 </select>
                                 @error('date_end')<div class="invalid-feedback" role="alert">{{$message}}</div>@enderror

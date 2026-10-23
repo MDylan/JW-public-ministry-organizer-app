@@ -370,7 +370,7 @@
                                 <div class="input-group">
                                     <select wire:model="state.group_role" wire:ignore.self name="group_role" class="form-control">
                                         @foreach ($group_roles as $role => $translate) 
-                                            <option value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
+                                            <option wire:key="{{$translate}}" value="{{$translate}}">{{ __('group.roles.'.$translate)}}</option>
                                         @endforeach
                                     </select>
                                     <div class="input-group-append">
@@ -528,7 +528,7 @@
                                             @if (!$value['visible'] && (auth()->user()->role !== "mainAdmin" && auth()->user()->role !== "translator"))
                                               @continue
                                             @endif
-                                            <option value="{{ $code }}">{{ $value['name'] }}</option>
+                                            <option wire:key="{{ $code }}" value="{{ $code }}">{{ $value['name'] }}</option>
                                           @endforeach
                                         </select>
                                         @error('email_language')
@@ -607,7 +607,7 @@
                                         @if ($group->id == $groupId)
                                             @continue
                                         @endif
-                                        <option value="{{ $group->id }}">{{ $group->name }}</option>
+                                        <option wire:key="{{ $group->id }}" value="{{ $group->id }}">{{ $group->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
