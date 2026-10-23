@@ -58,12 +58,15 @@ class RouteContractSnapshotTest extends TestCase
      * changed is when the vendor package registers.
      *
      * test_every_named_route_is_accounted_for is what caught this, which is
-     * exactly the job it was written for - so this entry is a reviewed
+     * exactly the job it was written for - so this entry was a reviewed
      * exclusion, not a silenced failure.
+     *
+     * `ignition.` left the list again at TODO 55.2, together with the
+     * package: Laravel 11 renders the debug page itself. Keeping a dead
+     * prefix would let a returning ignition add routes unnoticed.
      */
     private const DEV_ONLY_ROUTE_PREFIXES = [
         'debugbar.',
-        'ignition.',
     ];
 
     public function test_named_route_contracts_match_the_snapshot(): void
