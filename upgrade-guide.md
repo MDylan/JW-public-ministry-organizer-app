@@ -833,8 +833,28 @@ State that lives on the host and is not expressible in a release archive.
 - **TODO 59: nothing beyond the usual step 10.** A cached `config.php` would
   still say `livewire.layout` is `layouts.app`, but TODO 56 already deletes it
   at step 6; the compiled views are step 10's (section 3).
+- **TODO 60: the `jobs` table - drain it on the old release.** Rows the 1.x
+  release queued run on 2.x, measured (`DatabaseQueueWorkerTest`), with one
+  exception: the e-mail confirmations, which 1.x queued as
+  `ProtoneMedia\LaravelVerifyNewEmail\Mail\VerifyFirstEmail` / `VerifyNewEmail`.
+  2.x has no such class (TODO 33.5, section 2), so each such row fails after
+  three attempts, lands in `failed_jobs` and sends one failed-job mail, and the
+  user has to request the confirmation again. Branch B step 3 avoids it: with
+  the site down, `php artisan queue:work --stop-when-empty --force` - still the
+  1.x code - sends what is queued. `--force` is needed because the worker
+  pauses in maintenance mode. Rows waiting for a retry delay are not due and
+  stay; they are the queued notifications, which run on 2.x. To check
+  afterwards:
 
-*Last updated: TODO 59.*
+  ```
+  SELECT COUNT(*) FROM jobs WHERE payload LIKE '%ProtoneMedia%';
+  ```
+
+  If a host was upgraded without draining, the `failed_jobs` rows naming
+  `ProtoneMedia` can be removed with `php artisan queue:forget <uuid>`; nothing
+  else is affected.
+
+*Last updated: TODO 60.*
 
 ## 6. The upgrade procedure
 
@@ -861,7 +881,8 @@ verified against a real host before it is published:
 1. Confirm the PHP version against section 1. **Stop here if it cannot be met.**
 2. Back up the database and the whole application directory. Not "the changed
    files" - the whole directory, because step 5 deletes one.
-3. `php artisan down` (maintenance mode).
+3. `php artisan down` (maintenance mode), then, still on 1.x,
+   `php artisan queue:work --stop-when-empty --force` (section 5, TODO 60).
 4. Unpack the 2.0.0 archive over the application directory.
 5. **Delete `vendor/` entirely and replace it with the archive's copy.** This is
    what makes section 2 unnecessary and is the reason this branch is simpler
@@ -884,7 +905,7 @@ Rollback is step 2's backup restored wholesale. A partial rollback is not safe
 once step 8 has run: `install()`'s own `restore()` brings back files but not
 migrations, which is the same reason the major ceiling exists.
 
-*Last updated: TODO 56.*
+*Last updated: TODO 60.*
 
 ---
 
@@ -918,3 +939,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 57 | **doctrine/dbal leaves; four vendor paths orphan.** Nothing called it any more - Laravel 11's `change()` is native, and TODO 57.1 moved the installer off it. Section 2 gains `vendor/doctrine/dbal`, `vendor/doctrine/deprecations`, `vendor/doctrine/event-manager` and `vendor/psr/cache`, under two namespaces that must stay. Sections 3, 4 and 5 say none: no Laravel provider moved, so the `bootstrap/cache` manifests are unaffected. |
 | (no framework hop) | 58 | **Nothing for an operator.** The Laravel 11 blocker list is closed: the GDPR and translation packages left in Phase 3, and the self-updater fork (v2.0.0) already admits Laravel 11, 12 and 13. A test now guards the fork's range. No package, file, `.env` key or per-install state moves. |
 | (no framework hop) | 59 | **The application layout becomes an anonymous component; two inert files are left behind.** `resources/views/layouts/app.blade.php` moved to `resources/views/components/admin-layout.blade.php` and `BladeComponentServiceProvider` is gone; the rendered pages are byte-identical. Section 3 gains two `rm` lines and makes step 10's `optimize:clear` mandatory before step 11 (stale compiled views name the old layout). Sections 4 and 5 say none. |
+| (no framework hop) | 60 | **Drain the queue on the old release.** 1.x `jobs` rows run on 2.x, measured, except the e-mail confirmations 1.x queued through protonemedia/laravel-verify-new-email: 2.x has no such class, so each fails after three tries and triggers a failed-job mail. Branch B step 3 gains `php artisan queue:work --stop-when-empty --force`, run on 1.x after `down`; section 5 has the check and the cleanup. Sections 2, 3 and 4 say none. |
