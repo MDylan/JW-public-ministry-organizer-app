@@ -294,7 +294,23 @@ vendor/spatie/backtrace
 live there and are load-bearing. The same warning as `vendor/fruitcake` at
 TODO 35: delete the five directories, not their parent.
 
-*Last updated: TODO 55.2.*
+**TODO 57 (doctrine/dbal removed): four package paths, and both namespaces
+stay.**
+
+```
+vendor/doctrine/dbal
+vendor/doctrine/deprecations
+vendor/doctrine/event-manager
+vendor/psr/cache
+```
+
+**`vendor/doctrine` and `vendor/psr` must survive** - `doctrine/inflector` (the
+framework's) and `doctrine/lexer` live in the first, `psr/log`, `psr/container`,
+`psr/simple-cache` and five more PSR interfaces in the second, and all are
+load-bearing. Delete the four directories, not their parents. `vendor/bin/`
+also loses `doctrine-dbal` and `doctrine-dbal.bat`; they are inert.
+
+*Last updated: TODO 57.*
 
 ## 3. Application files that move or disappear
 
@@ -875,3 +891,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 55.2 | **The debug error page changes hands; five vendor paths orphan.** `spatie/laravel-ignition` and the four packages only it required are removed - Laravel 11 renders the debug page itself. Section 2 gains the five paths under a `vendor/spatie` that must stay. Section 5: the `bootstrap/cache` manifests name the removed provider, so deleting them is mandatory. Sections 3 and 4 say none. |
 | (no framework hop) | 55.3 | **Nothing for an operator: a new user gets one verification mail again, not two.** Laravel 11 started sending its own `VerifyEmail` on registration next to the application's mail; the application's mail is now the only one, and the verify-email page's resend button sends that same mail. No package, file, `.env` key or per-install state moves. |
 | (no framework hop) | 56 | **The Laravel 11 application skeleton; one new pre-first-request deletion.** Section 3: `bootstrap/app.php`, the new `bootstrap/providers.php`, `public/index.php`, `artisan`, `routes/console.php` and `config/app.php` overwrite in place; six deleted class files (`app/Http/Kernel.php`, `app/Console/Kernel.php`, `app/Exceptions/Handler.php`, the Route, Event and Broadcast service providers) linger inert and can be removed by hand. Section 4 says none: the framework config stays unmerged. Section 5 and Branch B step 6: a cached `bootstrap/cache/config.php` still lists the deleted providers and hides `bootstrap/providers.php`, so it goes - with `routes-v7.php` and `events.php` - together with the two manifests, before the first request. No package moves. |
+| (no framework hop) | 57 | **doctrine/dbal leaves; four vendor paths orphan.** Nothing called it any more - Laravel 11's `change()` is native, and TODO 57.1 moved the installer off it. Section 2 gains `vendor/doctrine/dbal`, `vendor/doctrine/deprecations`, `vendor/doctrine/event-manager` and `vendor/psr/cache`, under two namespaces that must stay. Sections 3, 4 and 5 say none: no Laravel provider moved, so the `bootstrap/cache` manifests are unaffected. |
