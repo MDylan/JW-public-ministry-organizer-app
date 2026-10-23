@@ -2773,6 +2773,14 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
     - `app/Http/Controllers/Setup/DatabaseController.php:124` calls `->getDoctrineSchemaManager()`, which no longer exists on the connection - rewrite using `Schema::` / `getSchemaBuilder()`.
     - Re-run all migrations from scratch against `kozter_testing`.
   - Expected changes: `composer.json`, `DatabaseController.php`, verified by the TODO 12 setup-flow tests.
+  - **The `DatabaseController` half is done - see TODO 57.1.** What remains here is the package removal itself, after the hop.
+
+- [x] **TODO 57.1: Replace the schema-manager call before the hop** - DONE
+  - **Delivered on 2026-10-23, on Laravel 10, ahead of TODO 55.** Red: 0 -> 0 (1561 tests, 4610 -> 4612 assertions).
+  - **Why it could not wait for TODO 57:** Laravel 11 removes `getDoctrineSchemaManager()` from the connection itself, regardless of whether `doctrine/dbal` is still installed. Left in place, the setup wizard's `databaseHasData()` - the guard that stops `migrate:fresh` from wiping a database that already holds tables - would have thrown on the hop instead of protecting.
+  - **The fix:** `Schema::connection('setup')->getTableListing()`, the framework's own listing, already present in Laravel 10.50. It lists base tables only, as the old call did. Only the count is used, so Laravel 12's schema-qualified names (`db.table`) change nothing. `QueryException` extends `PDOException`, so the existing catch still turns an unreachable server into "no data".
+  - **Guard:** `SetupDatabaseTest`'s tripwire, which called the schema manager directly so that it would fail when the method disappeared, is reversed into an assertion that the controller's code (comments stripped) no longer mentions Doctrine, plus a check that the framework listing sees `users`. The "existing data is not overwritten" case exercises the new call on the real test database. **Control experiment:** with the old controller restored, exactly the reversed case failed; restored, green.
+  - Files: `app/Http/Controllers/Setup/DatabaseController.php`, `tests/Feature/Setup/SetupDatabaseTest.php`, `.docs/routes.md` (which also named the wrong roadmap item, TODO 66), `upgrade-guide.md` (change log only), this roadmap. No composer file moved.
 
 - [ ] **TODO 58: Execute the Laravel 11 blocker decisions**
   - Needed:
