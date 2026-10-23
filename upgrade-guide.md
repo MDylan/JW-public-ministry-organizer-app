@@ -589,7 +589,26 @@ rm app/Providers/BroadcastServiceProvider.php
 `app/Exceptions/` held nothing but `Handler.php`. **Keep** every other file
 under `app/Providers/` and `app/Http/`.
 
-*Last updated: TODO 56.*
+**TODO 59: the application layout moves; two files are left behind, inert.**
+`resources/views/layouts/app.blade.php` became
+`resources/views/components/admin-layout.blade.php` (the archive ships the new
+file), and `app/Providers/BladeComponentServiceProvider.php` was deleted -
+`bootstrap/providers.php`, which overwrites in place, no longer names it.
+Remove both:
+
+```
+rm app/Providers/BladeComponentServiceProvider.php
+rm resources/views/layouts/app.blade.php
+```
+
+**Keep** the rest of `resources/views/layouts/` (`setup.blade.php`,
+`staticpage.blade.php`, `partials/`). Until step 10, compiled views under
+`storage/framework/views` still name `layouts.app`; that is harmless while the
+site is down, and step 10's `optimize:clear` removes them before step 11 brings
+it back up. **Do not skip step 10**: once the old layout is removed, a stale
+compiled view that still names it answers 500.
+
+*Last updated: TODO 59.*
 
 ## 4. `.env` changes
 
@@ -663,7 +682,9 @@ keys to the Laravel 11 spelling would make them silently ignored.
 **TODO 56: none.** The move to the slim skeleton kept the framework's config
 unmerged on purpose, so the warning above still stands word for word.
 
-*Last updated: TODO 56.*
+**TODO 59: none.**
+
+*Last updated: TODO 59.*
 
 ## 5. Per-install state to repair
 
@@ -809,8 +830,11 @@ State that lives on the host and is not expressible in a release archive.
   the two manifests, before the first request and before `php artisan migrate`**
   - Branch B's step 6, not step 10. `php artisan optimize:clear` removes all
   five, provided it can still boot; deleting the files by hand always works.
+- **TODO 59: nothing beyond the usual step 10.** A cached `config.php` would
+  still say `livewire.layout` is `layouts.app`, but TODO 56 already deletes it
+  at step 6; the compiled views are step 10's (section 3).
 
-*Last updated: TODO 56.*
+*Last updated: TODO 59.*
 
 ## 6. The upgrade procedure
 
@@ -893,3 +917,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 56 | **The Laravel 11 application skeleton; one new pre-first-request deletion.** Section 3: `bootstrap/app.php`, the new `bootstrap/providers.php`, `public/index.php`, `artisan`, `routes/console.php` and `config/app.php` overwrite in place; six deleted class files (`app/Http/Kernel.php`, `app/Console/Kernel.php`, `app/Exceptions/Handler.php`, the Route, Event and Broadcast service providers) linger inert and can be removed by hand. Section 4 says none: the framework config stays unmerged. Section 5 and Branch B step 6: a cached `bootstrap/cache/config.php` still lists the deleted providers and hides `bootstrap/providers.php`, so it goes - with `routes-v7.php` and `events.php` - together with the two manifests, before the first request. No package moves. |
 | (no framework hop) | 57 | **doctrine/dbal leaves; four vendor paths orphan.** Nothing called it any more - Laravel 11's `change()` is native, and TODO 57.1 moved the installer off it. Section 2 gains `vendor/doctrine/dbal`, `vendor/doctrine/deprecations`, `vendor/doctrine/event-manager` and `vendor/psr/cache`, under two namespaces that must stay. Sections 3, 4 and 5 say none: no Laravel provider moved, so the `bootstrap/cache` manifests are unaffected. |
 | (no framework hop) | 58 | **Nothing for an operator.** The Laravel 11 blocker list is closed: the GDPR and translation packages left in Phase 3, and the self-updater fork (v2.0.0) already admits Laravel 11, 12 and 13. A test now guards the fork's range. No package, file, `.env` key or per-install state moves. |
+| (no framework hop) | 59 | **The application layout becomes an anonymous component; two inert files are left behind.** `resources/views/layouts/app.blade.php` moved to `resources/views/components/admin-layout.blade.php` and `BladeComponentServiceProvider` is gone; the rendered pages are byte-identical. Section 3 gains two `rm` lines and makes step 10's `optimize:clear` mandatory before step 11 (stale compiled views name the old layout). Sections 4 and 5 say none. |
