@@ -61,18 +61,18 @@ class PosterEditModal extends AppComponent
                 $this->state['show_date'] = $this->fromDate;
             }
         }
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'PosterEditModal',
-            'livewire' => 'groups.poster-edit-modal',
-            'parameters_back' => [
+        $this->dispatch('show-modal',
+            id: 'PosterEditModal',
+            livewire: 'groups.poster-edit-modal',
+            parameters_back: [
                 'groupId' => $this->groupId,
                 'fromDate' => $this->fromDate
             ]
-        ]);
+        );
     }
 
     public function openModalFromDate($groupId, $date, $posterId = 0) {
-        $this->dispatchBrowserEvent('hide-modal', ['id' => 'form']);
+        $this->dispatch('hide-modal', id: 'form');
         $this->fromDate = $date;
         $this->openModal($groupId, $posterId);
     }
@@ -99,11 +99,11 @@ class PosterEditModal extends AppComponent
             $save = GroupPosters::create($validatedData);
         }
 
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'PosterEditModal',
-            'message' => __('group.poster.success'),
-            'savedMessage' => __('app.saved')
-        ]);        
+        $this->dispatch('hide-modal',
+            id: 'PosterEditModal',
+            message: __('group.poster.success'),
+            savedMessage: __('app.saved')
+        );        
         $this->emitUp('refresh');
         $this->reset();
         $this->openModal = false;
@@ -116,11 +116,11 @@ class PosterEditModal extends AppComponent
     }
 
     public function deletePosterConfirmation() {
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.poster.confirmDelete.question'),
-            'text' => __('group.poster.confirmDelete.message'),
-            'emit' => 'deletePoster'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.poster.confirmDelete.question'),
+            text: __('group.poster.confirmDelete.message'),
+            emit: 'deletePoster'
+        );
     }
 
     public function deletePoster() {
@@ -130,17 +130,17 @@ class PosterEditModal extends AppComponent
                             ->where('group_id', '=', $this->groupId)
                             ->delete();
         if($del) {
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'PosterEditModal',
-                'message' => __('group.poster.confirmDelete.success'),
-                'savedMessage' => __('app.saved')
-            ]);
+            $this->dispatch('hide-modal',
+                id: 'PosterEditModal',
+                message: __('group.poster.confirmDelete.success'),
+                savedMessage: __('app.saved')
+            );
             $this->reset();
             $this->emitUp('pollingOn');
         } else {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.poster.confirmDelete.error')
-            ]);
+            $this->dispatch('error',
+                message: __('group.poster.confirmDelete.error')
+            );
         }
         $this->openModal = false;
     }

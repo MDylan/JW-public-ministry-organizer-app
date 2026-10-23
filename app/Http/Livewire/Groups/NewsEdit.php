@@ -127,7 +127,7 @@ class NewsEdit extends AppComponent
     }
 
     public function confirmNewDelete() {
-        $this->dispatchBrowserEvent('show-newsDelete-confirmation');
+        $this->dispatch('show-newsDelete-confirmation');
     }
 
     public function deleteConfirmed() {
@@ -180,7 +180,7 @@ class NewsEdit extends AppComponent
 
     public function confirmFileDelete($fileId, $fileName) {
         $this->file_beeingRemoved = $fileId;
-        $this->dispatchBrowserEvent('show-fileDelete-confirmation', ['fileName' => $fileName]);
+        $this->dispatch('show-fileDelete-confirmation', fileName: $fileName);
     }
 
     public function deleteFileConfirmed() {

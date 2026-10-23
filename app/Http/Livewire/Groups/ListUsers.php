@@ -77,7 +77,7 @@ class ListUsers extends AppComponent
     }
 
     public function openModal($modalId = 'UserModal') {
-        $this->dispatchBrowserEvent('show-modal', ['id' => $modalId]);
+        $this->dispatch('show-modal', id: $modalId);
     }
 
     /**
@@ -157,11 +157,11 @@ class ListUsers extends AppComponent
                 $add->attach();
             }
 
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'UserAddModal',
-                'message' => __('group.user.add.success', ['number' => count($validatedData['email'])]),
-                'savedMessage' => __('app.saved')
-            ]);
+            $this->dispatch('hide-modal',
+                id: 'UserAddModal',
+                message: __('group.user.add.success', ['number' => count($validatedData['email'])]),
+                savedMessage: __('app.saved')
+            );
         }
         $this->new_users = "";   
 
@@ -201,7 +201,7 @@ class ListUsers extends AppComponent
             'message_send_priority' => $user->pivot->message_send_priority,
         ];
 
-        $this->dispatchBrowserEvent('show-modal', ['id' => 'UserModal']);
+        $this->dispatch('show-modal', id: 'UserModal');
     }
 
     public function updateUser() {
@@ -353,11 +353,11 @@ class ListUsers extends AppComponent
             $notifiable->notify($notification);
         }
 
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'UserModal',
-            'message' => __('group.user.saved').' ('.$selected_user->name.')',
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'UserModal',
+            message: __('group.user.saved').' ('.$selected_user->name.')',
+            savedMessage: __('app.saved')
+        );
     }
 
     public function confirmUserRemoval($userId) {
@@ -374,18 +374,18 @@ class ListUsers extends AppComponent
 
         if(pwbs_check_group_other_admins($this->group->id, $userId) === false) {
             //no other admin
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_admin'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('group.logout.error'),
+                message: __('group.logout.no_admin'),
+            );
             return;
         } 
 
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.user.confirmDelete.question', ['name' => $selected_user->name]),
-            'text' => __('group.user.confirmDelete.message'),
-            'emit' => 'deleteUser'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.user.confirmDelete.question', ['name' => $selected_user->name]),
+            text: __('group.user.confirmDelete.message'),
+            emit: 'deleteUser'
+        );
     }
 
     public function deleteUser() {
@@ -395,27 +395,27 @@ class ListUsers extends AppComponent
         }
 
         if($this->group->parent_group_id > 0) {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.user.confirmDelete.error_this_is_child')
-            ]);
+            $this->dispatch('error',
+                message: __('group.user.confirmDelete.error_this_is_child')
+            );
             return;
         }
 
         if(pwbs_check_group_other_admins($this->group->id, $this->userIdBeeingRemoved) === false) {
             //no other admin
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_admin'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('group.logout.error'),
+                message: __('group.logout.no_admin'),
+            );
             return;
         } 
 
         $detach = new GroupUserMoves($this->group->id, $this->userIdBeeingRemoved);
         $detach->detach();
 
-        $this->dispatchBrowserEvent('success', [
-            'message' => __('group.user.confirmDelete.success')
-        ]);
+        $this->dispatch('success',
+            message: __('group.user.confirmDelete.success')
+        );
 
         $this->userIdBeeingRemoved = null;
     }
@@ -493,7 +493,7 @@ class ListUsers extends AppComponent
             ]
         ];
 
-        $this->dispatchBrowserEvent('show-modal', ['id' => 'userRenewalModal']);
+        $this->dispatch('show-modal', id: 'userRenewalModal');
     }
 
     public function userRenewal() {
@@ -521,20 +521,20 @@ class ListUsers extends AppComponent
 
                 Notification::send($this->group->editors, new UserProfileRenewalAdminNotification($data));
 
-                $this->dispatchBrowserEvent('hide-modal', [
-                    'id' => 'userRenewalModal',
-                    'message' => __('group.user.saved').' ('.$user->name.')',
-                    'savedMessage' => __('app.saved')
-                ]);
+                $this->dispatch('hide-modal',
+                    id: 'userRenewalModal',
+                    message: __('group.user.saved').' ('.$user->name.')',
+                    savedMessage: __('app.saved')
+                );
             } else {
                 $error = true;
             }
         } else $error = true;
 
         if($error) {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('user.inactiveModal.error')
-            ]);
+            $this->dispatch('error',
+                message: __('user.inactiveModal.error')
+            );
         }
     }
 
@@ -684,15 +684,15 @@ class ListUsers extends AppComponent
                         $m->detach();
                     }                
                 }
-                $this->dispatchBrowserEvent('hide-modal', [
-                    'id' => 'LinkToModal',
-                    'message' => __('group.link.success'),
-                    'savedMessage' => __('app.saved')
-                ]);
+                $this->dispatch('hide-modal',
+                    id: 'LinkToModal',
+                    message: __('group.link.success'),
+                    savedMessage: __('app.saved')
+                );
             } else {
-                $this->dispatchBrowserEvent('error', [
-                    'message' => __('group.link.error')
-                ]);
+                $this->dispatch('error',
+                    message: __('group.link.error')
+                );
             }            
         }
     }
@@ -708,11 +708,11 @@ class ListUsers extends AppComponent
 
         $this->detachId = $selected_group->id;
 
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.link.parent.detach.question', ['groupName' => $selected_group->name]),
-            'text' => __('group.link.parent.detach.message'),
-            'emit' => 'detachChildGroup'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.link.parent.detach.question', ['groupName' => $selected_group->name]),
+            text: __('group.link.parent.detach.message'),
+            emit: 'detachChildGroup'
+        );
     }
 
     public function detachChildGroup() {
@@ -756,11 +756,11 @@ class ListUsers extends AppComponent
             new GroupParentGroupDetachedNotification($data)
         );
 
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'ChildGroupsModal',
-            'message' => __('group.link.parent.detach.success'),
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'ChildGroupsModal',
+            message: __('group.link.parent.detach.success'),
+            savedMessage: __('app.saved')
+        );
     }
 
     public function confirmParentDetach($parent_group_id) {
@@ -773,11 +773,11 @@ class ListUsers extends AppComponent
 
         $this->detachId = $group->parent_group_id;
 
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.link.child.detach.question'),
-            'text' => __('group.link.child.detach.message'),
-            'emit' => 'detachParentGroup'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.link.child.detach.question'),
+            text: __('group.link.child.detach.message'),
+            emit: 'detachParentGroup'
+        );
     }
 
     public function detachParentGroup() {
@@ -817,15 +817,15 @@ class ListUsers extends AppComponent
             
             Notification::send($admins, new GroupParentGroupDetachedNotification($data));
 
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'ParentGroupModal',
-                'message' => __('group.link.child.detach.success'),
-                'savedMessage' => __('app.saved')
-            ]);
+            $this->dispatch('hide-modal',
+                id: 'ParentGroupModal',
+                message: __('group.link.child.detach.success'),
+                savedMessage: __('app.saved')
+            );
         } else {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.link.child.detach.error')
-            ]);
+            $this->dispatch('error',
+                message: __('group.link.child.detach.error')
+            );
         }
     }
 
@@ -835,18 +835,18 @@ class ListUsers extends AppComponent
     public function toogleSign($user_id, $icon) {
         $this->getGroupInfo();
         if(Auth::id() !== $user_id && $this->isNotHelper()) {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.signs.error')
-            ]);
+            $this->dispatch('error',
+                message: __('group.signs.error')
+            );
             return false;
         }
         if(Auth::id() == $user_id && $this->isNotHelper()) {
             $group_signs = $this->group->signs;
             $change_self = (($group_signs[$icon]['change_self'] ?? null) == true);
             if(!$change_self) {
-                $this->dispatchBrowserEvent('error', [
-                    'message' => __('group.signs.error')
-                ]);
+                $this->dispatch('error',
+                    message: __('group.signs.error')
+                );
                 return false;
             }
         }
@@ -881,9 +881,9 @@ class ListUsers extends AppComponent
             }
         }
 
-        $this->dispatchBrowserEvent('success', [
-            'message' => __('group.signs.success')
-        ]);
+        $this->dispatch('success',
+            message: __('group.signs.success')
+        );
     }
 
     private function getGroupInfo() {
@@ -985,11 +985,11 @@ class ListUsers extends AppComponent
 
         $group->save();
 
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'ParentGroupModal',
-            'message' => __('app.saved'),
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'ParentGroupModal',
+            message: __('app.saved'),
+            savedMessage: __('app.saved')
+        );
     }
 
     public function render(Request $request)

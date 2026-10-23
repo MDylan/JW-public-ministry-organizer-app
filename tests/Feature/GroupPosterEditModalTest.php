@@ -21,7 +21,8 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id)
             ->assertSet('openModal', true)
-            ->assertDispatched('show-modal');
+            // TODO 47: `livewire` is what public/js/modal.js calls back on close.
+            ->assertDispatched('show-modal', id: 'PosterEditModal', livewire: 'groups.poster-edit-modal');
     }
 
     public function test_member_cannot_open_modal(): void

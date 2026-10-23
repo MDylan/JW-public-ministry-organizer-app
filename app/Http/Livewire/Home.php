@@ -226,7 +226,7 @@ class Home extends Component
             Auth::user()->groupsAccepted()->updateExistingPivot($groupId, ['list_order' => $list_order]);
         }
 
-        $this->dispatchBrowserEvent('success', ['message' => __('app.order_changed')]);
+        $this->dispatch('success', message: __('app.order_changed'));
         
     }
 

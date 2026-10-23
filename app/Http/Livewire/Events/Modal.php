@@ -402,10 +402,10 @@ class Modal extends AppComponent
         if($groupId > 0) {
             $this->form_groupId = $groupId;
         }
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'form',
-            'livewire' => 'events.modal',
-        ]); 
+        $this->dispatch('show-modal',
+            id: 'form',
+            livewire: 'events.modal',
+        ); 
         
         $this->polling_check();
         $this->show_content = true;
@@ -474,9 +474,9 @@ class Modal extends AppComponent
     public function acceptBulk() {
         if(!is_array($this->bulk_ids)) {
             $this->cancelBulk();
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('event.bulk.error')
-            ]);
+            $this->dispatch('error',
+                message: __('event.bulk.error')
+            );
             return;
         }
         $this->acceptBulkFinal();
@@ -495,7 +495,7 @@ class Modal extends AppComponent
             }
             $stat = new GenerateStat();
             $stat->generate($this->form_groupId, $this->date);
-            $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.acccept_done')]);
+            $this->dispatch('success', message: __('event.bulk.acccept_done'));
         }
         $this->cancelBulk();
     }
@@ -503,24 +503,24 @@ class Modal extends AppComponent
     public function rejectBulk() {
         if(!is_array($this->bulk_ids)) {
             $this->cancelBulk();
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('event.bulk.error')
-            ]);
+            $this->dispatch('error',
+                message: __('event.bulk.error')
+            );
             return;
         }
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('event.bulk.confirmReject.question'),
-            'text' => __('event.bulk.confirmReject.message', ['number' => count($this->bulk_ids)]),
-            'emit' => 'rejectBulkFinal'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('event.bulk.confirmReject.question'),
+            text: __('event.bulk.confirmReject.message', ['number' => count($this->bulk_ids)]),
+            emit: 'rejectBulkFinal'
+        );
     }
 
     public function rejectBulkFinal() {
         if(!is_array($this->bulk_ids)) {
             $this->cancelBulk();
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('event.bulk.error')
-            ]);
+            $this->dispatch('error',
+                message: __('event.bulk.error')
+            );
             return;
         }
         $role = $this->getRole();
@@ -535,7 +535,7 @@ class Modal extends AppComponent
             }
             $stat = new GenerateStat();
             $stat->generate($this->form_groupId, $this->date);
-            $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.confirmReject.success')]);
+            $this->dispatch('success', message: __('event.bulk.confirmReject.success'));
         }
         $this->cancelBulk();
     }

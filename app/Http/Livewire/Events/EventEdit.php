@@ -676,16 +676,16 @@ class EventEdit extends AppComponent
         $stat = new GenerateStat();
         $stat->generate($this->groupId, $validatedData['day']);
 
-        $this->dispatchBrowserEvent('success', ['message' => __('event.saved')]);
+        $this->dispatch('success', message: __('event.saved'));
         $this->pleaseWait = true;
     }
 
     public function confirmEventDelete() {
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('event.confirmDelete.question'),
-            'text' => __('event.confirmDelete.message'),
-            'emit' => 'deleteConfirmed'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('event.confirmDelete.question'),
+            text: __('event.confirmDelete.message'),
+            emit: 'deleteConfirmed'
+        );
     }
 
     public function deleteConfirmed() {
@@ -695,11 +695,11 @@ class EventEdit extends AppComponent
         $event = Event::findOrFail($this->eventId);
         $res = $event->delete();
         if($res) {
-            $this->dispatchBrowserEvent('success', ['message' => __('event.confirmDelete.success')]);
+            $this->dispatch('success', message: __('event.confirmDelete.success'));
             $stat = new GenerateStat();
             $stat->generate($event->group_id, $event['day']);
         } else {
-            $this->dispatchBrowserEvent('error', ['message' => __('event.confirmDelete.error')]);
+            $this->dispatch('error', message: __('event.confirmDelete.error'));
         }
         $this->emitTo('partials.events-bar', 'refresh');
         $this->emitUp('refresh');

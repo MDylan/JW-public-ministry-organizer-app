@@ -28,9 +28,9 @@ class ListUsers extends AppComponent
     public function addNew() {
         $this->showEditModal = false;
         $this->state = [];
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'form',
-        ]);
+        $this->dispatch('show-modal',
+            id: 'form',
+        );
     }
 
     /**
@@ -54,11 +54,11 @@ class ListUsers extends AppComponent
 
         User::create($validatedData);
         
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'form',
-            'message' => __('user.userSaved'),
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'form',
+            message: __('user.userSaved'),
+            savedMessage: __('app.saved')
+        );
 
     }
 
@@ -67,9 +67,9 @@ class ListUsers extends AppComponent
         $this->showEditModal = true;
         $this->state = $user->toArray();
         $this->user = $user;
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'form',
-        ]);
+        $this->dispatch('show-modal',
+            id: 'form',
+        );
     }
 
     public function updateUser() {
@@ -85,11 +85,11 @@ class ListUsers extends AppComponent
         ])->validate();
 
         $this->user->update($validatedData);
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'form',
-            'message' => __('user.userSaved'),
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'form',
+            message: __('user.userSaved'),
+            savedMessage: __('app.saved')
+        );
     }
 
     public function confirmUserRemoval($userId) {
@@ -97,20 +97,20 @@ class ListUsers extends AppComponent
         if(!$selected_user->id) abort(403);
 
         $this->userIdBeeingRemoved = $userId;
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('user.deleteUser'),
-            'text' => __('user.areYouSureDelete', ['userName' => $selected_user->name]),
-            'emit' => 'deleteUser'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('user.deleteUser'),
+            text: __('user.areYouSureDelete', ['userName' => $selected_user->name]),
+            emit: 'deleteUser'
+        );
     }
 
     public function deleteUser() {        
         $user = User::findOrFail($this->userIdBeeingRemoved);
         $user->delete();
         //TODO: maybe delete events or check groups privileges
-        $this->dispatchBrowserEvent('success', [
-            'message' =>  __('user.userDeleted')
-        ]);
+        $this->dispatch('success',
+            message: __('user.userDeleted')
+        );
     }
 
     public function updatedSearchTerm() {

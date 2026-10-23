@@ -78,10 +78,10 @@ class SpecialDateModal extends Component
             $this->date = $date;
             $this->getDateData();
         }
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'SpecialDateModal',
-            'livewire' => 'groups.special-date-modal',
-        ]);
+        $this->dispatch('show-modal',
+            id: 'SpecialDateModal',
+            livewire: 'groups.special-date-modal',
+        );
     }
 
     public function saveDate() {
@@ -141,11 +141,11 @@ class SpecialDateModal extends Component
             // dd($r->id);
             CalculateDateProcess::dispatch($this->groupId, $this->state['date'], auth()->user()->id);
 
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'SpecialDateModal',
-                'message' => __('group.special_dates.saved'),
-                'savedMessage' => __('app.saved')
-            ]);
+            $this->dispatch('hide-modal',
+                id: 'SpecialDateModal',
+                message: __('group.special_dates.saved'),
+                savedMessage: __('app.saved')
+            );
             $this->emitUp('pollingOn');
             $this->resetExcept('groupId');
         } catch(Exception $e) {
@@ -154,20 +154,20 @@ class SpecialDateModal extends Component
     }
 
     public function deleteDateConfirmation() {
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.special_dates.confirmDelete.question'),
-            'text' => __('group.special_dates.confirmDelete.message'),
-            'emit' => 'deleteDate'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.special_dates.confirmDelete.question'),
+            text: __('group.special_dates.confirmDelete.message'),
+            emit: 'deleteDate'
+        );
     }
 
     public function deleteDate() {
         $this->getGroupData();
 
         if(Carbon::parse($this->date)->isPast() && !Carbon::parse($this->date)->isToday()) {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.special_dates.confirmDelete.error')
-            ]);
+            $this->dispatch('error',
+                message: __('group.special_dates.confirmDelete.error')
+            );
             return;
         }
 
@@ -249,17 +249,17 @@ class SpecialDateModal extends Component
             // if(!$no_need_update) {
             //     CalculateDateProcess::dispatch($this->groupId, $this->date, auth()->user()->id, $deleteAfterCalculate);
             // }
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'SpecialDateModal',
-                'message' => __('group.special_dates.confirmDelete.success'),
-                'savedMessage' => __('app.saved')
-            ]);
+            $this->dispatch('hide-modal',
+                id: 'SpecialDateModal',
+                message: __('group.special_dates.confirmDelete.success'),
+                savedMessage: __('app.saved')
+            );
             $this->resetExcept('groupId');
             $this->emitUp('pollingOn');
         } else {
-            $this->dispatchBrowserEvent('error', [
-                'message' => __('group.special_dates.confirmDelete.error')
-            ]);
+            $this->dispatch('error',
+                message: __('group.special_dates.confirmDelete.error')
+            );
         }
     }
 

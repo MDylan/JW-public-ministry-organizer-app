@@ -43,7 +43,7 @@ class ListGroupsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id)
-            ->assertDispatched('sweet-error')
+            ->assertDispatched('sweet-error', title: __('group.logout.error'), message: __('group.logout.no_admin'))
             ->assertSet('groupBeeingLogout', null);
     }
 

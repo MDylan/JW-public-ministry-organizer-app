@@ -70,7 +70,7 @@ class StaticPageEdit extends AppComponent
     }
 
     public function confirmNewDelete() {
-        $this->dispatchBrowserEvent('show-pageDelete-confirmation');
+        $this->dispatch('show-pageDelete-confirmation');
     }
 
     public function deleteConfirmed() {

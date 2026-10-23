@@ -22,13 +22,15 @@ class LivewireComponentInteractionTest extends FeatureTestCase
 
         Livewire::test(AdminUserListComponent::class)
             ->call('addNew')
-            ->assertDispatched('show-modal')
+            // TODO 47: named parameters are what reach JavaScript as
+            // event.detail.<key>; see BrowserEventContractTest.
+            ->assertDispatched('show-modal', id: 'form')
             ->set('state.name', 'Livewire Created User')
             ->set('state.email', 'lw-created@example.test')
             ->set('state.phone_number', '36201230000')
             ->set('state.role', 'groupCreator')
             ->call('createUser')
-            ->assertDispatched('hide-modal');
+            ->assertDispatched('hide-modal', id: 'form', message: __('user.userSaved'), savedMessage: __('app.saved'));
 
         $created = User::where('email', 'lw-created@example.test')->firstOrFail();
         $this->assertSame('Livewire Created User', $created->name);
@@ -67,9 +69,14 @@ class LivewireComponentInteractionTest extends FeatureTestCase
             ->assertSet('searchTerm', null)
             ->call('confirmUserRemoval', $target->id)
             ->assertSet('userIdBeeingRemoved', $target->id)
-            ->assertDispatched('show-deletion-confirmation')
+            ->assertDispatched(
+                'show-deletion-confirmation',
+                title: __('user.deleteUser'),
+                text: __('user.areYouSureDelete', ['userName' => $target->name]),
+                emit: 'deleteUser',
+            )
             ->call('deleteUser')
-            ->assertDispatched('success');
+            ->assertDispatched('success', message: __('user.userDeleted'));
 
         $this->assertDatabaseMissing('users', ['id' => $target->id]);
     }

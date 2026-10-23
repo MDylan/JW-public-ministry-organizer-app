@@ -186,7 +186,7 @@ class Translation extends AppComponent
         $row = $this->rows[$index] ?? null;
 
         if (! is_array($row) || ! isset($row['path']) || ! is_array($row['path'])) {
-            $this->dispatchBrowserEvent('error', ['message' => __('translation.save_failed')]);
+            $this->dispatch('error', message: __('translation.save_failed'));
 
             return;
         }
@@ -194,12 +194,12 @@ class Translation extends AppComponent
         try {
             $this->writeRow($row);
         } catch (Throwable $e) {
-            $this->dispatchBrowserEvent('error', ['message' => __('translation.save_failed')]);
+            $this->dispatch('error', message: __('translation.save_failed'));
 
             return;
         }
 
-        $this->dispatchBrowserEvent('success', ['message' => __('translation.saved')]);
+        $this->dispatch('success', message: __('translation.saved'));
     }
 
     public function saveAll(): void
@@ -216,15 +216,15 @@ class Translation extends AppComponent
             try {
                 $saved += $this->writeRow($row) ? 1 : 0;
             } catch (Throwable $e) {
-                $this->dispatchBrowserEvent('error', ['message' => __('translation.save_failed')]);
+                $this->dispatch('error', message: __('translation.save_failed'));
 
                 return;
             }
         }
 
-        $this->dispatchBrowserEvent('success', [
-            'message' => trans_choice('translation.saved_count', $saved, ['count' => $saved]),
-        ]);
+        $this->dispatch('success',
+            message: trans_choice('translation.saved_count', $saved, ['count' => $saved]),
+        );
     }
 
     /**
@@ -268,7 +268,7 @@ class Translation extends AppComponent
                 (string) ($validated['newValue'] ?? '')
             );
         } catch (Throwable $e) {
-            $this->dispatchBrowserEvent('error', ['message' => __('translation.key_exists')]);
+            $this->dispatch('error', message: __('translation.key_exists'));
 
             return;
         }
@@ -279,7 +279,7 @@ class Translation extends AppComponent
         // The list gained a row, so it has to come from disk again.
         $this->rowsToken = '';
 
-        $this->dispatchBrowserEvent('success', ['message' => __('translation.key_added')]);
+        $this->dispatch('success', message: __('translation.key_added'));
     }
 
     // =========================================================================

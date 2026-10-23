@@ -440,11 +440,11 @@ class UpdateGroupForm extends AppComponent
     }
 
     public function confirmFutureChangesRemoval() {
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.update.in_progress_delete_confirm.question',),
-            'text' => __('group.update.in_progress_delete_confirm.message'),
-            'emit' => 'removeFutureChanges'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.update.in_progress_delete_confirm.question',),
+            text: __('group.update.in_progress_delete_confirm.message'),
+            emit: 'removeFutureChanges'
+        );
     }
 
     public function removeFutureChanges() {
@@ -477,12 +477,12 @@ class UpdateGroupForm extends AppComponent
             if(strlen(trim($this->state['literatureAdd'])) > 2) {
                 $this->literatures['new'][] = $this->state['literatureAdd'];
                 $this->state['literatureAdd'] = '';
-                $this->dispatchBrowserEvent('success', ['message' => __('group.literature.added')]);
+                $this->dispatch('success', message: __('group.literature.added'));
             } else {
-                $this->dispatchBrowserEvent('sweet-error', [
-                    'title' => __('group.literature.add_error'),
-                    'message' => __('group.literature.tooShort'),
-                ]);
+                $this->dispatch('sweet-error',
+                    title: __('group.literature.add_error'),
+                    message: __('group.literature.tooShort'),
+                );
             }
         }
     }
@@ -490,11 +490,11 @@ class UpdateGroupForm extends AppComponent
     public function literatureRemove($type, $id) {
         if($type == "new") {
             unset($this->literatures['new'][$id]);
-            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+            $this->dispatch('success', message: __('group.literature.confirmDelete.success'));
         } else {
             $this->editedLiteratureRemove['type'] = $type;
             $this->editedLiteratureRemove['id'] = $id;
-            $this->dispatchBrowserEvent('show-literature-confirmation', ['lang' => $this->literatures[$type][$id]]);
+            $this->dispatch('show-literature-confirmation', lang: $this->literatures[$type][$id]);
         }
     }
 
@@ -509,7 +509,7 @@ class UpdateGroupForm extends AppComponent
     public function literatureDeleteConfirmed() {
         $this->literatures['removed'][$this->editedLiteratureRemove['id']] = true;
         unset($this->literatures[$this->editedLiteratureRemove['type']][$this->editedLiteratureRemove['id']]);
-        $this->dispatchBrowserEvent('success', ['message' => __('group.literature.confirmDelete.success')]);
+        $this->dispatch('success', message: __('group.literature.confirmDelete.success'));
     }
 
     public function literatureEditCancel() {
@@ -521,13 +521,13 @@ class UpdateGroupForm extends AppComponent
     public function literatureEditSave() {
         if(strlen(trim($this->state['editedLiterature'])) > 2) {
             $this->literatures[$this->editedLiteratureType][$this->editedLiteratureId] = $this->state['editedLiterature'];
-            $this->dispatchBrowserEvent('success', ['message' => __('group.literature.saved')]);
+            $this->dispatch('success', message: __('group.literature.saved'));
             $this->literatureEditCancel();
         } else {
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.literature.save_error'),
-                'message' => __('group.literature.tooShort'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('group.literature.save_error'),
+                message: __('group.literature.tooShort'),
+            );
         }
     }
 
@@ -535,10 +535,10 @@ class UpdateGroupForm extends AppComponent
         $this->weather_messages = [];
         if($this->state['weather_enabled'] == 1) {
             if(empty($this->weather['city']) || empty($this->weather['country'])) {
-                $this->dispatchBrowserEvent('sweet-error', [
-                    'title' => __('group.weather.error'),
-                    'message' => __('group.weather.error_message'),
-                ]);
+                $this->dispatch('sweet-error',
+                    title: __('group.weather.error'),
+                    message: __('group.weather.error_message'),
+                );
             } else {
                 // $wt = new Weather();
                 // $weather = $wt->get3HourlyByCity($this->state['city'], $this->state['country']);
@@ -546,10 +546,10 @@ class UpdateGroupForm extends AppComponent
                 $weather = pwbs_weather_api_call($this->weather['city'], $this->weather['country']);
                 //dd($weather);
                 if(empty($weather['current_weather'])) {
-                    $this->dispatchBrowserEvent('sweet-error', [
-                        'title' => __('group.weather.error'),
-                        'message' => __('group.weather.error_weather_message'),
-                    ]);
+                    $this->dispatch('sweet-error',
+                        title: __('group.weather.error'),
+                        message: __('group.weather.error_weather_message'),
+                    );
                     return;
                 }
                 //dd($weather['forecast_weather']);

@@ -145,7 +145,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->test(Settings::class)
             ->set('state.retention.group_data', '1')
             ->call('saveGroupDataRetention')
-            ->assertDispatched('error')
+            ->assertDispatched('error', message: __('settings.retention.invalid'))
             ->assertNotDispatched('success')
             ->assertSet('state.retention.group_data', '12');
 

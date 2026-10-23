@@ -129,6 +129,21 @@ Three of them are mounted with Livewire tag syntax rather than `@livewire(...)`:
 | `Partials\SideMenu` | Main sidebar navigation and role-aware menu sections. |
 | `Partials\EventsBar` | Compact event list renderer with calendar links. |
 
+## Browser Events (Server -> JavaScript)
+
+Components talk to page scripts through window events: toasts, SweetAlert dialogs and Bootstrap modals are all opened and closed this way. The server side is `$this->dispatch('<name>', key: $value, ...)`; the event bubbles from the component's element to `window`, and its `detail` **is** the named-parameter list, so `dispatch('success', message: $m)` is read as `event.detail.message`.
+
+| Event | Keys | Receiver |
+|---|---|---|
+| `success`, `error` | `message` | `layouts/app.blade.php` (toastr) |
+| `sweet-error` | `title`, `message` | `layouts/app.blade.php` (SweetAlert) |
+| `show-deletion-confirmation` | `title`, `text`, `emit` | `layouts/app.blade.php`; `emit` names the Livewire event fired on confirm |
+| `show-modal` | `id`, optionally `livewire` and `parameters_back` | `public/js/modal.js`; with `livewire` set, closing the modal calls back `hideModal` / `hiddenModal` on that component (only `hiddenModal` has listeners: `Events\Modal`, and `Groups\PosterEditModal`, which takes `parameters_back`) - still through the Livewire 2 `Livewire.emitTo()` until TODO 46 |
+| `hide-modal` | `id`, optionally `message` and `savedMessage` | `public/js/modal.js` |
+| `show-*-confirmation` (`logout`, `reject`, `languageRemove`, `literature`, `newsDelete`, `pageDelete`, `fileDelete`) | per event (`groupId`, `lang`, `fileName`, or none) | a script in the component's own view |
+
+**Always pass named parameters.** `dispatch('success', ['message' => $m])` is legal PHP and dispatches an event of the right name, but Livewire 3 treats the array as one positional parameter: the browser receives `event.detail = [{message: ...}]`, every `event.detail.message` is undefined, and nothing reports an error. Component tests that assert only the event name pass either way. `tests/Feature/Livewire/BrowserEventContractTest` is what fails: it reads the receiver names from the views and `public/js`, and rejects any `dispatch()` of those events that is not named-parameter only. Livewire-to-Livewire events are not browser events and are not covered by this rule. Until TODO 47 this was `dispatchBrowserEvent($name, $array)`, which Livewire 3 removed.
+
 ## Class-Based Blade Components
 
 Located in `app/View/Components`.

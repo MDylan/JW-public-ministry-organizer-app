@@ -92,10 +92,10 @@ class LastEvents extends AppComponent
                         ->first();
         if(count($event->groups->literatures) == 0) {
             //there are no literature ability
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('app.error'),
-                'message' => __('event.service.error'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('app.error'),
+                message: __('event.service.error'),
+            );
             return false;
         } else {
             $groups = Auth()->user()->userGroups->toArray();
@@ -123,9 +123,9 @@ class LastEvents extends AppComponent
         $this->eventId = $eventId;
 
         if($this->getEventInfo(true)) {
-            $this->dispatchBrowserEvent('show-modal', [
-                'id' => 'ReportForm',
-            ]); 
+            $this->dispatch('show-modal',
+                id: 'ReportForm',
+            ); 
         }
     }
 
@@ -151,10 +151,10 @@ class LastEvents extends AppComponent
             }
             $this->reports = [];
 
-            $this->dispatchBrowserEvent('hide-modal', [
-                'id' => 'ReportForm',
-                'message' => __('event.service.success')
-            ]); 
+            $this->dispatch('hide-modal',
+                id: 'ReportForm',
+                message: __('event.service.success')
+            ); 
         }
     }
 

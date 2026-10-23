@@ -62,7 +62,7 @@ class NewsletterEdit extends Component
     }
 
     public function confirmNewDelete() {
-        $this->dispatchBrowserEvent('show-newsDelete-confirmation');
+        $this->dispatch('show-newsDelete-confirmation');
     }
 
     public function deleteConfirmed() {

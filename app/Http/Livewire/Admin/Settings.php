@@ -139,7 +139,7 @@ class Settings extends AppComponent
 
         unset($this->state['languageAdd']);
 
-        $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.success')]);
+        $this->dispatch('success', message: __('settings.languages.success'));
         $this->emitTo('partials.nav-bar', 'refresh');
     }
 
@@ -147,7 +147,7 @@ class Settings extends AppComponent
         $languages = $this->getLanguages();
         if(isset($languages[$code])) {
             $this->lang_beeing_deleted = $code;
-            $this->dispatchBrowserEvent('show-languageRemove-confirmation', ['lang' => $languages[$code]]);
+            $this->dispatch('show-languageRemove-confirmation', lang: $languages[$code]);
         }        
     }
 
@@ -161,7 +161,7 @@ class Settings extends AppComponent
                 ['name' => 'languages'],
                 ['value' => $languages]
             );  
-            $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.confirmDelete.success')]);
+            $this->dispatch('success', message: __('settings.languages.confirmDelete.success'));
         }
         $this->lang_beeing_deleted = "";
         $this->emitTo('partials.nav-bar', 'refresh');
@@ -179,9 +179,9 @@ class Settings extends AppComponent
             $setEnv['APP_LANG'] = '"'.$new.'"';
             setEnvironment::setEnvironmentValue($setEnv);
 
-            $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.defaultSet.success')]);
+            $this->dispatch('success', message: __('settings.languages.defaultSet.success'));
         } else {
-            $this->dispatchBrowserEvent('error', ['message' => __('settings.languages.defaultSet.error')]);
+            $this->dispatch('error', message: __('settings.languages.defaultSet.error'));
         }
     }
 
@@ -200,7 +200,7 @@ class Settings extends AppComponent
                 ['value' => $languages]
             );        
 
-            $this->dispatchBrowserEvent('success', ['message' => __('settings.languages.visibility_changed')]);
+            $this->dispatch('success', message: __('settings.languages.visibility_changed'));
         } 
     }
 
@@ -227,7 +227,7 @@ class Settings extends AppComponent
 
         if(!in_array($value, config('retention.group_data_options'), true)) {
             $this->state['retention']['group_data'] = $this->settings['group_data_retention'] ?? '0';
-            $this->dispatchBrowserEvent('error', ['message' => __('settings.retention.invalid')]);
+            $this->dispatch('error', message: __('settings.retention.invalid'));
             return;
         }
 
@@ -236,7 +236,7 @@ class Settings extends AppComponent
             ['value' => $value]
         );
 
-        $this->dispatchBrowserEvent('success', ['message' => __('settings.retention.saved')]);
+        $this->dispatch('success', message: __('settings.retention.saved'));
     }
 
     public function saveOthers() {
@@ -298,7 +298,7 @@ class Settings extends AppComponent
                 setEnvironment::setEnvironmentValue($setEnv);
             }            
 
-            $this->dispatchBrowserEvent('success', ['message' => __('settings.others_saved')]);
+            $this->dispatch('success', message: __('settings.others_saved'));
         }
     }
 
@@ -345,7 +345,7 @@ class Settings extends AppComponent
             } catch (Exception $e) {
                 return dd($e->getMessage());
             }
-            $this->dispatchBrowserEvent('success', ['message' => __('settings.run.success')]);
+            $this->dispatch('success', message: __('settings.run.success'));
         }
     }
 

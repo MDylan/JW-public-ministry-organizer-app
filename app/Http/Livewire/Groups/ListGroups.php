@@ -32,11 +32,11 @@ class ListGroups extends AppComponent
         }
         $this->groupBeeingRemoved = $groupId;
 
-        $this->dispatchBrowserEvent('show-deletion-confirmation', [
-            'title' => __('group.deletegroup'),
-            'text' => __('group.areYouSureDelete', ['groupName' => $group_check->name]),
-            'emit' => 'deleteGroup'
-        ]);
+        $this->dispatch('show-deletion-confirmation',
+            title: __('group.deletegroup'),
+            text: __('group.areYouSureDelete', ['groupName' => $group_check->name]),
+            emit: 'deleteGroup'
+        );
     }
 
     public function deleteGroup() {
@@ -54,9 +54,9 @@ class ListGroups extends AppComponent
     public function askGroupCreatorPrivilege() {
         $this->showEditModal = false;
         $this->state = [];
-        $this->dispatchBrowserEvent('show-modal', [
-            'id' => 'form',
-        ]);
+        $this->dispatch('show-modal',
+            id: 'form',
+        );
     }
 
     /**
@@ -82,11 +82,11 @@ class ListGroups extends AppComponent
                     ->replyTo(auth()->user()->email)
                     ->subject(__('group.requestMail.subject'));
          });
-         $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'form',
-            'message' => __('group.request.sent'),
-            'savedMessage' => __('app.saved')
-        ]);
+         $this->dispatch('hide-modal',
+            id: 'form',
+            message: __('group.request.sent'),
+            savedMessage: __('app.saved')
+        );
     }
 
     /**
@@ -96,9 +96,9 @@ class ListGroups extends AppComponent
         $accept = new GroupUserMoves($groupId, Auth::id());
         $res = $accept->acceptInvitation();
         if($res) {
-            $this->dispatchBrowserEvent('success', ['message' => __('group.accept_saved')]);
+            $this->dispatch('success', message: __('group.accept_saved'));
         } else {
-            $this->dispatchBrowserEvent('error', ['message' => __('group.accept_error')]);
+            $this->dispatch('error', message: __('group.accept_error'));
         }
         $this->emitTo('partials.side-menu', 'refresh');
         $this->emitTo('partials.nav-bar', 'refresh');
@@ -112,7 +112,7 @@ class ListGroups extends AppComponent
     public function rejectModal($groupId) {
         $this->groupBeeingRejected = $groupId;
 
-        $this->dispatchBrowserEvent('show-reject-confirmation');
+        $this->dispatch('show-reject-confirmation');
     }
 
     /**
@@ -123,9 +123,9 @@ class ListGroups extends AppComponent
         $res = $reject->rejectInvitation();
 
         if($res) {
-            $this->dispatchBrowserEvent('success', ['message' => __('group.accept_rejected')]);
+            $this->dispatch('success', message: __('group.accept_rejected'));
         } else {
-            $this->dispatchBrowserEvent('error', ['message' => __('group.accept_error')]);
+            $this->dispatch('error', message: __('group.accept_error'));
         }
         $this->emitTo('partials.side-menu', 'refresh');
         $this->emitTo('partials.nav-bar', 'refresh');
@@ -163,13 +163,13 @@ class ListGroups extends AppComponent
 
         if(pwbs_check_group_other_admins($groupId, auth()->id()) === false) {
             //no other admin
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_admin'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('group.logout.error'),
+                message: __('group.logout.no_admin'),
+            );
         } else {
             $this->groupBeeingLogout = $groupId;
-            $this->dispatchBrowserEvent('show-logout-confirmation', ['groupId' => $groupId]);
+            $this->dispatch('show-logout-confirmation', groupId: $groupId);
         }
     }
 
@@ -180,23 +180,23 @@ class ListGroups extends AppComponent
 
         if(pwbs_check_group_other_admins($this->groupBeeingLogout, auth()->id()) === false) {
             //no other admin
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_admin'),
-            ]);
+            $this->dispatch('sweet-error',
+                title: __('group.logout.error'),
+                message: __('group.logout.no_admin'),
+            );
         } else {
             $logout = new GroupUserMoves($this->groupBeeingLogout, auth()->id());
             $res = $logout->detach();
             if($res) {
-                $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
+                $this->dispatch('success', message: __('group.logout.success'));
             } else {
-                $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
+                $this->dispatch('error', message: __('group.logout.error'));
             }
         }
     }
 
     public function openModal($modalId) {
-        $this->dispatchBrowserEvent('show-modal', ['id' => $modalId]);
+        $this->dispatch('show-modal', id: $modalId);
     }
 
     public function createGroup() {
@@ -213,11 +213,11 @@ class ListGroups extends AppComponent
         $group = Group::create($validatedData);
         $user->userGroups()->save($group, ['group_role' => 'admin', 'accepted_at' => date('Y-m-d H:i:s')]);
 
-        $this->dispatchBrowserEvent('hide-modal', [
-            'id' => 'createGroup',
-            'message' => __('group.groupCreated'),
-            'savedMessage' => __('app.saved')
-        ]);
+        $this->dispatch('hide-modal',
+            id: 'createGroup',
+            message: __('group.groupCreated'),
+            savedMessage: __('app.saved')
+        );
 
         $this->state = [];
         auth()->user()->fresh();
