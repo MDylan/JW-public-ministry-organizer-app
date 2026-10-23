@@ -448,6 +448,20 @@ start from dispatched browser events, which v3 processes after the morph.
 | after TODO 47.2 | 1550 | 4519 | 0 | 0 | 0 |
 | after TODO 47.3 | 1552 | 4525 | 0 | 0 | 0 |
 
+### TODO 47.4, as delivered (2026-10-23)
+
+The third Livewire 2 behaviour the walk found missing: v2 rewrote every bound
+field from the component's data after each response. v3 does not, and its
+morph patches unkeyed `<option>` elements by position, so a select whose
+options were re-rendered could show a value the component did not hold. Every
+looped option of a bound select is now keyed by its value.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 47.3 | 1552 | 4525 | 0 | 0 | 0 |
+| after TODO 47.3, editor refill | 1553 | 4527 | 0 | 0 | 0 |
+| after TODO 47.4 | 1554 | 4530 | 0 | 0 | 0 |
+
 From 286 red of 1507 at the bump to 0 of 1547.
 
 ## `vendor:publish --tag=livewire:assets` under version 3
