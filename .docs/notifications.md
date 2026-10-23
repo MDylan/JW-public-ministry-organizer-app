@@ -56,7 +56,7 @@ The "Covered by" column below records the **dispatch trigger** test — the one 
 
 | Notification | Queued | Triggered From | Covered by | Purpose |
 |---|---|---|---|---|
-| `UserRegisteredNotification` | Yes | `Actions\Fortify\CreateNewUser` | `NotificationTriggerRegressionTest` | Registration email with verification link. |
+| `UserRegisteredNotification` | Yes | `User::sendEmailVerificationNotification()` - called by the framework's `Registered` listener after registration and by Fortify's resend route (`verification.send`) | `NotificationTriggerRegressionTest`, `Auth\RegistrationVerificationMailTest` | Registration email with verification link, and the **only** verification mail: since TODO 55.3 the framework's `VerifyEmail` is never sent. Laravel 11 subscribes `SendEmailVerificationNotification` to `Registered` by itself, so `CreateNewUser` must not notify as well - it did until TODO 55.3, and every new user got two mails. |
 | `FinishRegistration` | Yes | `Livewire\Groups\ListUsers::createUser` | `GroupUserInviteTest` | Invitation-style email to complete account registration. |
 | `FinishRegistrationSuccessNotification` | Yes | `Http\Controllers\FinishRegistration` | `CriticalUserFlowsTest` | Confirms successful finish-registration flow. |
 | `UserEmailChangedNotification` | Yes | `Actions\Fortify\UpdateUserProfileInformation` | `NotificationTriggerRegressionTest`, `NewEmail\PendingEmailFlowTest` | Alerts the **old** address that a new one is pending. Goes out alongside the verification mail below. |

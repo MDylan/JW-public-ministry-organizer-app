@@ -10,6 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use App\Support\Email\MustVerifyNewEmail;
+use App\Notifications\UserRegisteredNotification;
 use App\Support\Gdpr\AnonymizationPolicy;
 use App\Support\Gdpr\Portable;
 use App\Support\Gdpr\Anonymizable;
@@ -420,6 +421,22 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         }
 
         return false;
+    }
+
+    /**
+     * The verification mail is the registration mail (TODO 55.3).
+     *
+     * Laravel 11's EventServiceProvider subscribes
+     * SendEmailVerificationNotification to Registered on its own, and the
+     * slim skeleton (TODO 56) always registers that provider - there is no
+     * switch to turn it off. So the framework is the one sender: it calls
+     * this method after registration, and so does Fortify's "resend" button
+     * (verification.send). Both get the application's queued, retried
+     * registration mail instead of the framework's synchronous VerifyEmail.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new UserRegisteredNotification());
     }
 
     //this check if user email is valid or this is an anonymized user

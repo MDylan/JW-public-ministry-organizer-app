@@ -101,9 +101,13 @@ class SetupAccountTest extends SetupTestCase
 
         $this->post(route('setup.save-account'), $this->payload());
 
-        Notification::assertSentTo(
+        // Counted since TODO 55.3: the mail moved out of CreateNewUser, and
+        // the installer - which fires no Registered event - now sends it
+        // itself. Exactly once, not zero and not twice.
+        Notification::assertSentToTimes(
             User::where('email', 'first-admin@example.test')->firstOrFail(),
-            UserRegisteredNotification::class
+            UserRegisteredNotification::class,
+            1
         );
     }
 

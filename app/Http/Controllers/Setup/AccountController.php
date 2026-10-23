@@ -39,6 +39,11 @@ class AccountController extends Controller
     protected function register(Request $request): RedirectResponse
     {
         $user = (new CreateNewUser())->create($request->input());
+        // The installer creates the user without Fortify, so no Registered
+        // event fires and the framework's listener never sends the mail.
+        // CreateNewUser used to send it itself; since TODO 55.3 that is the
+        // listener's job, so this path sends it explicitly, as before.
+        $user->sendEmailVerificationNotification();
         $user->update([
             'role' => 'mainAdmin',
             'email_verified_at' => now()

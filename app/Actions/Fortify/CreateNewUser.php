@@ -3,7 +3,6 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
-use App\Notifications\UserRegisteredNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -42,7 +41,11 @@ class CreateNewUser implements CreatesNewUsers
                 'phone_number' => $input['phone_number'],
                 'password' => Hash::make($input['password']),
             ]);        
-            $user->notify(new UserRegisteredNotification());
+            // No notify() here since TODO 55.3: Fortify dispatches Registered,
+            // Laravel 11 listens to it with SendEmailVerificationNotification,
+            // and User::sendEmailVerificationNotification() sends the
+            // registration mail. Sending it here as well mailed every new user
+            // twice.
             
             return $user;
         } else {
