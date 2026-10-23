@@ -18,7 +18,7 @@ class Home extends Component
     private $day_stat = [];
     private $events = [];
     private $available_days = [];
-    public $listeners = [
+    protected $listeners = [
         'refresh' => 'pollingOn',
         'pollingOn',
         'pollingOff',
@@ -170,7 +170,7 @@ class Home extends Component
      */
     public function openEventsModal($groupId, $date) {
         $this->pollingOff();
-        $this->emitTo('events.modal', 'openModal', $date, $groupId, 'home');
+        $this->dispatch('openModal', $date, $groupId, 'home')->to('events.modal');
     }
 
     public function pollingOn() {

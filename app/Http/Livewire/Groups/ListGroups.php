@@ -100,8 +100,8 @@ class ListGroups extends AppComponent
         } else {
             $this->dispatch('error', message: __('group.accept_error'));
         }
-        $this->emitTo('partials.side-menu', 'refresh');
-        $this->emitTo('partials.nav-bar', 'refresh');
+        $this->dispatch('refresh')->to('partials.side-menu');
+        $this->dispatch('refresh')->to('partials.nav-bar');
         $user = Auth()->user();
         $user->refresh();
     }
@@ -127,8 +127,8 @@ class ListGroups extends AppComponent
         } else {
             $this->dispatch('error', message: __('group.accept_error'));
         }
-        $this->emitTo('partials.side-menu', 'refresh');
-        $this->emitTo('partials.nav-bar', 'refresh');
+        $this->dispatch('refresh')->to('partials.side-menu');
+        $this->dispatch('refresh')->to('partials.nav-bar');
     }
 
     /**

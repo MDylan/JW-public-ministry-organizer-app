@@ -103,15 +103,29 @@ class PosterEditModal extends AppComponent
             id: 'PosterEditModal',
             message: __('group.poster.success'),
             savedMessage: __('app.saved')
-        );        
-        $this->emitUp('refresh');
+        );
+        $this->dispatchToParent('refresh');
         $this->reset();
         $this->openModal = false;
     }
 
+    /**
+     * Livewire 3 has no emitUp(). This modal is nested in the calendar
+     * (events.events) and on the home page (home), never both at once, so the
+     * event goes to each by name; the one that is not on the page receives
+     * nothing. A plain dispatch() would reach every component on the page that
+     * listens for the name, nav bar and side menu included (TODO 44).
+     */
+    private function dispatchToParent(string $event): void
+    {
+        foreach (['events.events', 'home'] as $parent) {
+            $this->dispatch($event)->to($parent);
+        }
+    }
+
     public function hiddenModal($parameters_back) {
         if(isset($parameters_back['fromDate'])) {
-            $this->emitTo('events.modal', 'openModal', $parameters_back['fromDate'], $parameters_back['groupId']);
+            $this->dispatch('openModal', $parameters_back['fromDate'], $parameters_back['groupId'])->to('events.modal');
         }
     }
 
@@ -136,7 +150,7 @@ class PosterEditModal extends AppComponent
                 savedMessage: __('app.saved')
             );
             $this->reset();
-            $this->emitUp('pollingOn');
+            $this->dispatchToParent('pollingOn');
         } else {
             $this->dispatch('error',
                 message: __('group.poster.confirmDelete.error')

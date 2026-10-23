@@ -29,7 +29,7 @@ class EventEdit extends AppComponent
     public $original_day_data = [];
     public $group_data = [];
     public $service_days = [];
-    public $listeners = [
+    protected $listeners = [
         'setStart',
         'createForm',
         'editForm',
@@ -670,8 +670,8 @@ class EventEdit extends AppComponent
 
         //IMPORTANT: Check observers too
 
-        $this->emitUp('refresh');
-        $this->emitTo('partials.events-bar', 'refresh');
+        $this->dispatch('refresh')->to('events.modal');
+        $this->dispatch('refresh')->to('partials.events-bar');
 
         $stat = new GenerateStat();
         $stat->generate($this->groupId, $validatedData['day']);
@@ -701,8 +701,8 @@ class EventEdit extends AppComponent
         } else {
             $this->dispatch('error', message: __('event.confirmDelete.error'));
         }
-        $this->emitTo('partials.events-bar', 'refresh');
-        $this->emitUp('refresh');
+        $this->dispatch('refresh')->to('partials.events-bar');
+        $this->dispatch('refresh')->to('events.modal');
         $this->pleaseWait = true;
     }
 

@@ -60,7 +60,10 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->set('state.note', 'Teszt különleges nap')
             ->call('saveDate')
             ->assertHasNoErrors()
-            ->assertDispatched('hide-modal');
+            ->assertDispatched('hide-modal')
+            // TODO 44: emitUp('pollingOn') became a dispatch to the calendar,
+            // the only component this modal is nested in.
+            ->assertDispatchedTo('events.events', 'pollingOn');
 
         $this->assertDatabaseHas('group_dates', [
             'group_id' => $group->id,

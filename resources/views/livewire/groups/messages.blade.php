@@ -19,7 +19,7 @@
                                     {{ $message->user->name }}
                                     @if(!is_null($message->message) && ($privilege['delete'] || auth()->id() == $message->user_id))
                                         <span class="badge badge-danger @if(auth()->id() == $message->user_id) float-left @else float-right @endif mx-1 mt-1">
-                                            <a href="javascript:void(0);" wire:click="$emitSelf('deleteMessage', {{ $message->id }})" class="text-white" >
+                                            <a href="javascript:void(0);" wire:click="deleteMessage({{ $message->id }})" class="text-white" >
                                                 @lang('Delete')
                                             </a>
                                         </span>

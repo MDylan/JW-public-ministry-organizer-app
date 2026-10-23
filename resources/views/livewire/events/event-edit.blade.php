@@ -159,7 +159,7 @@
         @if ($eventId)
             <div class="row">
                 <div class="col-6 col-md-3">
-                    <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1 w-100">
+                    <a wire:click="$parent.cancelEdit()" class="btn btn-secondary mr-1 w-100">
                         <i class="fa fa-times mr-1"></i>
                         @lang('event.cancel_edit')
                     </a>
@@ -217,7 +217,7 @@
         @else
             <div class="row">
                 <div class="col-6 col-md-4">
-                    <a wire:click="$emitUp('cancelEdit')" class="btn btn-secondary mr-1">
+                    <a wire:click="$parent.cancelEdit()" class="btn btn-secondary mr-1">
                         <i class="fa fa-times mr-1"></i>
                         @lang('Cancel')
                     </a>

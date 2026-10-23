@@ -55,7 +55,11 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->set('state.info', 'Teszt hirdetmény tartalom')
             ->call('savePoster')
             ->assertHasNoErrors()
-            ->assertDispatched('hide-modal');
+            ->assertDispatched('hide-modal')
+            // TODO 44: emitUp('refresh') became a targeted dispatch to each
+            // page the modal can be nested in - not a page-wide broadcast.
+            ->assertDispatchedTo('events.events', 'refresh')
+            ->assertDispatchedTo('home', 'refresh');
 
         // info field is encrypted, so we check via the model
         $poster = GroupPosters::where('group_id', $group->id)->first();
@@ -101,7 +105,9 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id, $poster->id)
             ->call('deletePoster')
-            ->assertDispatched('hide-modal');
+            ->assertDispatched('hide-modal')
+            ->assertDispatchedTo('events.events', 'pollingOn')
+            ->assertDispatchedTo('home', 'pollingOn');
 
         $this->assertDatabaseMissing('group_posters', ['id' => $poster->id]);
     }

@@ -137,12 +137,31 @@ Components talk to page scripts through window events: toasts, SweetAlert dialog
 |---|---|---|
 | `success`, `error` | `message` | `layouts/app.blade.php` (toastr) |
 | `sweet-error` | `title`, `message` | `layouts/app.blade.php` (SweetAlert) |
-| `show-deletion-confirmation` | `title`, `text`, `emit` | `layouts/app.blade.php`; `emit` names the Livewire event fired on confirm |
-| `show-modal` | `id`, optionally `livewire` and `parameters_back` | `public/js/modal.js`; with `livewire` set, closing the modal calls back `hideModal` / `hiddenModal` on that component (only `hiddenModal` has listeners: `Events\Modal`, and `Groups\PosterEditModal`, which takes `parameters_back`) - still through the Livewire 2 `Livewire.emitTo()` until TODO 46 |
+| `show-deletion-confirmation` | `title`, `text`, `emit` | `layouts/app.blade.php`; `emit` names the Livewire event fired on confirm, via `Livewire.dispatch(event.detail.emit)` |
+| `show-modal` | `id`, optionally `livewire` and `parameters_back` | `public/js/modal.js`; with `livewire` set, closing the modal calls back `hideModal` / `hiddenModal` on that component through `Livewire.dispatchTo(..., { parameters_back })` (only `hiddenModal` has listeners: `Events\Modal`, and `Groups\PosterEditModal`, which takes `parameters_back` by that name) |
 | `hide-modal` | `id`, optionally `message` and `savedMessage` | `public/js/modal.js` |
 | `show-*-confirmation` (`logout`, `reject`, `languageRemove`, `literature`, `newsDelete`, `pageDelete`, `fileDelete`) | per event (`groupId`, `lang`, `fileName`, or none) | a script in the component's own view |
 
 **Always pass named parameters.** `dispatch('success', ['message' => $m])` is legal PHP and dispatches an event of the right name, but Livewire 3 treats the array as one positional parameter: the browser receives `event.detail = [{message: ...}]`, every `event.detail.message` is undefined, and nothing reports an error. Component tests that assert only the event name pass either way. `tests/Feature/Livewire/BrowserEventContractTest` is what fails: it reads the receiver names from the views and `public/js`, and rejects any `dispatch()` of those events that is not named-parameter only. Livewire-to-Livewire events are not browser events and are not covered by this rule. Until TODO 47 this was `dispatchBrowserEvent($name, $array)`, which Livewire 3 removed.
+
+## Component Events (Livewire -> Livewire)
+
+Components also signal each other - a partial re-rendering after a save, the day modal opening from the calendar. Each component declares what it answers to in a **`protected $listeners`** array (`'event'` or `'event' => 'method'`). All 19 are `protected` since TODO 44: Livewire 3 treats a `public` property declared on the component as client state, so a public `$listeners` was serialised into every snapshot and could be rewritten from the browser.
+
+**How to send one, and what each form reaches.** A Livewire 3 event is a DOM event, and that decides the choice:
+
+| Form | Reaches | Used for |
+|---|---|---|
+| `$this->dispatch('event', ...$args)->to('component.name')` | every instance of that component on the page, and nothing else | all server-side sends; arguments are positional, exactly as `emitTo()` passed them |
+| `$this->dispatch('event')` with no `to()` | **every** component on the page listening for that name | not used for component events - `refresh` alone has six listeners (nav bar, side menu, events bar, home, calendar, day modal) |
+| `wire:click="method(args)"` | the component itself | what `$emitSelf('method', args)` became - a listener on self is a direct call |
+| `wire:click="$parent.method()"` | the enclosing component | `Events\EventEdit`'s cancel buttons |
+| `wire:click="$dispatchTo('name', 'event', { param: value })"` / `Livewire.dispatchTo(...)` | as `->to()` | Blade and page scripts; **one** params argument, so it is an object whose keys are the listener method's parameter names |
+| `Livewire.dispatch('event'[, { ... }])` | every listener on the page | the confirmation dialogs' `...Confirmed` callbacks, as `Livewire.emit()` did |
+
+**There is no `emitUp()` in Livewire 3, and its replacement names the parent.** `Events\EventEdit` sends `refresh` to `events.modal`, `Groups\SpecialDateModal` sends `pollingOn` to `events.events`, and `Groups\PosterEditModal` - nested both in the calendar and on the home page - sends to both through `dispatchToParent()`; the one not on the page receives nothing. Nesting one of these somewhere new means adding the new parent there. `Events\Modal` passes `refresh` on to whichever component opened it (`$refreshUp`, set by `openModal()`; only `home` does today). Note that Livewire 3 resolves a `to()` name when the response is built and **throws on a name that is not a component**, where `emitTo()` quietly delivered nothing.
+
+The tests pin the targets with `assertDispatchedTo()`, which also proves the event is not a page-wide broadcast.
 
 ## Class-Based Blade Components
 

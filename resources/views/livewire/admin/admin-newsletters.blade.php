@@ -62,7 +62,7 @@
                                                         card-primary 
                                                     @endif 
                                                 @endif card-outline">
-                                    <a class="d-block w-100 collapsed" wire:ignore.self wire:click="$emitSelf('setAsRead', {{$newsletter->id}})" data-toggle="collapse" href="#collapse-{{ $newsletter->id }}" aria-expanded="false">
+                                    <a class="d-block w-100 collapsed" wire:ignore.self wire:click="setAsRead({{$newsletter->id}})" data-toggle="collapse" href="#collapse-{{ $newsletter->id }}" aria-expanded="false">
                                         <div class="card-header">
                                             <h4 class="card-title w-100">
                                                 @if (is_null($newsletter->user_read))

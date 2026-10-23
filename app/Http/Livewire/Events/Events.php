@@ -28,7 +28,7 @@ class Events extends AppComponent
     private $cal_service_days = [];
     private $cal_group_data = [];
     public $form_groupId = 0;
-    public $listeners = [
+    protected $listeners = [
         'openModal', 
         'refresh' => 'render',
         'pollingOn',
@@ -132,8 +132,8 @@ class Events extends AppComponent
         if($key !== false) {
             // dd('change', $this->form_groupId);
             session(['groupId' => $this->form_groupId]);
-            $this->emitTo('events.modal', 'setGroup', $this->form_groupId);
-            $this->emitTo('groups.special-date-modal', 'setGroup', $this->form_groupId);
+            $this->dispatch('setGroup', $this->form_groupId)->to('events.modal');
+            $this->dispatch('setGroup', $this->form_groupId)->to('groups.special-date-modal');
         }         
     }
     
@@ -240,7 +240,7 @@ class Events extends AppComponent
 
     public function openEventsModal($date) {
         // dd($date);
-        $this->emitTo('events.modal', 'openModal', $date, $this->form_groupId);
+        $this->dispatch('openModal', $date, $this->form_groupId)->to('events.modal');
         $this->polling = false;
     }
 

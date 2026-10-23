@@ -215,7 +215,7 @@
                         cancelButtonText: '@lang('Cancel')'
                     }).then((result) => {
                     if (result.isConfirmed) {
-                        Livewire.emit('deleteFileConfirmed');
+                        Livewire.dispatch('deleteFileConfirmed');
                     }
                     })
                 });

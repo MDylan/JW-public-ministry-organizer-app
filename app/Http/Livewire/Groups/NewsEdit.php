@@ -27,7 +27,7 @@ class NewsEdit extends AppComponent
     public $attached_files = [];
     private $languages = [];
 
-    public $listeners = [
+    protected $listeners = [
         'deleteConfirmed',
         'deleteFileConfirmed'
     ];

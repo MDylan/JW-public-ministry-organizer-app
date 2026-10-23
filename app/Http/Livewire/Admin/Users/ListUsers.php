@@ -20,7 +20,7 @@ class ListUsers extends AppComponent
     //for search with an url string
     protected $queryString = ['searchTerm' => ['except' => '']];
 
-    public $listeners = ['deleteUser'];
+    protected $listeners = ['deleteUser'];
 
     /**
      * Show Modal

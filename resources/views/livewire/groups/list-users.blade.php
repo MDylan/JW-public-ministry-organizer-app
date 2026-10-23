@@ -32,25 +32,25 @@
                             @lang('app.back')
                         </a>
                         @if($editor && !isset($current_parent_group_id)) 
-                            <a wire:click="$emitSelf('openModal', 'UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary mb-2 mb-md-0 ml-1">
+                            <a wire:click="openModal('UserAddModal')" wire:loading.attr="disabled" type="button" class="btn btn-secondary mb-2 mb-md-0 ml-1">
                                 <i class="fa fa-plus mr-1"></i>
                                 @lang('group.user.add.title')</a>
                         @endif
                         @if($admin) 
                             @if (count($child_groups) > 0)
                                 {{-- this is a parent group --}}
-                                <a wire:click="$emitSelf('openModal', 'ChildGroupsModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
+                                <a wire:click="openModal('ChildGroupsModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                     <i class="fa fa-unlink mr-1"></i>
                                     @lang('group.link.parent.detach.button')</a>
                             @else
 
                                 @if ($current_parent_group_id > 0)
                                     {{-- this is a child group --}}
-                                    <a wire:click="$emitSelf('openModal', 'ParentGroupModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
+                                    <a wire:click="openModal('ParentGroupModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                         <i class="fa fa-unlink mr-1"></i>
                                         @lang('group.link.child.detach.button')</a>
                                 @else
-                                    <a wire:click="$emitSelf('openModal', 'LinkToModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
+                                    <a wire:click="openModal('LinkToModal')" wire:loading.attr="disabled" type="button" class="btn btn-info mb-2 mb-md-0 ml-1">
                                         <i class="fa fa-link mr-1"></i>
                                         @lang('group.link.button')</a>
                                 @endif
@@ -254,7 +254,7 @@
                                         
                                         @if ($editor)
                                             @if (\Carbon\Carbon::parse($user->last_activity)->lt(now()->subMonths(config('gdpr.settings.ttl') ?? 6)->addDays(14)))
-                                                <button  wire:click="$emitSelf('openUserRenewalModal', {{$user->id}})" class="btn btn-sm btn-warning mx-1 mb-1">
+                                                <button  wire:click="openUserRenewalModal({{$user->id}})" class="btn btn-sm btn-warning mx-1 mb-1">
                                                     <i class="fas fa-user-clock mr-1"></i>
                                                     @lang('user.inactive')!
                                                 </button>
@@ -275,7 +275,7 @@
                                 @if($editor) 
                                     <div class="col-12 col-md-2 text-center my-auto align-middle">
                                         
-                                        <button wire:click="$emitSelf('editUser', {{$user->id}})" class="btn btn-sm btn-primary mr-1 mb-1">
+                                        <button wire:click="editUser({{$user->id}})" class="btn btn-sm btn-primary mr-1 mb-1">
                                             <i class="fa fa-user-edit mr-1"></i>
                                             @lang('app.edit')
                                         </button>                                        

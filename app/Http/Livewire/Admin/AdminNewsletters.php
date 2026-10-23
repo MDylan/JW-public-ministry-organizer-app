@@ -10,7 +10,7 @@ use Livewire\Component;
 class AdminNewsletters extends Component
 {
 
-    public $listeners = [
+    protected $listeners = [
         'setAsRead'
     ];
 
@@ -23,8 +23,8 @@ class AdminNewsletters extends Component
             'user_id' => auth()->id(),
             'admin_newsletter_id' => $newsletter_id
         ]);
-        $this->emitTo('partials.nav-bar', 'refresh');
-        $this->emitTo('partials.side-menu', 'refresh');
+        $this->dispatch('refresh')->to('partials.nav-bar');
+        $this->dispatch('refresh')->to('partials.side-menu');
     }
 
     public function render()

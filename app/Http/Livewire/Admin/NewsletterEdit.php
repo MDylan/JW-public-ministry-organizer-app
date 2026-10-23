@@ -13,7 +13,7 @@ class NewsletterEdit extends Component
 
     public $state = [];
 
-    public $listeners = ['deleteConfirmed'];
+    protected $listeners = ['deleteConfirmed'];
 
     public function mount($id = false) {
         if($id) {

@@ -72,7 +72,18 @@ class HomeLivewireTest extends FeatureTestCase
             ->assertStatus(200);
 
         // The "Új hirdetmény" button only appears for admin/roler
-        $response->assertDontSee('wire:click="$emitTo(\'groups.poster-edit-modal\', \'openModal\', '.$group->id.')"', false);
+        $response->assertDontSee($this->newPosterButton($group->id), false);
+    }
+
+    /**
+     * The "new poster" button's click handler. Shared by the two tests either
+     * side of it, so the hidden case cannot pass on a string that no longer
+     * renders anywhere - which is what happened to its Livewire 2 spelling
+     * ($emitTo) at TODO 44.
+     */
+    private function newPosterButton(int $groupId): string
+    {
+        return 'wire:click="$dispatchTo(\'groups.poster-edit-modal\', \'openModal\', { groupId: '.$groupId.' })"';
     }
 
     public function test_home_page_shows_poster_edit_button_for_group_admin(): void
@@ -86,6 +97,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->assertStatus(200);
 
         $response->assertSee(__('group.poster.button'));
+        $response->assertSee($this->newPosterButton($group->id), false);
     }
 
     // =========================================================================

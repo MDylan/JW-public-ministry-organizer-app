@@ -29,7 +29,7 @@ class Messages extends Component
     ];
     public int $message_number = 30;
 
-    public $listeners = [
+    protected $listeners = [
         'sendMessage',
         'deleteMessage',
         'increaseMessages'

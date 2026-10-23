@@ -53,7 +53,7 @@ class UpdateGroupForm extends AppComponent
     public $weather_messages = [];
     public $weather = [];
 
-    public $listeners = [
+    protected $listeners = [
         'literatureDeleteConfirmed', 
         'dateDeleteConfirmed', 
         'confirmFutureChangesRemoval',

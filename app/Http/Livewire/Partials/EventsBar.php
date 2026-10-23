@@ -11,7 +11,7 @@ use DateTime;
 class EventsBar extends Component
 {
 
-    public $listeners = [
+    protected $listeners = [
         'refresh' => 'render'
     ];
 

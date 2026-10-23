@@ -25,7 +25,7 @@ class Modal extends AppComponent
     private $day_events = [];
 
     public $form_groupId = 0;
-    public $listeners = [
+    protected $listeners = [
         'openModal', 
         'refresh', 
         'cancelEdit',
@@ -57,7 +57,7 @@ class Modal extends AppComponent
         $this->active_tab = '';
         $this->polling = true;
         if($this->refreshUp !== false)
-            $this->emitTo($this->refreshUp, 'refresh');
+            $this->dispatch('refresh')->to($this->refreshUp);
     }
 
     public function getRole() {
@@ -416,11 +416,11 @@ class Modal extends AppComponent
         $this->polling = false;
         $this->show_content = false;
         if($this->refreshUp !== false)
-            $this->emitTo($this->refreshUp, 'refresh');
+            $this->dispatch('refresh')->to($this->refreshUp);
     }
 
     public function openPosterModal($posterId = 0) {
-        $this->emitTo('groups.poster-edit-modal', 'openModalFromDate', $this->form_groupId, $this->date, $posterId);
+        $this->dispatch('openModalFromDate', $this->form_groupId, $this->date, $posterId)->to('groups.poster-edit-modal');
     }
 
     public function setDate($date) {
@@ -433,13 +433,13 @@ class Modal extends AppComponent
     public function setStart($time) {
         $this->active_tab = 'event';
         $this->polling = false;
-        $this->emitTo('events.event-edit', 'setStart', $time);
+        $this->dispatch('setStart', $time)->to('events.event-edit');
     }
 
     public function editEvent_modal($id) {
         $this->polling = false;
         $this->active_tab = 'event';
-        $this->emitTo('events.event-edit', 'editForm', $id);
+        $this->dispatch('editForm', $id)->to('events.event-edit');
 
     }
 
@@ -447,7 +447,7 @@ class Modal extends AppComponent
     public function cancelEdit() {
         $this->active_tab = '';
         $this->polling = true;
-        $this->emitTo('events.event-edit', 'createForm');
+        $this->dispatch('createForm')->to('events.event-edit');
     }
 
     public function polling_check() {

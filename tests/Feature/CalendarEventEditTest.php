@@ -35,7 +35,11 @@ class CalendarEventEditTest extends FeatureTestCase
             ->set('state.end', $endTs)
             ->call('saveEvent')
             ->assertHasNoErrors()
-            ->assertDispatched('success');
+            ->assertDispatched('success')
+            // TODO 44: emitUp('refresh') became a dispatch to the day modal,
+            // the only component the editor is nested in.
+            ->assertDispatchedTo('events.modal', 'refresh')
+            ->assertDispatchedTo('partials.events-bar', 'refresh');
 
         $this->assertDatabaseHas('events', [
             'group_id' => $group->id,

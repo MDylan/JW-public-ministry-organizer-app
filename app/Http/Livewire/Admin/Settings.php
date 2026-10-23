@@ -23,7 +23,7 @@ class Settings extends AppComponent
     public $settings;
     public $lang_beeing_deleted = "";
 
-    public $listeners = ['languageRemoveConfirmed'];
+    protected $listeners = ['languageRemoveConfirmed'];
 
     //These will be only checkboxes (true/false)
     public $others = [
@@ -140,7 +140,7 @@ class Settings extends AppComponent
         unset($this->state['languageAdd']);
 
         $this->dispatch('success', message: __('settings.languages.success'));
-        $this->emitTo('partials.nav-bar', 'refresh');
+        $this->dispatch('refresh')->to('partials.nav-bar');
     }
 
     public function languageRemoveConfirmation($code) {
@@ -164,7 +164,7 @@ class Settings extends AppComponent
             $this->dispatch('success', message: __('settings.languages.confirmDelete.success'));
         }
         $this->lang_beeing_deleted = "";
-        $this->emitTo('partials.nav-bar', 'refresh');
+        $this->dispatch('refresh')->to('partials.nav-bar');
     }
 
     public function languageSetDefault() {

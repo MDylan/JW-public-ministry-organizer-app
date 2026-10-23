@@ -65,6 +65,45 @@ class CalendarModalTest extends FeatureTestCase
     }
 
     // =========================================================================
+    // 2b. Passing the refresh on to the opener (TODO 44)
+    // =========================================================================
+
+    public function test_closing_the_modal_refreshes_the_component_that_opened_it(): void
+    {
+        // Home opens the modal with refreshUp = 'home' (Home::openEventsModal).
+        // The target is a runtime property, so it is the one emitTo() the
+        // upgrade tool's pattern could not match.
+        $user = $this->createUser(['email' => 'modal-refreshup@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($user, $group, 'member', true);
+
+        $date = now()->addDay()->toDateString();
+        $this->makeGroupDate($group, $date);
+
+        Livewire::actingAs($user)
+            ->test(EventsModal::class)
+            ->call('openModal', $date, $group->id, 'home')
+            ->call('hiddenModal')
+            ->assertDispatchedTo('home', 'refresh');
+    }
+
+    public function test_closing_a_modal_nobody_asked_to_refresh_dispatches_nothing(): void
+    {
+        $user = $this->createUser(['email' => 'modal-norefreshup@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($user, $group, 'member', true);
+
+        $date = now()->addDay()->toDateString();
+        $this->makeGroupDate($group, $date);
+
+        Livewire::actingAs($user)
+            ->test(EventsModal::class)
+            ->call('openModal', $date, $group->id)
+            ->call('hiddenModal')
+            ->assertNotDispatched('refresh');
+    }
+
+    // =========================================================================
     // 3. Polling logic based on date
     // =========================================================================
 

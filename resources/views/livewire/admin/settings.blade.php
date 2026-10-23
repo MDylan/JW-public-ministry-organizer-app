@@ -476,7 +476,7 @@
                     cancelButtonText: '@lang('Cancel')'
                 }).then((result) => {
                 if (result.isConfirmed) {
-                    Livewire.emit('languageRemoveConfirmed');
+                    Livewire.dispatch('languageRemoveConfirmed');
                 }
                 })
             });

@@ -292,9 +292,9 @@
                             </table>
                             <script>
                                 function modal(groupId, date) {
-                                    // livewire.emitTo('events.modal', 'openModal', date, groupId, 'events.events');
-                                    // livewire.emit('pollingOff');
-                                    livewire.emit('openEventsModal', date);                                    
+                                    // Livewire.dispatchTo('events.modal', 'openModal', { date: date, groupId: groupId, refreshUp: 'events.events' });
+                                    // Livewire.dispatch('pollingOff');
+                                    Livewire.dispatch('openEventsModal', { date: date });                                    
                                 }
                             </script>
                         </div>
@@ -308,7 +308,7 @@
                         <h5 class="card-header">
                             @lang('group.special_dates.title')
                             @if ($group_editor)
-                                <button wire:click="$emitTo('groups.special-date-modal', 'openModal')" class="btn btn-primary btn-sm">
+                                <button wire:click="$dispatchTo('groups.special-date-modal', 'openModal')" class="btn btn-primary btn-sm">
                                     <i class="fa fa-plus mr-1"></i>
                                         @lang('app.add')
                                 </button>
@@ -324,7 +324,7 @@
                                     @endphp
                                     <li class="list-group-item p-2">
                                         @if ($group_editor)
-                                            <button wire:click="$emitTo('groups.special-date-modal', 'openModal', '{{ $carbon_date->format("Y-m-d") }}')" class="btn btn-primary btn-sm mr-1">
+                                            <button wire:click="$dispatchTo('groups.special-date-modal', 'openModal', { date: '{{ $carbon_date->format("Y-m-d") }}' })" class="btn btn-primary btn-sm mr-1">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         @endif

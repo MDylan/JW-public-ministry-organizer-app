@@ -146,7 +146,7 @@ class SpecialDateModal extends Component
                 message: __('group.special_dates.saved'),
                 savedMessage: __('app.saved')
             );
-            $this->emitUp('pollingOn');
+            $this->dispatch('pollingOn')->to('events.events');
             $this->resetExcept('groupId');
         } catch(Exception $e) {
             $this->state['error'] = $e->getMessage();
@@ -255,7 +255,7 @@ class SpecialDateModal extends Component
                 savedMessage: __('app.saved')
             );
             $this->resetExcept('groupId');
-            $this->emitUp('pollingOn');
+            $this->dispatch('pollingOn')->to('events.events');
         } else {
             $this->dispatch('error',
                 message: __('group.special_dates.confirmDelete.error')

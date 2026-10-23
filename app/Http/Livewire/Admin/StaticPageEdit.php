@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 
 class StaticPageEdit extends AppComponent
 {
-    public $listeners = ['deleteConfirmed'];
+    protected $listeners = ['deleteConfirmed'];
 
     private $positions = ['left', 'bottom', 'hidden'];
 

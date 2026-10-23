@@ -285,7 +285,7 @@
             cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                // Livewire.emit('logoutConfirmed');
+                // Livewire.dispatch('logoutConfirmed');
                 window.location.replace('{{ config('app.url') }}/groups/' + event.detail.groupId + '/logout');
             }
             })
@@ -303,7 +303,7 @@
             cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                Livewire.emit('rejectConfirmed');
+                Livewire.dispatch('rejectConfirmed');
             }
             })
         });

@@ -11,13 +11,13 @@ $(document).ready(function() {
         $('#'+id).modal('show');
         $('#'+id).one('hide.bs.modal', function (e) {
             if(event.detail.livewire) {
-                Livewire.emitTo(event.detail.livewire, 'hideModal', event.detail.parameters_back);
+                Livewire.dispatchTo(event.detail.livewire, 'hideModal', { parameters_back: event.detail.parameters_back });
             }
         });
 
         $('#'+id).one('hidden.bs.modal', function (e) {
             if(event.detail.livewire) {
-                Livewire.emitTo(event.detail.livewire, 'hiddenModal', event.detail.parameters_back);
+                Livewire.dispatchTo(event.detail.livewire, 'hiddenModal', { parameters_back: event.detail.parameters_back });
             }
         });
     });

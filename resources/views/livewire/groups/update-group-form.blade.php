@@ -690,7 +690,7 @@
                 cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                Livewire.emit('literatureDeleteConfirmed');
+                Livewire.dispatch('literatureDeleteConfirmed');
             }
             })
         });
@@ -706,7 +706,7 @@
                 cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                Livewire.emit('dateDeleteConfirmed');
+                Livewire.dispatch('dateDeleteConfirmed');
             }
             })
         });

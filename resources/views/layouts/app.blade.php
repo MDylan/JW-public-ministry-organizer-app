@@ -104,7 +104,7 @@
           cancelButtonText: '@lang('Cancel')'
         }).then((result) => {
           if (result.isConfirmed) {
-              Livewire.emit(event.detail.emit);
+              Livewire.dispatch(event.detail.emit);
           }
         })
       });

@@ -72,7 +72,7 @@
                                                 <div class="col">
                                                     @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
                                                         <button wire:ignore.self
-                                                            wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }}, {{ $poster['id'] }})"
+                                                            wire:click="$dispatchTo('groups.poster-edit-modal', 'openModal', { groupId: {{ $group['id'] }}, posterId: {{ $poster['id'] }} })"
                                                             class="btn btn-sm btn-info my-1 mr-1">
                                                             <i class="far fa-edit"></i>
                                                         </button>
@@ -180,7 +180,7 @@
                                             <i class="fa fa-file mr-1"></i>
                                             @lang('group.news')</a>
                                         @if(in_array($group_roles[$group['id']], ['admin', 'roler'])) 
-                                            <a wire:ignore.self href="javascript:void(0);" wire:click="$emitTo('groups.poster-edit-modal', 'openModal', {{ $group['id'] }})" class="btn btn-info mb-2 ml-1">
+                                            <a wire:ignore.self href="javascript:void(0);" wire:click="$dispatchTo('groups.poster-edit-modal', 'openModal', { groupId: {{ $group['id'] }} })" class="btn btn-info mb-2 ml-1">
                                                 <i class="fa fa-plus mr-1"></i>
                                                 @lang('group.poster.button')</a>
                                         @endif

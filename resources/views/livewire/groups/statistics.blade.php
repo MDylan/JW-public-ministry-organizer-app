@@ -338,7 +338,7 @@
     </div>
     <script>
         function modal(date, groupId) {
-            livewire.emitTo('events.modal', 'openModal', date, groupId);
+            Livewire.dispatchTo('events.modal', 'openModal', { date: date, groupId: groupId });
         }
         function exportReport(tableId, fileName) {
             $("#"+tableId).table2excel({

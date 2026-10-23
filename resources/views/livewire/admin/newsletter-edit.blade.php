@@ -164,7 +164,7 @@
                         }).then((result) => {
                         if (result.isConfirmed) {
                                 // window.location.replace('{{ route('groups.news_delete', ['group' => 'id', 'new' => $state['id']]) }}');
-                                Livewire.emit('deleteConfirmed')
+                                Livewire.dispatch('deleteConfirmed')
                         }
                         })
                     });
