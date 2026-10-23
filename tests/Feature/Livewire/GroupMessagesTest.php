@@ -215,7 +215,7 @@ class GroupMessagesTest extends FeatureTestCase
         // The message assertion guards the other half of that migration: a
         // $fail() without ->translate() would put the raw `group.messages.limit`
         // key here, and the component would render the key to the user.
-        $this->assertSame(__('group.messages.limit'), $component->lastErrorBag->first('message'));
+        $this->assertSame(__('group.messages.limit'), $component->errors()->first('message'));
 
         $this->assertSame(3, GroupMessage::where('group_id', $this->group->id)->count());
     }

@@ -46,7 +46,7 @@ class AdminComponentsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(AdminNewsletters::class)
             ->call('setAsRead', $newsletter->id)
-            ->assertEmitted('refresh');
+            ->assertDispatched('refresh');
 
         $this->assertDatabaseHas('admin_newsletter_reads', [
             'user_id' => $this->admin->id,
@@ -184,7 +184,7 @@ class AdminComponentsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(NewsletterEdit::class, ['id' => $newsletter->id])
             ->call('confirmNewDelete')
-            ->assertDispatchedBrowserEvent('show-newsDelete-confirmation')
+            ->assertDispatched('show-newsDelete-confirmation')
             ->call('deleteConfirmed');
 
         $this->assertNull(AdminNewsletter::find($newsletter->id));
@@ -267,7 +267,7 @@ class AdminComponentsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(StaticPageEdit::class, ['staticPage' => $page->id])
             ->call('confirmNewDelete')
-            ->assertDispatchedBrowserEvent('show-pageDelete-confirmation')
+            ->assertDispatched('show-pageDelete-confirmation')
             ->call('deleteConfirmed');
 
         $this->assertNull(StaticPage::find($page->id));

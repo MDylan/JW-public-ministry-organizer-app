@@ -43,7 +43,7 @@ class ListGroupsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id)
-            ->assertDispatchedBrowserEvent('sweet-error')
+            ->assertDispatched('sweet-error')
             ->assertSet('groupBeeingLogout', null);
     }
 
@@ -55,7 +55,7 @@ class ListGroupsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id)
-            ->assertDispatchedBrowserEvent('show-logout-confirmation')
+            ->assertDispatched('show-logout-confirmation')
             ->assertSet('groupBeeingLogout', $this->group->id);
     }
 
@@ -68,7 +68,7 @@ class ListGroupsTest extends FeatureTestCase
             ->test(ListGroups::class)
             ->call('confirmLogoutModal', $this->group->id)
             ->call('logoutConfirmed')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSame(
             0,
@@ -90,7 +90,7 @@ class ListGroupsTest extends FeatureTestCase
         // The other admin leaves in the meantime.
         GroupUser::where('group_id', $this->group->id)->where('user_id', $secondAdmin->id)->delete();
 
-        $component->call('logoutConfirmed')->assertDispatchedBrowserEvent('sweet-error');
+        $component->call('logoutConfirmed')->assertDispatched('sweet-error');
 
         $this->assertSame(
             1,
@@ -125,7 +125,7 @@ class ListGroupsTest extends FeatureTestCase
             ->set('state.congregation', 'valami')
             ->call('askGroupCreatorPrivilege')
             ->assertSet('state', [])
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     public function test_the_privilege_request_validates_its_fields(): void
@@ -158,7 +158,7 @@ class ListGroupsTest extends FeatureTestCase
             ->set('state.reason', 'Szeretnék új csoportot létrehozni a városrészünkben.')
             ->call('requestGroupCreatorPrivilege')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
     }
 
     public function test_the_privilege_request_requires_a_numeric_phone_number(): void
@@ -183,6 +183,6 @@ class ListGroupsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(ListGroups::class)
             ->call('openModal', 'createGroup')
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 }

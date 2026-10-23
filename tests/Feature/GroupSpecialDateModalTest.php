@@ -21,7 +21,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
         Livewire::actingAs($editor)
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal')
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     public function test_member_cannot_open_modal(): void
@@ -34,7 +34,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
         Livewire::actingAs($member)
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal')
-            ->assertNotDispatchedBrowserEvent('show-modal');
+            ->assertNotDispatched('show-modal');
     }
 
     // =========================================================================
@@ -60,7 +60,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->set('state.note', 'Teszt különleges nap')
             ->call('saveDate')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseHas('group_dates', [
             'group_id' => $group->id,
@@ -92,7 +92,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->set('state.note', 'Frissített megjegyzés')
             ->call('saveDate')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseHas('group_dates', [
             'group_id' => $group->id,
@@ -189,7 +189,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal', $date)
             ->call('deleteDate')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseMissing('group_dates', [
             'group_id' => $group->id,
@@ -213,7 +213,7 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal', $date)
             ->call('deleteDate')
-            ->assertDispatchedBrowserEvent('error');
+            ->assertDispatched('error');
 
         $this->assertDatabaseHas('group_dates', [
             'group_id' => $group->id,
@@ -236,6 +236,6 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->test(SpecialDateModal::class, ['groupId' => $group->id])
             ->call('openModal', $date)
             ->call('deleteDateConfirmation')
-            ->assertDispatchedBrowserEvent('show-deletion-confirmation');
+            ->assertDispatched('show-deletion-confirmation');
     }
 }

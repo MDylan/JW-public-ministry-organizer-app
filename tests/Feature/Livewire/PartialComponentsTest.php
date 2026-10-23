@@ -141,7 +141,7 @@ class PartialComponentsTest extends FeatureTestCase
         // their 'refresh' listener (TODO 44).
         Livewire::actingAs($this->member)
             ->test(SideMenu::class)
-            ->emit('refresh')
+            ->dispatch('refresh')
             ->assertOk();
     }
 

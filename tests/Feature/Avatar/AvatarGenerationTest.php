@@ -82,7 +82,7 @@ class AvatarGenerationTest extends FeatureTestCase
 
         // The markup still carries one <img> per message, all pointing at that
         // single URI.
-        $html = $component->lastRenderedDom;
+        $html = $component->html();
 
         $this->assertSame(3, substr_count($html, 'data:image/svg+xml'));
 

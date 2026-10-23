@@ -61,7 +61,7 @@ class CalendarModalTest extends FeatureTestCase
             ->call('setStart', strtotime($date.' 09:00'))
             ->assertSet('active_tab', 'event')
             ->assertSet('polling', false)
-            ->assertEmittedTo('events.event-edit', 'setStart');
+            ->assertDispatchedTo('events.event-edit', 'setStart');
     }
 
     // =========================================================================

@@ -21,7 +21,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id)
             ->assertSet('openModal', true)
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     public function test_member_cannot_open_modal(): void
@@ -54,7 +54,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->set('state.info', 'Teszt hirdetmény tartalom')
             ->call('savePoster')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         // info field is encrypted, so we check via the model
         $poster = GroupPosters::where('group_id', $group->id)->first();
@@ -79,7 +79,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->set('state.info', 'Frissített hirdetmény tartalom')
             ->call('savePoster')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         // info field is encrypted, so we check via the model
         $this->assertEquals('Frissített hirdetmény tartalom', $poster->fresh()->info);
@@ -100,7 +100,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id, $poster->id)
             ->call('deletePoster')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseMissing('group_posters', ['id' => $poster->id]);
     }
@@ -116,7 +116,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id, $poster->id)
             ->call('deletePosterConfirmation')
-            ->assertDispatchedBrowserEvent('show-deletion-confirmation');
+            ->assertDispatched('show-deletion-confirmation');
     }
 
     // =========================================================================
@@ -167,7 +167,7 @@ class GroupPosterEditModalTest extends FeatureTestCase
         Livewire::actingAs($editor)
             ->test(PosterEditModal::class)
             ->call('hiddenModal', ['fromDate' => $date, 'groupId' => $group->id])
-            ->assertEmittedTo('events.modal', 'openModal', $date, $group->id);
+            ->assertDispatchedTo('events.modal', 'openModal', $date, $group->id);
     }
 
     // =========================================================================

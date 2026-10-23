@@ -135,7 +135,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->test(Home::class)
             ->call('openEventsModal', $group->id, $date)
             ->assertSet('polling', false)
-            ->assertEmittedTo('events.modal', 'openModal');
+            ->assertDispatchedTo('events.modal', 'openModal');
     }
 
     public function test_set_order_up_reorders_groups_and_dispatches_success_event(): void
@@ -152,7 +152,7 @@ class HomeLivewireTest extends FeatureTestCase
         Livewire::actingAs($user)
             ->test(Home::class)
             ->call('setOrder', $group2->id, 'up')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $order = DB::table('group_user')
             ->where('user_id', $user->id)
@@ -176,7 +176,7 @@ class HomeLivewireTest extends FeatureTestCase
         Livewire::actingAs($user)
             ->test(Home::class)
             ->call('setOrder', $group1->id, 'down')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $order = DB::table('group_user')
             ->where('user_id', $user->id)
@@ -230,7 +230,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id)
             ->assertSet('openModal', true)
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     public function test_poster_modal_does_not_open_for_member(): void
@@ -259,7 +259,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->set('state.info', 'Teszt hirdetmény szöveg')
             ->call('savePoster')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseHas('group_posters', ['group_id' => $group->id]);
     }
@@ -292,7 +292,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->set('state.info', 'Frissített szöveg')
             ->call('savePoster')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseHas('group_posters', ['id' => $poster->id]);
     }
@@ -309,7 +309,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->test(PosterEditModal::class)
             ->call('openModal', $group->id, $poster->id)
             ->call('deletePoster')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertDatabaseMissing('group_posters', ['id' => $poster->id]);
     }
@@ -337,7 +337,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->call('openModal', $date, $group->id)
             ->assertSet('show_content', true)
             ->assertSet('date', $date)
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     public function test_events_modal_hides_and_disables_polling_on_close(): void
@@ -393,7 +393,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->call('setBulk')
             ->call('bulk', $event->id)
             ->call('acceptBulk')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseHas('events', ['id' => $event->id, 'status' => 1]);
     }
@@ -461,7 +461,7 @@ class HomeLivewireTest extends FeatureTestCase
             ->call('setBulk')
             ->call('bulk', $event->id)
             ->call('rejectBulkFinal')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseHas('events', ['id' => $event->id, 'status' => 2]);
     }

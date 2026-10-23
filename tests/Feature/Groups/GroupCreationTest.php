@@ -73,7 +73,7 @@ class GroupCreationTest extends FeatureTestCase
 
         $this->createAs($translator, 'Fordítói csoport')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertSame('Fordítói csoport', $this->lastGroupOf($translator)->name);
     }

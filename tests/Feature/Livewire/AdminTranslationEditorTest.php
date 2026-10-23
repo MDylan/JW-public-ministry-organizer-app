@@ -213,7 +213,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('group', 'app')
             ->set('rows.0.value', 'Heading')
             ->call('save', 0)
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $files = $this->app->make(LangFiles::class);
 
@@ -251,7 +251,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('rows.0.value', 'Heading')
             ->set('rows.1.value', 'Store')
             ->call('saveAll')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $raw = $this->app->make(LangFiles::class)->raw('en', 'app');
 
@@ -270,7 +270,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('rows.0.path', ['injected'])
             ->set('rows.0.value', 'Nope')
             ->call('save', 0)
-            ->assertDispatchedBrowserEvent('error');
+            ->assertDispatched('error');
 
         $this->assertArrayNotHasKey('injected', $this->app->make(LangFiles::class)->raw('hu', 'app'));
     }
@@ -288,7 +288,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('state.newKey', 'menu.settings')
             ->set('state.newValue', 'Beállítások')
             ->call('addKey')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $raw = $this->app->make(LangFiles::class)->raw('hu', 'app');
 
@@ -304,7 +304,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('state.newKey', 'title')
             ->set('state.newValue', 'Másik')
             ->call('addKey')
-            ->assertDispatchedBrowserEvent('error');
+            ->assertDispatched('error');
 
         $this->assertSame('Cím', $this->app->make(LangFiles::class)->raw('hu', 'app')['title']);
     }
@@ -495,7 +495,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('group', LangFiles::JSON_GROUP)
             ->set('rows.0.value', 'Művelet')
             ->call('save', 0)
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSame(
             'Művelet',
@@ -513,7 +513,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->set('state.newKey', 'This cannot be undone.')
             ->set('state.newValue', 'Ez nem vonható vissza.')
             ->call('addKey')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $raw = $this->app->make(LangFiles::class)->raw('hu', LangFiles::JSON_GROUP);
 

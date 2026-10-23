@@ -22,13 +22,13 @@ class LivewireComponentInteractionTest extends FeatureTestCase
 
         Livewire::test(AdminUserListComponent::class)
             ->call('addNew')
-            ->assertDispatchedBrowserEvent('show-modal')
+            ->assertDispatched('show-modal')
             ->set('state.name', 'Livewire Created User')
             ->set('state.email', 'lw-created@example.test')
             ->set('state.phone_number', '36201230000')
             ->set('state.role', 'groupCreator')
             ->call('createUser')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $created = User::where('email', 'lw-created@example.test')->firstOrFail();
         $this->assertSame('Livewire Created User', $created->name);
@@ -41,7 +41,7 @@ class LivewireComponentInteractionTest extends FeatureTestCase
             ->set('state.phone_number', '36209998877')
             ->set('state.role', 'translator')
             ->call('updateUser')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $updated = $created->fresh();
         $this->assertSame('Livewire Updated User', $updated->name);
@@ -67,9 +67,9 @@ class LivewireComponentInteractionTest extends FeatureTestCase
             ->assertSet('searchTerm', null)
             ->call('confirmUserRemoval', $target->id)
             ->assertSet('userIdBeeingRemoved', $target->id)
-            ->assertDispatchedBrowserEvent('show-deletion-confirmation')
+            ->assertDispatched('show-deletion-confirmation')
             ->call('deleteUser')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseMissing('users', ['id' => $target->id]);
     }
@@ -86,7 +86,7 @@ class LivewireComponentInteractionTest extends FeatureTestCase
         Livewire::actingAs($user)
             ->test(GroupListComponent::class)
             ->call('accept', $groupToAccept->id)
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $acceptedPivot = DB::table('group_user')
             ->where('user_id', $user->id)
@@ -101,9 +101,9 @@ class LivewireComponentInteractionTest extends FeatureTestCase
             ->test(GroupListComponent::class)
             ->call('rejectModal', $groupToReject->id)
             ->assertSet('groupBeeingRejected', $groupToReject->id)
-            ->assertDispatchedBrowserEvent('show-reject-confirmation')
+            ->assertDispatched('show-reject-confirmation')
             ->call('rejectConfirmed')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSoftDeleted('group_user', [
             'user_id' => $user->id,
@@ -127,7 +127,7 @@ class LivewireComponentInteractionTest extends FeatureTestCase
             ->test(GroupListComponent::class)
             ->set('state.name', 'Livewire New Group')
             ->call('createGroup')
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $createdGroup = $groupCreator
             ->fresh()
@@ -174,24 +174,24 @@ class LivewireComponentInteractionTest extends FeatureTestCase
 
         $editPage->assertStatus(200);
         foreach ([
-            'wire:submit.prevent="updateGroup"',
-            'wire:model.defer="state.name"',
-            'wire:model.defer="state.replyTo"',
-            'wire:model.defer="state.max_extend_days"',
-            'wire:model="state.need_approval"',
-            'wire:model.defer="state.min_publishers"',
-            'wire:model.defer="state.max_publishers"',
-            'wire:model="state.min_time"',
-            'wire:model.defer="state.max_time"',
-            'wire:model.defer="state.color_default"',
-            'wire:model.defer="state.color_empty"',
-            'wire:model.defer="state.color_someone"',
-            'wire:model.defer="state.color_minimum"',
-            'wire:model.defer="state.color_maximum"',
-            'wire:model.defer="state.showPhone"',
-            'wire:model="days.0.day_number"',
-            'wire:model="state.messages_on"',
-            'wire:model="change_date"',
+            'wire:submit="updateGroup"',
+            'wire:model="state.name"',
+            'wire:model="state.replyTo"',
+            'wire:model="state.max_extend_days"',
+            'wire:model.live="state.need_approval"',
+            'wire:model="state.min_publishers"',
+            'wire:model="state.max_publishers"',
+            'wire:model.live="state.min_time"',
+            'wire:model="state.max_time"',
+            'wire:model="state.color_default"',
+            'wire:model="state.color_empty"',
+            'wire:model="state.color_someone"',
+            'wire:model="state.color_minimum"',
+            'wire:model="state.color_maximum"',
+            'wire:model="state.showPhone"',
+            'wire:model.live="days.0.day_number"',
+            'wire:model.live="state.messages_on"',
+            'wire:model.live="change_date"',
         ] as $field) {
             $editPage->assertSee($field, false);
         }

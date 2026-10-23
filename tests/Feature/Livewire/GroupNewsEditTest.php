@@ -205,7 +205,7 @@ class GroupNewsEditTest extends FeatureTestCase
 
         $component->call('confirmFileDelete', 0, 'torlendo.pdf')
             ->assertSet('file_beeingRemoved', 0)
-            ->assertDispatchedBrowserEvent('show-fileDelete-confirmation');
+            ->assertDispatched('show-fileDelete-confirmation');
 
         $component->call('deleteFileConfirmed')
             ->assertSet('file_beeingRemoved', null);
@@ -245,7 +245,7 @@ class GroupNewsEditTest extends FeatureTestCase
         Livewire::actingAs($this->editor)
             ->test(NewsEdit::class, ['group' => $this->group->id, 'new' => $news->id])
             ->call('confirmNewDelete')
-            ->assertDispatchedBrowserEvent('show-newsDelete-confirmation');
+            ->assertDispatched('show-newsDelete-confirmation');
     }
 
     public function test_delete_confirmed_soft_deletes_the_item_and_its_files(): void

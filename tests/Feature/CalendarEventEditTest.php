@@ -35,7 +35,7 @@ class CalendarEventEditTest extends FeatureTestCase
             ->set('state.end', $endTs)
             ->call('saveEvent')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseHas('events', [
             'group_id' => $group->id,
@@ -103,7 +103,7 @@ class CalendarEventEditTest extends FeatureTestCase
             ->set('state.end', $newEndTs)
             ->call('saveEvent')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseHas('events', [
             'id'  => $event->id,
@@ -136,7 +136,7 @@ class CalendarEventEditTest extends FeatureTestCase
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
             ->call('editForm', $event->id)
             ->call('deleteConfirmed')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSoftDeleted('events', ['id' => $event->id]);
     }
@@ -191,7 +191,7 @@ class CalendarEventEditTest extends FeatureTestCase
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
             ->call('editForm', $event->id)
             ->call('deleteConfirmed')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSoftDeleted('events', ['id' => $event->id]);
     }
@@ -392,6 +392,6 @@ class CalendarEventEditTest extends FeatureTestCase
             ->test(EventEdit::class, ['groupId' => $group->id, 'date' => $date])
             ->call('editForm', $event->id)
             ->call('confirmEventDelete')
-            ->assertDispatchedBrowserEvent('show-deletion-confirmation');
+            ->assertDispatched('show-deletion-confirmation');
     }
 }

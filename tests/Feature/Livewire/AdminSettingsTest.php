@@ -126,7 +126,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->test(Settings::class)
             ->set('state.retention.group_data', '12')
             ->call('saveGroupDataRetention')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '12']);
     }
@@ -145,8 +145,8 @@ class AdminSettingsTest extends FeatureTestCase
             ->test(Settings::class)
             ->set('state.retention.group_data', '1')
             ->call('saveGroupDataRetention')
-            ->assertDispatchedBrowserEvent('error')
-            ->assertNotDispatchedBrowserEvent('success')
+            ->assertDispatched('error')
+            ->assertNotDispatched('success')
             ->assertSet('state.retention.group_data', '12');
 
         $this->assertDatabaseHas('settings', ['name' => 'group_data_retention', 'value' => '12']);
@@ -178,8 +178,8 @@ class AdminSettingsTest extends FeatureTestCase
             ->set('state.languageAdd', ['country_code' => 'de', 'country_name' => 'Deutsch'])
             ->call('languageAdd')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('success')
-            ->assertEmitted('refresh');
+            ->assertDispatched('success')
+            ->assertDispatched('refresh');
 
         $languages = $this->storedLanguages();
 
@@ -259,7 +259,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->test(Settings::class)
             ->call('languageRemoveConfirmation', 'de')
             ->assertSet('lang_beeing_deleted', 'de')
-            ->assertDispatchedBrowserEvent('show-languageRemove-confirmation');
+            ->assertDispatched('show-languageRemove-confirmation');
 
         // Still present before confirmation.
         $this->assertArrayHasKey('de', $this->storedLanguages());
@@ -287,7 +287,7 @@ class AdminSettingsTest extends FeatureTestCase
             ->call('languageRemoveConfirmation', 'de')
             ->call('languageRemoveConfirmed')
             ->assertSet('lang_beeing_deleted', '')
-            ->assertEmitted('refresh');
+            ->assertDispatched('refresh');
 
         $languages = $this->storedLanguages();
 
@@ -301,7 +301,7 @@ class AdminSettingsTest extends FeatureTestCase
 
         $component = Livewire::actingAs($this->admin)->test(Settings::class);
 
-        $component->call('languageVisibility', 'de')->assertDispatchedBrowserEvent('success');
+        $component->call('languageVisibility', 'de')->assertDispatched('success');
         $this->assertFalse($this->storedLanguages()['de']['visible']);
 
         $component->call('languageVisibility', 'de');
@@ -331,7 +331,7 @@ class AdminSettingsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(Settings::class)
             ->call('run', 'view_clear')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
     }
 
     public function test_run_passes_the_force_flag_for_migrations(): void
@@ -341,7 +341,7 @@ class AdminSettingsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(Settings::class)
             ->call('run', 'migrate')
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
     }
 
     public function test_run_ignores_a_command_outside_the_whitelist(): void
@@ -353,7 +353,7 @@ class AdminSettingsTest extends FeatureTestCase
         Livewire::actingAs($this->admin)
             ->test(Settings::class)
             ->call('run', 'db:wipe')
-            ->assertNotDispatchedBrowserEvent('success');
+            ->assertNotDispatched('success');
     }
 
     // --- mail test ---

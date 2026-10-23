@@ -88,7 +88,7 @@ class EventCapacityTest extends FeatureTestCase
 
         $this->book($group, $actor, '09:00', '10:00')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('success');
+            ->assertDispatched('success');
 
         $this->assertSame(3, $this->eventCount($group));
     }
@@ -108,7 +108,7 @@ class EventCapacityTest extends FeatureTestCase
 
         $this->assertContains(
             __('event.reach_max_publisher'),
-            $component->lastErrorBag->get('start'),
+            $component->errors()->get('start'),
             'A negyedik jelentkezésnek a maximális hírnökszámra kell hivatkoznia.'
         );
 
@@ -182,8 +182,8 @@ class EventCapacityTest extends FeatureTestCase
         // but by the filtering of valid time points - hence the error
         // message is invalid_value, not reach_max_publisher. See the
         // publishers test below.
-        $this->assertContains(__('event.invalid_value'), $component->lastErrorBag->get('start'));
-        $this->assertNotContains(__('event.reach_max_publisher'), $component->lastErrorBag->get('start'));
+        $this->assertContains(__('event.invalid_value'), $component->errors()->get('start'));
+        $this->assertNotContains(__('event.reach_max_publisher'), $component->errors()->get('start'));
 
         $this->assertSame(7, $this->eventCount($group));
     }
@@ -206,7 +206,7 @@ class EventCapacityTest extends FeatureTestCase
         $component = $this->book($group, $actor, '09:00', '10:00')
             ->assertHasErrors(['start', 'end']);
 
-        $this->assertContains(__('event.reach_max_publisher'), $component->lastErrorBag->get('start'));
+        $this->assertContains(__('event.reach_max_publisher'), $component->errors()->get('start'));
 
         $this->assertSame(3, $this->eventCount($group));
     }

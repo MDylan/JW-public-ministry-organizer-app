@@ -107,7 +107,7 @@ class GroupDayTimeRangeTest extends FeatureTestCase
         ];
     }
 
-    private function form(): \Livewire\Testing\TestableLivewire
+    private function form(): \Livewire\Features\SupportTesting\Testable
     {
         $component = Livewire::actingAs($this->editor)
             ->test(UpdateGroupForm::class, ['group' => $this->group])
@@ -126,7 +126,7 @@ class GroupDayTimeRangeTest extends FeatureTestCase
      * the order the browser produces too, because each change regenerates the
      * other select.
      */
-    private function setDay(\Livewire\Testing\TestableLivewire $component, string $start, string $end): \Livewire\Testing\TestableLivewire
+    private function setDay(\Livewire\Features\SupportTesting\Testable $component, string $start, string $end): \Livewire\Features\SupportTesting\Testable
     {
         return $component
             ->set('days.'.$this->dayNumber.'.end_time', $end)

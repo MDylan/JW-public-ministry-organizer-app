@@ -137,7 +137,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
         $this->edit($actor, $target)
             ->assertSet('state', $this->editUserState($target, ['group_role' => 'roler']))
-            ->assertDispatchedBrowserEvent('show-modal');
+            ->assertDispatched('show-modal');
     }
 
     // =========================================================================
@@ -165,7 +165,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
             ->set('state.group_role', 'admin')
             ->call('updateUser')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('hide-modal');
+            ->assertDispatched('hide-modal');
 
         $this->assertSame('member', $this->roleOf($target), 'A szerep némán változatlan maradt.');
     }
@@ -294,7 +294,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
 
         $this->assertSame(
             [__('group.error_no_right_to_remove_admin')],
-            $component->lastErrorBag->get('users')
+            $component->errors()->get('users')
         );
         $this->assertSame('admin', $this->roleOf($target));
     }
@@ -321,7 +321,7 @@ class GroupRoleAssignmentTest extends FeatureTestCase
             ->call('updateUser')
             ->assertHasNoErrors();
 
-        $this->assertEmpty($component->lastErrorBag->get('users'));
+        $this->assertEmpty($component->errors()->get('users'));
         $this->assertSame('member', $this->roleOf($target));
     }
 

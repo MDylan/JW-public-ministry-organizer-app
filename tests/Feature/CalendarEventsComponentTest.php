@@ -111,7 +111,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
         Livewire::actingAs($user)
             ->test(Events::class)
             ->call('changeGroup')
-            ->assertEmittedTo('events.modal', 'setGroup', $group2->id);
+            ->assertDispatchedTo('events.modal', 'setGroup', $group2->id);
     }
 
     // =========================================================================
@@ -131,7 +131,7 @@ class CalendarEventsComponentTest extends FeatureTestCase
             ->test(Events::class)
             ->call('openEventsModal', $date)
             ->assertSet('polling', false)
-            ->assertEmittedTo('events.modal', 'openModal');
+            ->assertDispatchedTo('events.modal', 'openModal');
     }
 
     // =========================================================================
