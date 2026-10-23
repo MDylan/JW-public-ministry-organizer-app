@@ -4,9 +4,10 @@
 
 UI logic is primarily implemented with **Livewire components**, supported by class-based and anonymous Blade components.
 
-> **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
-> package is on `v3.8.8` since TODO 43, and the test suite is green again since
-> TODO 51.1; the browser walk (TODO 47.1) still has to close the phase. Since
+> **The application runs on Livewire 3 (roadmap Phase 6, closed 2026-10-23).**
+> The package is on `v3.8.8` since TODO 43, the suite is green since TODO 51.1,
+> and the browser walk (TODO 47.1) added the four markup rules below - the
+> polling root, inline scripts, option keys and the page title. Since
 > TODO 51 the classes live in
 > `App\Livewire`, Livewire 3's default namespace; the component names
 > (`groups.list-users`) and the view paths did not change. See Configuration

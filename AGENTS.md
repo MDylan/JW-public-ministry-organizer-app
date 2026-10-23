@@ -81,12 +81,13 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 
 ## Notes
 
-- **The test suite is green again since TODO 51.1** (1547 tests, 0 failures).
-  The Livewire 2 -> 3 migration (`upgrade-roadmap.md`, Phase 6) ran knowingly
-  red from TODO 43 (**286 red of 1507** at the bump) until then; a red test is
-  a regression again. **Phase 6 is still open:** TODO 47.1, a walk through the
-  application in a browser, remains - the suite runs no JavaScript, so modals,
-  `wire:ignore` regions, the `@this` bridges and the 419 prompt are unverified
-  until it has run, and `v2-dev` is not releasable before that.
+- **Phase 6 (Livewire 2 -> 3) is closed** (2026-10-23): the suite is green
+  (1554 tests, 0 failures) and the browser walk (TODO 47.1) is done. The
+  migration ran knowingly red from TODO 43 (**286 red of 1507** at the bump)
+  until TODO 51.1; a red test is a regression again. The walk found four
+  Livewire 3 behaviours the suite cannot see, each fixed with a guard test
+  (TODO 47.2-47.5) - read `.docs/components.md` before writing Livewire markup:
+  no `wire:key` on a component root, no inline `<script>` inside a Blade block,
+  `wire:key` on looped `<option>`s, no `@if` in `@section('title')`.
 
 - The framework upgrade is in progress (`upgrade-roadmap.md`, target Laravel 13). The application is on Laravel 10 as of TODO 39 and **runs on the default `php` (8.3) since the Phase 5 interpreter switch**. `php81` is still installed and Laravel 9 still supports it, but nothing needs it: `composer test` calls `php`, and the suite was green on 8.3 with its numbers unmoved when the interpreter switched. (For its state today, see the Phase 6 note above.)
