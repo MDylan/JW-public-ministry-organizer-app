@@ -162,8 +162,10 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   message sends successfully.
 - `Setup\DatabaseController::configure` runs `migrate:fresh` on the submitted
   credentials, so its success path is destructive by design and is deliberately
-  not exercised by tests. Its `databaseHasData()` guard calls
-  `getDoctrineSchemaManager()`, which Laravel 11 removes (roadmap TODO 66).
+  not exercised by tests. Its `databaseHasData()` guard lists the tables with
+  the framework's `Schema::getTableListing()`; it used doctrine/dbal's
+  `getDoctrineSchemaManager()` until roadmap TODO 57.1, because Laravel 11
+  removes that method.
 - `Exceptions\Handler` redirects any `QueryException` to `setup.welcome` while
   the sentinel is missing - this is what routes a freshly unpacked copy into the
   installer. With the sentinel present it returns `null`, so the exception falls

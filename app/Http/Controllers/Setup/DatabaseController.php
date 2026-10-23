@@ -10,9 +10,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use PDOException;
 
@@ -128,9 +128,11 @@ class DatabaseController extends Controller
     protected function databaseHasData(): bool
     {
         try {
-            $present_tables = DB::connection('setup')
-                ->getDoctrineSchemaManager()
-                ->listTableNames();
+            // The framework's own listing, not doctrine/dbal's schema
+            // manager: Laravel 11 removes getDoctrineSchemaManager() from the
+            // connection (roadmap TODO 57.1). Only the count matters here, so
+            // Laravel 12's schema-qualified names change nothing.
+            $present_tables = Schema::connection('setup')->getTableListing();
         } catch (PDOException $e) {
             Log::error($e->getMessage());
             return false;

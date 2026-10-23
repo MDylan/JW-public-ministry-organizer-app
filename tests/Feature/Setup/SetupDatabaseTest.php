@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\DB;
  * The success branch is DELIBERATELY not tested: configure() runs migrate:fresh
  * on the given connection and writes .env. A mistaken test would therefore
  * wipe a database. What IS measurable - and this is exactly the most valuable
- * part - is the databaseHasData() branch: it calls getDoctrineSchemaManager(),
- * which goes away in Laravel 11 (roadmap TODO 66).
+ * part - is the databaseHasData() branch. It used to call doctrine/dbal's
+ * getDoctrineSchemaManager(), which Laravel 11 removes; TODO 57.1 moved it to
+ * the framework's Schema::getTableListing() ahead of the hop.
  */
 class SetupDatabaseTest extends SetupTestCase
 {
@@ -77,13 +78,13 @@ class SetupDatabaseTest extends SetupTestCase
     }
 
     // =========================================================================
-    // 2. Protection of existing data - this is where getDoctrineSchemaManager() runs
+    // 2. Protection of existing data - this is where the table listing runs
     // =========================================================================
 
     public function test_an_existing_database_is_not_overwritten_without_consent(): void
     {
-        // databaseHasData() lists the tables through doctrine/dbal's schema
-        // manager. If it finds anything, configure() turns back WITHOUT
+        // databaseHasData() lists the tables through the schema builder. If
+        // it finds anything, configure() turns back WITHOUT
         // MIGRATING - which is why it is safe to measure this on the real test database.
         $response = $this->post(
             route('setup.save-database'),
@@ -101,15 +102,23 @@ class SetupDatabaseTest extends SetupTestCase
         );
     }
 
-    public function test_the_doctrine_schema_manager_is_still_reachable_on_this_version(): void
+    public function test_the_data_check_does_not_depend_on_doctrine_dbal(): void
     {
-        // Explicit note that in Phase 8 THIS call is the one that will disappear:
-        // Laravel 11 drops the doctrine/dbal integration, and with it the
-        // getDoctrineSchemaManager() method. This test will fail at the moment
-        // of the replacement, exactly where it should.
-        $tables = DB::connection()->getDoctrineSchemaManager()->listTableNames();
+        // REVERSED by TODO 57.1. This case used to call
+        // getDoctrineSchemaManager() itself, as a tripwire that would fail
+        // the moment Laravel 11 removed it. The guard now lists the tables
+        // with the framework's own schema builder, which exists on Laravel 10
+        // and every later version, so the tripwire became an assertion that
+        // the installer no longer reaches for doctrine/dbal at all - TODO 57
+        // removes the package after the hop.
+        // Comments stripped: the controller explains the change in words,
+        // and only the code may not reach for the package.
+        $source = php_strip_whitespace(app_path('Http/Controllers/Setup/DatabaseController.php'));
 
-        $this->assertContains('users', $tables);
+        $this->assertStringNotContainsString('getDoctrineSchemaManager', $source);
+        $this->assertStringNotContainsString('Doctrine', $source);
+
+        $this->assertContains('users', \Illuminate\Support\Facades\Schema::getTableListing());
     }
 
     // =========================================================================
