@@ -33,9 +33,10 @@ missing key would behave the same; the file is explicit for the reader.
 - `class_namespace` is **not** set: the classes are in `App\Livewire`, the
   default. Livewire turns a dotted name into a class under this namespace, so
   changing it breaks every `@livewire` / `<livewire:...>` tag.
-- `layout` is `layouts.app`, not the stub's `components.layouts.app`. No
-  component calls `->layout()`, so this key is what wraps every route-mounted
-  component.
+- `layout` is `components.admin-layout`, not the stub's
+  `components.layouts.app`. No component calls `->layout()`, so this key is
+  what wraps every route-mounted component. It is the same file as the
+  `<x-admin-layout>` tag - see "The Application Layout" below.
 - `temporary_file_upload.preview_mimes` adds `pdf, doc, docx, xls, xlsx` to
   the package list - see `Groups\NewsEdit` below.
 - `pagination_theme` is `bootstrap`. `AppComponent::paginationView()` wins over
@@ -137,7 +138,7 @@ The whole feature is additionally gated on `config('weather')`, which is injecte
 
 These are used from other Livewire views or layouts.
 
-Three of them are mounted with Livewire tag syntax rather than `@livewire(...)`: `Events\Modal` from `layouts/app.blade.php` (on every page rendered through the application layout), `Events\EventEdit` from `livewire/events/modal.blade.php`, and `Groups\Messages` from `livewire/home.blade.php`. All three tags are self-closing. **The `wire:key` on a tag is compiled verbatim into `key(...)`**, so a bound `:wire:key` must hold a PHP expression (`:wire:key="'messages_'.$group['id']"`) and a literal key must be unbound (`wire:key="events_modal"`). A bound bare word compiles to an undefined constant, and on the layout tag that is a 500 on every page.
+Three of them are mounted with Livewire tag syntax rather than `@livewire(...)`: `Events\Modal` from `components/admin-layout.blade.php` (on every page rendered through the application layout), `Events\EventEdit` from `livewire/events/modal.blade.php`, and `Groups\Messages` from `livewire/home.blade.php`. All three tags are self-closing. **The `wire:key` on a tag is compiled verbatim into `key(...)`**, so a bound `:wire:key` must hold a PHP expression (`:wire:key="'messages_'.$group['id']"`) and a literal key must be unbound (`wire:key="events_modal"`). A bound bare word compiles to an undefined constant, and on the layout tag that is a 500 on every page.
 
 The rest use `@livewire('name', $params, key(...))`. **`$params` must be an array** - `[]` when there is nothing to pass, or leave it out. Livewire 3 matches it against the child's properties with `array_intersect_key()`, which throws on a string; `@livewire('groups.poster-edit-modal', '', ...)` in the calendar view did exactly that, and only for admins and rolers, the one audience that block renders for. `tests/Feature/Livewire/LivewireDirectiveParametersTest` checks every directive in `resources/views`, including those behind role checks.
 
@@ -158,9 +159,9 @@ Components talk to page scripts through window events: toasts, SweetAlert dialog
 
 | Event | Keys | Receiver |
 |---|---|---|
-| `success`, `error` | `message` | `layouts/app.blade.php` (toastr) |
-| `sweet-error` | `title`, `message` | `layouts/app.blade.php` (SweetAlert) |
-| `show-deletion-confirmation` | `title`, `text`, `emit` | `layouts/app.blade.php`; `emit` names the Livewire event fired on confirm, via `Livewire.dispatch(event.detail.emit)` |
+| `success`, `error` | `message` | `components/admin-layout.blade.php` (toastr) |
+| `sweet-error` | `title`, `message` | `components/admin-layout.blade.php` (SweetAlert) |
+| `show-deletion-confirmation` | `title`, `text`, `emit` | `components/admin-layout.blade.php`; `emit` names the Livewire event fired on confirm, via `Livewire.dispatch(event.detail.emit)` |
 | `show-modal` | `id`, optionally `livewire` and `parameters_back` | `public/js/modal.js`; with `livewire` set, closing the modal calls back `hideModal` / `hiddenModal` on that component through `Livewire.dispatchTo(..., { parameters_back })` (only `hiddenModal` has listeners: `Events\Modal`, and `Groups\PosterEditModal`, which takes `parameters_back` by that name) |
 | `hide-modal` | `id`, optionally `message` and `savedMessage` | `public/js/modal.js` |
 | `show-*-confirmation` (`logout`, `reject`, `languageRemove`, `literature`, `newsDelete`, `pageDelete`, `fileDelete`) | per event (`groupId`, `lang`, `fileName`, or none) | a script in the component's own view |
@@ -232,22 +233,33 @@ Located in `app/View/Components`.
 | `Footer` | `components.footer` | Footer static page links (role-aware visibility in view). |
 | `Modal` | `components.modal` | Generic modal wrapper with slots and size/id inputs. |
 | `SideStaticPages` | `components.side-static-pages` | Side-menu static page links. |
-| `UpdateNotification` | `components.update-notification` | Displays updater info and online user count when an update is available. Mounted from `layouts/app.blade.php` inside `@can('is-admin')`, so it renders on every admin page load. Instantiates `MDylan\LaraUpdater\LaraUpdaterController` directly (not through the container) and calls `check()`; if that returns a version it also calls `getDescription()`, which is served from the same 15-minute cache entry, so the pair costs one channel read. Returns an empty string when the system is current. Pinned by `tests/Feature/Updater/UpdaterContractTest.php`. |
+| `UpdateNotification` | `components.update-notification` | Displays updater info and online user count when an update is available. Mounted from `components/admin-layout.blade.php` inside `@can('is-admin')`, so it renders on every admin page load. Instantiates `MDylan\LaraUpdater\LaraUpdaterController` directly (not through the container) and calls `check()`; if that returns a version it also calls `getDescription()`, which is served from the same 15-minute cache entry, so the pair costs one channel read. Returns an empty string when the system is current. Pinned by `tests/Feature/Updater/UpdaterContractTest.php`. |
 
 ## Anonymous/Utility Blade Components
 
 Used without backing PHP class:
 
+- `components/admin-layout.blade.php` - the application layout, below
 - `components/loading-indicator.blade.php`
 - `components/offline.blade.php`
 
-## Blade Alias Registration
+## The Application Layout
 
-In `app/Providers/BladeComponentServiceProvider.php`:
+`resources/views/components/admin-layout.blade.php` is the layout of every
+logged-in page, and it has two consumers:
 
-- `Blade::component('layouts.app', 'admin-layout')`
+- the five views that open with `<x-admin-layout>`
+  (`home/verify-email`, `user/profile`, `user/twofactorsettings`,
+  `auth/confirm-password`, `layouts/staticpage`). Blade finds the file by name,
+  as an anonymous component - there is no alias and no service provider;
+- every route-mounted Livewire component, through `config/livewire.php`'s
+  `layout` key, which names the same view.
 
-This allows using `<x-admin-layout>` for the main app layout.
+The layout dereferences `auth()->user()`, so a route that renders it needs
+`auth`. Until TODO 59 the file was `layouts/app.blade.php`, and the tag was an
+alias registered by `BladeComponentServiceProvider`
+(`Blade::component('layouts.app', 'admin-layout')`, a view name where Blade
+documents a class). Pinned by `tests/Feature/View/AdminLayoutComponentTest.php`.
 
 ## The Translation Editor (`Admin\Translation`)
 

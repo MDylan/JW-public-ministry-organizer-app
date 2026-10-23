@@ -53,7 +53,6 @@ class SlimSkeletonTest extends TestCase
         $this->assertSame([
             \App\Providers\AppServiceProvider::class,
             \App\Providers\AuthServiceProvider::class,
-            \App\Providers\BladeComponentServiceProvider::class,
             \MDylan\LaraUpdater\LaraUpdaterServiceProvider::class,
             \App\Providers\FortifyServiceProvider::class,
         ], require base_path('bootstrap/providers.php'));
@@ -66,6 +65,7 @@ class SlimSkeletonTest extends TestCase
         $this->assertContains(\App\Providers\FortifyServiceProvider::class, $loaded);
         $this->assertNotContains('App\Providers\RouteServiceProvider', $loaded);
         $this->assertNotContains('App\Providers\EventServiceProvider', $loaded);
+        $this->assertNotContains('App\Providers\BladeComponentServiceProvider', $loaded); // TODO 59
     }
 
     public function test_the_framework_configuration_is_still_not_merged(): void

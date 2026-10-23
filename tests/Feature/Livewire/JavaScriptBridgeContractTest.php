@@ -85,7 +85,7 @@ class JavaScriptBridgeContractTest extends FeatureTestCase
         }
 
         $this->assertSame([], $unpaired, '@livewireScripts turns off auto-injection of the styles too; use both directives or neither.');
-        $this->assertStringContainsString('@livewireScripts', $sources['resources/views/layouts/app.blade.php']);
+        $this->assertStringContainsString('@livewireScripts', $sources['resources/views/components/admin-layout.blade.php']);
         $this->assertStringNotContainsString('@livewire', $sources['resources/views/layouts/setup.blade.php']);
     }
 
@@ -96,7 +96,7 @@ class JavaScriptBridgeContractTest extends FeatureTestCase
         // uncaught exception - an ErrorEvent with no detail. The toast handler
         // read event.detail.message off it and threw a TypeError of its own on
         // top of whatever had failed. The browser walk found it that way.
-        $layout = $this->sources()['resources/views/layouts/app.blade.php'];
+        $layout = $this->sources()['resources/views/components/admin-layout.blade.php'];
 
         $this->assertMatchesRegularExpression(
             "/window\\.addEventListener\\('error', event => \\{\\s*if \\(! \\(event instanceof CustomEvent\\)\\) \\{\\s*return;\\s*\\}/",

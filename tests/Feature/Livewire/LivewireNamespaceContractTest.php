@@ -79,7 +79,7 @@ class LivewireNamespaceContractTest extends FeatureTestCase
     public function test_the_configuration_is_livewire_3_and_keeps_the_project_choices(): void
     {
         $this->assertSame(self::NAMESPACE, config('livewire.class_namespace'));
-        $this->assertSame('layouts.app', config('livewire.layout'));
+        $this->assertSame('components.admin-layout', config('livewire.layout')); // TODO 59
         $this->assertTrue(view()->exists(config('livewire.layout')), 'The full-page components render into this layout.');
         $this->assertSame('bootstrap', config('livewire.pagination_theme'));
 

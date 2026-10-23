@@ -14,7 +14,7 @@ use Tests\TestCase;
  * dispatch($name, ...$params), turns its parameters into the event's
  * `detail`, so `dispatch('success', message: $m)` arrives as
  * `event.detail.message` - exactly what the receivers in
- * layouts/app.blade.php, public/js/modal.js and the component views read.
+ * components/admin-layout.blade.php, public/js/modal.js and the component views read.
  *
  * THE TRAP. The obvious rename, `dispatch('success', ['message' => $m])`,
  * passes the array as ONE positional parameter. The browser then receives

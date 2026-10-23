@@ -223,7 +223,7 @@ class PendingEmailFlowTest extends FeatureTestCase
         $user = $this->createUser(['email' => 'banner@example.test']);
         $user->newEmail('banner-pending@example.test');
 
-        // layouts/app.blade.php:45 - the banner is excluded on the profile page by
+        // components/admin-layout.blade.php:42 - the banner is excluded on the profile page by
         // the `!request()->routeIs('user.profile')` condition, where the badge stands
         // in its place.
         $this->actingAs($user)

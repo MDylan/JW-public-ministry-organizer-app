@@ -88,7 +88,7 @@ class AssetPipelineKnownGapsTest extends FeatureTestCase
 
     public function test_the_two_layouts_now_reference_the_same_file_by_the_same_url(): void
     {
-        $app = file_get_contents(base_path('resources/views/layouts/app.blade.php'));
+        $app = file_get_contents(base_path('resources/views/components/admin-layout.blade.php'));
         $setup = file_get_contents(base_path('resources/views/layouts/setup.blade.php'));
 
         // Previously the same jQuery was packaged into two DIFFERENT output

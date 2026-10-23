@@ -74,7 +74,7 @@ Before this rule the server sent no `Cache-Control` and no `Expires` at all - on
 
 | File | Tags | Notes |
 |---|---|---|
-| `resources/views/layouts/app.blade.php` | 12 (5 css, 7 js) | The Livewire default layout (`config/livewire.php:42`), so every route-level component renders through it |
+| `resources/views/components/admin-layout.blade.php` | 12 (5 css, 7 js) | The application layout: Livewire's full-page layout (`config/livewire.php:61`) and the `<x-admin-layout>` anonymous component, so every route-level component and the five views that open with the tag render through it |
 | `resources/views/layouts/setup.blade.php` | 8 (5 css, 3 js) | The installer wizard |
 | `resources/views/livewire/groups/poster-edit-modal.blade.php` | 1 (js) | Summernote, pushed into the `footer_scripts` section - the only asset call inside a Livewire view |
 
@@ -158,10 +158,10 @@ carries a guard rather than a convention.
   Livewire injects both itself into any page that rendered a component; but
   `@livewireScripts` switches that injection off for the styles too, so one
   directive without the other either loses the styles or prints them twice.
-  `layouts/app.blade.php` carries both; `layouts/setup.blade.php` renders no
+  `components/admin-layout.blade.php` carries both; `layouts/setup.blade.php` renders no
   component and carries neither.
 - **An expired page is handled through the `request` hook.** Livewire 3 has no
-  `onPageExpired()`; `layouts/app.blade.php` registers a `fail()` callback that,
+  `onPageExpired()`; `components/admin-layout.blade.php` registers a `fail()` callback that,
   on a 419, prevents Livewire's own English prompt and asks with
   `app.page_expired` instead.
 

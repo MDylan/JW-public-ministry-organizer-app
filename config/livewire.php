@@ -12,9 +12,12 @@
 | Three choices differ from the stub `livewire:publish --config` writes, and
 | each is load-bearing:
 |
-| - `layout` stays `layouts.app`. The stub's `components.layouts.app` does
-|   not exist here, and the 19 route-mounted components have no ->layout()
-|   call of their own, so this key is the only thing that wraps them.
+| - `layout` is `components.admin-layout`, not the stub's
+|   `components.layouts.app`. It is the same file the five Blade views
+|   open with `<x-admin-layout>` (an anonymous component since TODO 59), so
+|   one layout serves both. The 19 route-mounted components have no
+|   ->layout() call of their own, so this key is the only thing that wraps
+|   them.
 | - `temporary_file_upload.preview_mimes` carries pdf, doc, docx, xls and
 |   xlsx. temporaryUrl() throws for any extension outside this list, and
 |   Groups\NewsEdit previews every file it accepts (TODO 49; pinned by
@@ -55,7 +58,7 @@ return [
     |
     */
 
-    'layout' => 'layouts.app',
+    'layout' => 'components.admin-layout',
 
     /*
     |---------------------------------------------------------------------------

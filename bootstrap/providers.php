@@ -8,11 +8,12 @@
 // There is no RouteServiceProvider and no EventServiceProvider any more: the
 // routes are loaded by bootstrap/app.php's withRouting(), the listeners are
 // discovered from app/Listeners and the observers are registered in
-// AppServiceProvider::boot().
+// AppServiceProvider::boot(). Nor is there a BladeComponentServiceProvider
+// (TODO 59): `<x-admin-layout>` is the anonymous component
+// resources/views/components/admin-layout.blade.php, found without an alias.
 return [
     App\Providers\AppServiceProvider::class,
     App\Providers\AuthServiceProvider::class,
-    App\Providers\BladeComponentServiceProvider::class,
     MDylan\LaraUpdater\LaraUpdaterServiceProvider::class,
     App\Providers\FortifyServiceProvider::class,
 ];
