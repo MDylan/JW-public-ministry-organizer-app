@@ -116,6 +116,8 @@ The whole feature is additionally gated on `config('weather')`, which is injecte
 
 These are used from other Livewire views or layouts.
 
+Three of them are mounted with Livewire tag syntax rather than `@livewire(...)`: `Events\Modal` from `layouts/app.blade.php` (on every page rendered through the application layout), `Events\EventEdit` from `livewire/events/modal.blade.php`, and `Groups\Messages` from `livewire/home.blade.php`. All three tags are self-closing. **The `wire:key` on a tag is compiled verbatim into `key(...)`**, so a bound `:wire:key` must hold a PHP expression (`:wire:key="'messages_'.$group['id']"`) and a literal key must be unbound (`wire:key="events_modal"`). A bound bare word compiles to an undefined constant, and on the layout tag that is a 500 on every page.
+
 | Component | Typical Usage |
 |---|---|
 | `Events\Modal` | Day modal for event creation/edit/accept/reject flows, poster and bulk actions. |

@@ -202,6 +202,27 @@ The other two `<livewire:...>` tags are not affected:
 `livewire/events/modal.blade.php:246` and `livewire/home.blade.php:109` both bind
 quoted PHP expressions. All three are still unclosed, which TODO 50 also owns.
 
+### TODO 50, as delivered (2026-10-23)
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| untouched head (`515cbc09`), re-measured | 1507 | 3441 | 192 | 81 | 273 |
+| layout attribute only | 1507 | 3712 | 193 | 21 | 214 |
+| layout attribute + all three tags self-closing | 1507 | 3712 | 193 | 21 | 214 |
+
+The head no longer reproduces the 286 above: 13 failures fewer, with no code
+change since `698d570a` (`git diff 698d570a 515cbc09` touches documents only).
+The drift is environmental and unattributed. Measured against the head as it
+stands, the fix is worth **59 tests and 271 assertions** - the same figures as
+the control experiment, so the experiment's prediction held and only the
+starting point moved.
+
+The tag compiler pastes the `wire:key` value into `key(...)` verbatim
+(`LivewireTagPrecompiler::componentString()`, `:72-76`), and Blade quotes an
+unbound attribute value, so `wire:key="events_modal"` compiles to
+`key('events_modal')`. Self-closing the tags changes nothing measurable: the
+v3 tag pattern matches an unclosed opening tag too.
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
