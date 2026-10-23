@@ -296,24 +296,33 @@ class RouteContractSnapshotTest extends TestCase
         $this->assertNotNull($symfony->get('password.confirm.store'));
     }
 
-    public function test_the_winner_depends_on_the_service_provider_boot_order(): void
+    public function test_routes_web_is_loaded_before_routes_fortify(): void
     {
-        // THIS IS THE REAL UPGRADE VALUE OF TODO 14. The winner of
-        // `verification.verify` depends solely on which provider loads its
-        // own route file first. The Laravel 11 skeleton migration (TODO 56)
-        // moves the providers into bootstrap/providers.php - a reordering
-        // there would silently tip the route back onto the dead closure.
-        $providers = config('app.providers');
+        // THIS IS THE REAL UPGRADE VALUE OF TODO 14. When two route files
+        // define the same method + URI, the one loaded LAST wins the URL, so
+        // the load order of routes/web.php and routes/fortify.php is part of
+        // the contract. It used to be asserted through the provider order in
+        // config('app.providers') (RouteServiceProvider before
+        // FortifyServiceProvider); TODO 56 deletes the application's
+        // RouteServiceProvider, and the framework's one boots LAST, after
+        // every provider - which would have loaded web.php after Fortify.
+        //
+        // So the order is now asserted where it shows: in the route
+        // collection itself, by one route from each file.
+        $order = array_map(
+            fn ($route) => $route->getName(),
+            app('router')->getRoutes()->getRoutes()
+        );
 
-        $routeProvider = array_search(\App\Providers\RouteServiceProvider::class, $providers, true);
-        $fortifyProvider = array_search(\App\Providers\FortifyServiceProvider::class, $providers, true);
+        $web = array_search('verification.notice', $order, true);      // routes/web.php
+        $fortify = array_search('verification.verify', $order, true);  // routes/fortify.php
 
-        $this->assertIsInt($routeProvider);
-        $this->assertIsInt($fortifyProvider);
+        $this->assertIsInt($web);
+        $this->assertIsInt($fortify);
         $this->assertLessThan(
-            $fortifyProvider,
-            $routeProvider,
-            'A Fortify a routes/web.php UTÁN kell regisztráljon, különben a verification.verify a halott closure-re esik vissza.'
+            $fortify,
+            $web,
+            'routes/fortify.php must load AFTER routes/web.php, or a shared method + URI would be won by the other file.'
         );
     }
 
