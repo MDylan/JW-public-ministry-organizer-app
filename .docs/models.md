@@ -154,6 +154,24 @@ The project uses Eloquent models for user/group scheduling, content publishing, 
 
   Traps 1, 2 and 4 are fixed by roadmap TODO 33.7, trap 3 by TODO 33.6.
 
+### Date arithmetic: written to survive Carbon 3
+
+Laravel 11 admits Carbon 3, and two of its changes are silent here. Every call under `app/` is
+written in the form that returns the same value in both versions (roadmap TODO 55.1):
+
+- **`diffIn*()` always gets `true` as its second argument.** Carbon 2 returned the absolute value
+  by default; Carbon 3 returns a signed (and fractional) one, so `$end->diffInHours($start)` turns
+  negative. Where Carbon 2's whole number mattered, the call is also cast to `int`.
+  - `Event::service_hour` - absolute whole minutes / 60, rounded to 2 decimals: a 2h30 shift is `2.5`.
+  - `Groups\Statistics`' publisher table - absolute whole hours, **truncated**: the same shift
+    counts as `2`. The two disagree, and did before this; the fix kept both numbers as they were.
+  - `SetUserLastActivity` - absolute seconds; signed, the once-a-minute refresh would never fire.
+- **`createFromTimestamp()` always names the timezone.** Carbon 3 reads a timestamp in UTC instead
+  of the default timezone; `Home` feeds it `strtotime()` of a date (local midnight), which would
+  land on the previous day in Budapest.
+
+`tests/Feature/Dates/CarbonThreeReadinessTest` fails on any call written the Carbon-2 way.
+
 ### Encrypted columns
 
 Nine columns across six models use the `encrypted` cast. Behaviour is covered by

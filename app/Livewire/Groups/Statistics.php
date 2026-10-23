@@ -352,7 +352,12 @@ class Statistics extends AppComponent
                 $startTime = Carbon::parse($event->start);
                 $finishTime = Carbon::parse($event->end);
 
-                $totalDuration = $finishTime->diffInHours($startTime);
+                // Absolute and truncated to whole hours, as Carbon 2 returned
+                // it by default - so a 2h30 shift counts as 2 here, unlike
+                // Event::service_hour. Carbon 3 makes diffIn* signed and
+                // fractional; the explicit form keeps today's numbers
+                // (roadmap TODO 55.1).
+                $totalDuration = (int) $finishTime->diffInHours($startTime, true);
                 $users_stats[$event->user_id]['hours'] += $totalDuration;
                 $users_stats[$event->user_id]['days'][$event->day.''] = true;
                 $users_stats[$event->user_id]['last_event'] = $event->day;

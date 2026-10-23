@@ -92,7 +92,9 @@ class Event extends Model
     public function getServiceHourAttribute() {
         $startTime = Carbon::parse($this->start);
         $finishTime = Carbon::parse($this->end);
-        return round(($finishTime->diffInMinutes($startTime) / 60), 2);
+        // Absolute and whole minutes, as Carbon 2 returned them by default.
+        // Carbon 3 makes diffIn* signed and fractional (roadmap TODO 55.1).
+        return round(((int) $finishTime->diffInMinutes($startTime, true) / 60), 2);
     }
 
     public function calendarLink() {

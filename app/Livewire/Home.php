@@ -97,7 +97,11 @@ class Home extends Component
                     ];
                 }
                 foreach($this->available_days[$group['id']] as $day => $value) {
-                    $date_now = Carbon::createFromTimestamp($day);
+                    // $day is strtotime() of a date, i.e. local midnight. Carbon 2
+                    // read a timestamp in the default timezone, Carbon 3 reads
+                    // it in UTC - which moves Budapest midnight to the previous
+                    // day. Naming the timezone keeps it (roadmap TODO 55.1).
+                    $date_now = Carbon::createFromTimestamp($day, config('app.timezone'));
                     if($date_now->gte($change_date)) {
                         $check = isset($future_days[$date_now->format("w")]);
 

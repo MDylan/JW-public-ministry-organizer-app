@@ -88,7 +88,7 @@ Other aliases (`auth.basic`, `cache.headers`, `can`, `password.confirm`, `signed
 | `SetGuestLanguage` | Custom | Sets locale from invited user language using route `id` parameter. |
 | `SetLocale` | Custom | Resolves locale from query/session/user defaults, handles maintenance logout for non-admin users, and shares static-page side menu via cache. Two TODO 31 changes: the maintenance flag is read from `App\Support\Settings\ApplicationSettings`, not from `config('settings_maintenance')`, so the switch takes effect on the next request rather than the next boot; and the side-menu `catch` no longer swallows its exception — it logs and shares an empty collection. |
 | `HttpsProtocol` | Custom | Redirects to HTTPS in production when `config('security.use_https')` is true. Two fixes landed here: the comparison used to be against the literal string `"true"`, so `USE_HTTPS=1` did nothing (v1-patch B14), and the flag was read from `env()` at runtime, so `config:cache` would have silently switched enforcement off on exactly the installations careful enough to cache their configuration (TODO 28). The `.env` variable is unchanged — `config/security.php` reads it with `filter_var()`, accepting `1`, `true`, `on` and `yes`. |
-| `SetUserLastActivity` | Custom | Updates authenticated user `last_activity` (at most once per minute). |
+| `SetUserLastActivity` | Custom | Updates authenticated user `last_activity` (at most once per minute). The age check asks for the absolute difference explicitly, because Carbon 3 makes `diffIn*()` signed - see `.docs/models.md`, "Date arithmetic". |
 
 ## Practical Notes
 
