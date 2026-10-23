@@ -206,6 +206,16 @@ they prove the caller belongs to *that* group and nothing more. Any second model
 parameter on the same route is bound by bare id and has to be scoped in the
 controller.
 
+**That parameter arrives in two shapes, and both middleware accept either.**
+Livewire 3 resolves a page component's `mount()` bindings inside
+`SubstituteBindings`, which runs before route middleware. So on
+`groups.news`, `groups.edit` and `groups.delete` - whose components type-hint
+`Group $group` - `{group}` is already a `Group` model; on every other group
+route it is the raw id string. A new group route or a newly type-hinted
+`mount()` needs nothing extra, but code reading `$request->route('group')`
+anywhere else must not assume one shape. Pinned by
+`tests/Feature/Middleware/GroupMembershipMiddlewareTest.php`, refusals included.
+
 `GET /news_file/{group}/{file}` (`groups.news.filedownload`) did not do that, so
 any accepted member of any group could download **any other group's** private
 news attachment by passing their own group id next to a foreign file id. The
