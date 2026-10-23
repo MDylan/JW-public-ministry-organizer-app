@@ -410,6 +410,22 @@ commit `vendor/`.
 | after TODO 49 | 1541 | 4366 | 0 | 3 | 3 |
 | after TODO 51 | 1546 | 4481 | 0 | 3 | 3 |
 
+### TODO 51.1, as delivered (2026-10-23)
+
+The last three failures were the route snapshot this migration was expected to
+break. Version 3 has one named endpoint, `default.livewire.update`, whose
+prefix put it outside the `livewire.` slice; the test now classifies Livewire
+routes the way Livewire finds its endpoint (prefix or `livewire.update`
+suffix). The script routes stayed unnamed, contrary to the roadmap's
+expectation, and are pinned by URI.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 51 | 1546 | 4481 | 0 | 3 | 3 |
+| after TODO 51.1 | 1547 | 4482 | 0 | 0 | **0** |
+
+From 286 red of 1507 at the bump to 0 of 1547.
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run

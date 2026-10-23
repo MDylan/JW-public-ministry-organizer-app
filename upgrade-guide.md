@@ -574,8 +574,18 @@ State that lives on the host and is not expressible in a release archive.
   cached configuration (`config:cache`) still says `App\Http\Livewire`. Either
   one left warm serves "class not found" or "Unable to find component" on the
   first request. `optimize:clear` removes both; nothing else is needed.
+- **TODO 51.1: if anything in front of the application filters by URL, it has
+  to learn one new path.** Livewire 2 posted every component update to
+  `/livewire/message/{name}` (and a localized variant); Livewire 3 posts all of
+  them to **`POST /livewire/update`**. A web-application firewall, a proxy rule
+  or a rate limit written for the old path no longer matches, and one that
+  allowlists Livewire by path blocks every interaction. The upload routes
+  (`/livewire/upload-file`, `/livewire/preview-file/{filename}`) are unchanged.
+  The script is served from `/livewire/livewire.min.js` when `APP_DEBUG` is off,
+  unless the published copy under `public/vendor/livewire/` takes over (see
+  section 3, TODO 43).
 
-*Last updated: TODO 51.*
+*Last updated: TODO 51.1.*
 
 ## 6. The upgrade procedure
 
@@ -644,3 +654,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 42.1 | **Every section still says "none", and this is the first such row that is nevertheless not invisible to an operator.** No package moves, no file is deleted or relocated, no `.env` key changes and there is no migration. Three behaviour changes a user can meet, all in the group edit form's service-day rows: a `18:00 - 00:00` template becomes savable on the pending-changes URL, where a dead-looking wildcard rule had been rejecting it and discarding the pending change with it; a mis-clicked start time no longer drags the day's end down with it and leaves the "no service" template behind; and a group configured with `min_time = 120` and a day ending at midnight now shows a blocking error **on the field it belongs to** where it previously saved a silently emptied day. The last one is an open defect rather than a fixed one - that configuration cannot be saved at all, and this row exists so an operator meeting it recognises it. Nothing here needs an action on a deployed host beyond the `optimize:clear` step section 6 already runs: a warm `bootstrap/cache` holds compiled Blade, and the day rows are Blade. |
 | (no framework hop) | 43 | **The first Phase 6 row, and the first one that reports a red test suite as an intended state.** Livewire 2.12.8 -> 3.8.8. Section 2 says none - the resolution is 0 installs, 1 update, 0 removals and `vendor/livewire/livewire` is replaced in place, so a major version change orphans no vendor path at all. Section 3 gains one file that is not under `vendor/`: the Livewire 2 `livewire.js.map`, deleted here and undeletable on a host. That entry carries the finding the whole item turned on - `public/vendor/livewire/` is served **in preference to** the package's own route whenever its `manifest.json` exists, in both versions, and a mismatch announces itself only as a `console.warn`. Section 4 says none. Section 5 gains two checks, both about served JavaScript: `optimize:clear` stops being optional because every `wire:` directive was rewritten, and a host serving these assets from a CDN has to be re-pointed. Nothing else here is operator-visible yet: the application is mid-migration until roadmap TODO 51 closes the phase, and no 2.x release can be cut before then. |
 | (no framework hop) | 51 | **The Livewire components change namespace, and the archive cannot say so on its own.** `App\Http\Livewire` -> `App\Livewire` (28 classes). Section 2 says none: no package moves. Section 3 gains `app/Http/Livewire/`, left behind on every host and inert there, with the one-line removal. Section 4 says none. Section 5 records that a warm `route:cache` or `config:cache` names the old classes, so step 10's `optimize:clear` is what makes the move take effect. The archive also has to carry a regenerated `vendor/composer/autoload_classmap.php`, which this repository commits. |
+| (no framework hop) | 51.1 | **The test suite is green again, and the one route change is the one an operator can trip over.** Livewire's component endpoint moved from `/livewire/message/{name}` to `POST /livewire/update`; section 5 asks anyone filtering by URL in front of the application to follow it. Sections 2, 3 and 4 say none: no package, file or `.env` key moves. Phase 6 still waits on the browser walk (roadmap TODO 47.1) before a 2.x release can be cut. |
