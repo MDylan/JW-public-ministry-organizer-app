@@ -474,6 +474,22 @@ use an expression, and the route-mounted render test checks every title.
 | after TODO 47.4 | 1554 | 4530 | 0 | 0 | 0 |
 | after TODO 47.5 | 1554 | 4572 | 0 | 0 | 0 |
 
+### Phase 6 closed (2026-10-23)
+
+TODO 47.1's browser walk closed the phase. Across the whole migration the
+upgrade tool and the suite carried most of the load, and the walk found what
+neither can see: four places where Livewire 2 did something implicitly that
+Livewire 3 does not - morphing the root specially, evaluating re-rendered
+scripts, rewriting every bound field after a response - plus v3's own morph
+markers surfacing in `<title>`. All four are now explicit rules in
+`.docs/components.md`, each with a guard test.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| at the TODO 43 bump | 1507 | - | - | - | 286 |
+| after TODO 51.1 | 1547 | 4482 | 0 | 0 | 0 |
+| Phase 6 closed | 1554 | 4572 | 0 | 0 | 0 |
+
 From 286 red of 1507 at the bump to 0 of 1547.
 
 ## `vendor:publish --tag=livewire:assets` under version 3
