@@ -4,6 +4,7 @@ namespace Illuminate\Process;
 
 use Closure;
 use Illuminate\Process\Exceptions\ProcessTimedOutException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
 use LogicException;
@@ -245,9 +246,8 @@ class PendingProcess
     {
         $this->command = $command ?: $this->command;
 
+        $process = $this->toSymfonyProcess($command);
         try {
-            $process = $this->toSymfonyProcess($command);
-
             if ($fake = $this->fakeFor($command = $process->getCommandline())) {
                 return tap($this->resolveSynchronousFake($command, $fake), function ($result) {
                     $this->factory->recordIfRecording($this, $result);
@@ -329,6 +329,16 @@ class PendingProcess
     }
 
     /**
+     * Determine whether TTY is supported on the current operating system.
+     *
+     * @return bool
+     */
+    public function supportsTty()
+    {
+        return Process::isTtySupported();
+    }
+
+    /**
      * Specify the fake process result handlers for the pending process.
      *
      * @param  array  $fakeHandlers
@@ -349,8 +359,8 @@ class PendingProcess
      */
     protected function fakeFor(string $command)
     {
-        return collect($this->fakeHandlers)
-                ->first(fn ($handler, $pattern) => $pattern === '*' || Str::is($pattern, $command));
+        return (new Collection($this->fakeHandlers))
+            ->first(fn ($handler, $pattern) => $pattern === '*' || Str::is($pattern, $command));
     }
 
     /**
@@ -364,6 +374,10 @@ class PendingProcess
     {
         $result = $fake($this);
 
+        if (is_int($result)) {
+            return (new FakeProcessResult(exitCode: $result))->withCommand($command);
+        }
+
         if (is_string($result) || is_array($result)) {
             return (new FakeProcessResult(output: $result))->withCommand($command);
         }
@@ -373,6 +387,7 @@ class PendingProcess
             $result instanceof FakeProcessResult => $result->withCommand($command),
             $result instanceof FakeProcessDescription => $result->toProcessResult($command),
             $result instanceof FakeProcessSequence => $this->resolveSynchronousFake($command, fn () => $result()),
+            $result instanceof \Throwable => throw $result,
             default => throw new LogicException('Unsupported synchronous process fake result provided.'),
         };
     }

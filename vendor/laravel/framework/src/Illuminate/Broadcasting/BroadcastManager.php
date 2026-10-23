@@ -133,6 +133,30 @@ class BroadcastManager implements FactoryContract
     }
 
     /**
+     * Begin sending an anonymous broadcast to the given channels.
+     */
+    public function on(Channel|string|array $channels): AnonymousEvent
+    {
+        return new AnonymousEvent($channels);
+    }
+
+    /**
+     * Begin sending an anonymous broadcast to the given private channels.
+     */
+    public function private(string $channel): AnonymousEvent
+    {
+        return $this->on(new PrivateChannel($channel));
+    }
+
+    /**
+     * Begin sending an anonymous broadcast to the given presence channels.
+     */
+    public function presence(string $channel): AnonymousEvent
+    {
+        return $this->on(new PresenceChannel($channel));
+    }
+
+    /**
      * Begin broadcasting an event.
      *
      * @param  mixed|null  $event
@@ -303,14 +327,23 @@ class BroadcastManager implements FactoryContract
      */
     public function pusher(array $config)
     {
+        $guzzleClient = new GuzzleClient(
+            array_merge(
+                [
+                    'connect_timeout' => 10,
+                    'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT,
+                    'timeout' => 30,
+                ],
+                $config['client_options'] ?? [],
+            ),
+        );
+
         $pusher = new Pusher(
             $config['key'],
             $config['secret'],
             $config['app_id'],
             $config['options'] ?? [],
-            isset($config['client_options']) && ! empty($config['client_options'])
-                    ? new GuzzleClient($config['client_options'])
-                    : null,
+            $guzzleClient,
         );
 
         if ($config['log'] ?? false) {

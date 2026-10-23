@@ -12,6 +12,7 @@
 namespace Symfony\Component\Mime\Header;
 
 use Symfony\Component\Mime\Encoder\QpMimeHeaderEncoder;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 /**
  * An abstract base MIME Header.
@@ -31,13 +32,14 @@ abstract class AbstractHeader implements HeaderInterface
 
     public function __construct(string $name)
     {
+        if (!preg_match('/^[\x21-\x7E]++$/D', $name)) {
+            throw new RfcComplianceException(sprintf('The header name "%s" contains characters that are not allowed in a header name.', $name));
+        }
+
         $this->name = $name;
     }
 
-    /**
-     * @return void
-     */
-    public function setCharset(string $charset)
+    public function setCharset(string $charset): void
     {
         $this->charset = $charset;
     }
@@ -51,10 +53,8 @@ abstract class AbstractHeader implements HeaderInterface
      * Set the language used in this Header.
      *
      * For example, for US English, 'en-us'.
-     *
-     * @return void
      */
-    public function setLanguage(string $lang)
+    public function setLanguage(string $lang): void
     {
         $this->lang = $lang;
     }
@@ -69,10 +69,7 @@ abstract class AbstractHeader implements HeaderInterface
         return $this->name;
     }
 
-    /**
-     * @return void
-     */
-    public function setMaxLineLength(int $lineLength)
+    public function setMaxLineLength(int $lineLength): void
     {
         $this->lineLength = $lineLength;
     }
@@ -160,7 +157,7 @@ abstract class AbstractHeader implements HeaderInterface
 
     protected function tokenNeedsEncoding(string $token): bool
     {
-        return (bool) preg_match('~[\x00-\x08\x10-\x19\x7F-\xFF\r\n]~', $token);
+        return preg_match('~[\x00-\x08\x0A-\x1F\x7F-\xFF]~', $token);
     }
 
     /**

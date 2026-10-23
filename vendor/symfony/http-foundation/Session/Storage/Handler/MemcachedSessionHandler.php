@@ -21,8 +21,6 @@ namespace Symfony\Component\HttpFoundation\Session\Storage\Handler;
  */
 class MemcachedSessionHandler extends AbstractSessionHandler
 {
-    private \Memcached $memcached;
-
     /**
      * Time to live in seconds.
      */
@@ -42,10 +40,10 @@ class MemcachedSessionHandler extends AbstractSessionHandler
      *
      * @throws \InvalidArgumentException When unsupported options are passed
      */
-    public function __construct(\Memcached $memcached, array $options = [])
-    {
-        $this->memcached = $memcached;
-
+    public function __construct(
+        private \Memcached $memcached,
+        array $options = [],
+    ) {
         if ($diff = array_diff(array_keys($options), ['prefix', 'expiretime', 'ttl'])) {
             throw new \InvalidArgumentException(\sprintf('The following options are not supported "%s".', implode(', ', $diff)));
         }
@@ -59,9 +57,15 @@ class MemcachedSessionHandler extends AbstractSessionHandler
         return $this->memcached->quit();
     }
 
-    protected function doRead(#[\SensitiveParameter] string $sessionId): string
+    protected function doRead(#[\SensitiveParameter] string $sessionId): string|false
     {
-        return $this->memcached->get($this->prefix.$sessionId) ?: '';
+        $data = $this->memcached->get($this->prefix.$sessionId);
+
+        if (false === $data && \Memcached::RES_NOTFOUND !== $this->memcached->getResultCode()) {
+            return false;
+        }
+
+        return $data ?: '';
     }
 
     public function updateTimestamp(#[\SensitiveParameter] string $sessionId, string $data): bool

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NunoMaduro\Collision\Contracts;
 
-use Spatie\ErrorSolutions\Contracts\Solution;
+use Spatie\Ignition\Contracts\Solution;
 use Throwable;
 
 /**
@@ -17,5 +17,5 @@ interface SolutionsRepository
      *
      * @return array<int, Solution>
      */
-    public function getFromThrowable(Throwable $throwable): array;
+    public function getFromThrowable(Throwable $throwable): array; // @phpstan-ignore-line
 }

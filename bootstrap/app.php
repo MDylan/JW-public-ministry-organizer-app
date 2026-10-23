@@ -16,6 +16,16 @@ $app = new Illuminate\Foundation\Application(
 );
 
 /*
+| Laravel 11 merges its own default config files underneath the application's.
+| This application keeps complete config files from before that change, and
+| some omissions in them are deliberate - the s3 disk was removed at roadmap
+| TODO 37 - so merging would silently put them back. The configuration is
+| exactly what config/ says. Whether to adopt slim config files and the merge
+| is roadmap TODO 56's decision (TODO 55 records the measured difference).
+*/
+$app->dontMergeFrameworkConfiguration();
+
+/*
 |--------------------------------------------------------------------------
 | Bind Important Interfaces
 |--------------------------------------------------------------------------

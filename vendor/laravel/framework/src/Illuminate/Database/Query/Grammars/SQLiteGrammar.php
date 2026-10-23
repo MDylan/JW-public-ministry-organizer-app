@@ -4,7 +4,9 @@ namespace Illuminate\Database\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class SQLiteGrammar extends Grammar
 {
@@ -40,6 +42,39 @@ class SQLiteGrammar extends Grammar
     protected function wrapUnion($sql)
     {
         return 'select * from ('.$sql.')';
+    }
+
+    /**
+     * Compile a "where like" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereLike(Builder $query, $where)
+    {
+        if ($where['caseSensitive'] == false) {
+            return parent::whereLike($query, $where);
+        }
+        $where['operator'] = $where['not'] ? 'not glob' : 'glob';
+
+        return $this->whereBasic($query, $where);
+    }
+
+    /**
+     * Convert a LIKE pattern to a GLOB pattern using simple string replacement.
+     *
+     * @param  string  $value
+     * @param  bool  $caseSensitive
+     * @return string
+     */
+    public function prepareWhereLikeBinding($value, $caseSensitive)
+    {
+        return $caseSensitive === false ? $value : str_replace(
+            ['*', '?', '%', '_'],
+            ['[*]', '[?]', '*', '?'],
+            $value
+        );
     }
 
     /**
@@ -126,6 +161,10 @@ class SQLiteGrammar extends Grammar
      */
     protected function compileIndexHint(Builder $query, $indexHint)
     {
+        if (! preg_match('/^[a-zA-Z0-9_$]+$/', $indexHint->index)) {
+            throw new InvalidArgumentException('Index name contains invalid characters.');
+        }
+
         return $indexHint->type === 'force'
                 ? "indexed by {$indexHint->index}"
                 : '';
@@ -185,6 +224,25 @@ class SQLiteGrammar extends Grammar
     }
 
     /**
+     * Compile a group limit clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileGroupLimit(Builder $query)
+    {
+        $version = $query->getConnection()->getServerVersion();
+
+        if (version_compare($version, '3.25.0') >= 0) {
+            return parent::compileGroupLimit($query);
+        }
+
+        $query->groupLimit = null;
+
+        return $this->compileSelect($query);
+    }
+
+    /**
      * Compile an update statement into SQL.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
@@ -236,7 +294,7 @@ class SQLiteGrammar extends Grammar
     {
         $jsonGroups = $this->groupJsonColumnsForUpdate($values);
 
-        return collect($values)->reject(function ($value, $key) {
+        return (new Collection($values))->reject(function ($value, $key) {
             return $this->isJsonSelector($key);
         })->merge($jsonGroups)->map(function ($value, $key) use ($jsonGroups) {
             $column = last(explode('.', $key));
@@ -262,7 +320,7 @@ class SQLiteGrammar extends Grammar
 
         $sql .= ' on conflict ('.$this->columnize($uniqueBy).') do update set ';
 
-        $columns = collect($update)->map(function ($value, $key) {
+        $columns = (new Collection($update))->map(function ($value, $key) {
             return is_numeric($key)
                 ? $this->wrap($value).' = '.$this->wrapValue('excluded').'.'.$this->wrap($value)
                 : $this->wrap($key).' = '.$this->parameter($value);
@@ -333,11 +391,11 @@ class SQLiteGrammar extends Grammar
     {
         $groups = $this->groupJsonColumnsForUpdate($values);
 
-        $values = collect($values)->reject(function ($value, $key) {
-            return $this->isJsonSelector($key);
-        })->merge($groups)->map(function ($value) {
-            return is_array($value) ? json_encode($value) : $value;
-        })->all();
+        $values = (new Collection($values))
+            ->reject(fn ($value, $key) => $this->isJsonSelector($key))
+            ->merge($groups)
+            ->map(fn ($value) => is_array($value) ? json_encode($value) : $value)
+            ->all();
 
         $cleanBindings = Arr::except($bindings, 'select');
 

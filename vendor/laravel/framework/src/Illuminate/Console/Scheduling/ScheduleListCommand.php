@@ -5,9 +5,9 @@ namespace Illuminate\Console\Scheduling;
 use Closure;
 use Cron\CronExpression;
 use DateTimeZone;
-use Illuminate\Console\Application;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use ReflectionClass;
 use ReflectionFunction;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -24,6 +24,7 @@ class ScheduleListCommand extends Command
     protected $signature = 'schedule:list
         {--timezone= : The timezone that times should be displayed in}
         {--next : Sort the listed tasks by their next due date}
+        {--json : Output the scheduled tasks as JSON}
     ';
 
     /**
@@ -50,26 +51,84 @@ class ScheduleListCommand extends Command
      */
     public function handle(Schedule $schedule)
     {
-        $events = collect($schedule->events());
+        $events = new Collection($schedule->events());
 
         if ($events->isEmpty()) {
-            $this->components->info('No scheduled tasks have been defined.');
+            if ($this->option('json')) {
+                $this->output->writeln('[]');
+            } else {
+                $this->components->info('No scheduled tasks have been defined.');
+            }
 
             return;
         }
-
-        $terminalWidth = self::getTerminalWidth();
-
-        $expressionSpacing = $this->getCronExpressionSpacing($events);
-
-        $repeatExpressionSpacing = $this->getRepeatExpressionSpacing($events);
 
         $timezone = new DateTimeZone($this->option('timezone') ?? config('app.timezone'));
 
         $events = $this->sortEvents($events, $timezone);
 
-        $events = $events->map(function ($event) use ($terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone) {
-            return $this->listEvent($event, $terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone);
+        $this->display($events, $timezone);
+    }
+
+    /**
+     * Render the scheduled tasks information as JSON.
+     *
+     * @param  \Illuminate\Support\Collection  $events
+     * @param  \DateTimeZone  $timezone
+     * @return void
+     */
+    protected function displayJson(Collection $events, DateTimeZone $timezone)
+    {
+        $this->output->writeln($events->flatMap(function ($event) use ($timezone) {
+            $nextDueDate = $this->getNextDueDateForEvent($event, $timezone);
+
+            $command = $event->command ?? '';
+
+            if (! $this->output->isVerbose()) {
+                $command = $event->normalizeCommand($command);
+            }
+
+            if ($event instanceof CallbackEvent) {
+                $command = $event->getSummaryForDisplay();
+
+                if (in_array($command, ['Closure', 'Callback'])) {
+                    $command = 'Closure at: '.$this->getClosureLocation($event);
+                }
+            }
+
+            return collect(CronExpressionTimezoneConverter::forEvent($event, $timezone))->map(fn ($expression) => [
+                'expression' => $expression,
+                'command' => $command,
+                'description' => $event->description ?? null,
+                'next_due_date' => $nextDueDate->format('Y-m-d H:i:s P'),
+                'next_due_date_human' => $nextDueDate->diffForHumans(),
+                'timezone' => $timezone->getName(),
+                'has_mutex' => $event->mutex->exists($event),
+                'repeat_seconds' => $event->isRepeatable() ? $event->repeatSeconds : null,
+                'environments' => $event->environments,
+            ]);
+        })->values()->toJson());
+    }
+
+    /**
+     * Render the scheduled tasks information formatted for the CLI.
+     *
+     * @param  \Illuminate\Support\Collection  $events
+     * @param  \DateTimeZone  $timezone
+     * @return void
+     */
+    protected function displayForCli(Collection $events, DateTimeZone $timezone)
+    {
+        $terminalWidth = self::getTerminalWidth();
+
+        $expressionSpacing = $this->getCronExpressionSpacing($events, $timezone);
+
+        $repeatExpressionSpacing = $this->getRepeatExpressionSpacing($events);
+
+        $events = $events->flatMap(function ($event) use ($terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone) {
+            return collect(CronExpressionTimezoneConverter::forEvent($event, $timezone))->map(
+                fn ($expression) => $this->listEvent($event, $terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone, $expression)
+            );
         });
 
         $this->line(
@@ -83,11 +142,12 @@ class ScheduleListCommand extends Command
      * @param  \Illuminate\Support\Collection  $events
      * @return array<int, int>
      */
-    private function getCronExpressionSpacing($events)
+    private function getCronExpressionSpacing($events, DateTimeZone $timezone)
     {
-        $rows = $events->map(fn ($event) => array_map('mb_strlen', preg_split("/\s+/", $event->expression)));
+        $rows = $events->flatMap(fn ($event) => collect(CronExpressionTimezoneConverter::forEvent($event, $timezone))
+            ->map(fn ($expression) => array_map(mb_strlen(...), preg_split("/\s+/", $expression))));
 
-        return collect($rows[0] ?? [])->keys()->map(fn ($key) => $rows->max($key))->all();
+        return (new Collection($rows[0] ?? []))->keys()->map(fn ($key) => $rows->max($key))->all();
     }
 
     /**
@@ -104,17 +164,17 @@ class ScheduleListCommand extends Command
     /**
      * List the given even in the console.
      *
-     * @param  \Illuminate\Console\Scheduling\Event
+     * @param  \Illuminate\Console\Scheduling\Event  $event
      * @param  int  $terminalWidth
      * @param  array  $expressionSpacing
      * @param  int  $repeatExpressionSpacing
-     * @param  array  $repeatExpressionSpacing
      * @param  \DateTimeZone  $timezone
-     * @return \Illuminate\Support\DateTimeZone
+     * @param  string|null  $convertedExpression
+     * @return array
      */
-    private function listEvent($event, $terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone)
+    private function listEvent($event, $terminalWidth, $expressionSpacing, $repeatExpressionSpacing, $timezone, $convertedExpression = null)
     {
-        $expression = $this->formatCronExpression($event->expression, $expressionSpacing);
+        $expression = $this->formatCronExpression($convertedExpression ?? $event->expression, $expressionSpacing);
 
         $repeatExpression = str_pad($this->getRepeatExpression($event), $repeatExpressionSpacing);
 
@@ -123,10 +183,7 @@ class ScheduleListCommand extends Command
         $description = $event->description ?? '';
 
         if (! $this->output->isVerbose()) {
-            $command = str_replace([Application::phpBinary(), Application::artisanBinary()], [
-                'php',
-                preg_replace("#['\"]#", '', Application::artisanBinary()),
-            ], $command);
+            $command = $event->normalizeCommand($command);
         }
 
         if ($event instanceof CallbackEvent) {
@@ -199,6 +256,18 @@ class ScheduleListCommand extends Command
     }
 
     /**
+     * Render the scheduled tasks information.
+     *
+     * @param  \Illuminate\Support\Collection  $events
+     * @param  \DateTimeZone  $timezone
+     * @return void
+     */
+    protected function display(Collection $events, DateTimeZone $timezone)
+    {
+        $this->option('json') ? $this->displayJson($events, $timezone) : $this->displayForCli($events, $timezone);
+    }
+
+    /**
      * Get the next due date for an event.
      *
      * @param  \Illuminate\Console\Scheduling\Event  $event
@@ -245,7 +314,7 @@ class ScheduleListCommand extends Command
     {
         $expressions = preg_split("/\s+/", $expression);
 
-        return collect($spacing)
+        return (new Collection($spacing))
             ->map(fn ($length, $index) => str_pad($expressions[$index], $length))
             ->implode(' ');
     }

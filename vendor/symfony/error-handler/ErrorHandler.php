@@ -70,12 +70,12 @@ class ErrorHandler
     private array $loggers = [
         \E_DEPRECATED => [null, LogLevel::INFO],
         \E_USER_DEPRECATED => [null, LogLevel::INFO],
-        \E_NOTICE => [null, LogLevel::WARNING],
-        \E_USER_NOTICE => [null, LogLevel::WARNING],
-        \E_WARNING => [null, LogLevel::WARNING],
-        \E_USER_WARNING => [null, LogLevel::WARNING],
-        \E_COMPILE_WARNING => [null, LogLevel::WARNING],
-        \E_CORE_WARNING => [null, LogLevel::WARNING],
+        \E_NOTICE => [null, LogLevel::ERROR],
+        \E_USER_NOTICE => [null, LogLevel::ERROR],
+        \E_WARNING => [null, LogLevel::ERROR],
+        \E_USER_WARNING => [null, LogLevel::ERROR],
+        \E_COMPILE_WARNING => [null, LogLevel::ERROR],
+        \E_CORE_WARNING => [null, LogLevel::ERROR],
         \E_USER_ERROR => [null, LogLevel::CRITICAL],
         \E_RECOVERABLE_ERROR => [null, LogLevel::CRITICAL],
         \E_COMPILE_ERROR => [null, LogLevel::CRITICAL],
@@ -90,7 +90,6 @@ class ErrorHandler
     private int $screamedErrors = 0x55; // E_ERROR + E_CORE_ERROR + E_COMPILE_ERROR + E_PARSE
     private int $loggedErrors = 0;
     private \Closure $configureException;
-    private bool $debug;
 
     private bool $isRecursive = false;
     private bool $isRoot = false;
@@ -117,11 +116,12 @@ class ErrorHandler
             $handler = new static();
         }
 
-        if (null === $prev = set_error_handler([$handler, 'handleError'])) {
-            restore_error_handler();
+        if (null === $prev = get_error_handler()) {
             // Specifying the error types earlier would expose us to https://bugs.php.net/63206
             set_error_handler([$handler, 'handleError'], $handler->thrownErrors | $handler->loggedErrors);
             $handler->isRoot = true;
+        } else {
+            set_error_handler([$handler, 'handleError']);
         }
 
         if ($handlerIsNew && \is_array($prev) && $prev[0] instanceof self) {
@@ -182,11 +182,13 @@ class ErrorHandler
         }
     }
 
-    public function __construct(?BufferingLogger $bootstrappingLogger = null, bool $debug = false)
-    {
+    public function __construct(
+        ?BufferingLogger $bootstrappingLogger = null,
+        private bool $debug = false,
+    ) {
         if (\PHP_VERSION_ID < 80400) {
             $this->levels[\E_STRICT] = 'Runtime Notice';
-            $this->loggers[\E_STRICT] = [null, LogLevel::WARNING];
+            $this->loggers[\E_STRICT] = [null, LogLevel::ERROR];
         }
 
         if ($bootstrappingLogger) {
@@ -200,7 +202,6 @@ class ErrorHandler
             $e->line = $line ?? $e->line;
         }, null, new class extends \Exception {
         });
-        $this->debug = $debug;
     }
 
     /**
@@ -367,9 +368,8 @@ class ErrorHandler
     private function reRegister(int $prev): void
     {
         if ($prev !== ($this->thrownErrors | $this->loggedErrors)) {
-            $handler = set_error_handler(static fn () => null);
+            $handler = get_error_handler();
             $handler = \is_array($handler) ? $handler[0] : null;
-            restore_error_handler();
             if ($handler === $this) {
                 restore_error_handler();
                 if ($this->isRoot) {
@@ -499,6 +499,7 @@ class ErrorHandler
     public function handleException(\Throwable $exception): void
     {
         $handlerException = null;
+        $loggerFailed = false;
 
         if (!$exception instanceof FatalError) {
             self::$exitCode = 255;
@@ -526,6 +527,7 @@ class ErrorHandler
             try {
                 $this->loggers[$type][0]->log($this->loggers[$type][1], $message, ['exception' => $exception]);
             } catch (\Throwable $handlerException) {
+                $loggerFailed = true;
             }
         }
 
@@ -553,7 +555,8 @@ class ErrorHandler
         }
 
         $loggedErrors = $this->loggedErrors;
-        if ($exception === $handlerException) {
+        if ($exception === $handlerException || $loggerFailed) {
+            // the logger for that type is what threw, so calling it again would recurse forever
             $this->loggedErrors &= ~$type;
         }
 
@@ -622,7 +625,8 @@ class ErrorHandler
         if ($error && $error['type'] &= \E_PARSE | \E_ERROR | \E_CORE_ERROR | \E_COMPILE_ERROR) {
             // Let's not throw anymore but keep logging
             $handler->throwAt(0, true);
-            $trace = $error['backtrace'] ?? null;
+            // "trace" is set by PHP >= 8.5 when fatal_error_backtraces is enabled
+            $trace = $error['trace'] ?? null;
 
             if (str_starts_with($error['message'], 'Allowed memory') || str_starts_with($error['message'], 'Out of memory')) {
                 $fatalError = new OutOfMemoryError($handler->levels[$error['type']].': '.$error['message'], 0, $error, 2, false, $trace);

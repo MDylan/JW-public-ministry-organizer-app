@@ -644,7 +644,7 @@ elif [ "$1" == "mongodb" ]; then
     if [ "$EXEC" == "yes" ]; then
         ARGS+=(exec)
         [ ! -t 0 ] && ARGS+=(-T)
-        ARGS+=(mongodb mongosh --port "${FORWARD_MONGODB_PORT:-27017}" --username "$MONGODB_USERNAME" --password "$MONGODB_PASSWORD" --authenticationDatabase admin)
+        ARGS+=(mongodb mongosh --port 27017 --username "$MONGODB_USERNAME" --password "$MONGODB_PASSWORD" --authenticationDatabase admin)
     else
         sail_is_not_running
     fi
@@ -719,6 +719,11 @@ elif [ "$1" == "open" ]; then
     else
         sail_is_not_running
     fi
+fi
+
+# Forward the host terminal's color capability to container commands...
+if [ "${ARGS[0]:-}" == "exec" ] && [ -n "${COLORTERM:-}" ]; then
+    ARGS=(exec -e "COLORTERM=${COLORTERM}" "${ARGS[@]:1}")
 fi
 
 # Run Docker Compose with the defined arguments...

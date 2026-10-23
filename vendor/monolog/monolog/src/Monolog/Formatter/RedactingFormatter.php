@@ -173,13 +173,14 @@ final class RedactingFormatter implements WrappingFormatterInterface
             return [];
         }
 
-        // a secret containing quotes/backslashes/newlines shows up escaped in json output,
-        // so both forms have to be looked for
+        // a secret shows up escaped in json output (quotes/backslashes/newlines) and in html output
+        // (& < >), so every spelling the wrapped formatter can produce has to be looked for
         $escapedSecrets = [];
         foreach ($secrets as $secret) {
-            $escaped = substr(Utils::jsonEncode($secret, null, true), 1, -1);
-            if ($escaped !== $secret && $escaped !== '') {
-                $escapedSecrets[] = $escaped;
+            foreach ([substr(Utils::jsonEncode($secret, null, true), 1, -1), htmlspecialchars($secret, ENT_NOQUOTES, 'UTF-8')] as $escaped) {
+                if ($escaped !== $secret && $escaped !== '') {
+                    $escapedSecrets[] = $escaped;
+                }
             }
         }
 
@@ -203,8 +204,9 @@ final class RedactingFormatter implements WrappingFormatterInterface
         if (\is_array($data)) {
             foreach ($data as $key => $value) {
                 if (\is_string($key) && \in_array(strtolower($key), $this->sensitiveKeys, true)) {
-                    // no need to recurse, the whole value is masked in the record anyway
-                    $this->addSecret($value, $secrets);
+                    // the value is masked in the record, but a nested array's leaves can still
+                    // leak elsewhere (e.g. json-encoded by PsrLogMessageProcessor)
+                    $this->collectSensitiveValue($value, $secrets, $depth + 1);
 
                     continue;
                 }
@@ -237,6 +239,28 @@ final class RedactingFormatter implements WrappingFormatterInterface
         foreach (get_object_vars($data) as $value) {
             $this->collect($value, $secrets, $seen, $depth + 1);
         }
+    }
+
+    /**
+     * Collects every string leaf nested inside a value under a sensitive key.
+     *
+     * @param list<string> $secrets
+     */
+    private function collectSensitiveValue(mixed $value, array &$secrets, int $depth): void
+    {
+        if ($depth > self::MAX_DEPTH) {
+            return;
+        }
+
+        if (\is_array($value)) {
+            foreach ($value as $item) {
+                $this->collectSensitiveValue($item, $secrets, $depth + 1);
+            }
+
+            return;
+        }
+
+        $this->addSecret($value, $secrets);
     }
 
     /**

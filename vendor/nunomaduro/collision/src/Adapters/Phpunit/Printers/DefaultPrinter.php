@@ -100,6 +100,8 @@ final class DefaultPrinter
 
         ConfigureIO::of(new ArgvInput, $this->output);
 
+        class_exists(\Pest\Collision\Events::class) && \Pest\Collision\Events::setOutput($this->output);
+
         self::$verbose = $this->output->isVerbose();
 
         $this->style = new Style($this->output);

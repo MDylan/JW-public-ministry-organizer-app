@@ -4524,9 +4524,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       get(target, property) {
         if (property === "__instance")
           return component;
-        if (property in aliases) {
+        if (Object.hasOwn(aliases, property)) {
           return getProperty(component, aliases[property]);
-        } else if (property in properties) {
+        } else if (Object.hasOwn(properties, property)) {
           return getProperty(component, property);
         } else if (property in state) {
           return state[property];
@@ -4717,13 +4717,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     mergeQueuedUpdates(diff2) {
       Object.entries(this.queuedUpdates).forEach(([updateKey, updateValue]) => {
         Object.entries(diff2).forEach(([diffKey, diffValue]) => {
-          if (diffKey.startsWith(updateValue)) {
+          if (diffKey === updateKey || diffKey.startsWith(updateKey + ".")) {
             delete diff2[diffKey];
           }
         });
         diff2[updateKey] = updateValue;
       });
-      this.queuedUpdates = [];
+      this.queuedUpdates = {};
       return diff2;
     }
     applyUpdates(object, updates) {
@@ -8418,10 +8418,27 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     };
     queueMicrotask(() => {
       queueMicrotask(() => {
+        let shouldScrollToFragment = !document.body.hasAttribute("data-scroll-x");
         scroll(document.body);
         document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:scroll]"]).forEach(scroll);
+        if (shouldScrollToFragment) {
+          getFragmentTarget()?.scrollIntoView({ behavior: "instant" });
+        }
       });
     });
+  }
+  function getFragmentTarget() {
+    let fragment = window.location.hash.substring(1);
+    if (!fragment)
+      return;
+    let target = document.getElementById(fragment);
+    if (target)
+      return target;
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch (e) {
+    }
+    return document.getElementById(fragment) || Array.from(document.getElementsByName(fragment)).find((el) => el.tagName === "A");
   }
 
   // js/plugins/navigate/persist.js
@@ -8493,6 +8510,10 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
 
     #nprogress {
       pointer-events: none;
+
+      /* NProgress fades out by setting opacity here, which creates a stacking context... */
+      position: relative;
+      z-index: 1031;
     }
 
     #nprogress .bar {

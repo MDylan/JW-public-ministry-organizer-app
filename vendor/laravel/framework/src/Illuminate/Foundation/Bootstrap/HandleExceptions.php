@@ -9,6 +9,9 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\Env;
 use Monolog\Handler\NullHandler;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Runner\ErrorHandler;
+use PHPUnit\Runner\Version;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\ErrorHandler\Error\FatalError;
 use Throwable;
@@ -37,7 +40,7 @@ class HandleExceptions
      */
     public function bootstrap(Application $app)
     {
-        self::$reservedMemory = str_repeat('x', 32768);
+        static::$reservedMemory = str_repeat('x', 32768);
 
         static::$app = $app;
 
@@ -177,7 +180,7 @@ class HandleExceptions
      */
     public function handleException(Throwable $e)
     {
-        self::$reservedMemory = null;
+        static::$reservedMemory = null;
 
         try {
             $this->getExceptionHandler()->report($e);
@@ -225,7 +228,7 @@ class HandleExceptions
      */
     public function handleShutdown()
     {
-        self::$reservedMemory = null;
+        static::$reservedMemory = null;
 
         if (! is_null($error = error_get_last()) && $this->isFatal($error['type'])) {
             $this->handleException($this->fatalErrorFromPhpError($error, 0));
@@ -292,9 +295,77 @@ class HandleExceptions
      * Clear the local application instance from memory.
      *
      * @return void
+     *
+     * @deprecated This method will be removed in a future Laravel version.
      */
     public static function forgetApp()
     {
         static::$app = null;
+    }
+
+    /**
+     * Flush the bootstrapper's global state.
+     *
+     * @param  \PHPUnit\Framework\TestCase|null  $testCase
+     * @return void
+     */
+    public static function flushState(?TestCase $testCase = null)
+    {
+        if (is_null(static::$app)) {
+            return;
+        }
+
+        static::flushHandlersState($testCase);
+
+        static::$app = null;
+
+        static::$reservedMemory = null;
+    }
+
+    /**
+     * Flush the bootstrapper's global handlers state.
+     *
+     * @param  \PHPUnit\Framework\TestCase|null  $testCase
+     * @return void
+     */
+    public static function flushHandlersState(?TestCase $testCase = null)
+    {
+        while (true) {
+            $previousHandler = set_exception_handler(static fn () => null);
+
+            restore_exception_handler();
+
+            if ($previousHandler === null) {
+                break;
+            }
+
+            restore_exception_handler();
+        }
+
+        while (true) {
+            $previousHandler = set_error_handler(static fn () => null);
+
+            restore_error_handler();
+
+            if ($previousHandler === null) {
+                break;
+            }
+
+            restore_error_handler();
+        }
+
+        if (class_exists(ErrorHandler::class)) {
+            $instance = ErrorHandler::instance();
+
+            if ((fn () => $this->enabled ?? false)->call($instance)) {
+                $instance->disable();
+
+                if (version_compare(Version::id(), '12.3.4', '>=')) {
+                    $instance->enable($testCase);
+                } else {
+                    $instance->enable();
+                }
+            }
+        }
     }
 }

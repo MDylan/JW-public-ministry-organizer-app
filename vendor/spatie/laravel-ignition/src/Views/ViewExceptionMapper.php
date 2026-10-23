@@ -42,7 +42,7 @@ class ViewExceptionMapper
 
         preg_match('/\(View: (?P<path>.*?)\)/', $viewException->getMessage(), $matches);
 
-        $compiledViewPath = $matches['path'];
+        $compiledViewPath = $matches['path'] ?? $viewException->getFile();
 
         $exception = $this->createException($baseException);
 
@@ -104,7 +104,6 @@ class ViewExceptionMapper
             ->toArray();
 
         $traceProperty = new ReflectionProperty('Exception', 'trace');
-        $traceProperty->setAccessible(true);
         $traceProperty->setValue($exception, $trace);
     }
 
@@ -132,24 +131,34 @@ class ViewExceptionMapper
 
     protected function getKnownPaths(): array
     {
-        $compilerEngineReflection = new ReflectionClass($this->compilerEngine);
+        $compilerEngine = $this->compilerEngine;
+        $compilerEngineReflection = new ReflectionClass($compilerEngine);
+        $visitedEngines = [];
 
-        if (! $compilerEngineReflection->hasProperty('lastCompiled') && $compilerEngineReflection->hasProperty('engine')) {
-            $compilerEngine = $compilerEngineReflection->getProperty('engine');
-            $compilerEngine->setAccessible(true);
-            $compilerEngine = $compilerEngine->getValue($this->compilerEngine);
-            $lastCompiled = new ReflectionProperty($compilerEngine, 'lastCompiled');
-            $lastCompiled->setAccessible(true);
-            $lastCompiled = $lastCompiled->getValue($compilerEngine);
-        } else {
-            $lastCompiled = $compilerEngineReflection->getProperty('lastCompiled');
-            $lastCompiled->setAccessible(true);
-            $lastCompiled = $lastCompiled->getValue($this->compilerEngine);
+        while (! $compilerEngineReflection->hasProperty('lastCompiled')) {
+            if (in_array($compilerEngine, $visitedEngines, true)) {
+                return [];
+            }
+
+            if (! $compilerEngineReflection->hasProperty('engine')) {
+                return [];
+            }
+
+            $visitedEngines[] = $compilerEngine;
+            $compilerEngine = $compilerEngineReflection->getProperty('engine')->getValue($compilerEngine);
+
+            if (! $compilerEngine instanceof Engine) {
+                return [];
+            }
+
+            $compilerEngineReflection = new ReflectionClass($compilerEngine);
         }
+
+        $lastCompiled = $compilerEngineReflection->getProperty('lastCompiled')->getValue($compilerEngine);
 
         $knownPaths = [];
         foreach ($lastCompiled as $lastCompiledPath) {
-            $compiledPath = $this->compilerEngine->getCompiler()->getCompiledPath($lastCompiledPath);
+            $compiledPath = $compilerEngine->getCompiler()->getCompiledPath($lastCompiledPath);
 
             $knownPaths[realpath($compiledPath ?? $lastCompiledPath)] = realpath($lastCompiledPath);
         }

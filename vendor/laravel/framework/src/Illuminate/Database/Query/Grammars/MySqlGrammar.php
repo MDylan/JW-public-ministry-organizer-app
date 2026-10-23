@@ -4,7 +4,9 @@ namespace Illuminate\Database\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinLateralClause;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class MySqlGrammar extends Grammar
 {
@@ -14,6 +16,22 @@ class MySqlGrammar extends Grammar
      * @var string[]
      */
     protected $operators = ['sounds like'];
+
+    /**
+     * Compile a "where like" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereLike(Builder $query, $where)
+    {
+        $where['operator'] = $where['not'] ? 'not ' : '';
+
+        $where['operator'] .= $where['caseSensitive'] ? 'like binary' : 'like';
+
+        return $this->whereBasic($query, $where);
+    }
 
     /**
      * Add a "where null" clause to the query.
@@ -88,11 +106,91 @@ class MySqlGrammar extends Grammar
      */
     protected function compileIndexHint(Builder $query, $indexHint)
     {
+        if (! preg_match('/^[a-zA-Z0-9_$]+$/', $indexHint->index)) {
+            throw new InvalidArgumentException('Index name contains invalid characters.');
+        }
+
         return match ($indexHint->type) {
             'hint' => "use index ({$indexHint->index})",
             'force' => "force index ({$indexHint->index})",
             default => "ignore index ({$indexHint->index})",
         };
+    }
+
+    /**
+     * Compile a group limit clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileGroupLimit(Builder $query)
+    {
+        return $this->useLegacyGroupLimit($query)
+            ? $this->compileLegacyGroupLimit($query)
+            : parent::compileGroupLimit($query);
+    }
+
+    /**
+     * Determine whether to use a legacy group limit clause for MySQL < 8.0.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return bool
+     */
+    public function useLegacyGroupLimit(Builder $query)
+    {
+        $version = $query->getConnection()->getServerVersion();
+
+        return ! $query->getConnection()->isMaria() && version_compare($version, '8.0.11') < 0;
+    }
+
+    /**
+     * Compile a group limit clause for MySQL < 8.0.
+     *
+     * Derived from https://softonsofa.com/tweaking-eloquent-relations-how-to-get-n-related-models-per-parent/.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileLegacyGroupLimit(Builder $query)
+    {
+        $limit = (int) $query->groupLimit['value'];
+        $offset = $query->offset;
+
+        if (isset($offset)) {
+            $offset = (int) $offset;
+            $limit += $offset;
+
+            $query->offset = null;
+        }
+
+        $column = last(explode('.', $query->groupLimit['column']));
+        $column = $this->wrap($column);
+
+        $partition = ', @laravel_row := if(@laravel_group = '.$column.', @laravel_row + 1, 1) as `laravel_row`';
+        $partition .= ', @laravel_group := '.$column;
+
+        $orders = (array) $query->orders;
+
+        array_unshift($orders, [
+            'column' => $query->groupLimit['column'],
+            'direction' => 'asc',
+        ]);
+
+        $query->orders = $orders;
+
+        $components = $this->compileComponents($query);
+
+        $sql = $this->concatenate($components);
+
+        $from = '(select @laravel_row := 0, @laravel_group := 0) as `laravel_vars`, ('.$sql.') as `laravel_table`';
+
+        $sql = 'select `laravel_table`.*'.$partition.' from '.$from.' having `laravel_row` <= '.$limit;
+
+        if (isset($offset)) {
+            $sql .= ' and `laravel_row` > '.$offset;
+        }
+
+        return $sql.' order by `laravel_row`';
     }
 
     /**
@@ -132,6 +230,20 @@ class MySqlGrammar extends Grammar
         [$field, $path] = $this->wrapJsonFieldAndPath($column);
 
         return 'json_contains('.$field.', '.$value.$path.')';
+    }
+
+    /**
+     * Compile a "JSON overlaps" statement into SQL.
+     *
+     * @param  string  $column
+     * @param  string  $value
+     * @return string
+     */
+    protected function compileJsonOverlaps($column, $value)
+    {
+        [$field, $path] = $this->wrapJsonFieldAndPath($column);
+
+        return 'json_overlaps('.$field.', '.$value.$path.')';
     }
 
     /**
@@ -178,10 +290,20 @@ class MySqlGrammar extends Grammar
      *
      * @param  string|int  $seed
      * @return string
+     *
+     * @throws \InvalidArgumentException
      */
     public function compileRandom($seed)
     {
-        return 'RAND('.$seed.')';
+        if ($seed === '' || $seed === null) {
+            return 'RAND()';
+        }
+
+        if (! is_numeric($seed)) {
+            throw new InvalidArgumentException('The seed value must be numeric.');
+        }
+
+        return 'RAND('.(int) $seed.')';
     }
 
     /**
@@ -225,7 +347,7 @@ class MySqlGrammar extends Grammar
      */
     protected function compileUpdateColumns(Builder $query, array $values)
     {
-        return collect($values)->map(function ($value, $key) {
+        return (new Collection($values))->map(function ($value, $key) {
             if ($this->isJsonSelector($key)) {
                 return $this->compileJsonUpdateColumn($key, $value);
             }
@@ -255,7 +377,7 @@ class MySqlGrammar extends Grammar
 
         $sql .= ' on duplicate key update ';
 
-        $columns = collect($update)->map(function ($value, $key) use ($useUpsertAlias) {
+        $columns = (new Collection($update))->map(function ($value, $key) use ($useUpsertAlias) {
             if (! is_numeric($key)) {
                 return $this->wrap($key).' = '.$this->parameter($value);
             }
@@ -337,11 +459,10 @@ class MySqlGrammar extends Grammar
      */
     public function prepareBindingsForUpdate(array $bindings, array $values)
     {
-        $values = collect($values)->reject(function ($value, $column) {
-            return $this->isJsonSelector($column) && is_bool($value);
-        })->map(function ($value) {
-            return is_array($value) ? json_encode($value) : $value;
-        })->all();
+        $values = (new Collection($values))
+            ->reject(fn ($value, $column) => $this->isJsonSelector($column) && is_bool($value))
+            ->map(fn ($value) => is_array($value) ? json_encode($value) : $value)
+            ->all();
 
         return parent::prepareBindingsForUpdate($bindings, $values);
     }
@@ -370,6 +491,16 @@ class MySqlGrammar extends Grammar
         }
 
         return $sql;
+    }
+
+    /**
+     * Compile a query to get the number of open connections for a database.
+     *
+     * @return string
+     */
+    public function compileThreadCount()
+    {
+        return 'select variable_value as `Value` from performance_schema.session_status where variable_name = \'threads_connected\'';
     }
 
     /**

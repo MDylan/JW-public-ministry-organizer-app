@@ -21,7 +21,7 @@ class TableRenderer extends Renderer
             ->setCellRowFormat('<fg=default>%s</>');
 
         if (empty($table->headers)) {
-            $tableStyle->setCrossingChars('┼', '', '', '', '┤', '┘</>', '┴', '└', '├', '<fg=gray>┌', '┬', '┐');
+            $tableStyle->setCrossingChars('┼', '<fg=gray>┌', '┬', '┐', '┤', '┘</>', '┴', '└', '├', '<fg=gray>┌', '┬', '┐');
         } else {
             $tableStyle->setCrossingChars('┼', '<fg=gray>┌', '┬', '┐', '┤', '┘</>', '┴', '└', '├');
         }
@@ -34,8 +34,9 @@ class TableRenderer extends Renderer
             ->setStyle($tableStyle)
             ->render();
 
-        collect(explode(PHP_EOL, trim($buffered->content(), PHP_EOL)))
-            ->each(fn ($line) => $this->line(' '.$line));
+        foreach (explode(PHP_EOL, trim($buffered->content(), PHP_EOL)) as $line) {
+            $this->line(' '.$line);
+        }
 
         return $this;
     }

@@ -2,6 +2,7 @@
 
 namespace Illuminate\Filesystem;
 
+use Aws\Credentials\CredentialProvider;
 use Aws\S3\S3Client;
 use Closure;
 use Illuminate\Contracts\Filesystem\Factory as FactoryContract;
@@ -137,19 +138,19 @@ class FilesystemManager implements FactoryContract
             throw new InvalidArgumentException("Disk [{$name}] does not have a configured driver.");
         }
 
-        $name = $config['driver'];
+        $driver = $config['driver'];
 
-        if (isset($this->customCreators[$name])) {
+        if (isset($this->customCreators[$driver])) {
             return $this->callCustomCreator($config);
         }
 
-        $driverMethod = 'create'.ucfirst($name).'Driver';
+        $driverMethod = 'create'.ucfirst($driver).'Driver';
 
         if (! method_exists($this, $driverMethod)) {
-            throw new InvalidArgumentException("Driver [{$name}] is not supported.");
+            throw new InvalidArgumentException("Driver [{$driver}] is not supported.");
         }
 
-        return $this->{$driverMethod}($config);
+        return $this->{$driverMethod}($config, $name);
     }
 
     /**
@@ -167,9 +168,10 @@ class FilesystemManager implements FactoryContract
      * Create an instance of the local driver.
      *
      * @param  array  $config
+     * @param  string  $name
      * @return \Illuminate\Contracts\Filesystem\Filesystem
      */
-    public function createLocalDriver(array $config)
+    public function createLocalDriver(array $config, string $name = 'local')
     {
         $visibility = PortableVisibilityConverter::fromArray(
             $config['permissions'] ?? [],
@@ -184,7 +186,14 @@ class FilesystemManager implements FactoryContract
             $config['root'], $visibility, $config['lock'] ?? LOCK_EX, $links
         );
 
-        return new FilesystemAdapter($this->createFlysystem($adapter, $config), $adapter, $config);
+        return (new LocalFilesystemAdapter(
+            $this->createFlysystem($adapter, $config), $adapter, $config
+        ))->diskName(
+            $name
+        )->shouldServeSignedUrls(
+            $config['serve'] ?? false,
+            fn () => $this->app['url'],
+        );
     }
 
     /**
@@ -214,7 +223,7 @@ class FilesystemManager implements FactoryContract
     {
         $provider = SftpConnectionProvider::fromArray($config);
 
-        $root = $config['root'] ?? '/';
+        $root = $config['root'] ?? '';
 
         $visibility = PortableVisibilityConverter::fromArray(
             $config['permissions'] ?? []
@@ -257,17 +266,37 @@ class FilesystemManager implements FactoryContract
      *
      * @param  array  $config
      * @return array
+     *
+     * @throws \InvalidArgumentException
      */
     protected function formatS3Config(array $config)
     {
         $config += ['version' => 'latest'];
 
-        if (! empty($config['key']) && ! empty($config['secret'])) {
-            $config['credentials'] = Arr::only($config, ['key', 'secret']);
+        $credentials = $config['credentials'] ?? null;
+
+        $provider = is_array($credentials) ? ($credentials['provider'] ?? null) : $credentials;
+
+        if (is_string($provider)) {
+            $options = is_array($credentials) ? Arr::except($credentials, ['provider']) : [];
+
+            $provider = CredentialProvider::memoize(match ($provider) {
+                'ecs' => CredentialProvider::ecsCredentials($options),
+                'instance' => CredentialProvider::instanceProfile($options),
+                default => throw new InvalidArgumentException(
+                    "Invalid credential provider [{$provider}]."
+                ),
+            });
         }
 
-        if (! empty($config['token'])) {
-            $config['credentials']['token'] = $config['token'];
+        if ($provider) {
+            $config['credentials'] = $provider;
+        } elseif (! empty($config['key']) && ! empty($config['secret'])) {
+            $config['credentials'] = Arr::only($config, ['key', 'secret']);
+
+            if (! empty($config['token'])) {
+                $config['credentials']['token'] = $config['token'];
+            }
         }
 
         return Arr::except($config, ['token']);

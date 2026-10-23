@@ -7,6 +7,8 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Assert as PHPUnit;
 
+use function Illuminate\Support\enum_value;
+
 trait Matching
 {
     /**
@@ -24,16 +26,16 @@ trait Matching
 
         if ($expected instanceof Closure) {
             PHPUnit::assertTrue(
-                $expected(is_array($actual) ? Collection::make($actual) : $actual),
+                $expected(is_array($actual) ? new Collection($actual) : $actual),
                 sprintf('Property [%s] was marked as invalid using a closure.', $this->dotPath($key))
             );
 
             return $this;
         }
 
-        if ($expected instanceof Arrayable) {
-            $expected = $expected->toArray();
-        }
+        $expected = $expected instanceof Arrayable
+            ? $expected->toArray()
+            : enum_value($expected);
 
         $this->ensureSorted($expected);
         $this->ensureSorted($actual);
@@ -62,16 +64,16 @@ trait Matching
 
         if ($expected instanceof Closure) {
             PHPUnit::assertFalse(
-                $expected(is_array($actual) ? Collection::make($actual) : $actual),
+                $expected(is_array($actual) ? new Collection($actual) : $actual),
                 sprintf('Property [%s] was marked as invalid using a closure.', $this->dotPath($key))
             );
 
             return $this;
         }
 
-        if ($expected instanceof Arrayable) {
-            $expected = $expected->toArray();
-        }
+        $expected = $expected instanceof Arrayable
+            ? $expected->toArray()
+            : enum_value($expected);
 
         $this->ensureSorted($expected);
         $this->ensureSorted($actual);
@@ -155,17 +157,19 @@ trait Matching
      */
     public function whereContains(string $key, $expected)
     {
-        $actual = Collection::make(
+        $actual = new Collection(
             $this->prop($key) ?? $this->prop()
         );
 
-        $missing = Collection::make($expected)->reject(function ($search) use ($key, $actual) {
-            if ($actual->containsStrict($key, $search)) {
-                return true;
-            }
+        $missing = (new Collection($expected))
+            ->map(fn ($search) => enum_value($search))
+            ->reject(function ($search) use ($key, $actual) {
+                if ($actual->containsStrict($key, $search)) {
+                    return true;
+                }
 
-            return $actual->containsStrict($search);
-        });
+                return $actual->containsStrict($search);
+            });
 
         if ($missing->whereInstanceOf('Closure')->isNotEmpty()) {
             PHPUnit::assertEmpty(
