@@ -23,11 +23,16 @@ place where it has already come due.
 ## The `->change()` trap, and how it is closed
 
 Eight columns reached their current shape through a `->change()` call, in seven
-migrations. Under Laravel 8-10 - which since TODO 39 means the version actually
-running - those go through `doctrine/dbal`, which reads the
+migrations. Under Laravel 8-10 those went through `doctrine/dbal`, which reads the
 column's current definition and alters only what the migration redeclares.
 **Laravel 11 makes `change()` native, and the native one drops every attribute
-that is not redeclared** - nullability, default, charset, collation.
+that is not redeclared** - nullability, default, charset, collation. It is native
+whether or not the package is installed, so from TODO 55 on nothing used
+`doctrine/dbal` any more, and **TODO 57 removed it** (with `doctrine/deprecations`,
+`doctrine/event-manager` and `psr/cache`, which only it required).
+`tests/Feature/Database/DoctrineDbalRemovedTest.php` keeps it out; the schema
+`migrate:fresh` builds without it was measured identical, table by table, to the
+one built with it.
 
 Measured, six of the eight redeclare enough to survive. Two do not:
 

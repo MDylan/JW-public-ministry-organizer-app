@@ -109,8 +109,8 @@ class SetupDatabaseTest extends SetupTestCase
         // the moment Laravel 11 removed it. The guard now lists the tables
         // with the framework's own schema builder, which exists on Laravel 10
         // and every later version, so the tripwire became an assertion that
-        // the installer no longer reaches for doctrine/dbal at all - TODO 57
-        // removes the package after the hop.
+        // the installer no longer reaches for doctrine/dbal at all. TODO 57
+        // removed the package after the hop (DoctrineDbalRemovedTest).
         // Comments stripped: the controller explains the change in words,
         // and only the code may not reach for the package.
         $source = php_strip_whitespace(app_path('Http/Controllers/Setup/DatabaseController.php'));
