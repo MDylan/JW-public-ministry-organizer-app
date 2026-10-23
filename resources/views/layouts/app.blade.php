@@ -115,19 +115,23 @@
   </script>
   @yield('footer_scripts')
   @livewireScripts  
+  {{-- An expired session answers a Livewire request with 419. Livewire 3 has
+       no onPageExpired(); the request hook's fail() callback replaces it, and
+       preventDefault() keeps Livewire's own English confirm() and error modal
+       from showing after ours (TODO 46). --}}
   <script>
     document.addEventListener('livewire:init', () => {
-        Livewire.onPageExpired(
-          (response, message) => {
-            res = confirm('{{ __('app.page_expired') }}');
-            if(res == true) {
+      Livewire.hook('request', ({ fail }) => {
+        fail(({ status, preventDefault }) => {
+          if (status === 419) {
+            preventDefault();
+            if (confirm(@json(__('app.page_expired')))) {
               location.reload();
-            } else {
-              return res;
             }
           }
-        );
-    })
+        });
+      });
+    });
   </script>
 </body>
 </html>

@@ -1,13 +1,13 @@
 $(document).ready(function() {
     window.addEventListener('hide-modal', event => {
-        id = event.detail.id;
+        let id = event.detail.id;
         $('#' + id).modal('hide');
         if(event.detail.message) {
             toastr.success(event.detail.message, event.detail.savedMessage);
         }
     });
     window.addEventListener('show-modal', event => {
-        id = event.detail.id;
+        let id = event.detail.id;
         $('#'+id).modal('show');
         $('#'+id).one('hide.bs.modal', function (e) {
             if(event.detail.livewire) {

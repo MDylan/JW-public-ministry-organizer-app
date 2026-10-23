@@ -140,6 +140,27 @@ committed. It looks like a cache. It is not:
 That combination - authoritative, committed, and silent when wrong - is why it
 carries a guard rather than a convention.
 
+### What the Livewire script brings, and what the layouts must not add
+
+- **Alpine comes with it.** Livewire 3 bundles Alpine and starts it; no view
+  may load another copy (three used to pull Alpine 3 from unpkg, which ran two
+  instances on those pages). The one Alpine island, the upload progress bar in
+  `livewire/groups/news-edit.blade.php`, runs on the bundled copy.
+  `public/js/alpine.min.js` is a leftover nothing loads.
+- **`@livewireStyles` and `@livewireScripts` come in pairs.** Without either,
+  Livewire injects both itself into any page that rendered a component; but
+  `@livewireScripts` switches that injection off for the styles too, so one
+  directive without the other either loses the styles or prints them twice.
+  `layouts/app.blade.php` carries both; `layouts/setup.blade.php` renders no
+  component and carries neither.
+- **An expired page is handled through the `request` hook.** Livewire 3 has no
+  `onPageExpired()`; `layouts/app.blade.php` registers a `fail()` callback that,
+  on a 419, prevents Livewire's own English prompt and asks with
+  `app.page_expired` instead.
+
+`tests/Feature/Livewire/JavaScriptBridgeContractTest` pins all three, plus the
+absence of every Livewire 2 client API from the views and `public/js`.
+
 ### The composer hook that used to keep it in step
 
 `composer.json`'s `post-autoload-dump` used to run:

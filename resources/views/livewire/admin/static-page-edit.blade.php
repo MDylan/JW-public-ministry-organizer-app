@@ -176,7 +176,6 @@
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
     @endsection
     @section('footer_scripts')
-        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script src="{{ asset('plugins/summernote/summernote-bs4.min.js') }}"></script>
         @if (trans('news.editor_lang') !== null)
             <script src="{{ asset('plugins/summernote/lang/summernote-' . __('news.editor_lang') . '.min.js') }}"></script>            

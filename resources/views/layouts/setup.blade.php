@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="{{ pwbs_asset('/plugins/toastr/toastr.min.css') }}">
   <link rel="stylesheet" href="{{ pwbs_asset('/css/public_style.css') }}">
   @yield('header_style')
-  @livewireStyles
 </head>
 <body class="hold-transition layout-top-nav">
 <div class="wrapper">
@@ -43,6 +42,5 @@
 <script src="{{ pwbs_asset('/dist/js/adminlte.min.js') }}"></script>
 
 @yield('footer_scripts')
-@livewireScripts  
 </body>
 </html>
