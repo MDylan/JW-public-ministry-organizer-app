@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -102,6 +103,14 @@ class DatabaseController extends Controller
      */
     protected function migrateDatabase(): bool
     {
+        // Laravel 11's migrate:fresh wraps its table wipe in
+        // Migrator::usingConnection(), which makes 'setup' the default
+        // connection and restores the previous one only when the wipe
+        // returns. When it throws - an unreachable server, wrong credentials -
+        // the rest of this request would run on 'setup'. Restored here
+        // whatever happens (roadmap TODO 55).
+        $defaultConnection = DB::getDefaultConnection();
+
         try {
             Artisan::call('migrate:fresh', [
                 '--database' => 'setup', // Specify the correct connection
@@ -111,8 +120,10 @@ class DatabaseController extends Controller
         } catch (Exception $e) {
             $alert = trans('setup.database.config_error') . ' ' . $e->getMessage();
             Session::flash('error_message', $alert);
-            
+
             return false;
+        } finally {
+            DB::setDefaultConnection($defaultConnection);
         }
 
         return true;

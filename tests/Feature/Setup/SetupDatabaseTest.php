@@ -143,6 +143,23 @@ class SetupDatabaseTest extends SetupTestCase
         );
     }
 
+    public function test_a_failed_attempt_leaves_the_default_connection_alone(): void
+    {
+        // Laravel 11's migrate:fresh switches the default connection to
+        // 'setup' around its table wipe and does not switch it back when the
+        // wipe throws. Before the controller restored it (TODO 55), the rest
+        // of the request - and this test's own RefreshDatabase rollback - ran
+        // on the unreachable connection and died with a PDOException.
+        $before = DB::getDefaultConnection();
+
+        $this->post(route('setup.save-database'), array_merge(
+            $this->unreachableCredentials(),
+            ['overwrite_data' => '1']
+        ))->assertRedirect();
+
+        $this->assertSame($before, DB::getDefaultConnection());
+    }
+
     public function test_the_failed_attempt_does_not_advance_the_wizard(): void
     {
         // The success branch leads to setup.mail; the failing one must not advance.

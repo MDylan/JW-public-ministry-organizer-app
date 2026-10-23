@@ -165,7 +165,10 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   not exercised by tests. Its `databaseHasData()` guard lists the tables with
   the framework's `Schema::getTableListing()`; it used doctrine/dbal's
   `getDoctrineSchemaManager()` until roadmap TODO 57.1, because Laravel 11
-  removes that method.
+  removes that method. On a failed attempt the controller restores the default
+  database connection itself: Laravel 11's `migrate:fresh` makes `setup` the
+  default around its table wipe and does not switch back when the wipe throws
+  (roadmap TODO 55).
 - `Exceptions\Handler` redirects any `QueryException` to `setup.welcome` while
   the sentinel is missing - this is what routes a freshly unpacked copy into the
   installer. With the sentinel present it returns `null`, so the exception falls
