@@ -6,14 +6,10 @@ UI logic is primarily implemented with **Livewire components**, supported by cla
 
 > **The application is mid-migration to Livewire 3 (roadmap Phase 6).** The
 > package is on `v3.8.8` since TODO 43, and the test suite is **knowingly red**
-> until TODO 51 closes the phase. One thing in this document is therefore
-> pinned to a Livewire 2 internal and is being carried across rather than
-> relied on: the persistent-middleware paragraph near the end, which asserts
-> on `Livewire::getPersistentMiddleware()` - a version 2 internal that
-> version 3 reworks (TODO 46.1). The component
-> inventory itself is unchanged: no class moved, and `config/livewire.php`
-> still declares `App\Http\Livewire` as the namespace, which is TODO 51's
-> decision to confirm or reverse.
+> until TODO 51.1 closes the phase. The component
+> inventory itself is unchanged so far: no class moved, and `config/livewire.php`
+> still declares `App\Http\Livewire` as the namespace. TODO 51 decided to move
+> it to `App\Livewire`; until that item lands, the paths below are current.
 
 - Livewire classes: `app/Http/Livewire`
 - Class-based Blade components: `app/View/Components`
@@ -251,19 +247,26 @@ in `mount()` and in every writing action. That is not belt-and-braces for its ow
 sake - it was measured.
 
 A Livewire **action** does not travel over the route it was rendered from. It POSTs
-to `livewire/message`, whose own middleware group is only `web`. What re-applies the
-original route's guards there is `Livewire::getPersistentMiddleware()`, a hardcoded
-list inside the package. Removing `Illuminate\Auth\Middleware\Authorize` from that
-list was tried against a real HTTP request: a plain `registered` user, posting a
-valid payload taken from a translator's page, could then call `save()` and rewrite a
-language file - the endpoint answered **200**. With the component's own gate in
-place the same request is refused with **403**, whether or not the middleware list
-still contains `Authorize`.
+to `livewire/update` (route `default.livewire.update`), whose own middleware group is
+only `web`. What re-applies the original route's guards there is
+`Livewire::getPersistentMiddleware()`, a hardcoded list inside the package: the
+component's snapshot remembers the path it was rendered on, and the update request
+re-runs those of that route's middleware whose class is on the list.
+`Illuminate\Auth\Middleware\Authorize` is, so `can:is-translator` is re-applied.
 
-Livewire 3 reworks persistent middleware, so the component-level check is what makes
-this survive the upgrade. `AdminTranslationEditorTest` pins all three: a translator
-can save over real HTTP, a `registered` user gets 403, and the middleware list still
-contains `Authorize`.
+**There are two independent layers, and each was measured on its own** (Livewire 3,
+TODO 46.1): with `Authorize` taken off the list, a plain `registered` user posting a
+valid snapshot taken from a translator's page is still refused with **403** by the
+component's gate; with the component's gate disabled instead, the persistent
+middleware alone answers **403**; with both gone, the same request saves and the
+endpoint answers **200**. Livewire 3 kept the list, its API and `Authorize`'s place on
+it from version 2 - the expectation that it would rework them did not hold - but the
+component-level check stays, because it does not depend on that list at all.
+
+`AdminTranslationEditorTest` pins it over real HTTP, speaking the version 3 protocol:
+it scrapes the signed `wire:snapshot` from the rendered page and posts it back
+unchanged with `updates` and `calls`. A translator can save, a `registered` user gets
+403, a guest gets 401/403/419, and the middleware list still contains `Authorize`.
 
 Two guards that are **not** re-applied to component actions, and this is normal for
 the whole application rather than specific to this screen: `verified`/`profileFull`

@@ -341,34 +341,40 @@ class AdminTranslationEditorTest extends FeatureTestCase
     // Livewire\Testing bypasses HTTP entirely, so none of the tests above prove
     // anything about who may reach the component. That matters more here than
     // usual: a Livewire ACTION does not travel over the route it was rendered
-    // from - it POSTs to livewire/message, whose own middleware group is only
+    // from - it POSTs to livewire/update, whose own middleware group is only
     // `web`. What re-applies the original route's guards is
-    // Livewire::getPersistentMiddleware(), a framework-internal list.
+    // Livewire::getPersistentMiddleware(), a framework-internal list, plus the
+    // component's own Gate::authorize() call.
     //
-    // These two tests therefore go over real HTTP.
+    // These tests therefore go over real HTTP, speaking Livewire 3's protocol
+    // (TODO 46.1): the page carries each component's state as a signed
+    // `wire:snapshot`, and an action is a POST to livewire/update carrying that
+    // snapshot, the property `updates` and the method `calls`.
     // =========================================================================
 
     /**
-     * The initial payload Livewire embedded for a component on a rendered page.
-     * Taking it from a real render means the checksum is genuine, so the tests
-     * below measure authorization and nothing else.
+     * The snapshot Livewire embedded for a component on a rendered page, as
+     * the exact JSON string it was signed over. Taking it from a real render
+     * means the checksum is genuine, so the tests below measure authorization
+     * and nothing else. It is posted back as scraped: the server re-hashes it,
+     * and a decode / re-encode round trip here could change the bytes.
      */
-    private function initialDataFor(string $html, string $component): array
+    private function snapshotFor(string $html, string $component): string
     {
-        preg_match_all('/wire:initial-data="([^"]*)"/', $html, $matches);
+        preg_match_all('/wire:snapshot="([^"]*)"/', $html, $matches);
 
         foreach ($matches[1] as $raw) {
-            $decoded = json_decode(html_entity_decode($raw, ENT_QUOTES), true);
+            $snapshot = html_entity_decode($raw, ENT_QUOTES);
 
-            if (($decoded['fingerprint']['name'] ?? null) === $component) {
-                return $decoded;
+            if ((json_decode($snapshot, true)['memo']['name'] ?? null) === $component) {
+                return $snapshot;
             }
         }
 
-        $this->fail("No Livewire payload found for {$component}.");
+        $this->fail("No Livewire snapshot found for {$component}.");
     }
 
-    private function renderedEditorPayload(): array
+    private function renderedEditorSnapshot(): string
     {
         $html = $this->actingAs($this->translator)
             ->withSession($this->passwordConfirmedSession())
@@ -376,32 +382,34 @@ class AdminTranslationEditorTest extends FeatureTestCase
             ->assertOk()
             ->getContent();
 
-        return $this->initialDataFor($html, 'admin.translation');
+        return $this->snapshotFor($html, 'admin.translation');
     }
 
     /**
-     * The serverMemo is covered by a checksum, so a value cannot be injected
-     * into it - it travels as a syncInput update, exactly as wire:model.defer
-     * sends it from the browser.
+     * The snapshot is covered by a checksum, so a value cannot be injected
+     * into it - it travels in `updates`, exactly as a deferred wire:model
+     * sends it from the browser with the next action.
+     *
+     * @param  array<string, mixed>  $updates  property path => new value
+     * @param  list<array{0: string, 1: array}>  $calls  [method, params] pairs
      */
-    private function postUpdates(array $payload, array $updates)
+    private function postToComponent(string $snapshot, array $updates, array $calls)
     {
-        return $this->withHeaders(['X-Livewire' => 'true'])->postJson(
-            '/livewire/message/'.$payload['fingerprint']['name'],
-            [
-                'fingerprint' => $payload['fingerprint'],
-                'serverMemo' => $payload['serverMemo'],
+        return $this->withHeaders(['X-Livewire' => 'true'])->postJson('/livewire/update', [
+            'components' => [[
+                'snapshot' => $snapshot,
                 'updates' => $updates,
-            ]
-        );
+                'calls' => array_map(
+                    fn ($call) => ['path' => '', 'method' => $call[0], 'params' => $call[1]],
+                    $calls
+                ),
+            ]],
+        ]);
     }
 
-    private function postAction(array $payload, string $method, array $params = [])
+    private function postAction(string $snapshot, string $method, array $params = [])
     {
-        return $this->postUpdates($payload, [[
-            'type' => 'callMethod',
-            'payload' => ['id' => 'abcd', 'method' => $method, 'params' => $params],
-        ]]);
+        return $this->postToComponent($snapshot, [], [[$method, $params]]);
     }
 
     public function test_a_translator_can_invoke_a_save_over_real_http(): void
@@ -411,31 +419,26 @@ class AdminTranslationEditorTest extends FeatureTestCase
         // takes when the save button is pressed.
         $this->writeGroup('hu', 'app', ['title' => 'Cím']);
 
-        $payload = $this->renderedEditorPayload();
+        $snapshot = $this->renderedEditorSnapshot();
 
-        $this->postUpdates($payload, [
-            [
-                'type' => 'syncInput',
-                'payload' => ['id' => 'ab01', 'name' => 'rows.0.value', 'value' => 'Fejléc'],
-            ],
-            [
-                'type' => 'callMethod',
-                'payload' => ['id' => 'ab02', 'method' => 'save', 'params' => [0]],
-            ],
-        ])->assertOk();
+        $this->postToComponent(
+            $snapshot,
+            ['rows.0.value' => 'Fejléc'],
+            [['save', [0]]]
+        )->assertOk();
 
         $this->assertSame('Fejléc', $this->app->make(LangFiles::class)->raw('hu', 'app')['title']);
     }
 
     public function test_a_user_without_the_translator_role_cannot_invoke_a_save(): void
     {
-        // The payload is valid and freshly minted by a real translator's page
+        // The snapshot is valid and freshly minted by a real translator's page
         // load - only the caller is wrong. If the gate were not re-applied on
-        // the livewire/message endpoint, any authenticated user could rewrite
+        // the livewire/update endpoint, any authenticated user could rewrite
         // the application's language files.
         $this->writeGroup('hu', 'app', ['title' => 'Cím']);
 
-        $payload = $this->renderedEditorPayload();
+        $snapshot = $this->renderedEditorSnapshot();
 
         $intruder = $this->createUser([
             'email' => 'not-a-translator@example.test',
@@ -451,7 +454,7 @@ class AdminTranslationEditorTest extends FeatureTestCase
         $this->flushSession();
         $this->actingAs($intruder);
 
-        $this->postAction($payload, 'save', [0])->assertForbidden();
+        $this->postAction($snapshot, 'save', [0])->assertForbidden();
         $this->assertSame(
             'Cím',
             $this->app->make(LangFiles::class)->raw('hu', 'app')['title'],
@@ -463,14 +466,14 @@ class AdminTranslationEditorTest extends FeatureTestCase
     {
         $this->writeGroup('hu', 'app', ['title' => 'Cím']);
 
-        $payload = $this->renderedEditorPayload();
+        $snapshot = $this->renderedEditorSnapshot();
 
         // app('auth')->forgetGuards() is what actingAs leaves behind; a fresh
         // request without a session is the honest guest case.
         $this->app['auth']->forgetGuards();
         $this->flushSession();
 
-        $response = $this->postAction($payload, 'save', [0]);
+        $response = $this->postAction($snapshot, 'save', [0]);
 
         $this->assertContains(
             $response->getStatusCode(),
@@ -483,10 +486,12 @@ class AdminTranslationEditorTest extends FeatureTestCase
 
     public function test_the_authorization_gate_is_on_livewires_persistent_middleware_list(): void
     {
-        // The mechanism the two tests above depend on, asserted directly
+        // One of the two layers the tests above depend on, asserted directly
         // because it is exactly the kind of framework internal an upgrade
-        // moves: Livewire 3 reworks persistent middleware entirely. If this
-        // ever stops holding, the editor needs its own authorize() call.
+        // could move. Livewire 3 did not: the list, its API and Authorize's
+        // place on it came across from version 2 unchanged (checked against
+        // PersistentMiddleware.php in v3.8.8, TODO 46.1). The other layer is
+        // the component's own Gate::authorize(), which holds without this.
         $this->assertContains(
             \Illuminate\Auth\Middleware\Authorize::class,
             \Livewire\Livewire::getPersistentMiddleware(),

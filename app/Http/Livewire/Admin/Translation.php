@@ -89,16 +89,17 @@ class Translation extends AppComponent
      * The editor's own authorization check, on top of the route's gate.
      *
      * Not redundant, and measured: a Livewire action does NOT travel over the
-     * route it was rendered from - it POSTs to livewire/message, whose group is
+     * route it was rendered from - it POSTs to livewire/update, whose group is
      * only `web`. What re-applies `can:is-translator` there is
      * Livewire::getPersistentMiddleware(), a hardcoded list inside the package.
-     * Removing `Illuminate\Auth\Middleware\Authorize` from that list was tried:
-     * a plain `registered` user could then call save() over HTTP and rewrite a
-     * language file, answering 200.
+     * With `Illuminate\Auth\Middleware\Authorize` removed from that list and
+     * this method disabled, a plain `registered` user could call save() over
+     * HTTP and rewrite a language file, answering 200.
      *
-     * So the whole protection rests on a framework internal that Livewire 3
-     * reworks. This method makes the component refuse on its own terms, which
-     * costs one gate call per action and survives that change.
+     * Livewire 3 kept that list unchanged, but it is still a framework
+     * internal. This method makes the component refuse on its own terms, which
+     * costs one gate call per action; either layer alone answers 403
+     * (AdminTranslationEditorTest, TODO 46.1).
      */
     private function authorizeTranslator(): void
     {
