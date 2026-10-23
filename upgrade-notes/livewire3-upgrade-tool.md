@@ -236,6 +236,34 @@ no step for (`TestableLivewire`, `lastErrorBag`, `lastRenderedDom`, `->emit()`).
 | after TODO 43.1 | 1507 | 3758 | 178 | 21 | 199 |
 | after TODO 43.2 | 1519 | 3802 | 178 | 16 | 194 |
 
+### TODO 47, as delivered (2026-10-23)
+
+`replace-emit-with-dispatch` was still not run, for the reason given above: its
+`dispatchBrowserEvent` pattern is a rename, and a rename produces
+`dispatch('name', [...])`, which Livewire 3 sends to the browser as
+`event.detail = [{...}]`. All 101 live calls (the 102nd is commented out) were
+rewritten to named parameters instead - `dispatch('name', key: $value)` - by a
+one-off tokenizer script that touched only each array literal's top-level keys.
+With named parameters `event.detail.<key>` reads as before, so no receiver moved.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 43.2, re-measured as the baseline | 1519 | 3802 | 178 | 16 | 194 |
+| after TODO 47 | 1521 | 4137 | 64 | 16 | 80 |
+
+Compared test by test from the two JUnit logs: **114 green, 0 newly red**, and 16
+that now fail one call later on `emitUp` / `emitTo`. The two added tests are
+`BrowserEventContractTest`, which rejects the positional form for every event
+that has a `window` receiver. Where the 80 now sit:
+
+| cause | count | owner |
+|---|---|---|
+| `emitUp` / `emitTo` do not exist | 39 | TODO 44 |
+| `Property [$page]`, `paginationView`, pagination content, `admin.translate` 500 | 31 | TODO 48 |
+| raw-HTTP Livewire endpoint | 3 | TODO 46.1 |
+| route contract snapshots | 3 | TODO 51.1 |
+| `array_intersect_key()` in a calendar view | 4 | unattributed |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
