@@ -314,6 +314,29 @@ left:
 | route contract snapshots | 3 | TODO 51.1 |
 | `array_intersect_key()` in a calendar view | 4 | unattributed |
 
+### TODO 50.1, as delivered (2026-10-23)
+
+The four unattributed errors had one cause, and no upgrade-tool step covers it:
+`resources/views/livewire/events/events.blade.php:379` passed `''` as the
+parameter list of `@livewire('groups.poster-edit-modal', ...)`. Livewire 3's
+`SupportNestingComponents::setParametersToMatchingProperties()` runs
+`array_intersect_key()` over the parameters, and a string is refused. The line
+renders only for admins and rolers, which is why exactly the four calendar tests
+acting as one of them failed. Fixed to `[]`, and pinned by the static
+`LivewireDirectiveParametersTest`.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 48 | 1525 | 4311 | 4 | 6 | 10 |
+| after TODO 50.1 | 1526 | 4321 | 0 | 6 | 6 |
+
+**4 green, 0 newly red, no reason changed.** What is left:
+
+| cause | count | owner |
+|---|---|---|
+| raw-HTTP Livewire endpoint | 3 | TODO 46.1 |
+| route contract snapshots | 3 | TODO 51.1 |
+
 ## `vendor:publish --tag=livewire:assets` under version 3
 
 The roadmap says the composer hook "breaks under Livewire 3". It does not. Run
