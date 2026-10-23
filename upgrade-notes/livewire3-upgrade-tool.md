@@ -436,6 +436,18 @@ PHPUnit never morphs - only a second render in a browser does.
 | after TODO 51.1 | 1547 | 4482 | 0 | 0 | 0 |
 | after TODO 47.2 | 1550 | 4519 | 0 | 0 | 0 |
 
+### TODO 47.3, as delivered (2026-10-23)
+
+The walk's second finding, and the second one of its kind - a Livewire 2
+behaviour nothing documented as a feature: re-rendered `<script>` elements
+were evaluated. Livewire 3 drops them silently. The two affected scripts now
+start from dispatched browser events, which v3 processes after the morph.
+
+| state | tests | assertions | errors | failures | red |
+|---|---|---|---|---|---|
+| after TODO 47.2 | 1550 | 4519 | 0 | 0 | 0 |
+| after TODO 47.3 | 1552 | 4525 | 0 | 0 | 0 |
+
 From 286 red of 1507 at the bump to 0 of 1547.
 
 ## `vendor:publish --tag=livewire:assets` under version 3
