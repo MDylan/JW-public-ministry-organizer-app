@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Setup;
 
+use App\Http\Controllers\Setup\DatabaseController;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use ReflectionMethod;
 
 /**
  * TODO 12: the installer's database step - and the Laravel 11 blocker.
@@ -118,7 +122,48 @@ class SetupDatabaseTest extends SetupTestCase
         $this->assertStringNotContainsString('getDoctrineSchemaManager', $source);
         $this->assertStringNotContainsString('Doctrine', $source);
 
-        $this->assertContains('users', \Illuminate\Support\Facades\Schema::getTableListing());
+        // Laravel 12 lists every schema on the server and qualifies the
+        // names unless asked otherwise; the controller asks for the current
+        // database only (TODO 61), and so does this check.
+        $schema = Schema::connection('mysql');
+
+        $this->assertContains('users', $schema->getTableListing($schema->getCurrentSchemaListing(), false));
+    }
+
+    public function test_an_empty_database_next_to_other_databases_has_no_data(): void
+    {
+        // TODO 61: Laravel 12's getTableListing() without a schema lists the
+        // tables of EVERY non-system database the server holds. Called that
+        // way, the check reported data in a freshly created, empty database
+        // whenever the same MySQL server held any other one - the usual case
+        // on shared hosting and on Laragon - and the installer refused to
+        // continue without the "overwrite" box ticked. Measured here with the
+        // test database next door.
+        //
+        // The database is created and dropped on a connection of its own:
+        // CREATE / DROP DATABASE commit implicitly, and on the default
+        // connection that would end RefreshDatabase's transaction.
+        $empty = 'kozter_testing_setup_empty';
+        Config::set('database.connections.setup_probe', config('database.connections.mysql'));
+        $probe = DB::connection('setup_probe');
+        $probe->statement("DROP DATABASE IF EXISTS `{$empty}`");
+        $probe->statement("CREATE DATABASE `{$empty}`");
+
+        try {
+            $controller = app(DatabaseController::class);
+            $credentials = array_merge($this->existingDatabaseCredentials(), ['db_name' => $empty]);
+
+            (new ReflectionMethod($controller, 'createTempDatabaseConnection'))->invoke($controller, $credentials);
+
+            $this->assertFalse(
+                (new ReflectionMethod($controller, 'databaseHasData'))->invoke($controller),
+                'An empty database must not count as one with data because another database shares its server.'
+            );
+        } finally {
+            DB::purge('setup');
+            $probe->statement("DROP DATABASE IF EXISTS `{$empty}`");
+            DB::purge('setup_probe');
+        }
     }
 
     // =========================================================================

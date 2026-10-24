@@ -167,7 +167,10 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   not exercised by tests. Its `databaseHasData()` guard lists the tables with
   the framework's `Schema::getTableListing()`; it used doctrine/dbal's
   `getDoctrineSchemaManager()` until roadmap TODO 57.1, because Laravel 11
-  removes that method. On a failed attempt the controller restores the default
+  removes that method. It passes the connection's current schema: without one,
+  Laravel 12 lists the tables of every database on the server, and an empty
+  database next to any other one counted as full (roadmap TODO 61). On a
+  failed attempt the controller restores the default
   database connection itself: Laravel 11's `migrate:fresh` makes `setup` the
   default around its table wipe and does not switch back when the wipe throws
   (roadmap TODO 55).

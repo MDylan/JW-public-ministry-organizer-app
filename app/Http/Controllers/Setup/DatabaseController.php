@@ -141,9 +141,13 @@ class DatabaseController extends Controller
         try {
             // The framework's own listing, not doctrine/dbal's schema
             // manager: Laravel 11 removes getDoctrineSchemaManager() from the
-            // connection (roadmap TODO 57.1). Only the count matters here, so
-            // Laravel 12's schema-qualified names change nothing.
-            $present_tables = Schema::connection('setup')->getTableListing();
+            // connection (roadmap TODO 57.1). Without a schema, Laravel 12
+            // lists the tables of every database on the server, so an empty
+            // database would count as full next to any other one; the
+            // current schema is what migrate:fresh's wipe uses as well
+            // (roadmap TODO 61).
+            $schema = Schema::connection('setup');
+            $present_tables = $schema->getTableListing($schema->getCurrentSchemaListing(), false);
         } catch (PDOException $e) {
             Log::error($e->getMessage());
             return false;
