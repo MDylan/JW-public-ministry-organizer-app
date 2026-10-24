@@ -3,6 +3,7 @@
 namespace App\Livewire\Groups;
 
 use App\Livewire\AppComponent;
+use App\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Group;
 use App\Models\GroupNews;
 use App\Models\GroupNewsFile;
@@ -10,20 +11,39 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Locked;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
+/**
+ * Create and edit a group's news.
+ *
+ * Roadmap TODO 70: the group, the news item and the file lists are
+ * #[Locked], the editor role is re-checked on every request (hydrate()),
+ * and what is updated or deleted is always the news item loaded through the
+ * group - never an id from the form's state. Before, an admin of one group
+ * could set groupId/newId/state.id to create, edit or delete another
+ * group's news, and removed_files to delete any group's attachments.
+ */
 class NewsEdit extends AppComponent
 {
+    use AuthorizesGroupAccess;
     use WithFileUploads;
 
     private $group;
+    #[Locked]
     public $newId = false;
+    #[Locked]
     public $groupId;
     private $new_data;
     public $files = [];
+    #[Locked]
     public $file_types = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
+    #[Locked]
     public $file_beeingRemoved = null;
+    #[Locked]
     public $removed_files = [];
+    #[Locked]
     public $attached_files = [];
     private $languages = [];
 
@@ -33,9 +53,18 @@ class NewsEdit extends AppComponent
     ];
 
     public function mount($group, $new = false) {
+        $this->authorizeGroupEditor($group);
         $this->groupId = $group;
         $this->newId = $new;
         $this->getGroup(true);
+    }
+
+    /**
+     * Every request after the first: the route's groupAdmin does not run
+     * on component actions.
+     */
+    public function hydrate() {
+        $this->authorizeGroupEditor($this->groupId);
     }
 
     public function getGroup($loadState = false) {
@@ -82,13 +111,19 @@ class NewsEdit extends AppComponent
         ])->validate();
 
         $validatedData['user_id'] = Auth::id();
-        if(isset($this->state['lang'])) {
-            foreach($this->state['lang'] as $code => $fields) {
-                $validatedData[$code] = $fields;
+        if(isset($this->state['lang']) && is_array($this->state['lang'])) {
+            // Only the group's languages, only the two translated fields: a
+            // key like `group_id` would otherwise reach fill() as a column.
+            foreach(array_intersect_key($this->state['lang'], $this->languages) as $code => $fields) {
+                if(! is_array($fields)) continue;
+                $validatedData[$code] = [
+                    'title' => is_string($fields['title'] ?? null) ? $fields['title'] : '',
+                    'content' => is_string($fields['content'] ?? null) ? $fields['content'] : '',
+                ];
             }
         }
 
-        if(isset($this->state['id'])) {
+        if($this->new_data !== null) {
             $this->new_data->update($validatedData);
             $newId = $this->new_data->id;
             Session::flash('message', __('news.edited')); 
@@ -102,7 +137,7 @@ class NewsEdit extends AppComponent
         if($this->attached_files) {
             $file_data = [];
             foreach($this->attached_files as $file) {
-                if(isset($file['new'])) {
+                if(isset($file['new']) && ($file['file'] ?? null) instanceof TemporaryUploadedFile) {
                     $file_data = [
                         'group_new_id' => $newId,
                         'name' => $file['name'],
@@ -112,12 +147,13 @@ class NewsEdit extends AppComponent
                 }
             }
         }
-        //delete removed files
-        if(count($this->removed_files)) {
+        //delete removed files - only this news item's, by their stored path
+        if(count($this->removed_files) && $this->new_data !== null) {
             foreach($this->removed_files as $file) {
-                if(GroupNewsFile::find($file['id'])->delete()) {
-                    if (Storage::disk('news_files')->exists($file['file'])) {
-                        Storage::disk('news_files')->delete($file['file']);
+                $stored = $this->new_data->files()->whereKey($file['id'] ?? null)->first();
+                if($stored !== null && $stored->delete()) {
+                    if (Storage::disk('news_files')->exists($stored->file)) {
+                        Storage::disk('news_files')->delete($stored->file);
                     }
                 }
             }
@@ -133,18 +169,16 @@ class NewsEdit extends AppComponent
     public function deleteConfirmed() {
         $this->getGroup();
         $group_id = $this->groupId;
-        if(isset($this->state['id'])) {
-            $files = $this->new_data->files()->get()->toArray();
-            if(count($files)) {
-                foreach($files as $file) {
-                    if(GroupNewsFile::find($file['id'])->delete()) {
-                        if (Storage::disk('news_files')->exists($file['file'])) {
-                            Storage::disk('news_files')->delete($file['file']);
-                        }
+        // The news item loaded through the group, not state.id.
+        if($this->new_data !== null) {
+            foreach($this->new_data->files()->get() as $file) {
+                if($file->delete()) {
+                    if (Storage::disk('news_files')->exists($file->file)) {
+                        Storage::disk('news_files')->delete($file->file);
                     }
                 }
             }
-            GroupNews::whereId($this->state['id'])->delete();
+            $this->new_data->delete();
             Session::flash('message', __('news.confirmDelete.success')); 
         } else {
             Session::flash('message', __('news.confirmDelete.error')); 

@@ -11,15 +11,14 @@ class GroupNewsDelete extends Controller
 {
     public function delete($group, $new) {
 
-        $news = GroupNews::firstWhere('id', $new);
+        // Through the group (roadmap TODO 70): groupAdmin vouches for
+        // {group} only, and {new} used to be looked up in every group.
+        $news = GroupNews::where('group_id', $group)->findOrFail($new);
 
-        $files = $news->files()->get()->toArray();
-        if(count($files)) {
-            foreach($files as $file) {
-                if(GroupNewsFile::find($file['id'])->delete()) {
-                    if (Storage::disk('news_files')->exists($file['file'])) {
-                        Storage::disk('news_files')->delete($file['file']);
-                    }
+        foreach($news->files()->get() as $file) {
+            if($file->delete()) {
+                if (Storage::disk('news_files')->exists($file->file)) {
+                    Storage::disk('news_files')->delete($file->file);
                 }
             }
         }
