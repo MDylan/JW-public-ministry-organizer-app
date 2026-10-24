@@ -88,6 +88,7 @@ whose PHP cannot be raised cannot take 2.0.0 at all.
 | after Phase 4 | 9.52.x | **`^8.0.2`** | TODO 34 |
 | after Phase 5 | **10.50.x** | **`^8.1`** | TODO 39 |
 | after Phase 8 | **11.57.x** | **`^8.2`** | TODO 55 |
+| after Phase 9 | **12.70.x** | `^8.2` (unchanged) | - (TODO 61) |
 | after Phase 10 | 13.x | `^8.3` (planned) | TODO 64 |
 
 Rows marked *planned* come from the roadmap's *Runtime and Version Matrix* and
@@ -108,7 +109,10 @@ TODO 35 raised nothing here: removing two packages cannot raise a floor.
 answer above - 2.0.0 needs 8.3 regardless - but from this hop on a host on PHP
 8.1 cannot run the tree at all.
 
-*Last updated: TODO 35.*
+**TODO 61 (Laravel 11 -> 12) raised nothing**: Laravel 12 keeps `^8.2`, and
+`composer.json` keeps it too.
+
+*Last updated: TODO 61.*
 
 ## 2. Orphaned `vendor/` paths
 
@@ -310,7 +314,13 @@ framework's) and `doctrine/lexer` live in the first, `psr/log`, `psr/container`,
 load-bearing. Delete the four directories, not their parents. `vendor/bin/`
 also loses `doctrine-dbal` and `doctrine-dbal.bat`; they are inert.
 
-*Last updated: TODO 57.*
+**TODO 61 (Laravel 11 -> 12): none.** 2 installs, 24 updates, **0 removals**:
+`symfony/polyfill-php84` and `staabm/side-effects-detector` arrive, and the
+framework, `nunomaduro/collision` and the PHPUnit 11 family (`phpunit/*`,
+`sebastian/*`) are replaced in place. As at TODO 55, files inside the updated
+packages come and go, which Branch B's full `vendor/` replacement handles.
+
+*Last updated: TODO 61.*
 
 ## 3. Application files that move or disappear
 
@@ -684,7 +694,10 @@ unmerged on purpose, so the warning above still stands word for word.
 
 **TODO 59: none.**
 
-*Last updated: TODO 59.*
+**TODO 61: none.** Laravel 12 renames no key this application reads, and the
+TODO 55 warning about the skeleton's `.env.example` still applies unchanged.
+
+*Last updated: TODO 61.*
 
 ## 5. Per-install state to repair
 
@@ -853,8 +866,14 @@ State that lives on the host and is not expressible in a release archive.
   If a host was upgraded without draining, the `failed_jobs` rows naming
   `ProtoneMedia` can be removed with `php artisan queue:forget <uuid>`; nothing
   else is affected.
+- **TODO 61 triggers the `bootstrap/cache` rule above** - the framework
+  crossed a major and two packages arrived - so delete both manifests before
+  the first request. Nothing else: no migration, no `.env` key, and
+  `public/vendor/livewire/` did not change. The installer's "database already
+  has data" check was fixed in the same item; it matters only for a fresh
+  install, not for an upgraded host.
 
-*Last updated: TODO 60.*
+*Last updated: TODO 61.*
 
 ## 6. The upgrade procedure
 
@@ -940,3 +959,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 58 | **Nothing for an operator.** The Laravel 11 blocker list is closed: the GDPR and translation packages left in Phase 3, and the self-updater fork (v2.0.0) already admits Laravel 11, 12 and 13. A test now guards the fork's range. No package, file, `.env` key or per-install state moves. |
 | (no framework hop) | 59 | **The application layout becomes an anonymous component; two inert files are left behind.** `resources/views/layouts/app.blade.php` moved to `resources/views/components/admin-layout.blade.php` and `BladeComponentServiceProvider` is gone; the rendered pages are byte-identical. Section 3 gains two `rm` lines and makes step 10's `optimize:clear` mandatory before step 11 (stale compiled views name the old layout). Sections 4 and 5 say none. |
 | (no framework hop) | 60 | **Drain the queue on the old release.** 1.x `jobs` rows run on 2.x, measured, except the e-mail confirmations 1.x queued through protonemedia/laravel-verify-new-email: 2.x has no such class, so each fails after three tries and triggers a failed-job mail. Branch B step 3 gains `php artisan queue:work --stop-when-empty --force`, run on 1.x after `down`; section 5 has the check and the cleanup. Sections 2, 3 and 4 say none. |
+| **Laravel 11 -> 12** | **61** | **The fourth framework hop, and the first that needs no exemption.** `laravel/framework` 12.70.1 and PHPUnit 11; 2 packages in, 24 updated, 0 out, so section 2 says none. The PHP floor stays `^8.2` (section 1) and section 4 says none. Section 5: the `bootstrap/cache` manifests must go. All four `laravel/framework` advisories exempted at TODO 34 and TODO 55 are fixed in 12.70.1, so the exemption block is gone and `composer audit` reports nothing. **One more advisory an operator of a 1.x host should know about:** PKSA-b41t-wbzk-9q51 (critical, reported 2026-10-23) is a `TokenGuard` bypass with no Laravel 8 fix. This application's `api` guard uses that driver, but its `users` table has no `api_token` column, and on Laravel 11 that made the bypass unreachable (measured; not measured on 1.x). The installer no longer reports an empty database as full when the MySQL server holds other databases - a fresh-install fix only. |
