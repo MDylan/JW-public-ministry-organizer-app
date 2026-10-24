@@ -90,7 +90,7 @@
                                                         @endif
                                                     </strong>
                                                     <div class="collapse @if(count($poster['user_read'] ?? []) == 0) show @endif" id="collapse_poster{{ $poster['id'] }}">
-                                                        {!! $poster['info'] !!}
+                                                        {!! \App\Support\Html\SafeHtml::clean($poster['info']) !!}
                                                     </div>
                                                 </div>
                                             </div>

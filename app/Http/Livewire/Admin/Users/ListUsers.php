@@ -9,10 +9,15 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Http\Livewire\Concerns\LocksProperties;
 
 
 class ListUsers extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['userIdBeeingRemoved'];
 
     public $user;
     public $userIdBeeingRemoved = null;

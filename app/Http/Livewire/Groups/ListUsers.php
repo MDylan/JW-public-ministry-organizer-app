@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Groups;
 
 use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
+use App\Http\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Group;
 use App\Models\GroupUser;
 use Illuminate\Support\Facades\Auth;
@@ -26,9 +27,27 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Livewire\Concerns\LocksProperties;
 
+/**
+ * A group's member list and its editor actions.
+ *
+ * Roadmap TODO 70: the group and the ids the actions work on are locked (LocksProperties);
+ * the caller's role is an ACCEPTED membership's (a pending invitation used
+ * to count, and a pending admin passed every admin check); a roler cannot
+ * remove an admin, which they already could not demote; removal is only
+ * of someone in the group; and a pending invitee's profile is neither
+ * shown to nor editable by the group's editors - inviting an e-mail
+ * address used to reveal and overwrite that account's name and phone.
+ */
 class ListUsers extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['groupId', 'selected_user', 'userIdBeeingRemoved', 'detachId'];
+    use AuthorizesGroupAccess;
+
     public $groupId;
     public $state;
     public $selected_user;
@@ -136,8 +155,10 @@ class ListUsers extends AppComponent
                         'password' => bcrypt($password),
                         'language' => $this->email_language
                     ]);
+                    // Seven days. This was addMinutes(7 * 24 * 60 * 60) -
+                    // seconds counted as minutes, about 420 days (TODO 70).
                     $url = URL::temporarySignedRoute(
-                        'finish_registration', now()->addMinutes(7 * 24 * 60 * 60), [
+                        'finish_registration', now()->addDays(7), [
                             'id' => $u->id
                         ]
                     );
@@ -177,12 +198,15 @@ class ListUsers extends AppComponent
         }
 
         $user = $this->group->groupUsers()->where('user_id', '=', $UserId)->first();
+        if($user === null) abort(403);
+        $profile = self::profileIsTheGroups($user);
         $this->selected_user = [
             'id' => $user->id,
+            'profile' => $profile,
             'user' => [
-                'name' => $user->name,
-                'phone_number' => $user->phone_number,
-                'congregation' => $user->congregation,
+                'name' => $profile ? $user->name : null,
+                'phone_number' => $profile ? $user->phone_number : null,
+                'congregation' => $profile ? $user->congregation : null,
             ],
             'email' => $user->email,
         ];
@@ -191,9 +215,9 @@ class ListUsers extends AppComponent
             'note' => $user->pivot->note,
             'hidden' => $user->pivot->hidden,
             'user' => [
-                'name' => $user->name,
-                'phone_number' => $user->phone_number,
-                'congregation' => $user->congregation,
+                'name' => $profile ? $user->name : null,
+                'phone_number' => $profile ? $user->phone_number : null,
+                'congregation' => $profile ? $user->congregation : null,
                 'email_verified_at' => $user->email_verified_at,
             ],
             'finish_guest_registration' => 0,
@@ -213,13 +237,15 @@ class ListUsers extends AppComponent
         $admins = $this->group->groupAdmins()->get()->count();
         $current_user = $this->group->groupUsers()->where('user_id', Auth::id())->first();
         $selected_user = $this->group->groupUsers()->where('user_id', $this->selected_user['id'])->first();
+        if($selected_user === null) abort(403);
 
         if(!in_array($this->state['group_role'], $this->maxRoles())) {
             //if user have lower right, he dont change privilage
             $this->state['group_role'] = $selected_user->pivot->group_role;
         }
 
-        if($selected_user->email_verified_at === null) {
+        // The view offers it only in a top-level group; so does the server.
+        if($selected_user->email_verified_at === null && ! $this->group->parent_group_id) {
             $finish_guest = [0,1];
         } else {
             $finish_guest = [0];
@@ -261,15 +287,18 @@ class ListUsers extends AppComponent
         
         $validatedData = $v->validate();
 
-        // A profilmezők validációja KORÁBBAN a pivot mentése UTÁN futott, külön
-        // Validator::make()-kel és tranzakció nélkül. Egy hibás név ezért
-        // részlegesen mentett rekordot hagyott maga után: a jegyzet és a szerep
-        // már az adatbázisban volt, a profil viszont nem, a felhasználó pedig
-        // csak egy hibaüzenetet látott. Minden validáció ezért ide, az első írás
-        // ELÉ került, és ami utána marad, az egyetlen tranzakcióban fut le.
-        $profileChanged = $selected_user->name !== $this->state['user']['name']
-            || $selected_user->phone_number !== $this->state['user']['phone_number']
-            || $selected_user->congregation !== $this->state['user']['congregation'];
+        // Validation of the profile fields used to run AFTER the pivot save, with a
+        // separate Validator::make() and no transaction. An invalid name therefore
+        // left behind a partially saved record: the note and the role were
+        // already in the database, but the profile wasn't, and the user
+        // only saw an error message. All validation was therefore moved to
+        // BEFORE the first write, and whatever remains runs in a single transaction.
+        // Only the profile of someone who is in the group (or whose account
+        // this group's invitation created) is the group's to edit.
+        $profileChanged = self::profileIsTheGroups($selected_user) && (
+               $selected_user->name !== ($this->state['user']['name'] ?? null)
+            || $selected_user->phone_number !== ($this->state['user']['phone_number'] ?? null)
+            || $selected_user->congregation !== ($this->state['user']['congregation'] ?? null));
 
         $userValidatedData = null;
         if($profileChanged) {
@@ -367,10 +396,16 @@ class ListUsers extends AppComponent
         if($this->isNotHelper()) {
             abort(403);
         }
-        $this->userIdBeeingRemoved = $userId;
-
         $selected_user = $this->group->groupUsers()->where('user_id', $userId)->first();
-        if(!$selected_user->id) abort(403);
+        if($selected_user === null) abort(403);
+        if($this->mayNotRemove($selected_user)) {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.error_no_right_to_remove_admin'),
+            ]);
+            return;
+        }
+        $this->userIdBeeingRemoved = $selected_user->id;
 
 
         if(pwbs_check_group_other_admins($this->group->id, $userId) === false) {
@@ -402,6 +437,18 @@ class ListUsers extends AppComponent
             return;
         }
 
+        // Re-checked here: this is a listener of its own, and the role may
+        // have changed since the confirmation.
+        $selected_user = $this->group->groupUsers()->where('user_id', $this->userIdBeeingRemoved)->first();
+        if($selected_user === null) abort(403);
+        if($this->mayNotRemove($selected_user)) {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('group.logout.error'),
+                'message' => __('group.error_no_right_to_remove_admin'),
+            ]);
+            return;
+        }
+
         if(pwbs_check_group_other_admins($this->group->id, $this->userIdBeeingRemoved) === false) {
             //no other admin
             $this->dispatchBrowserEvent('sweet-error', [
@@ -409,7 +456,7 @@ class ListUsers extends AppComponent
                 'message' => __('group.logout.no_admin'),
             ]);
             return;
-        } 
+        }
 
         $detach = new GroupUserMoves($this->group->id, $this->userIdBeeingRemoved);
         $detach->detach();
@@ -568,7 +615,7 @@ class ListUsers extends AppComponent
 
     public function linkToGroup() {
         $group = Group::findorFail($this->groupId);
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
         $this->resetErrorBag();
@@ -700,12 +747,12 @@ class ListUsers extends AppComponent
 
     public function confirmChildDetach($child_group_id) {
         $group = Group::findorFail($this->groupId);
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
 
         $selected_group = $group->childGroups()->where('id', $child_group_id)->first();
-        if(!$selected_group->id) abort(403);
+        if($selected_group === null) abort(403);
 
         $this->detachId = $selected_group->id;
 
@@ -718,7 +765,7 @@ class ListUsers extends AppComponent
 
     public function detachChildGroup() {
         $group = Group::findorFail($this->groupId);
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
 
@@ -766,7 +813,7 @@ class ListUsers extends AppComponent
 
     public function confirmParentDetach($parent_group_id) {
         $group = Group::findorFail($this->groupId);
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
         if($group->parent_group_id != $parent_group_id)
@@ -784,7 +831,7 @@ class ListUsers extends AppComponent
     public function detachParentGroup() {
         $group = Group::findorFail($this->groupId);
 
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
 
@@ -909,11 +956,32 @@ class ListUsers extends AppComponent
         return !in_array($this->role, ['admin', 'roler']);
     }
 
+    /**
+     * Whether a member's own profile (name, phone, congregation) is this
+     * group's to see and edit: once they are in the group, or while their
+     * account is the unverified one the group's invitation created. A
+     * pending invitation to an existing account is just an e-mail address.
+     */
+    private static function profileIsTheGroups(User $user): bool {
+        return $user->pivot->accepted_at !== null || $user->email_verified_at === null;
+    }
+
+    /**
+     * The rule updateUser() already applied to demotion: only an admin may
+     * act on an admin.
+     */
+    private function mayNotRemove(User $user): bool {
+        return $user->pivot->group_role === 'admin' && $this->role !== 'admin';
+    }
+
+    private function isAcceptedAdminOf($groupId): bool {
+        return $this->acceptedGroupRole($groupId) === 'admin';
+    }
+
     private function getRole() {
-        $info = GroupUser::where('user_id', '=', Auth::id())
-            ->where('group_id', '=', $this->groupId)
-            ->select('group_role')
-            ->first();
+        // An ACCEPTED membership's role (TODO 70).
+        $role = $this->acceptedGroupRole($this->groupId);
+        $info = $role === null ? null : (object) ['group_role' => $role];
 
         // Tagsági sor nélkül korábban a ->toArray() szállt el null-on, vagyis
         // egy 500-as hiba tartotta zárva a komponenst. A route-on ott van a
@@ -948,7 +1016,7 @@ class ListUsers extends AppComponent
 
     public function setCopyInfo() {
         $group = Group::findOrFail($this->groupId);
-        if($group->groupAdmins()->wherePivot('user_id', Auth::id())->count() == 0) {
+        if(! $this->isAcceptedAdminOf($group->id)) {
             abort(403);
         }
         $this->setCopyDataList();
@@ -1024,12 +1092,22 @@ class ListUsers extends AppComponent
                             }
                         }
                     })->get(); 
-        if(strlen($this->searchTerm) > 0) {
+        // What a member who is not an editor does not see is not counted or
+        // searched either (TODO 70): hidden members used to be dropped only
+        // by the view, so the total and the search revealed them, and the
+        // search matched e-mail addresses their owners keep private.
+        if(!$editor) {
+            $users = collect($users)->reject(function($user) {
+                return $user->pivot->hidden == 1 && $user->id !== Auth::id();
+            });
+        }
+        if(strlen($this->searchTerm ?? '') > 0) {
             //search in user's name and email. This is because we store user's name encrypted
-            $users = collect($users)->filter(function($user) {
+            $users = collect($users)->filter(function($user) use ($editor) {
+                $emailVisible = $editor || ($user->show_fields['email'] ?? false) == true;
                 if(
                       mb_strpos(mb_strtolower($user->name), mb_strtolower($this->searchTerm)) !== false
-                   || mb_strpos(mb_strtolower($user->email), mb_strtolower($this->searchTerm)) !== false
+                   || ($emailVisible && mb_strpos(mb_strtolower($user->email), mb_strtolower($this->searchTerm)) !== false)
                 ) return true;
                 return false;
             });
@@ -1047,7 +1125,7 @@ class ListUsers extends AppComponent
 
         return view('livewire.groups.list-users', [
             'editor' => $editor,
-            'admin' => $this->group->groupAdmins()->wherePivot('user_id', Auth::id())->count(),
+            'admin' => $this->isAcceptedAdminOf($this->group->id) ? 1 : 0,
             'users' => $users,
             'group_name' => $this->group->name,
             'group_id' => $this->group->id,
