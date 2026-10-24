@@ -8514,6 +8514,7 @@ return array(
     'Tests\\Feature\\Auth\\PasswordRuleTest' => $baseDir . '/tests/Feature/Auth/PasswordRuleTest.php',
     'Tests\\Feature\\Auth\\RecoveryCodesDownloadTest' => $baseDir . '/tests/Feature/Auth/RecoveryCodesDownloadTest.php',
     'Tests\\Feature\\Auth\\RegistrationVerificationMailTest' => $baseDir . '/tests/Feature/Auth/RegistrationVerificationMailTest.php',
+    'Tests\\Feature\\Auth\\RouteAccessMatrixTest' => $baseDir . '/tests/Feature/Auth/RouteAccessMatrixTest.php',
     'Tests\\Feature\\Auth\\TwoFactorConfirmationFlowTest' => $baseDir . '/tests/Feature/Auth/TwoFactorConfirmationFlowTest.php',
     'Tests\\Feature\\Auth\\TwoFactorReplayTest' => $baseDir . '/tests/Feature/Auth/TwoFactorReplayTest.php',
     'Tests\\Feature\\Avatar\\AvatarGenerationTest' => $baseDir . '/tests/Feature/Avatar/AvatarGenerationTest.php',

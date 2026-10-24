@@ -9207,6 +9207,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Auth\\PasswordRuleTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/PasswordRuleTest.php',
         'Tests\\Feature\\Auth\\RecoveryCodesDownloadTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/RecoveryCodesDownloadTest.php',
         'Tests\\Feature\\Auth\\RegistrationVerificationMailTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/RegistrationVerificationMailTest.php',
+        'Tests\\Feature\\Auth\\RouteAccessMatrixTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/RouteAccessMatrixTest.php',
         'Tests\\Feature\\Auth\\TwoFactorConfirmationFlowTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/TwoFactorConfirmationFlowTest.php',
         'Tests\\Feature\\Auth\\TwoFactorReplayTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/TwoFactorReplayTest.php',
         'Tests\\Feature\\Avatar\\AvatarGenerationTest' => __DIR__ . '/../..' . '/tests/Feature/Avatar/AvatarGenerationTest.php',
