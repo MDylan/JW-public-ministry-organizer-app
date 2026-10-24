@@ -8621,6 +8621,7 @@ return array(
     'Tests\\Feature\\Security\\GroupComponentAuthorizationTest' => $baseDir . '/tests/Feature/Security/GroupComponentAuthorizationTest.php',
     'Tests\\Feature\\Security\\GroupMemberListAuthorizationTest' => $baseDir . '/tests/Feature/Security/GroupMemberListAuthorizationTest.php',
     'Tests\\Feature\\Security\\NewsAuthorizationTest' => $baseDir . '/tests/Feature/Security/NewsAuthorizationTest.php',
+    'Tests\\Feature\\Security\\ReportAndRequestHardeningTest' => $baseDir . '/tests/Feature/Security/ReportAndRequestHardeningTest.php',
     'Tests\\Feature\\Seeders\\SeederTest' => $baseDir . '/tests/Feature/Seeders/SeederTest.php',
     'Tests\\Feature\\Settings\\ApplicationSettingsTest' => $baseDir . '/tests/Feature/Settings/ApplicationSettingsTest.php',
     'Tests\\Feature\\Setup\\InstalledExceptionHandlerTest' => $baseDir . '/tests/Feature/Setup/InstalledExceptionHandlerTest.php',

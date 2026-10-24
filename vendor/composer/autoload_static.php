@@ -9314,6 +9314,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Security\\GroupComponentAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/GroupComponentAuthorizationTest.php',
         'Tests\\Feature\\Security\\GroupMemberListAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/GroupMemberListAuthorizationTest.php',
         'Tests\\Feature\\Security\\NewsAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/NewsAuthorizationTest.php',
+        'Tests\\Feature\\Security\\ReportAndRequestHardeningTest' => __DIR__ . '/../..' . '/tests/Feature/Security/ReportAndRequestHardeningTest.php',
         'Tests\\Feature\\Seeders\\SeederTest' => __DIR__ . '/../..' . '/tests/Feature/Seeders/SeederTest.php',
         'Tests\\Feature\\Settings\\ApplicationSettingsTest' => __DIR__ . '/../..' . '/tests/Feature/Settings/ApplicationSettingsTest.php',
         'Tests\\Feature\\Setup\\InstalledExceptionHandlerTest' => __DIR__ . '/../..' . '/tests/Feature/Setup/InstalledExceptionHandlerTest.php',

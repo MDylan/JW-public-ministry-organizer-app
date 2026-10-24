@@ -5,6 +5,7 @@ namespace App\Livewire\Groups;
 use App\Classes\GroupUserMoves;
 use App\Livewire\AppComponent;
 use App\Models\Group;
+use App\Rules\Throttle;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -69,7 +70,13 @@ class ListGroups extends AppComponent
         $this->state['phone'] = auth()->user()->phone_number;
         $validatedData = Validator::make($this->state, [
             'congregation' => 'required|min:3',
-            'reason' => 'required|min:10',
+            'reason' => [
+                'required',
+                'min:10',
+                // Every request is an e-mail to the site's admin; nothing
+                // limited how many a user could send (roadmap TODO 70).
+                new Throttle('group-creator-request-'.auth()->id(), 3, 60),
+            ],
             'phone' => 'required|numeric',
         ])->validate();
 
