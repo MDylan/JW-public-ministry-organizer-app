@@ -6,6 +6,7 @@ use App\Classes\GenerateSlots;
 use App\Classes\GenerateStat;
 use App\Helpers\GroupDateHelper;
 use App\Http\Livewire\AppComponent;
+use App\Http\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Event;
 use Illuminate\Support\Facades\Auth;
 use DateTime;
@@ -16,9 +17,23 @@ use App\Models\GroupUser;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
+use App\Http\Livewire\Concerns\LocksProperties;
 
+/**
+ * The day modal, mounted on every page of the layout.
+ *
+ * Roadmap TODO 70: openModal() takes the group from the caller, so the
+ * group is authorized where it is used - getInfo() and getRole() read the
+ * current user's ACCEPTED membership on each request, and the bulk actions
+ * only touch events of that group.
+ */
 class Modal extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['form_groupId', 'bulk_ids'];
+    use AuthorizesGroupAccess;
     private $service_days = [];
     private $group_data = [];
     private $day_data = [];
@@ -61,11 +76,7 @@ class Modal extends AppComponent
     }
 
     public function getRole() {
-        $info = GroupUser::where('user_id', '=', Auth::id())
-            ->where('group_id', '=', $this->form_groupId)
-            ->select('group_role')
-            ->first()->toArray();
-        return $info['group_role'];
+        return $this->acceptedGroupRole($this->form_groupId);
     }
 
     public function getInfo() {
@@ -73,8 +84,11 @@ class Modal extends AppComponent
 
         $groupId = $this->form_groupId;
 
-        $check = auth()->user()->userGroups()->whereId($groupId);
-        if(!$check) {
+        // This was `...->whereId($groupId); if(!$check)` - a query builder,
+        // always truthy. What stopped an outsider was a fatal on the missing
+        // current_user row below; a pending invitee had one and saw the day.
+        $memberRole = $this->acceptedGroupRole($groupId);
+        if($memberRole === null) {
             $this->error = __('event.error.invalid_group');
             return;
         }
@@ -121,7 +135,7 @@ class Modal extends AppComponent
         //         $dates[$d['date_status']][strtotime($d['date'])] = $d;
         //     }
         // }
-        $this->role = $group['current_user'][0]['pivot']['group_role'];
+        $this->role = $memberRole;
         $this->editor = in_array($this->role, ['admin', 'roler']) ? true : false;
         //unset this part, it's not public for livewire
         unset($group['current_user']);
@@ -485,14 +499,15 @@ class Modal extends AppComponent
     public function acceptBulkFinal() {        
         $role = $this->getRole();
         if(in_array($role, ['admin', 'roler']) && is_array($this->bulk_ids)) {
-            foreach($this->bulk_ids as $id) {
-                Event::where('id', '=', $id)
-                    ->where('status', '=', '0')
-                    ->first()
-                    ->update([
-                        'status' => 1
-                    ]);
-            }
+            // Only this group's pending events (TODO 70): the ids come from
+            // the client.
+            Event::where('group_id', $this->form_groupId)
+                ->whereIn('id', array_filter(array_values($this->bulk_ids), 'is_numeric'))
+                ->where('status', '=', '0')
+                ->get()
+                ->each->update([
+                    'status' => 1
+                ]);
             $stat = new GenerateStat();
             $stat->generate($this->form_groupId, $this->date);
             $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.acccept_done')]);
@@ -525,14 +540,13 @@ class Modal extends AppComponent
         }
         $role = $this->getRole();
         if(in_array($role, ['admin', 'roler']) && is_array($this->bulk_ids)) {
-            foreach($this->bulk_ids as $id) {
-                Event::where('id', '=', $id)
-                    ->where('status', '=', '0')
-                    ->first()
-                    ->update([
-                        'status' => 2
-                    ]);
-            }
+            Event::where('group_id', $this->form_groupId)
+                ->whereIn('id', array_filter(array_values($this->bulk_ids), 'is_numeric'))
+                ->where('status', '=', '0')
+                ->get()
+                ->each->update([
+                    'status' => 2
+                ]);
             $stat = new GenerateStat();
             $stat->generate($this->form_groupId, $this->date);
             $this->dispatchBrowserEvent('success', ['message' => __('event.bulk.confirmReject.success')]);

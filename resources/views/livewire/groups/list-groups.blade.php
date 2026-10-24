@@ -270,6 +270,10 @@
         </form>
     @endcan
 
+    <form id="group-logout-form" method="POST" action="" class="d-none">
+        @csrf
+    </form>
+
     @section('footer_scripts')
     <script>
     $(document).ready(function() {
@@ -285,8 +289,10 @@
             cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                // Livewire.emit('logoutConfirmed');
-                window.location.replace('{{ config('app.url') }}/groups/' + event.detail.groupId + '/logout');
+                // A POST since roadmap TODO 70 (was a GET navigation).
+                const form = document.getElementById('group-logout-form');
+                form.action = @json(route('groups.logout', ['group' => '__GROUP__'])).replace('__GROUP__', event.detail.groupId);
+                form.submit();
             }
             })
         });
@@ -307,6 +313,12 @@
             }
             })
         });
+
+        // Back from the password confirmation the exit asked for (roadmap TODO 70.1):
+        // offer it again instead of a page where nothing happened.
+        @if($resumeLogoutGroupId)
+            window.dispatchEvent(new CustomEvent('show-logout-confirmation', { detail: { groupId: @json($resumeLogoutGroupId) } }));
+        @endif
     });
     </script>
     @endsection

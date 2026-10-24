@@ -3,17 +3,26 @@
 namespace App\Http\Livewire\Groups;
 
 use App\Http\Livewire\AppComponent;
+use App\Http\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
 use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use App\Http\Livewire\Concerns\LocksProperties;
 
 class Statistics extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['groupId'];
+    use AuthorizesGroupAccess;
 
     protected $group;
+    // Locked since roadmap TODO 70 (LocksProperties): set to another group's id it showed
+    // that group's members, events and reports.
     public $groupId = 0;
     public $filter_sub_group = false;
     public $filter_all_event = false;
@@ -22,6 +31,7 @@ class Statistics extends AppComponent
     public $endDate = null;
 
     public function mount($group) {
+        $this->authorizeGroupEditor($group);
         $this->groupId = $group;
 
         if(!$this->startDate) {
@@ -51,6 +61,15 @@ class Statistics extends AppComponent
      * (A dinamikus property PHP 8.2-től deprecated - ezzel az a csapda is
      * eltűnik a Phase 8 elől.)
      */
+    /**
+     * Every request after the first (roadmap TODO 70): the route's
+     * groupAdmin does not run on component actions, so a demoted or
+     * removed editor would otherwise keep the page.
+     */
+    public function hydrate() {
+        $this->authorizeGroupEditor($this->groupId);
+    }
+
     public function applyDateRange() {
         // A render() mindent a frissített $startDate / $endDate alapján számol.
     }

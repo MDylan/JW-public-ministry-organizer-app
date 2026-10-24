@@ -5,22 +5,32 @@ namespace App\Http\Livewire\Groups;
 use App\Classes\GroupUserMoves;
 use App\Http\Livewire\AppComponent;
 use App\Models\Group;
+use App\Rules\Throttle;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Livewire\Concerns\LocksProperties;
+use App\Support\Auth\ResumedAction;
 
 class ListGroups extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['groupBeeingRemoved', 'groupBeeingRejected', 'groupBeeingLogout'];
 
     public $group;
     public $groupBeeingRemoved = null;
     public $groupBeeingRejected = null;
     public $groupBeeingLogout = null;
 
+    // No 'logoutConfirmed' listener since roadmap TODO 70: leaving a group
+    // is the groups.logout route, behind password.confirm and its own
+    // last-admin check. The component method skipped the confirmation and
+    // was reachable by any client, while the page itself never called it.
     protected $listeners = [
         'rejectConfirmed' => 'rejectConfirmed',
-        'logoutConfirmed' => 'logoutConfirmed',
         // 'deleteGroup'
     ];
     /*
@@ -66,7 +76,13 @@ class ListGroups extends AppComponent
         $this->state['phone'] = auth()->user()->phone_number;
         $validatedData = Validator::make($this->state, [
             'congregation' => 'required|min:3',
-            'reason' => 'required|min:10',
+            'reason' => [
+                'required',
+                'min:10',
+                // Every request is an e-mail to the site's admin; nothing
+                // limited how many a user could send (roadmap TODO 70).
+                new Throttle('group-creator-request-'.auth()->id(), 3, 60),
+            ],
             'phone' => 'required|numeric',
         ])->validate();
 
@@ -173,28 +189,6 @@ class ListGroups extends AppComponent
         }
     }
 
-    /**
-     * Confirmed quit
-     */
-    public function logoutConfirmed() {
-
-        if(pwbs_check_group_other_admins($this->groupBeeingLogout, auth()->id()) === false) {
-            //no other admin
-            $this->dispatchBrowserEvent('sweet-error', [
-                'title' => __('group.logout.error'),
-                'message' => __('group.logout.no_admin'),
-            ]);
-        } else {
-            $logout = new GroupUserMoves($this->groupBeeingLogout, auth()->id());
-            $res = $logout->detach();
-            if($res) {
-                $this->dispatchBrowserEvent('success', ['message' => __('group.logout.success')]);
-            } else {
-                $this->dispatchBrowserEvent('error', ['message' => __('group.logout.error')]);
-            }
-        }
-    }
-
     public function openModal($modalId) {
         $this->dispatchBrowserEvent('show-modal', ['id' => $modalId]);
     }
@@ -223,12 +217,26 @@ class ListGroups extends AppComponent
         auth()->user()->fresh();
     }
 
+    /** The group whose exit a password confirmation interrupted (roadmap TODO 70.1). */
+    protected $resumeLogoutGroupId = null;
+
+    public function mount() {
+        $resumed = ResumedAction::take('groups.logout');
+        $groupId = $resumed['group'] ?? null;
+        if($groupId !== null
+            && Auth::user()->groupsAccepted()->where('groups.id', $groupId)->exists()
+            && pwbs_check_group_other_admins((int) $groupId, Auth::id()) !== false) {
+            $this->resumeLogoutGroupId = (int) $groupId;
+        }
+    }
+
     public function render()
-    {        
-        $user = Auth()->user(); 
+    {
+        $user = Auth()->user();  
         $groups = $user->userGroups()->paginate(20);
 
         return view('livewire.groups.list-groups', [
+            'resumeLogoutGroupId' => $this->resumeLogoutGroupId,
             'groups' => $groups
         ]);
     }

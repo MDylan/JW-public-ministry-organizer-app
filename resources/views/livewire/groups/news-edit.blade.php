@@ -171,9 +171,16 @@
                     </div>
                 </div>
             </form>
+            @if (isset($state['id']))
+                {{-- The deletion is a DELETE since roadmap TODO 70; the dialog submits this. --}}
+                <form id="news-delete-form" method="POST" action="{{ route('groups.news_delete', ['group' => $group->id, 'new' => $state['id']]) }}" class="d-none">
+                    @csrf
+                    @method('DELETE')
+                </form>
+            @endif
         </div>
     </div>
-    @section('header_style') 
+    @section('header_style')
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
     @endsection
     @section('footer_scripts')
@@ -197,10 +204,16 @@
                             cancelButtonText: '@lang('Cancel')'
                         }).then((result) => {
                         if (result.isConfirmed) {
-                                window.location.replace('{{ route('groups.news_delete', ['group' => $group->id, 'new' => $state['id']]) }}');
+                                // A DELETE since roadmap TODO 70 (was a GET navigation).
+                                document.getElementById('news-delete-form').submit();
                         }
                         })
                     });
+                    // Back from the password confirmation this deletion asked
+                    // for (roadmap TODO 70.1): offer it again.
+                    @if($resumeDelete)
+                        window.dispatchEvent(new CustomEvent('show-newsDelete-confirmation'));
+                    @endif
                 @endif
 
                 window.addEventListener('show-fileDelete-confirmation', event => {

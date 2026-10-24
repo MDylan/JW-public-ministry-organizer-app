@@ -9,9 +9,14 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Livewire\Concerns\LocksProperties;
 
 class LastEvents extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['eventId'];
 
     private $eventForm;
     public $months = [];
@@ -89,6 +94,14 @@ class LastEvents extends AppComponent
                         ->with(['serviceReports', 'groups.literatures'])
                         ->has('groups')
                         ->first();
+        // Another user's event, or none: it used to be a fatal on null.
+        if($event === null) {
+            $this->dispatchBrowserEvent('sweet-error', [
+                'title' => __('app.error'),
+                'message' => __('event.service.error'),
+            ]);
+            return false;
+        }
         if(count($event->groups->literatures) == 0) {
             //there are no literature ability
             $this->dispatchBrowserEvent('sweet-error', [
@@ -97,7 +110,7 @@ class LastEvents extends AppComponent
             ]);
             return false;
         } else {
-            $groups = Auth()->user()->userGroups->toArray();
+            $groups = Auth()->user()->groupsAccepted->toArray();
             $this->eventFormDisabled = false;
             if($this->searchForId($event->groups->id, $groups) === false) {
                 $this->eventFormDisabled = true;
@@ -139,7 +152,11 @@ class LastEvents extends AppComponent
                 '*.return_visits' => 'digits_between:0,2',
                 '*.bible_studies' => 'digits_between:0,2',
             ])->validate();
+            // Only the literature of the event's own group (roadmap TODO 70):
+            // the keys come from the client.
+            $literatureIds = $this->eventForm->groups->literatures->pluck('id')->map(fn ($id) => (string) $id)->all();
             foreach($validatedData as $literatureId => $report) {
+                if(! in_array((string) $literatureId, $literatureIds, true)) continue;
                 foreach($report as $k => $v) {
                     $report[$k] = intval($v);
                 }

@@ -73,6 +73,12 @@ if (! function_exists('main')) {
         //    line every deployed host would keep it forever.
         $ok = laraupdater_upgrade_remove(base_path('vendor/rakibdevs')) && $ok;
 
+        // 5) 1.2.1 (roadmap TODO 70.1): the impersonation password guard was
+        //    generalised as RequirePasswordBeforeAction. The shipped Kernel no
+        //    longer names the old class, so the file is inert - but install()
+        //    never deletes, and it must not linger.
+        $ok = laraupdater_upgrade_remove(base_path('app/Http/Middleware/RequirePasswordForImpersonation.php')) && $ok;
+
         return $ok;
     }
 }

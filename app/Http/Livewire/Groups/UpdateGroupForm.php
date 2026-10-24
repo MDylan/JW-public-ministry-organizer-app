@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Groups;
 use App\Classes\updateGroupFutureChanges;
 use App\Helpers\GroupDateHelper;
 use App\Http\Livewire\AppComponent;
+use App\Http\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Jobs\CalculateDateProcess;
 use App\Models\Group;
 use App\Models\GroupDate;
@@ -21,9 +22,15 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Countries;
+use App\Http\Livewire\Concerns\LocksProperties;
 
 class UpdateGroupForm extends AppComponent
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['editedLiteratureId'];
+    use AuthorizesGroupAccess;
 
     // public $users = [];
     // public $users_old = []; //original users
@@ -77,6 +84,15 @@ class UpdateGroupForm extends AppComponent
     ];
 
     public $groupSigns = [];
+
+    /**
+     * Every request after the first (roadmap TODO 70): the route's
+     * groupAdmin does not run on component actions, so a demoted or
+     * removed editor would otherwise keep the page.
+     */
+    public function hydrate() {
+        $this->authorizeGroupEditor($this->group->id);
+    }
 
     public function mount(Group $group) {
 

@@ -107,6 +107,7 @@ return [
         ]
     ],
     'login_to' => 'Átlépés hozzá',
+    'login_to_retry' => 'A jelszavad megerősítve. A(z) :name nevében való belépéshez kattints újra a belépés ikonjára.',
     'logged_to' => 'Sikeresen átléptél :name fiókjába.',
     'login_back' => 'Vissza a saját fiókba',
     'logged_back' => 'Sikeresen visszaléptél a fiókodba.',

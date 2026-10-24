@@ -12,9 +12,14 @@ use DateTime;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
+use App\Http\Livewire\Concerns\LocksProperties;
 
 class SpecialDateModal extends Component
 {
+    use LocksProperties;
+
+    // Server-owned; the client may not write them (TODO 70.1).
+    protected $lockedProperties = ['groupId'];
 
     public $groupId = 0;
     private $group = [];

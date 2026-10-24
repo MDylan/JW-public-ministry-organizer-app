@@ -64,6 +64,7 @@ return array (
   'loginWithUser' => 'Ich habe schon ein Konto, melde mich an',
   'login_back' => 'Zurück zu meinem Account',
   'login_to' => 'Auf folgendem Konto ummelden',
+  'login_to_retry' => 'Dein Passwort ist bestätigt. Um dich als :name anzumelden, klicke erneut auf das Anmeldesymbol.',
   'logout_info' => 'Sobald du dein Passwort eingegeben hast, kannst du dich von jedem anderen Gerät aus abmelden, bei dem du dich zuvor angemeldet hast.',
   'logout_other_devices' => 'Von anderen Geräten ausloggen',
   'logout_other_devices_error' => 'Fehler beim Beenden, versuche es erneut!',

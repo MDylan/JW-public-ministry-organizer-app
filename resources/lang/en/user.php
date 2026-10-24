@@ -71,6 +71,7 @@ return array (
   'loginWithUser' => 'I already have an account, I want to log in.',
   'login_back' => 'Back to my profile',
   'login_to' => 'Login as',
+  'login_to_retry' => 'Your password is confirmed. To log in as :name, click the login icon again.',
   'logout_info' => 'After entering your current password, you will be able to log out on every other devices.',
   'logout_other_devices' => 'Log out on other devices',
   'logout_other_devices_error' => 'Error, please try again.',

@@ -66,7 +66,9 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
-        'password.confirm.impersonation' => \App\Http\Middleware\RequirePasswordForImpersonation::class,
+        // Returns to a page, not to the POST/DELETE action (roadmap TODO 70.1;
+        // it began as the impersonation guard, password.confirm.impersonation).
+        'password.confirm.action' => \App\Http\Middleware\RequirePasswordBeforeAction::class,
         'installer' => \App\Http\Middleware\EnsureInstallerToken::class,
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
