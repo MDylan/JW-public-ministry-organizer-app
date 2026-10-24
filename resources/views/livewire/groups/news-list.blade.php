@@ -81,7 +81,7 @@
                                     </a>
                                     <div id="collapse-{{ $new->id }}" class="collapse" data-parent="#accordion" style="">
                                         <div class="card-body">
-                                            {!! $new->content !!}
+                                            {!! \App\Support\Html\SafeHtml::clean($new->content) !!}
                                             <div class="row">
                                                 <div class="col-md-8">
                                                     @foreach ($new->files as $file)

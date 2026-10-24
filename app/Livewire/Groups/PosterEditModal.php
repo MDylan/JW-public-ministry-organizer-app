@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
+use App\Support\Html\SafeHtml;
 
 class PosterEditModal extends AppComponent
 {
@@ -45,6 +46,9 @@ class PosterEditModal extends AppComponent
                             ->where('group_id', '=', $this->groupId)
                             ->first()
                             ->toArray();
+        // Summernote loads this into a live contenteditable, where an
+        // onerror attribute runs for whoever opens the editor (TODO 70).
+        $this->state['info'] = SafeHtml::clean($this->state['info'] ?? null);
         // dd($this->state);
     }
 
@@ -93,6 +97,7 @@ class PosterEditModal extends AppComponent
             'hide_date' => 'nullable|date_format:Y-m-d|after:show_date',
             'info' => 'required|string|min:3|max:5000'
         ])->validate();
+        $validatedData['info'] = SafeHtml::clean($validatedData['info']);
 
         if($this->posterId) {
             $save = GroupPosters::where('id', '=', $this->posterId)

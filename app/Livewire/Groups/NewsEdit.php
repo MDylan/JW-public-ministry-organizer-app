@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use App\Support\Html\SafeHtml;
 
 /**
  * Create and edit a group's news.
@@ -94,7 +95,8 @@ class NewsEdit extends AppComponent
                     foreach($this->state['translations'] as $translation) {
                         $this->state['lang'][$translation['locale']] = [
                             'title' => $translation['title'],
-                            'content' => $translation['content'],
+                            // Into Summernote's live editor: cleaned first (TODO 70).
+                            'content' => SafeHtml::clean($translation['content']),
                         ];                    
                     }
                 }
@@ -118,7 +120,7 @@ class NewsEdit extends AppComponent
                 if(! is_array($fields)) continue;
                 $validatedData[$code] = [
                     'title' => is_string($fields['title'] ?? null) ? $fields['title'] : '',
-                    'content' => is_string($fields['content'] ?? null) ? $fields['content'] : '',
+                    'content' => SafeHtml::clean(is_string($fields['content'] ?? null) ? $fields['content'] : ''),
                 ];
             }
         }
