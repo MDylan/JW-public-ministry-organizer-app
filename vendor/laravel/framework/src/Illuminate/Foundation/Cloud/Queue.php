@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Symfony\Component\Console\Input\ArgvInput;
-use Throwable;
 
 class Queue implements QueueContract, ClearableQueue
 {
@@ -258,8 +257,8 @@ class Queue implements QueueContract, ClearableQueue
                 ->retry([0, 500], throw: false)
                 ->get('/next');
         } catch (ConnectionException $e) {
-            throw $this->agentUnreachable(
-                'The Laravel Cloud agent runtime socket is unreachable.', $e
+            throw new AgentUnreachableException(
+                'The Laravel Cloud agent runtime socket is unreachable.', previous: $e
             );
         }
 
@@ -268,13 +267,13 @@ class Queue implements QueueContract, ClearableQueue
         }
 
         if (! $response->ok()) {
-            throw $this->agentUnreachable(
+            throw new AgentUnreachableException(
                 "The Laravel Cloud agent returned HTTP {$response->status()} from GET /next."
             );
         }
 
         if (! is_array($data = $response->json())) {
-            throw $this->agentUnreachable(
+            throw new AgentUnreachableException(
                 'The Laravel Cloud agent returned a non-array body from GET /next.'
             );
         }
@@ -302,36 +301,18 @@ class Queue implements QueueContract, ClearableQueue
                     'delay' => $delay,
                 ], fn ($value) => $value !== null));
         } catch (ConnectionException $e) {
-            throw $this->agentUnreachable(
-                'The Laravel Cloud agent runtime socket is unreachable.', $e
+            throw new AgentUnreachableException(
+                'The Laravel Cloud agent runtime socket is unreachable.', previous: $e
             );
         } catch (RequestException $e) {
             if ($e->response->serverError()) {
-                throw $this->agentUnreachable(
-                    "The Laravel Cloud agent returned HTTP {$e->response->status()} from POST /result.", $e
+                throw new AgentUnreachableException(
+                    "The Laravel Cloud agent returned HTTP {$e->response->status()} from POST /result.", previous: $e
                 );
             }
 
             throw $e;
         }
-    }
-
-    /**
-     * Build the exception for an unreachable agent, first flagging the running
-     * queue:work worker to stop so the pod restarts.
-     *
-     * This release has no injectable LostConnectionDetector, so rather than
-     * teaching the worker to recognize the exception, flag the shared worker
-     * singleton directly. Its daemon loop then exits with a "lost connection"
-     * stop reason on the next tick and the process is restarted.
-     */
-    protected function agentUnreachable(string $message, ?Throwable $previous = null): AgentUnreachableException
-    {
-        if ($this->app->bound('queue.worker')) {
-            $this->app['queue.worker']->lostConnection = true;
-        }
-
-        return new AgentUnreachableException($message, previous: $previous);
     }
 
     /**

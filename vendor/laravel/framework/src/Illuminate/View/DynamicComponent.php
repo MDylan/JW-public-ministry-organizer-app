@@ -2,10 +2,13 @@
 
 namespace Illuminate\View;
 
+use BackedEnum;
 use Illuminate\Container\Container;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\Compilers\ComponentTagCompiler;
+
+use function Illuminate\Support\enum_value;
 
 class DynamicComponent extends Component
 {
@@ -33,12 +36,11 @@ class DynamicComponent extends Component
     /**
      * Create a new component instance.
      *
-     * @param  string  $component
-     * @return void
+     * @param  \BackedEnum|string  $component
      */
-    public function __construct(string $component)
+    public function __construct(BackedEnum|string $component)
     {
-        $this->component = $component;
+        $this->component = (string) enum_value($component);
     }
 
     /**
@@ -121,7 +123,7 @@ EOF;
     protected function compileSlots(array $slots)
     {
         return (new Collection($slots))
-            ->map(fn ($slot, $name) => $name === '__default' ? null : '<x-slot name="'.$name.'" '.((string) $slot->attributes).'>{{ $'.$name.' }}</x-slot>')
+            ->map(fn ($slot, $name) => $name === '__default' ? null : '<x-slot name="'.$name.'" :attributes="$'.$name.'->attributes">{{ $'.$name.' }}</x-slot>')
             ->filter()
             ->implode(PHP_EOL);
     }
@@ -149,7 +151,7 @@ EOF;
      */
     protected function bindings(string $class)
     {
-        [$data, $attributes] = $this->compiler()->partitionDataAndAttributes($class, $this->attributes->getAttributes());
+        [$data] = $this->compiler()->partitionDataAndAttributes($class, $this->attributes->getAttributes());
 
         return array_keys($data->all());
     }

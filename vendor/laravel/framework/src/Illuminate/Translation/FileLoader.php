@@ -42,7 +42,6 @@ class FileLoader implements Loader
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  array|string  $path
-     * @return void
      */
     public function __construct(Filesystem $files, array|string $path)
     {
@@ -61,6 +60,11 @@ class FileLoader implements Loader
      */
     public function load($locale, $group, $namespace = null)
     {
+        if ($this->isUnsafePathSegment($locale) ||
+            ($group !== '*' && $this->isUnsafePathSegment($group, allowSlashes: true))) {
+            return [];
+        }
+
         if ($group === '*' && $namespace === '*') {
             return $this->loadJsonPaths($locale);
         }
@@ -103,15 +107,15 @@ class FileLoader implements Loader
     protected function loadNamespaceOverrides(array $lines, $locale, $group, $namespace)
     {
         return (new Collection($this->paths))
-            ->reduce(function ($output, $path) use ($lines, $locale, $group, $namespace) {
+            ->reduce(function ($output, $path) use ($locale, $group, $namespace) {
                 $file = "{$path}/vendor/{$namespace}/{$locale}/{$group}.php";
 
                 if ($this->files->exists($file)) {
-                    $lines = array_replace_recursive($lines, $this->files->getRequire($file));
+                    $output = array_replace_recursive($output, $this->files->getRequire($file));
                 }
 
-                return $lines;
-            }, []);
+                return $output;
+            }, $lines);
     }
 
     /**
@@ -158,6 +162,23 @@ class FileLoader implements Loader
 
                 return $output;
             }, []);
+    }
+
+    /**
+     * Determine if the given value is unsafe to use as part of a translation file path.
+     *
+     * @param  mixed  $value
+     * @param  bool  $allowSlashes
+     * @return bool
+     */
+    protected function isUnsafePathSegment($value, $allowSlashes = false)
+    {
+        return ! is_string($value)
+            || $value === ''
+            || str_contains($value, '..')
+            || str_contains($value, '\\')
+            || str_contains($value, "\0")
+            || (! $allowSlashes && str_contains($value, '/'));
     }
 
     /**

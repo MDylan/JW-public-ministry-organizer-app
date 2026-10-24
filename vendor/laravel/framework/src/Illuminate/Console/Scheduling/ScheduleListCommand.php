@@ -207,7 +207,7 @@ class ScheduleListCommand extends Command
         $hasMutex = $event->mutex->exists($event) ? 'Has Mutex › ' : '';
 
         $dots = str_repeat('.', max(
-            $terminalWidth - mb_strlen($expression.$repeatExpression.$command.$nextDueDateLabel.$nextDueDate.$hasMutex) - 8, 0
+            $terminalWidth - mb_strwidth($expression.$repeatExpression.$command.$nextDueDateLabel.$nextDueDate.$hasMutex) - 8, 0
         ));
 
         // Highlight the parameters...
@@ -251,8 +251,8 @@ class ScheduleListCommand extends Command
     private function sortEvents(\Illuminate\Support\Collection $events, DateTimeZone $timezone)
     {
         return $this->option('next')
-                    ? $events->sortBy(fn ($event) => $this->getNextDueDateForEvent($event, $timezone))
-                    : $events;
+            ? $events->sortBy(fn ($event) => $this->getNextDueDateForEvent($event, $timezone))
+            : $events;
     }
 
     /**

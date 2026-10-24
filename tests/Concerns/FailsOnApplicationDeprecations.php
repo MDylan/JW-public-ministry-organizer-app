@@ -7,9 +7,10 @@ namespace Tests\Concerns;
  *
  * WHY THIS EXISTS, AND WHY `phpunit.xml` CANNOT DO THE SAME JOB
  *
- * PHPUnit 10 has a `failOnDeprecation` attribute, and in a Laravel test
- * suite it is inert. Two measurements, both taken from the installed
- * vendor tree rather than from the documentation:
+ * PHPUnit 10 and 11 have a `failOnDeprecation` attribute, and in a Laravel
+ * test suite it is inert. Two measurements, both taken from the installed
+ * vendor tree rather than from the documentation (first on PHPUnit 10 and
+ * Laravel 10, again at roadmap TODO 61 on PHPUnit 11.5 and Laravel 12):
  *
  * 1. `HandleExceptions::bootstrap()` installs its own `set_error_handler()`
  *    while the application boots, and `shouldIgnoreDeprecationErrors()`
