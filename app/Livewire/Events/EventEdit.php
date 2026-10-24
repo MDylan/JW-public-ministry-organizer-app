@@ -6,6 +6,7 @@ use App\Classes\GenerateSlots;
 use App\Classes\GenerateStat;
 use App\Helpers\GroupDateHelper;
 use App\Livewire\AppComponent;
+use App\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupDate;
@@ -16,18 +17,40 @@ use DateTime;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Locked;
 
+/**
+ * The event form of the day modal.
+ *
+ * Roadmap TODO 70: every property below except $state is server-owned and
+ * #[Locked]. They used to be client-writable, and the form trusted them: a
+ * helper of one group could set eventId to another group's event and delete
+ * or read it (with the member's phone number), set editEvent to rewrite it,
+ * or set groupId / role to read another group's member list. The role is
+ * now read fresh on every request (hydrate()), and an event is only ever
+ * loaded through the group.
+ */
 class EventEdit extends AppComponent
 {
+    use AuthorizesGroupAccess;
 
+    #[Locked]
     public $groupId;
+    #[Locked]
     public $date;
+    #[Locked]
     public $day_data;
+    #[Locked]
     public $formText = [];
+    #[Locked]
     public $eventId = null;
+    #[Locked]
     public $editEvent = null;
+    #[Locked]
     public $original_day_data = [];
+    #[Locked]
     public $group_data = [];
+    #[Locked]
     public $service_days = [];
     protected $listeners = [
         'setStart',
@@ -35,17 +58,23 @@ class EventEdit extends AppComponent
         'editForm',
         'deleteConfirmed'
     ];
+    #[Locked]
     public $users = [];
+    #[Locked]
     public $role = null;
     private $pleaseWait = false;
     private $error = false;
+    #[Locked]
     public $date_data = [];
+    #[Locked]
     public $other_events = [];
+    #[Locked]
     public $user_statistics = [];
 
     public function mount($groupId, $date) {
-        $check = auth()->user()->userGroups()->whereId($groupId);
-        if(!$check) {
+        // This was `$check = ...->whereId($groupId); if(!$check)` - a query
+        // builder, always truthy, so the check never refused anyone.
+        if($this->acceptedGroupRole($groupId) === null) {
             $this->error = __('event.error.invalid_group');
         } else {
             $this->groupId = $groupId;
@@ -59,12 +88,40 @@ class EventEdit extends AppComponent
         }
     }
 
+    /**
+     * Every request after the first: the current user must still be an
+     * accepted member of the group, and the role is the current one.
+     */
+    public function hydrate() {
+        $this->role = $this->authorizeGroupMember($this->groupId);
+    }
+
     public function getRole() {
-        $info = GroupUser::where('user_id', '=', Auth::id())
-            ->where('group_id', '=', $this->groupId)
-            ->select('group_role')
-            ->first()->toArray();
-        $this->role = $info['group_role'];
+        $this->role = $this->authorizeGroupMember($this->groupId);
+    }
+
+    private function isServant(): bool {
+        return in_array($this->role, ['admin', 'roler', 'helper'], true);
+    }
+
+    /**
+     * Whose events the form may show and book: a servant may pick any
+     * accepted member of THIS group, anyone else only themselves.
+     */
+    private function targetUserId(): int {
+        $userId = (int) ($this->state['user_id'] ?? 0);
+        if($userId === Auth::id()) return $userId;
+        if(! $this->isServant()) return Auth::id();
+        // 0 is setStart()'s "nobody picked yet"; it fails validation on save.
+        if($userId === 0) return 0;
+
+        $member = GroupUser::query()
+            ->where('group_id', $this->groupId)
+            ->where('user_id', $userId)
+            ->whereNotNull('accepted_at')
+            ->exists();
+
+        return $member ? $userId : 0;
     }
 
     public function createForm() {
@@ -109,12 +166,21 @@ class EventEdit extends AppComponent
     public function checkUserRole() {
         $this->getRole();
         if($this->eventId !== null) {
-            $editEvent = Event::with(['user', 'accept_user', 'histories.user'])->firstWhere('id', $this->eventId)->toArray();
+            // Through the group (TODO 70): an id from another group is not
+            // an event of this form.
+            $editEvent = Event::with(['user', 'accept_user', 'histories.user'])
+                ->where('group_id', $this->groupId)
+                ->find($this->eventId)
+                ?->toArray();
 
-            if(!in_array($this->role, ['admin', 'roler', 'helper'])
-                && $editEvent['user_id'] !== Auth::id()) {
-                    $this->error = __('event.error.no_permission');
+            if($editEvent === null
+                || (!$this->isServant() && $editEvent['user_id'] !== Auth::id())) {
+                    // Back to an empty, renderable form: cancelEdit() alone
+                    // left $state without the fields the view reads, so the
+                    // next render after a refusal threw.
                     $this->cancelEdit();
+                    $this->createForm();
+                    $this->error = __('event.error.no_permission');
                 return false;
             }
             return $editEvent;
@@ -149,6 +215,7 @@ class EventEdit extends AppComponent
 
     public function getInfo($saveProcess = false) {
         if($this->eventId == null) $this->editEvent = null;
+        $this->state['user_id'] = $this->targetUserId();
 
         $groupId = $this->groupId;
         $date = $this->date;
@@ -183,7 +250,10 @@ class EventEdit extends AppComponent
         $slots = $disabled_slots = [];
 
         if($this->group_data['current_date'] === null) {
-            $helper = new GroupDateHelper($this->form_groupId);
+            // $this->form_groupId is the day modal's property; this component
+            // never had one, so the fallback threw whenever the day had no
+            // GroupDate row yet.
+            $helper = new GroupDateHelper($this->groupId);
             $generate = $helper->generateDate($this->date);
             if(is_array($generate)) {
                 $this->date_data = [
@@ -372,6 +442,7 @@ class EventEdit extends AppComponent
         $this->original_day_data = $this->day_data;
 
         $this->user_statistics = [];
+        $this->state['user_id'] = $this->targetUserId();
         if(in_array($this->role, ['admin', 'roler'])) {
             $date = strtotime($this->date);
             $date_back = date("Y-m-d", $date - (30 * 24 * 60 * 60));
@@ -497,16 +568,17 @@ class EventEdit extends AppComponent
         //check if time still ok or not
         // dd($this->state);
         $this->getRole();
+        if($this->editEvent !== null) {
+            // The stored event, read again through the group: start, end,
+            // owner and status below come from the database, not from the
+            // form's own copy (TODO 70).
+            $this->eventId = $this->editEvent['id'];
+            $stored = $this->checkUserRole();
+            if($stored === false) return;
+            $this->editEvent = $stored;
+        }
         $this->getInfo(true);
         // $this->getUserOtherEvents();
-
-        if($this->editEvent !== null) {
-            if(!in_array($this->role, ['admin', 'roler', 'helper']) 
-                && $this->editEvent['user_id'] !== Auth::id()) {
-                    $this->error = __('event.error.no_permission');
-                    return;
-            }  
-        }
         $publishers_ok = true;
         $invalid = [];
         if($this->state['status'] != 2 || $this->editEvent === null) {
@@ -653,12 +725,10 @@ class EventEdit extends AppComponent
         // $validatedData['group_id'] = $this->groupId;
         // dd($validatedData);
         if($this->editEvent !== null) {
-            //update event
-            $exists = $group->events()->whereId($this->editEvent['id']);
-            if($exists !== null) {
-                $event = Event::findOrFail($this->editEvent['id']);
-                $event->update($validatedData);
-            }
+            //update event - through the group (this was a query builder
+            // compared with null, which never refused anything)
+            $event = $group->events()->whereKey($this->editEvent['id'])->firstOrFail();
+            $event->update($validatedData);
 
 
             $this->cancelEdit();
@@ -692,7 +762,7 @@ class EventEdit extends AppComponent
         $editEvent = $this->checkUserRole();
         if($editEvent === false) return;
 
-        $event = Event::findOrFail($this->eventId);
+        $event = Event::where('group_id', $this->groupId)->findOrFail($this->eventId);
         $res = $event->delete();
         if($res) {
             $this->dispatch('success', message: __('event.confirmDelete.success'));
@@ -709,6 +779,7 @@ class EventEdit extends AppComponent
     public function getUserOtherEvents() {
         $this->other_events = [];
         // return;
+        $this->state['user_id'] = $this->targetUserId();
         if($this->state['user_id'] != 0) {
             if(!isset($this->state['start']) || !isset($this->state['end'])) return;
             

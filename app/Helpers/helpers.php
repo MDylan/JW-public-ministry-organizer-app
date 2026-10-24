@@ -5,6 +5,12 @@ use Illuminate\Support\Facades\DB;
 
 if(!function_exists('pwbs_poster_set_read')) {
     function pwbs_poster_set_read(int $poster_id) {
+        // Only a poster of a group the user is an accepted member of
+        // (roadmap TODO 70): the id comes from the client.
+        $groupId = DB::table('group_posters')->where('id', $poster_id)->value('group_id');
+        if($groupId === null || ! auth()->user()->groupsAccepted()->where('groups.id', $groupId)->exists()) {
+            return;
+        }
         //toggle read state
         $res = DB::table('group_poster_reads')->where('user_id', auth()->id())->where('poster_id', $poster_id);
         if($res->count() == 1) {
