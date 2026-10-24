@@ -144,7 +144,6 @@ these packages are on every 1.2.0 host today.
 ```
 vendor/laravelcollective          (html; TODO 23)
 vendor/doctrine/cache             (TODO 24's re-resolution - NOT the whole vendor/doctrine)
-vendor/symfony/polyfill-php81     (TODO 24; dead weight on a PHP 8.1+ platform)
 vendor/dialect                    (gdpr-compliance; TODO 33.2)
 vendor/joedixon                   (laravel-translation; TODO 33.3)
 vendor/protonemedia               (laravel-verify-new-email; TODO 33.5)
@@ -158,6 +157,10 @@ from this branch, minus the ones the later entries already list. `vendor/doctrin
 stays (dbal lives there until TODO 57), and so does `vendor/symfony`.
 `vendor/dialect` is the one with a consequence outside `vendor/`: section 3's
 first "Before TODO 34" file extends a class from it.
+
+**`vendor/symfony/polyfill-php81` was on this list until TODO 69 - do not delete
+it.** TODO 24 had made it dead weight; the passkey library (`spomky-labs/cbor-php`)
+requires it again, and the 2.x tree ships it.
 
 **TODO 34 (Laravel 8 -> 9):**
 
@@ -309,12 +312,11 @@ vendor/spatie/backtrace
 live there and are load-bearing. The same warning as `vendor/fruitcake` at
 TODO 35: delete the five directories, not their parent.
 
-**TODO 57 (doctrine/dbal removed): four package paths, and both namespaces
-stay.**
+**TODO 57 (doctrine/dbal removed): three package paths (four until TODO 69), and
+both namespaces stay.**
 
 ```
 vendor/doctrine/dbal
-vendor/doctrine/deprecations
 vendor/doctrine/event-manager
 vendor/psr/cache
 ```
@@ -324,6 +326,10 @@ framework's) and `doctrine/lexer` live in the first, `psr/log`, `psr/container`,
 `psr/simple-cache` and five more PSR interfaces in the second, and all are
 load-bearing. Delete the four directories, not their parents. `vendor/bin/`
 also loses `doctrine-dbal` and `doctrine-dbal.bat`; they are inert.
+
+**`vendor/doctrine/deprecations` was the fourth path here until TODO 69 - do not
+delete it.** The passkey library's `phpdocumentor/*` dependencies require it
+again, and the 2.x tree ships it.
 
 **TODO 61 (Laravel 11 -> 12): none.** 2 installs, 24 updates, **0 removals**:
 `symfony/polyfill-php84` and `staabm/side-effects-detector` arrive, and the
@@ -348,7 +354,13 @@ nothing (1 install, 3 updates).
 (`vendor/barryvdh/laravel-debugbar`), and `php-debugbar/symfony-bridge`
 arrives.
 
-*Last updated: TODO 66.*
+**TODO 69 (Fortify 1.41, passkeys): none.** 16 installs, 1 update, 0 removals.
+`doctrine/deprecations` and `symfony/polyfill-php81` arrive again - required by
+the passkey library's dependencies this time - so on a host that removed them
+after TODO 57 or TODO 23 they are simply back, and on one that did not they are
+no longer orphaned. Delete neither from now on.
+
+*Last updated: TODO 69.*
 
 ## 3. Application files that move or disappear
 
@@ -653,7 +665,22 @@ The files overwrite in place. A customisation of the old key made through
 the translation editor is lost with them - and had stopped showing anyway,
 because Laravel 13 no longer reads that key.
 
-*Last updated: TODO 67.*
+**TODO 69: two class files are left behind, and three language files and a
+few views change.** `app/Actions/Fortify/DisableTwoFactorAuthentication.php`
+and `app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php` are deleted - Fortify's
+own classes do their job now. On a host they stay inert (nothing names them);
+remove them by hand:
+
+```
+rm app/Actions/Fortify/DisableTwoFactorAuthentication.php
+rm app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php
+```
+
+`lang/{hu,en,de}/user.php` gain the passkey and setup-key strings and overwrite
+in place, like every language file. `public/vendor/passkeys/` is new and ships
+in the archive.
+
+*Last updated: TODO 69.*
 
 ## 4. `.env` changes
 
@@ -732,7 +759,14 @@ unmerged on purpose, so the warning above still stands word for word.
 **TODO 61: none.** Laravel 12 renames no key this application reads, and the
 TODO 55 warning about the skeleton's `.env.example` still applies unchanged.
 
-*Last updated: TODO 61.*
+**TODO 69: no new key, but `APP_URL` and `APP_KEY` now matter more.** Passkeys
+take their relying party and their only allowed origin from `APP_URL`, so it
+must be the exact `https://` address users open - a site reached under a second
+name, or over plain http, cannot use passkeys there. The passkey user handle is
+derived from `APP_KEY`: rotating it invalidates every registered passkey, on top
+of making the encrypted columns unreadable.
+
+*Last updated: TODO 69.*
 
 ## 5. Per-install state to repair
 
@@ -916,8 +950,19 @@ State that lives on the host and is not expressible in a release archive.
   `APP_DEBUG` - which is the intended state for a live site.
 - **TODO 64 triggers the rule as well** (the framework crossed a major). The
   PHP floor is now `^8.3` (section 1).
+- **TODO 69: one migration, and the `bootstrap/cache` rule again.** The
+  `passkeys` table arrives (`2026_10_24_120000_create_passkeys_table`), which
+  Branch B's `php artisan migrate` creates; it is additive, so rolling back the
+  code without rolling it back is harmless. A stale package manifest does not
+  list `Laravel\Passkeys\PasskeysServiceProvider`, so passkeys fail until both
+  manifests are deleted. **Two user-visible changes:** a user halfway through
+  setting up two-factor authentication (secret saved, never confirmed) finishes
+  on the same page as before - the confirmation now asks for the password first
+  if it was not confirmed in the last few hours - and a settings page left open
+  across the deploy posts to the old `/user/2fa-confirm` once and gets a 404;
+  reloading fixes it.
 
-*Last updated: TODO 66.*
+*Last updated: TODO 69.*
 
 ## 6. The upgrade procedure
 
@@ -1010,3 +1055,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 66 | **Debugbar 4 and tinker 3; one pre-first-request deletion, and one setting that stops working on live sites.** No vendor path orphans (section 2). Section 5: Debugbar's provider class moved namespace, so the `bootstrap/cache` manifests are fatal until deleted; the admin "debugbar" setting no longer turns the bar on where `APP_ENV=production`. |
 | **Laravel 12 -> 13** | **64** | **The fifth and last framework hop, and the PHP floor reaches the 2.0.0 number: `^8.3`.** `laravel/framework` 13.38.0; 1 package in, 3 updated, 0 out, so section 2 adds nothing for the hop itself. Sections 3 and 4 say none for the hop. Section 5: the `bootstrap/cache` manifests must go. `composer audit` reports nothing. |
 | (no framework hop) | 67 | **The reset mail is translated again.** Laravel 13 renamed the password reset subject's key, and the five translated locales had been sending it in English since the hop; section 3 records the five language files. CSRF now also accepts a same-origin browser request without a token - no operator action. Cache and session serialization stay as they were: the Laravel 13 skeleton's stricter defaults are not merged into this application's configuration. |
+| (no framework hop) | 69 | **Passkeys, and Fortify owns the two-factor confirmation.** `laravel/fortify` 1.41.0 with `laravel/passkeys` (16 packages in, none out; section 2 says two old paths are back). Section 3: two inert class files to delete, `public/vendor/passkeys/` new. Section 4: no key, but `APP_URL` must be the real `https://` address and `APP_KEY` now also anchors every passkey. Section 5: the `passkeys` migration and the `bootstrap/cache` rule; users can now add passkeys on the 2FA settings page and sign in or confirm their password with one. |
