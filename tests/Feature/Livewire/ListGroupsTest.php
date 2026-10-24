@@ -61,14 +61,15 @@ class ListGroupsTest extends FeatureTestCase
 
     public function test_confirming_the_exit_detaches_the_membership(): void
     {
+        // The page's confirmation dialog navigates to groups.logout; that
+        // route, behind password.confirm, is the exit (roadmap TODO 70).
         $secondAdmin = $this->createUser(['email' => 'lg-admin3@example.test']);
         $this->attachUserToGroup($secondAdmin, $this->group, 'admin');
 
-        Livewire::actingAs($this->admin)
-            ->test(ListGroups::class)
-            ->call('confirmLogoutModal', $this->group->id)
-            ->call('logoutConfirmed')
-            ->assertDispatched('success');
+        $this->actingAs($this->admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->get(route('groups.logout', ['group' => $this->group->id]))
+            ->assertRedirect(route('groups'));
 
         $this->assertSame(
             0,
@@ -76,25 +77,96 @@ class ListGroupsTest extends FeatureTestCase
         );
     }
 
-    public function test_confirming_the_exit_is_re_checked_and_refused_without_another_admin(): void
+    public function test_the_exit_route_refuses_the_last_admin(): void
     {
-        // The guard also runs on confirmation, not only when the modal opens -
-        // so a co-admin removed in the meantime cannot open a loophole either.
-        $secondAdmin = $this->createUser(['email' => 'lg-admin4@example.test']);
-        $this->attachUserToGroup($secondAdmin, $this->group, 'admin');
-
-        $component = Livewire::actingAs($this->admin)
-            ->test(ListGroups::class)
-            ->call('confirmLogoutModal', $this->group->id);
-
-        // The other admin leaves in the meantime.
-        GroupUser::where('group_id', $this->group->id)->where('user_id', $secondAdmin->id)->delete();
-
-        $component->call('logoutConfirmed')->assertDispatched('sweet-error');
+        // The guard also runs on the exit itself, not only when the modal
+        // opens - the route is reachable without the page, and a co-admin
+        // may have left in the meantime.
+        $this->actingAs($this->admin)
+            ->withSession($this->passwordConfirmedSession())
+            ->get(route('groups.logout', ['group' => $this->group->id]))
+            ->assertRedirect(route('groups'))
+            ->assertSessionHas('message', __('group.logout.no_admin'));
 
         $this->assertSame(
             1,
             GroupUser::where('group_id', $this->group->id)->where('user_id', $this->admin->id)->count()
+        );
+    }
+
+    public function test_the_component_has_no_exit_of_its_own(): void
+    {
+        // logoutConfirmed() skipped the route's password confirmation and the
+        // page never called it (TODO 70).
+        $this->expectException(\Livewire\Exceptions\MethodNotFoundException::class);
+
+        Livewire::actingAs($this->admin)
+            ->test(ListGroups::class)
+            ->call('logoutConfirmed');
+    }
+
+    // --- invitations: only a real, still pending one (roadmap TODO 70) ---
+
+    public function test_accepting_without_an_invitation_joins_nothing(): void
+    {
+        // accept() used to sync() the pivot, which attaches a missing row:
+        // any user could join any group, and its child groups, by id.
+        $stranger = $this->createUser(['email' => 'lg-stranger@example.test']);
+        $child = $this->createChildGroup($this->group);
+
+        Livewire::actingAs($stranger)
+            ->test(ListGroups::class)
+            ->call('accept', $this->group->id)
+            ->assertDispatched('error');
+
+        $this->assertSame(0, GroupUser::withTrashed()->where('user_id', $stranger->id)->count());
+        $this->assertSame(0, GroupUser::withTrashed()->where('user_id', $stranger->id)->where('group_id', $child->id)->count());
+    }
+
+    public function test_accepting_does_not_bring_back_a_removed_membership(): void
+    {
+        $removed = $this->createUser(['email' => 'lg-removed@example.test']);
+        $this->attachUserToGroup($removed, $this->group, 'member');
+        GroupUser::where('group_id', $this->group->id)->where('user_id', $removed->id)->delete();
+
+        Livewire::actingAs($removed)
+            ->test(ListGroups::class)
+            ->call('accept', $this->group->id)
+            ->assertDispatched('error');
+
+        $this->assertSame(0, GroupUser::where('group_id', $this->group->id)->where('user_id', $removed->id)->count());
+    }
+
+    public function test_accepting_an_invitation_accepts_the_child_group_invitations_too(): void
+    {
+        $child = $this->createChildGroup($this->group);
+        $invitee = $this->createUser(['email' => 'lg-invitee@example.test']);
+        $this->attachUserToGroup($invitee, $this->group, 'member', accepted: false);
+        $this->attachUserToGroup($invitee, $child, 'member', accepted: false);
+
+        Livewire::actingAs($invitee)
+            ->test(ListGroups::class)
+            ->call('accept', $this->group->id)
+            ->assertDispatched('success');
+
+        foreach ([$this->group, $child] as $group) {
+            $this->assertNotNull(GroupUser::where('group_id', $group->id)->where('user_id', $invitee->id)->value('accepted_at'));
+        }
+    }
+
+    public function test_rejecting_cannot_leave_an_accepted_membership(): void
+    {
+        // The last admin "rejecting" their own group used to leave it without
+        // an admin, past the exit route's checks.
+        Livewire::actingAs($this->admin)
+            ->test(ListGroups::class)
+            ->call('rejectModal', $this->group->id)
+            ->call('rejectConfirmed')
+            ->assertDispatched('error');
+
+        $this->assertSame(
+            'admin',
+            GroupUser::where('group_id', $this->group->id)->where('user_id', $this->admin->id)->value('group_role')
         );
     }
 

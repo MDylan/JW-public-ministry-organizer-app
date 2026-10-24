@@ -18,9 +18,12 @@ class ListGroups extends AppComponent
     public $groupBeeingRejected = null;
     public $groupBeeingLogout = null;
 
+    // No 'logoutConfirmed' listener since roadmap TODO 70: leaving a group
+    // is the groups.logout route, behind password.confirm and its own
+    // last-admin check. The component method skipped the confirmation and
+    // was reachable by any client, while the page itself never called it.
     protected $listeners = [
         'rejectConfirmed' => 'rejectConfirmed',
-        'logoutConfirmed' => 'logoutConfirmed',
         // 'deleteGroup'
     ];
     /*
@@ -170,28 +173,6 @@ class ListGroups extends AppComponent
         } else {
             $this->groupBeeingLogout = $groupId;
             $this->dispatch('show-logout-confirmation', groupId: $groupId);
-        }
-    }
-
-    /**
-     * Confirmed quit
-     */
-    public function logoutConfirmed() {
-
-        if(pwbs_check_group_other_admins($this->groupBeeingLogout, auth()->id()) === false) {
-            //no other admin
-            $this->dispatch('sweet-error',
-                title: __('group.logout.error'),
-                message: __('group.logout.no_admin'),
-            );
-        } else {
-            $logout = new GroupUserMoves($this->groupBeeingLogout, auth()->id());
-            $res = $logout->detach();
-            if($res) {
-                $this->dispatch('success', message: __('group.logout.success'));
-            } else {
-                $this->dispatch('error', message: __('group.logout.error'));
-            }
         }
     }
 
