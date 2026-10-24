@@ -193,6 +193,7 @@ return array(
     'App\\Providers\\FortifyServiceProvider' => $baseDir . '/app/Providers/FortifyServiceProvider.php',
     'App\\Rules\\Throttle' => $baseDir . '/app/Rules/Throttle.php',
     'App\\Rules\\TimeCheck' => $baseDir . '/app/Rules/TimeCheck.php',
+    'App\\Support\\Auth\\ResumedAction' => $baseDir . '/app/Support/Auth/ResumedAction.php',
     'App\\Support\\Avatar\\InitialsAvatar' => $baseDir . '/app/Support/Avatar/InitialsAvatar.php',
     'App\\Support\\Concerns\\ResolvesCauser' => $baseDir . '/app/Support/Concerns/ResolvesCauser.php',
     'App\\Support\\Email\\MustVerifyNewEmail' => $baseDir . '/app/Support/Email/MustVerifyNewEmail.php',

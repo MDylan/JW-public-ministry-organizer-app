@@ -313,6 +313,12 @@
             }
             })
         });
+
+        // Back from the password confirmation the exit asked for (roadmap TODO 70.1):
+        // offer it again instead of a page where nothing happened.
+        @if($resumeLogoutGroupId)
+            window.dispatchEvent(new CustomEvent('show-logout-confirmation', { detail: { groupId: @json($resumeLogoutGroupId) } }));
+        @endif
     });
     </script>
     @endsection

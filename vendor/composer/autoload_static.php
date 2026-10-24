@@ -897,6 +897,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'App\\Providers\\FortifyServiceProvider' => __DIR__ . '/../..' . '/app/Providers/FortifyServiceProvider.php',
         'App\\Rules\\Throttle' => __DIR__ . '/../..' . '/app/Rules/Throttle.php',
         'App\\Rules\\TimeCheck' => __DIR__ . '/../..' . '/app/Rules/TimeCheck.php',
+        'App\\Support\\Auth\\ResumedAction' => __DIR__ . '/../..' . '/app/Support/Auth/ResumedAction.php',
         'App\\Support\\Avatar\\InitialsAvatar' => __DIR__ . '/../..' . '/app/Support/Avatar/InitialsAvatar.php',
         'App\\Support\\Concerns\\ResolvesCauser' => __DIR__ . '/../..' . '/app/Support/Concerns/ResolvesCauser.php',
         'App\\Support\\Email\\MustVerifyNewEmail' => __DIR__ . '/../..' . '/app/Support/Email/MustVerifyNewEmail.php',

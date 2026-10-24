@@ -24,6 +24,10 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
+            {{-- Back from the password confirmation an impersonation asked for (roadmap TODO 70.1). --}}
+            @if($resumeImpersonation)
+                <div class="alert alert-info">@lang('user.login_to_retry', ['name' => $resumeImpersonation])</div>
+            @endif
             <div class="row">
                 <div class="col-md-9 mb-2 mb-md-0">
                         <button wire:click.prevent="addNew" class="btn btn-primary">

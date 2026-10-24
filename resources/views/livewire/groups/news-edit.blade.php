@@ -206,6 +206,11 @@
                         }
                         })
                     });
+                    // Back from the password confirmation this deletion asked
+                    // for (roadmap TODO 70.1): offer it again.
+                    @if($resumeDelete)
+                        window.dispatchEvent(new CustomEvent('show-newsDelete-confirmation'));
+                    @endif
                 @endif
 
                 window.addEventListener('show-fileDelete-confirmation', event => {
