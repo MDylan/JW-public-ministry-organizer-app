@@ -2897,6 +2897,8 @@ The largest structural hop. No new runtime is needed: Laravel 11's `php: ^8.2` i
 
 Comparatively small once Phase 8 lands.
 
+**PHASE 9 CLOSED ON 2026-10-24.** Laravel 12.70.1 and PHPUnit 11.5.57 (TODO 61), with every `laravel/framework` advisory exemption retired and `composer audit` empty; one installer defect the hop introduced, fixed (61); the official Laravel 12 upgrade guide walked item by item against this application, with nothing else to change and two guards added (62); the package matrix re-measured, which found the per-hop ladder's floors overstated and TODO 66's lock bumps already done (63). Suite 1606 -> 1610 tests, green.
+
 - [x] **TODO 61: Upgrade the framework and test stack to Laravel 12** - DONE
   - **Delivered on 2026-10-24, in three commits plus this documentation one: a pre-hop test-layer fix on PHPUnit 10, the dependency set, then an application defect the hop introduced.** `laravel/framework` `^11.0` -> `^12.0`, resolving to **v12.70.1**; `phpunit/phpunit` `^10.0` -> `^11.0`, resolving to **11.5.57**. `artisan about` reports Laravel 12.70.1 on PHP 8.3.16 (`upgrade-notes/laravel12-about.txt`) and `artisan optimize` exits 0. Suite: **1606 -> 1608 tests, 4821 -> 4824 assertions, green**, with no "there were issues" line - PHPUnit 11 reports no deprecation, warning or risky test. One case went red at the bump, one cause, below.
   - **Two `composer.json` edits plus a deletion:** the framework, PHPUnit, and the whole `config.policy` block (below). **The only installed package rejecting the hop was `nunomaduro/collision` 8.5.0**, which declares a conflict with `laravel/framework >=12.0.0` - the same shape as collision 7 at TODO 55 - but `^8.0` already admits 8.9.5, so it moved as a **lock bump, not a constraint edit**. Measured offline from the committed `vendor/` before the network run: every other direct dependency already admitted 12 (`laravel/fortify` 1.36.2, `livewire/livewire` 3.8.11, `laravel/tinker` 2.11.1, `barryvdh/laravel-debugbar` 3.16.5, `laravel/sail` 1.69.0, `astrotomic/laravel-translatable` 11.17.1, the `spatie/*` packages, `petercoles/multilingual-country-list` 1.2.14 and the `mdylan/laraupdater` fork). Every L12 floor in Appendix A's ladder is below what is installed.
@@ -2917,7 +2919,23 @@ Comparatively small once Phase 8 lands.
     - Carbon 3 compatibility in date-sensitive code: `app/Helpers/GroupDateHelper.php`, the calendar components, and the scheduler commands.
   - Expected changes: composer updates, test-layer fixes.
 
-- [ ] **TODO 62: Audit Laravel 12 behavioral changes against this app**
+- [x] **TODO 62: Audit Laravel 12 behavioral changes against this app** - DONE
+  - **Delivered on 2026-10-24, on Laravel 12.70.1. Red: 0 -> 0** (1608 -> 1610 tests, 4824 -> 4828 assertions). No application code changed; two guards were added.
+  - **The list below was the roadmap's, and it was not the guide's.** This item walked the official upgrade guide (laravel.com/docs/12.x/upgrade) instead - thirteen entries - and searched `app/`, `database/`, `routes/`, `config/`, `bootstrap/`, `resources/views/` and `lang/` for each. The one entry that did bite, multi-schema inspecting, was not on the roadmap's list at all; TODO 61 met it at the hop (`Setup\DatabaseController::databaseHasData()`).
+  - **Per guide entry:**
+    - *Dependencies, Carbon 3*: TODO 61 and TODO 55. *The Laravel installer*: not used.
+    - *Models and UUIDv7*: no `HasUuids`, `HasVersion7Uuids` or ordered UUIDs anywhere. Nothing.
+    - *Concurrency result index mapping*: no `Concurrency::run()` call. Nothing.
+    - *Container class dependency resolution* - **one site, measured, no change.** `WeatherCache::__construct(?OpenWeatherClient $client = null)` is container-resolved (`app(WeatherCache::class)` in `pwbs_weather_api_call()`, method injection in `weather:refresh`). Laravel 12's `Container::resolveClass()` returns the default when the class is not bound, so the constructor now gets `null` and builds `new OpenWeatherClient()` itself, where Laravel 11 built it through the container. `OpenWeatherClient` has no constructor and no binding, so the two are the same object; a bound instance is still used (checked with `tinker`). The tests build the client directly and fake HTTP, so none of them depended on either path. No other class-typed parameter with a `null` default exists under `app/`.
+    - *Image validation excludes SVG*: no `image` rule, `File::image()` or `dimensions:` anywhere - the roadmap's correction below still holds.
+    - *Local disk default root `storage/app/private`* - **does not reach this application, for two independent reasons.** The default comes only from the framework's own `config/filesystems.php`, which reaches an application through config merging - and `bootstrap/app.php` switches merging off (TODO 55/56); and this application's `local` disk names `storage_path('app')` explicitly. The bare `Storage::` sentinels (`installed.txt` in `routes/web.php`, `bootstrap/app.php` and `Setup\MetaController`; `EnsureInstallerToken`'s token file) therefore still resolve under `storage/app`. `FilesystemDiskContractTest` already pinned the configuration; **new case `test_the_installer_sentinels_resolve_under_storage_app`** pins the resolved path the sentinels actually use. **Control experiment:** with the local root set to `storage/app/private`, exactly the new case and the existing configuration case failed; restored, green.
+    - *Multi-schema database inspecting*: TODO 61's defect, fixed there. The only other inspection calls are two `Schema::hasColumn()` guards in migrations, which Laravel 12 still scopes to the current schema. *Database constructor signature changes*: no `new Blueprint`, custom grammar, `setConnection()` or table-prefix call.
+    - *Nested array request merging*: `mergeIfMissing()` is called by nothing - not the application, not a package, not the framework itself - and there is no `$request->merge()` either. Livewire 3 does not route property updates through request merging, so the roadmap's "relevant to the Livewire forms" had nothing to attach to.
+    - *Route precedence*: a shared name now resolves to the **first** route registered with it in uncached routing, as cached routing always did. TODO 26 had removed the application's duplicates and `test_the_route_files_contain_no_duplicate_names` guards the route files; but that scanner reads only the application's own files, and the packages' routes (Livewire, Debugbar, the updater) are registered too. **New case `test_the_registered_routes_contain_no_duplicate_names`** checks the registered collection: 73 names on 81 routes, none shared. **Control experiment:** an application route named `livewire.upload-file` failed exactly the new case (the source scan stayed green), and `route('livewire.upload-file')` returned the package's URL - the first-registered rule, observed; removed, green. (A first attempt with `livewire.update` did not collide: Livewire 3 names that route `default.livewire.update`.)
+    - *DatabaseTokenRepository's `$expires` in seconds*: the application never constructs it; the framework's broker manager converts `auth.passwords.*.expire` itself.
+  - **The skeleton diff (`laravel/laravel` 11.x...12.x) was not adopted**, for the reason TODO 56 recorded: config merging is off, so the skeleton's config edits cannot reach this application, and its frontend files are what TODO 52 removed.
+  - Files: `tests/Feature/Storage/FilesystemDiskContractTest.php`, `tests/Feature/RouteContractSnapshotTest.php`, `upgrade-guide.md` (change log only), this roadmap. No composer file moved, so no audit.
+  - **Everything below is the entry as it stood before delivery.**
   - Needed:
     - Duplicate route-name precedence changed - already resolved in TODO 26, so this is verification only.
     - `Storage::disk('local')` now defaults its root to `storage/app/private` unless configured explicitly. Verified: no direct `Storage::disk('local')` usage, but the bare `Storage::exists('installed.txt')` sentinel uses the default disk - **check this specifically**.
@@ -2925,7 +2943,15 @@ Comparatively small once Phase 8 lands.
     - **Correction to earlier planning:** the SVG concern does not apply. Verified: this project has **zero** `image` validation rules. The only file validation is the dynamic `mimes:` list in `Groups\NewsEdit` (TODO 49).
   - Expected changes: targeted verification, `config/filesystems.php` if the local root needs pinning.
 
-- [ ] **TODO 63: Re-confirm third-party Laravel 12 support**
+- [x] **TODO 63: Re-confirm third-party Laravel 12 support** - DONE
+  - **Delivered on 2026-10-24.** Appendix A re-measured with TODO 22's method: the installed version and its real `require`/`conflict` from `composer.lock`, every stable release from Packagist's p2 metadata, and the resolver's own `Composer\Semver\Semver::satisfies()` (loaded from `composer.phar`), counting a release as admitting a Laravel major only when its framework constraints say so explicitly and its `php` admits 8.3.16. No composer file moved, so no audit.
+  - **Laravel 12: confirmed, and it was never in doubt by then** - TODO 61's resolution installed every package on it. Measured anyway: every installed version with a framework constraint admits 12.
+  - **Laravel 13, the finding that matters for Phase 10: TODO 66's six lock bumps are already done.** `astrotomic/laravel-translatable` 11.17.1, `spatie/laravel-activitylog` 4.12.3, `spatie/laravel-cookie-consent` 3.5.0, `spatie/laravel-failed-job-monitor` 4.5.0, `petercoles/multilingual-country-list` 1.2.14 and `laravel/sail` 1.69.0 are installed and all admit 13; so do `laravel/fortify` 1.36.2, `livewire/livewire` 3.8.11, `nunomaduro/collision` 8.9.5 and the updater fork. **Only two installed packages reject Laravel 13:** `laravel/tinker` 2.11.1 and `barryvdh/laravel-debugbar` 3.16.5 - the two constraint edits TODO 66 already names.
+  - **One TODO 66 decision lost its reason: Guzzle 8.** TODO 66 says stay on `^7` because `laravel/framework` 13 requires `^7.8.2`. True when measured; **since v13.26.0 (2026-08-18) it requires `^7.8.2 || ^8.0`** (12.x still `^7.8.2`). Staying on 7 is still a valid choice - it is now a choice, not a constraint. Recorded in TODO 66, not decided here.
+  - **The per-hop ladder's floors were overstated.** Several cells were not the lowest release admitting their major - `laravel/fortify` L12 1.31.3 (lowest is 1.25.4) and L13 1.36.2 (1.34.1); `laravel/sail` 1.52.0 / 1.65.0 (1.41.0 / 1.53.0); `spatie/laravel-cookie-consent` L13 3.5.0 (3.4.0), and more in every column. Checked against the raw metadata, not just the script: Fortify 1.25.4 declares `illuminate/support ^10.0|^11.0|^12.0`, 1.34.1 adds `^13.0`. No decision rested on a floor - every hop took the newest admitted release - so nothing has to be redone. The ladder below is replaced with the new measurement and gains `nunomaduro/collision`, which declares a `conflict` on the framework rather than a requirement.
+  - **Upstream moved since TODO 22**, none of it forcing anything: `laravel/framework` 13.38.0 (was 13.24.0), Fortify 1.41.0 (above the passkey ceiling, TODO 66/69), Livewire 4.4.8 (Appendix B), Debugbar 4.4.4, Guzzle 8.3.0, activitylog 5.1.3 (`php ^8.4`), calendar-links 2.2.0 (`php ^8.3`), PHPUnit 13.4.3 (`php >=8.4.1`; 12.5.40 is the ceiling at 8.3).
+  - Files: this roadmap (this entry, TODO 66, Appendix A), `upgrade-guide.md` (change log only).
+  - **Everything below is the entry as it stood before delivery.**
   - Needed:
     - Refresh Appendix A. At the time of writing `astrotomic/laravel-translatable` and the `spatie/*` packages all support Laravel 12 or newer. (`laravolt/avatar` was on this list until TODO 39.1 removed it.)
   - Expected changes: updated matrix.
@@ -2957,6 +2983,8 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - **Lock bumps, already admitted by `composer.json`:** `astrotomic/laravel-translatable` -> 11.17.0, `spatie/laravel-activitylog` -> 4.12.3, `spatie/laravel-cookie-consent` -> 3.5.0, `spatie/laravel-failed-job-monitor` -> 4.5.0, `petercoles/multilingual-country-list` -> 1.2.14, `laravel/sail` -> 1.65.0. The per-hop ladder in Appendix A has the exact floors if an intermediate hop needs one.
     - **Constraint edits - these fail the resolution otherwise:** `laravel/tinker` `^2.5` -> `^3.0` (no 2.x release supports Laravel 13; the line stops at 2.10.2), and `barryvdh/laravel-debugbar` `^3.6` -> `^4.0` (the 3.x line stops at 3.15.4).
     - **`laravel/fortify`: pin at 1.36.2.** It is the last release covering Laravel 10 through 13 without pulling `laravel/passkeys`, which 1.37.0 added as a hard requirement while raising its floor to `illuminate ^11` / `php ^8.2`. Taking 1.37+ means reconciling new passkey routes into the hand-patched `routes/fortify.php` - see TODO 69. That is a feature decision, not an upgrade step, and it does not belong in this hop.
+    - **Re-measured by TODO 63 (2026-10-24): the lock bumps on the next line are already done** - every one of those packages is installed at or above its L13 target, so this item is the two constraint edits plus the pins below.
+    - **`guzzlehttp/guzzle` - the reason below expired (TODO 63):** `laravel/framework` admits `^8.0` since v13.26.0, so `^7` is now a choice. Decide it here, with the hop's resolution in front of you.
     - **`guzzlehttp/guzzle`: stay on `^7`.** 8.0.2 exists, and `laravel/framework` v13 declares `guzzlehttp/guzzle: ^7.8.2` in `require` - so bumping the major is a resolution failure. 7.15.3 is the target.
     - **`spatie/laravel-activitylog`: stay on 4.x.** 5.0.0 requires `php ^8.4`, above this roadmap's target; 4.12.3 covers Laravel 13 on `php ^8.1`.
     - **`spatie/calendar-links`: nothing to do.** It declares no framework constraint in any version, so it never blocked. The 2.x line (`php ^8.3`) is an optional cleanup outside this roadmap.
@@ -3076,6 +3104,30 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
 
 ## Appendix A - Package Compatibility Matrix
 
+**Re-measured on 2026-10-24 by TODO 63, on Laravel 12.70.1.** The state at that point, in one table; the TODO 22 table below it is kept as the record the earlier decisions were made against.
+
+| Package | Installed (lock) | Declared | Installed admits L13? | Latest admitting L13 at PHP 8.3 | Phase 10 action |
+| --- | --- | --- | --- | --- | --- |
+| `laravel/framework` | 12.70.1 | `^12.0` | - | 13.38.0 (`php ^8.3`) | Constraint edit `^13.0` (TODO 64) |
+| `laravel/fortify` | 1.36.2 | `>=1.19.1 <1.37.0` | yes | 1.36.2 under the pin (1.41.0 above it) | None - pinned (TODO 66, 69) |
+| `livewire/livewire` | 3.8.11 | `^3.0` | yes | 3.x; 4.4.8 is optional (Appendix B) | None |
+| `laravel/tinker` | 2.11.1 | `^2.5` | **no** | 3.0.2 | **Constraint edit** `^3.0` |
+| `astrotomic/laravel-translatable` | 11.17.1 | `^11.9` | yes | 11.17.1 | None |
+| `spatie/laravel-activitylog` | 4.12.3 | `^4.0.0` | yes | 4.12.3 (5.x needs `php ^8.4`) | None |
+| `spatie/laravel-cookie-consent` | 3.5.0 | `^3.1` | yes | 3.5.0 | None |
+| `spatie/laravel-failed-job-monitor` | 4.5.0 | `^4.1` | yes | 4.5.0 | None |
+| `petercoles/multilingual-country-list` | 1.2.14 | `^1.2` | yes | 1.2.14 | None |
+| `mdylan/laraupdater` (VCS fork) | v2.0.0 | `^2.0` | yes | v2.0.0 | None |
+| `spatie/calendar-links` | 1.11.1 | `^1.6` | no framework constraint | 2.2.0 (`php ^8.3`), optional | None |
+| `guzzlehttp/guzzle` | 7.16.0 | `^7.0.1` | no framework constraint | 8.3.0; the framework admits `^8.0` from 13.26.0 | **Decision** (TODO 66) |
+| `barryvdh/laravel-debugbar` (dev) | 3.16.5 | `^3.6` | **no** | 4.4.4 | **Constraint edit** `^4.0` |
+| `laravel/sail` (dev) | 1.69.0 | `^1.0.1` | yes | 1.69.0 | None |
+| `nunomaduro/collision` (dev) | 8.9.5 | `^8.0` | yes | 8.9.5 | None |
+| `phpunit/phpunit` (dev) | 11.5.57 | `^11.0` | no framework constraint | 12.5.40 (13.x needs `php >=8.4.1`) | Constraint edit `^12.0` (TODO 64) |
+| `mockery/mockery`, `fakerphp/faker` (dev) | 1.6.15 / 1.24.1 | `^1.4.2` / `^1.9.1` | no framework constraint | the same | None |
+
+### The TODO 22 measurement (2026-08-08)
+
 **Re-measured on 2026-08-08 by TODO 22**, and this table is now derived rather than remembered. The method is in that item: `composer.lock` for the installed version's real `require` block, `composer.json` for the declared constraint, Packagist's p2 endpoint for every stable release, and `Composer\Semver\Semver::satisfies()` - the resolver's own matching - to decide which admits what.
 
 Two columns carry most of the information. **"Installed fails at"** is the first Laravel major the *installed* version's constraint rejects; `never` means Composer will not stop the upgrade at any hop, which is a silent risk rather than a safe one. **"Admits the target?"** compares the declared `composer.json` constraint against the release that supports Laravel 13: *lock bump* needs no file edit, *constraint edit* does.
@@ -3118,6 +3170,24 @@ Two columns carry most of the information. **"Installed fails at"** is the first
 ### The per-hop version ladder
 
 For every package that survives the upgrade, the **lowest** release admitting each Laravel major - so a hop's item can read a number instead of estimating one. Measured the same way as the table above.
+
+**Re-measured by TODO 63 (2026-10-24), and the earlier table was overstated:** many of its cells were not the lowest admitting release (Fortify L12 1.31.3 / L13 1.36.2 against the measured 1.25.4 / 1.34.1, for example). No hop rested on a floor - each took the newest admitted release - so nothing was decided wrongly. A release counts only when its framework constraint admits the major explicitly and its `php` admits 8.3.16.
+
+| Package | L9 (Ph. 4) | L10 (Ph. 5) | L11 (Ph. 8) | L12 (Ph. 9) | L13 (Ph. 10) |
+| --- | --- | --- | --- | --- | --- |
+| `astrotomic/laravel-translatable` | 11.10.0 | 11.12.0 | 11.13.0 | 11.16.0 | 11.17.0 |
+| `spatie/laravel-activitylog` | 4.4.0 | 4.7.3 | 4.8.0 | 4.10.1 | 4.12.0 |
+| `spatie/laravel-cookie-consent` | 3.2.0 | 3.2.4 | 3.3.0 | 3.3.3 | 3.4.0 |
+| `spatie/laravel-failed-job-monitor` | 4.1.0 | 4.2.1 | 4.3.0 | 4.3.3 | 4.3.6 |
+| `petercoles/multilingual-country-list` | 1.2.9 | 1.2.10 | 1.2.12 | 1.2.13 | 1.2.14 |
+| `laravel/fortify` | 1.9.0 | 1.16.0 | 1.20.0 | 1.25.4 | 1.34.1 |
+| `laravel/tinker` | 2.7.0 | 2.8.0 | 2.9.0 | 2.10.1 | **3.0.0** |
+| `livewire/livewire` | 2.10.0 | 2.11.0 | 3.0.0 | 3.5.20 | 3.7.11 |
+| `laravel/sail` | - | 1.18.0 | 1.26.0 | 1.41.0 | 1.53.0 |
+| `barryvdh/laravel-debugbar` (dev) | 3.6.6 | 3.8.0 | 3.10.0 | 3.15.0 | **4.0.10** |
+| `nunomaduro/collision` (dev, by its `conflict`) | - | - | 8.0.0 | 8.6.0 | 8.9.0 |
+
+The TODO 22 ladder, as it was:
 
 | Package | L9 (Ph. 4) | L10 (Ph. 5) | L11 (Ph. 8) | L12 (Ph. 9) | L13 (Ph. 10) |
 | --- | --- | --- | --- | --- | --- |
