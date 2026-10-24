@@ -114,12 +114,12 @@
                                     <div class="col-6 border border-primary text-center rounded py-2">
                                         <samp id="two_factor_codes">
                                             @foreach (auth()->user()->recoveryCodes() as $code)
-                                                {{ $code }}<br/>
+                                                <span data-recovery-code>{{ $code }}</span><br/>
                                             @endforeach
                                         </samp>
                                     </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-primary" onclick="copyToClipboard('#two_factor_codes')">
+                                    <div class="col-6 d-flex flex-column align-items-start">
+                                        <button type="button" class="btn btn-primary" onclick="copyToClipboard('#two_factor_codes')">
                                             <i class="far fa-copy mr-1"></i>
                                             @lang('user.two_factor.copy_to_clipboard')
                                         </button>
@@ -157,13 +157,28 @@
         @section('footer_scripts')
         @include('partials.passkeys-client')
         <script>
+            // One code per line: the codes' own text, not the element's,
+            // which carries the template's indentation. An <input> cannot
+            // hold line breaks, so the fallback copies from a <textarea>.
             function copyToClipboard(element) {
-                var $temp = $("<input>");
-                $("body").append($temp);
-                $temp.val($(element).text()).select();
-                document.execCommand("copy");
+                var text = $(element).find('[data-recovery-code]').map(function () {
+                    return $(this).text().trim();
+                }).get().join('\n');
+                var done = function () {
+                    toastr.success(@json(__('user.two_factor.copy_success')), @json(__('user.two_factor.copy_to_clipboard')));
+                };
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done);
+                    return;
+                }
+
+                var $temp = $('<textarea>').val(text).css({position: 'fixed', opacity: 0});
+                $('body').append($temp);
+                $temp.trigger('select');
+                document.execCommand('copy');
                 $temp.remove();
-                toastr.success('{{__('user.two_factor.copy_success')}}', '{{__('user.two_factor.copy_to_clipboard')}}');
+                done();
             }
         </script>
         @endsection

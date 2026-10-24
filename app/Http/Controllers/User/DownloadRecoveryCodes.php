@@ -28,7 +28,8 @@ class DownloadRecoveryCodes extends Controller
             __('user.two_factor.codes_file_account', ['email' => $user->email]),
             __('user.two_factor.codes_file_created', ['date' => now()->format('Y-m-d H:i')]),
             '',
-            __('user.two_factor.codes_file_usage'),
+            // One sentence a line, so the note reads without scrolling.
+            ...preg_split('/(?<=[.!?])\s+/u', __('user.two_factor.codes_file_usage')),
             '',
             ...$user->recoveryCodes(),
         ];

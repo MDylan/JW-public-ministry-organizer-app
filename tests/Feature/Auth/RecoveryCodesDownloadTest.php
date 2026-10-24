@@ -50,6 +50,10 @@ class RecoveryCodesDownloadTest extends FeatureTestCase
             $this->assertContains($code, $lines, 'Each code must stand on a line of its own.');
         }
         $this->assertStringContainsString('recovery-download@example.test', $response->getContent());
+
+        foreach ($lines as $line) {
+            $this->assertDoesNotMatchRegularExpression('/[.!?]\s+\S/u', $line, 'A sentence of the note must end its line.');
+        }
     }
 
     public function test_the_download_requires_a_confirmed_password(): void
@@ -85,6 +89,7 @@ class RecoveryCodesDownloadTest extends FeatureTestCase
             ->withSession(['auth.password_confirmed_at' => time()])
             ->get(route('user.twofactorsettings'))
             ->assertOk()
-            ->assertSee(route('user.recovery-codes.download'), false);
+            ->assertSee(route('user.recovery-codes.download'), false)
+            ->assertSee('<span data-recovery-code>'.self::CODES[0].'</span>', false);
     }
 }
