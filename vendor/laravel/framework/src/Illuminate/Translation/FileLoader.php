@@ -33,7 +33,7 @@ class FileLoader implements Loader
     /**
      * All of the namespace hints.
      *
-     * @var array
+     * @var array<string, string>
      */
     protected $hints = [];
 
@@ -157,7 +157,7 @@ class FileLoader implements Loader
                         throw new RuntimeException("Translation file [{$full}] contains an invalid JSON structure.");
                     }
 
-                    $output = array_merge($output, $decoded);
+                    $output = array_replace($output, $decoded);
                 }
 
                 return $output;
@@ -196,7 +196,7 @@ class FileLoader implements Loader
     /**
      * Get an array of all the registered namespaces.
      *
-     * @return array
+     * @return array<string, string>
      */
     public function namespaces()
     {

@@ -4,6 +4,7 @@ namespace Illuminate\Console\Scheduling;
 
 use DateTimeZone;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Throwable;
 
 class CronExpressionTimezoneConverter
@@ -21,15 +22,9 @@ class CronExpressionTimezoneConverter
     {
         $eventTimezone = static::resolveEventTimezone($event, $timezone);
 
-        $offsetComponents = static::offsetComponents(
+        [$totalOffsetMinutes, $hourOffset, $minuteOffset] = static::offsetComponents(
             $event, $eventTimezone, $timezone
         );
-
-        if (is_null($offsetComponents)) {
-            return [$event->expression];
-        }
-
-        [$totalOffsetMinutes, $hourOffset, $minuteOffset] = $offsetComponents;
 
         if ($totalOffsetMinutes === 0) {
             return [$event->expression];
@@ -61,29 +56,20 @@ class CronExpressionTimezoneConverter
     /**
      * Get offset components between the event and display timezones.
      *
-     * @return array{int, int, int}|null
+     * @return array{int, int, int}
      */
     protected static function offsetComponents(Event $event, DateTimeZone $eventTimezone, DateTimeZone $displayTimezone)
     {
         try {
             $at = $event->nextRunDate(Carbon::now());
-            $nextAt = $event->nextRunDate(Carbon::now(), 1);
         } catch (Throwable) {
             $at = Carbon::now();
-            $nextAt = null;
         }
 
         $totalOffsetMinutes = intdiv(
             $displayTimezone->getOffset($at) - $eventTimezone->getOffset($at),
             60
         );
-
-        if ($nextAt && $totalOffsetMinutes !== intdiv(
-            $displayTimezone->getOffset($nextAt) - $eventTimezone->getOffset($nextAt),
-            60
-        )) {
-            return null;
-        }
 
         return [$totalOffsetMinutes, intdiv($totalOffsetMinutes, 60), $totalOffsetMinutes % 60];
     }
@@ -247,7 +233,7 @@ class CronExpressionTimezoneConverter
             $groups[implode(',', $days)][] = $month;
         }
 
-        return collect($groups)->map(function ($months, $days) {
+        return (new Collection($groups))->map(function ($months, $days) {
             sort($months);
 
             return [
@@ -427,7 +413,7 @@ class CronExpressionTimezoneConverter
             return (string) $values[0];
         }
 
-        $steps = collect($values)
+        $steps = (new Collection($values))
             ->sliding(2)
             ->map(fn ($pair) => $pair->last() - $pair->first())
             ->unique();
@@ -455,7 +441,7 @@ class CronExpressionTimezoneConverter
      */
     protected static function collapseRuns(array $values)
     {
-        return collect($values)
+        return (new Collection($values))
             ->chunkWhile(fn ($value, $key, $chunk) => $value === $chunk->last() + 1)
             ->map(fn ($run) => $run->count() >= 3 ? $run->first().'-'.$run->last() : $run->implode(','))
             ->implode(',');

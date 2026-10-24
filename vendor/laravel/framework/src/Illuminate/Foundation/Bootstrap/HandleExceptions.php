@@ -28,7 +28,7 @@ class HandleExceptions
     /**
      * The application instance.
      *
-     * @var \Illuminate\Contracts\Foundation\Application
+     * @var \Illuminate\Contracts\Foundation\Application|null
      */
     protected static $app;
 
@@ -105,7 +105,9 @@ class HandleExceptions
 
             with($logger->channel('deprecations'), function ($log) use ($message, $file, $line, $level, $options) {
                 if ($options['trace'] ?? false) {
-                    $log->warning((string) new ErrorException($message, 0, $level, $file, $line));
+                    $log->warning($message, [
+                        'exception' => new ErrorException($message, 0, $level, $file, $line),
+                    ]);
                 } else {
                     $log->warning(sprintf('%s in %s on line %s',
                         $message, $file, $line
@@ -125,6 +127,7 @@ class HandleExceptions
     protected function shouldIgnoreDeprecationErrors()
     {
         return ! class_exists(LogManager::class)
+            || is_null(static::$app)
             || ! static::$app->hasBeenBootstrapped()
             || (static::$app->runningUnitTests() && ! Env::get('LOG_DEPRECATIONS_WHILE_TESTING'));
     }

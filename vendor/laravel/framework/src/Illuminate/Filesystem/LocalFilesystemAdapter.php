@@ -27,7 +27,7 @@ class LocalFilesystemAdapter extends FilesystemAdapter
     /**
      * The Closure that should be used to resolve the URL generator.
      *
-     * @var \Closure
+     * @var \Closure|null
      */
     protected $urlGeneratorResolver;
 
@@ -62,6 +62,8 @@ class LocalFilesystemAdapter extends FilesystemAdapter
      * @param  \DateTimeInterface  $expiration
      * @param  array  $options
      * @return string
+     *
+     * @throws \RuntimeException
      */
     public function temporaryUrl($path, $expiration, array $options = [])
     {
@@ -92,6 +94,8 @@ class LocalFilesystemAdapter extends FilesystemAdapter
      * @param  \DateTimeInterface  $expiration
      * @param  array  $options
      * @return array
+     *
+     * @throws \RuntimeException
      */
     public function temporaryUploadUrl($path, $expiration, array $options = [])
     {
