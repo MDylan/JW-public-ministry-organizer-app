@@ -7948,6 +7948,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Unit\\Support\\LangFilesTest' => __DIR__ . '/../..' . '/tests/Unit/Support/LangFilesTest.php',
         'Tests\\Unit\\Support\\LangPathTest' => __DIR__ . '/../..' . '/tests/Unit/Support/LangPathTest.php',
         'Tests\\Unit\\Support\\RetentionWindowTest' => __DIR__ . '/../..' . '/tests/Unit/Support/RetentionWindowTest.php',
+        'Tests\\Unit\\TestMetadataAttributeTest' => __DIR__ . '/../..' . '/tests/Unit/TestMetadataAttributeTest.php',
         'TheSeer\\Tokenizer\\Exception' => __DIR__ . '/..' . '/theseer/tokenizer/src/Exception.php',
         'TheSeer\\Tokenizer\\NamespaceUri' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUri.php',
         'TheSeer\\Tokenizer\\NamespaceUriException' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUriException.php',

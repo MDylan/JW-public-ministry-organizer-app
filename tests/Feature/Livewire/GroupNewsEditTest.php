@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -162,9 +163,8 @@ class GroupNewsEditTest extends FeatureTestCase
      * test the extension is guessed from the declared MIME type; in production
      * from the content - the same guess the `mimes:` rule makes, which is why
      * the configuration test below is the general guarantee.
-     *
-     * @dataProvider allowedFileTypes
      */
+    #[DataProvider('allowedFileTypes')]
     public function test_every_allowed_file_type_gets_a_preview_url(string $name, string $mime): void
     {
         $file = UploadedFile::fake()->create($name, 10, $mime);

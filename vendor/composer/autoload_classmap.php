@@ -7350,6 +7350,7 @@ return array(
     'Tests\\Unit\\Support\\LangFilesTest' => $baseDir . '/tests/Unit/Support/LangFilesTest.php',
     'Tests\\Unit\\Support\\LangPathTest' => $baseDir . '/tests/Unit/Support/LangPathTest.php',
     'Tests\\Unit\\Support\\RetentionWindowTest' => $baseDir . '/tests/Unit/Support/RetentionWindowTest.php',
+    'Tests\\Unit\\TestMetadataAttributeTest' => $baseDir . '/tests/Unit/TestMetadataAttributeTest.php',
     'TheSeer\\Tokenizer\\Exception' => $vendorDir . '/theseer/tokenizer/src/Exception.php',
     'TheSeer\\Tokenizer\\NamespaceUri' => $vendorDir . '/theseer/tokenizer/src/NamespaceUri.php',
     'TheSeer\\Tokenizer\\NamespaceUriException' => $vendorDir . '/theseer/tokenizer/src/NamespaceUriException.php',
