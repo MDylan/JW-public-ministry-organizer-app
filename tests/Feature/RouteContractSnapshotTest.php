@@ -353,6 +353,26 @@ class RouteContractSnapshotTest extends TestCase
         $this->assertSame([], $duplicates);
     }
 
+    public function test_the_registered_routes_contain_no_duplicate_names(): void
+    {
+        // TODO 62: Laravel 12 resolves a shared name to the FIRST route
+        // registered with it, where uncached Laravel 11 took the last. The
+        // source scan above only reads this application's route files; the
+        // packages' routes (Livewire, Debugbar, the updater) are registered
+        // too, and a name shared with one of them would now change which URL
+        // route() builds. So the registered collection is checked as well.
+        $names = array_filter(array_map(
+            fn (Route $route) => $route->getName(),
+            app('router')->getRoutes()->getRoutes()
+        ));
+
+        $this->assertNotEmpty($names);
+        $this->assertSame(
+            [],
+            array_keys(array_filter(array_count_values($names), fn (int $count): bool => $count > 1))
+        );
+    }
+
     public function test_the_route_files_use_no_group_level_name_prefixes(): void
     {
         // The source scanner above assumes a flat namespace: every name comes

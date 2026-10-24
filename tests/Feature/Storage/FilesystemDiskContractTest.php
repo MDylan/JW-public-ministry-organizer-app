@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Storage;
 
+use App\Http\Middleware\EnsureInstallerToken;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -99,6 +101,31 @@ class FilesystemDiskContractTest extends TestCase
     {
         $this->assertSame('local', config('filesystems.default'));
         $this->assertSame(storage_path('app'), config('filesystems.disks.local.root'));
+    }
+
+    /**
+     * TODO 62: the two sentinels resolve under storage/app, not under
+     * storage/app/private.
+     *
+     * Laravel 12's own config/filesystems.php roots the local disk at
+     * storage/app/private. It reaches an application only through config
+     * merging, which bootstrap/app.php switches off, and this file's local
+     * disk names its root anyway. Measured on the disk the bare facade
+     * resolves rather than on the configuration, because that is what the
+     * sentinels use: if either safeguard went, a deployed host's
+     * installed.txt would stop being found and the installer would open
+     * again on a working site.
+     */
+    public function test_the_installer_sentinels_resolve_under_storage_app()
+    {
+        $this->assertSame(
+            str_replace('\\', '/', storage_path('app/installed.txt')),
+            str_replace('\\', '/', Storage::path('installed.txt'))
+        );
+        $this->assertSame(
+            str_replace('\\', '/', storage_path('app/'.EnsureInstallerToken::TOKEN_FILE)),
+            str_replace('\\', '/', Storage::path(EnsureInstallerToken::TOKEN_FILE))
+        );
     }
 
     /**
