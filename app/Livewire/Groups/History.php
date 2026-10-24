@@ -3,14 +3,18 @@
 namespace App\Livewire\Groups;
 
 use App\Livewire\AppComponent;
+use App\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Group;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Livewire\Attributes\Locked;
 
 class History extends AppComponent
 {
+    use AuthorizesGroupAccess;
 
     protected $group;
+    #[Locked]
     public $groupId = 0;
     public $months = [];
     public $year = 0;
@@ -20,6 +24,7 @@ class History extends AppComponent
     public $last_day = null;
 
     public function mount($group) {
+        $this->authorizeGroupEditor($group);
         $this->groupId = $group;
         
         if(!isset($this->state['month'])) {
@@ -28,6 +33,15 @@ class History extends AppComponent
         $this->year = date("Y");
         $this->month = date("m");        
 
+    }
+
+    /**
+     * Every request after the first (roadmap TODO 70): the route's
+     * groupAdmin does not run on component actions, so a demoted or
+     * removed editor would otherwise keep the page.
+     */
+    public function hydrate() {
+        $this->authorizeGroupEditor($this->groupId);
     }
 
     public function getMonthListFromDate(Carbon $start)

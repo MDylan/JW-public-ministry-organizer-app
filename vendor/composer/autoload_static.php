@@ -9311,6 +9311,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\RouteContractSnapshotTest' => __DIR__ . '/../..' . '/tests/Feature/RouteContractSnapshotTest.php',
         'Tests\\Feature\\RouteMiddlewareRegressionTest' => __DIR__ . '/../..' . '/tests/Feature/RouteMiddlewareRegressionTest.php',
         'Tests\\Feature\\Security\\EventAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/EventAuthorizationTest.php',
+        'Tests\\Feature\\Security\\GroupComponentAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/GroupComponentAuthorizationTest.php',
         'Tests\\Feature\\Security\\NewsAuthorizationTest' => __DIR__ . '/../..' . '/tests/Feature/Security/NewsAuthorizationTest.php',
         'Tests\\Feature\\Seeders\\SeederTest' => __DIR__ . '/../..' . '/tests/Feature/Seeders/SeederTest.php',
         'Tests\\Feature\\Settings\\ApplicationSettingsTest' => __DIR__ . '/../..' . '/tests/Feature/Settings/ApplicationSettingsTest.php',

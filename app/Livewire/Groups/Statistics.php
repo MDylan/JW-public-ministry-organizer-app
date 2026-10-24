@@ -3,17 +3,23 @@
 namespace App\Livewire\Groups;
 
 use App\Livewire\AppComponent;
+use App\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\DayStat;
 use App\Models\Event;
 use App\Models\Group;
 use App\Support\Retention\RetentionWindow;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Livewire\Attributes\Locked;
 
 class Statistics extends AppComponent
 {
+    use AuthorizesGroupAccess;
 
     protected $group;
+    // Locked since roadmap TODO 70: set to another group's id it showed
+    // that group's members, events and reports.
+    #[Locked]
     public $groupId = 0;
     public $filter_sub_group = false;
     public $filter_all_event = false;
@@ -24,6 +30,7 @@ class Statistics extends AppComponent
     public $last_day = null;
 
     public function mount($group) {
+        $this->authorizeGroupEditor($group);
         $this->groupId = $group;
 
         if(!$this->startDate) {
@@ -54,6 +61,15 @@ class Statistics extends AppComponent
      * (Dynamic properties are deprecated as of PHP 8.2 - this also removes
      * that trap ahead of Phase 8.)
      */
+    /**
+     * Every request after the first (roadmap TODO 70): the route's
+     * groupAdmin does not run on component actions, so a demoted or
+     * removed editor would otherwise keep the page.
+     */
+    public function hydrate() {
+        $this->authorizeGroupEditor($this->groupId);
+    }
+
     public function applyDateRange() {
         // render() computes everything from the updated $startDate / $endDate.
     }

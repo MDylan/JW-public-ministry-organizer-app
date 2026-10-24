@@ -137,12 +137,17 @@ class Group extends Model
     }
 
     /**
-     * Those who can edit the group
+     * Those who can edit the group: accepted admins and rolers.
+     *
+     * Accepted since roadmap TODO 70 - the poster and special-date modals
+     * authorize with this, and an invitation to be a roler is not yet the
+     * role (User::userGroupsEditable, behind groupAdmin, never counted it).
      */
     public function editors() {
         return $this->belongsToMany(User::class)
                 ->wherePivotIn('group_role',['roler', 'admin'])
                 ->wherePivot('deleted_at', null)
+                ->wherePivotNotNull('accepted_at')
                 ->withTimestamps()
                 ->as('group_editors')
                 ->using(GroupUser::class);

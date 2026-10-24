@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Groups;
 
+use App\Livewire\Concerns\AuthorizesGroupAccess;
 use App\Models\Group;
 use App\Models\GroupMessage;
 use App\Models\GroupUser;
@@ -11,17 +12,33 @@ use App\Rules\Throttle;
 use App\Support\Avatar\InitialsAvatar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
+/**
+ * A group's message board on the home page.
+ *
+ * Roadmap TODO 70: the group and its settings are #[Locked] (they were the
+ * client's to rewrite: group_write=0 let anyone write to a read-only board,
+ * group_priority=1 sent priority e-mails the group had switched off,
+ * group_name went into those e-mails), the membership is checked on every
+ * request, and a message is deleted only on its own board.
+ */
 class Messages extends Component
 {
+    use AuthorizesGroupAccess;
 
+    #[Locked]
     public $group_id;
     public $message = '';
     public int $message_priority = 0;
+    #[Locked]
     public int $group_write = 0;
+    #[Locked]
     public int $group_priority = 0;
+    #[Locked]
     public $group_name = '';
+    #[Locked]
     public $privilege = [
         'read' => false,
         'write' => false,
@@ -36,10 +53,15 @@ class Messages extends Component
     ];
 
     public function mount(Group $group) {
+        $this->authorizeGroupMember($group->id);
         $this->group_id = $group->id;
         $this->group_priority = $group->messages_priority;
         $this->group_write = $group->messages_write;
         $this->group_name = $group->name;
+    }
+
+    public function hydrate() {
+        $this->authorizeGroupMember($this->group_id);
     }
 
     public function increaseMessages() {
@@ -110,6 +132,10 @@ class Messages extends Component
 
     public function deleteMessage(GroupMessage $groupMessage) {
         $this->checkPrivilege();
+        // The privilege is this board's; the message id is the caller's.
+        if((int) $groupMessage->group_id !== (int) $this->group_id) {
+            return;
+        }
         if($groupMessage->user_id == auth()->id() || $this->privilege['delete']) {
             $groupMessage->update([
                 'message' => null

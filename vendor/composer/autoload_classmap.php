@@ -8618,6 +8618,7 @@ return array(
     'Tests\\Feature\\RouteContractSnapshotTest' => $baseDir . '/tests/Feature/RouteContractSnapshotTest.php',
     'Tests\\Feature\\RouteMiddlewareRegressionTest' => $baseDir . '/tests/Feature/RouteMiddlewareRegressionTest.php',
     'Tests\\Feature\\Security\\EventAuthorizationTest' => $baseDir . '/tests/Feature/Security/EventAuthorizationTest.php',
+    'Tests\\Feature\\Security\\GroupComponentAuthorizationTest' => $baseDir . '/tests/Feature/Security/GroupComponentAuthorizationTest.php',
     'Tests\\Feature\\Security\\NewsAuthorizationTest' => $baseDir . '/tests/Feature/Security/NewsAuthorizationTest.php',
     'Tests\\Feature\\Seeders\\SeederTest' => $baseDir . '/tests/Feature/Seeders/SeederTest.php',
     'Tests\\Feature\\Settings\\ApplicationSettingsTest' => $baseDir . '/tests/Feature/Settings/ApplicationSettingsTest.php',
