@@ -62,6 +62,9 @@ Any help are welcomed! :)
 
 ## PHP REQUIREMENTS
 - Minimum PHP 8.0.7 
+- **Tested on PHP 8.1, 8.2 and 8.3** (version 1.2.1: the full test suite passes on 8.1.30, 8.2.35 and 8.3.16, and an update and e-mail sending were also checked on a live PHP 8.2 install).
+- **Recommended: PHP 8.3.** It receives security fixes until 31 December 2027; PHP 8.1 no longer does, and PHP 8.2 stops on 31 December 2026. PHP 8.4 and later are not supported on the 1.x line.
+- When you switch the PHP version, switch the cron job (and any queue worker) to the same PHP binary too.
 - Allow URL fopen
 - INTL PHP extension
 - BCMath PHP Extension
