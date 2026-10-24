@@ -67,8 +67,18 @@
                 <!-- /.col -->
             </div>
             </form>
-    
-            
+
+            {{-- TODO 69: shown only where the browser supports passkeys. --}}
+            <div class="mt-3 text-center d-none" data-passkey-scope data-passkey-block>
+                <p class="text-muted mb-2">@lang('user.passkeys.or')</p>
+                <button type="button" class="btn btn-outline-primary btn-block d-none"
+                        data-passkey="login"
+                        data-options="{{ route('passkey.login-options') }}"
+                        data-submit="{{ route('passkey.login') }}">
+                    <i class="fas fa-fingerprint mr-1"></i> @lang('user.passkeys.login')
+                </button>
+                <div class="text-danger mt-2 d-none" role="alert" data-passkey-error></div>
+            </div>
         </div>
         <!-- /.card-body -->
         <div class="card-footer text-muted">
@@ -96,6 +106,9 @@
     </div>
     <!-- /.login-box -->
 </div>
+@endsection
+@section('footer_scripts')
+    @include('partials.passkeys-client')
 @endsection
 @if (config('security.use_recaptcha'))
     @include('auth.recaptcha-script', ['formId' => 'loginForm', 'action' => 'login'])

@@ -16,11 +16,13 @@ use App\Support\Gdpr\Portable;
 use App\Support\Gdpr\Anonymizable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
+class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference, PasskeyUser
 {
-    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, MustVerifyNewEmail {
+    use HasFactory, Notifiable, LogsActivity, Portable, Anonymizable, TwoFactorAuthenticatable, PasskeyAuthenticatable, MustVerifyNewEmail {
         Anonymizable::anonymize as protected anonymizeAttributes;
     }
 
@@ -321,6 +323,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
         // For the other half of the signed link that was issued, see App\Models\PendingUserEmail.
         $this->clearPendingEmail();
 
+        // The same holds for passkeys (TODO 69): rows in a table of their
+        // own, untouched by the field lists above. Left in place, they would
+        // keep signing in to the anonymized account, and each carries the
+        // user's own label for a device.
+        $this->passkeys()->delete();
+
         return true;
     }
 
@@ -385,7 +393,21 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
             }
             $array['groups'] = $groups;
             unset($array['groups_accepted']);
-        }       
+        }
+
+        // TODO 69: the user's passkeys, by the label they gave them. The
+        // credential - a public key and an authenticator id - stays out; it
+        // is data about a device, not something the user entered.
+        $array['passkeys'] = $this->passkeys()
+            ->orderBy('created_at')
+            ->get(['name', 'created_at', 'last_used_at'])
+            ->map(fn ($passkey) => [
+                'name' => $passkey->name,
+                'created_at' => $passkey->created_at?->toJSON(),
+                'last_used_at' => $passkey->last_used_at?->toJSON(),
+            ])
+            ->all();
+
         return $array;
     }
 

@@ -73,7 +73,7 @@ class FortifyRouteParityTest extends TestCase
     {
         $source = file_get_contents(base_path('vendor/laravel/fortify/routes/routes.php'));
 
-        preg_match_all('/^use (Laravel\\\\Fortify\\\\Http\\\\Controllers\\\\(\w+));$/m', $source, $uses, PREG_SET_ORDER);
+        preg_match_all('/^use (Laravel\\\\(?:Fortify|Passkeys)\\\\Http\\\\Controllers\\\\(\w+));$/m', $source, $uses, PREG_SET_ORDER);
         $classes = [];
         foreach ($uses as [, $fqcn, $short]) {
             $classes[$short] = $fqcn;
@@ -107,8 +107,11 @@ class FortifyRouteParityTest extends TestCase
 
         /** @var Route $route */
         foreach (app('router')->getRoutes()->getRoutes() as $route) {
+            // Fortify's controllers, and since Fortify 1.41 laravel/passkeys'
+            // (Fortify's route file names those too).
             $action = $route->getActionName();
-            if (! str_starts_with($action, 'Laravel\\Fortify\\Http\\Controllers\\')) {
+            if (! str_starts_with($action, 'Laravel\\Fortify\\Http\\Controllers\\')
+                && ! str_starts_with($action, 'Laravel\\Passkeys\\Http\\Controllers\\')) {
                 continue;
             }
 

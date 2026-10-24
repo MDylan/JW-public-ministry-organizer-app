@@ -123,6 +123,19 @@ What that means in practice:
 - **The Laravel 11 skeleton ships `package.json` and `vite.config.js`.** Copying them over during a framework hop would quietly reintroduce a pipeline that builds nothing; `AssetPipelineKnownGapsTest` fails if either file, either entry-point directory, or any `mix(` / `@vite` / `Vite::` call appears.
 - `.gitignore` still lists `/node_modules`, `/public/hot`, `npm-debug.log` and `yarn-error.log` on purpose: if someone does run `npm` in a checkout, its output stays out of a commit - and therefore out of a release archive.
 
+## The passkey client: vendored ES modules (roadmap TODO 69)
+
+`public/vendor/passkeys/` holds the official browser client - `@laravel/passkeys`
+0.4.0 and `@simplewebauthn/browser` 13.3.0 - copied byte for byte out of the npm
+registry tarballs (integrity hashes and the update procedure in its `README.md`).
+There is no bundler, so `resources/views/partials/passkeys-client.blade.php` loads
+them as ES modules and an **import map** resolves the one bare import
+(`@simplewebauthn/browser`). The partial is included only on the three pages that
+use it (login, password confirmation, 2FA settings), before any other module script.
+It links the files with `asset()`, not `pwbs_asset()`: a module's own relative
+imports would not carry the cache-busting token anyway, so a version change
+means new file names (the chunk is content-hashed) rather than a query string.
+
 ## Livewire's own JavaScript is not served by the helper
 
 `pwbs_asset()` has nothing to do with it, and neither does any build step. It
@@ -213,5 +226,6 @@ repository can assert. `upgrade-guide.md` sections 3 and 5 own that half.
 | That no served stylesheet carries an absolute URL or a mangled `data:` URI | `tests/Feature/Assets/AssetPipelineTest.php` |
 | The nine closed gaps, the removed Mix pipeline (and that no other build appears), the call-site count | `tests/Feature/Assets/AssetPipelineKnownGapsTest.php` |
 | The published Livewire assets against the package's own `dist/` | `tests/Feature/Assets/LivewirePublishedAssetsTest.php` |
+| The vendored passkey modules: every import resolves, the bare one is mapped, provenance | `tests/Feature/Assets/PasskeyClientAssetsTest.php` |
 
 The layout-rendering tests use the real `public/` directory, because only that proves what the browser receives. The two stylesheet guards start from the **rendered HTML** rather than a hand-written list, so if a generating pipeline ever returns, they inspect its output rather than the untouched source.

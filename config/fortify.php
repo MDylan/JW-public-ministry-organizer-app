@@ -105,6 +105,29 @@ return [
     'limiters' => [
         'login' => 'login',
         'two-factor' => 'two-factor',
+        // Without this key the passkey routes carry no throttle at all
+        // (routes/fortify.php reads it, as Fortify's own file does).
+        'passkeys' => 'passkeys',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passkeys
+    |--------------------------------------------------------------------------
+    |
+    | Roadmap TODO 69. The relying party is the host of APP_URL, and only that
+    | origin may complete a ceremony - a host reached under a second name, or
+    | over plain http on anything but localhost, cannot use passkeys. Fortify
+    | derives the opaque user handle from APP_KEY unless
+    | `user_handle_secret` is set here, so rotating APP_KEY also invalidates
+    | every registered passkey - one more reason the key must survive a deploy.
+    |
+    */
+
+    'passkeys' => [
+        'relying_party_id' => parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST),
+        'allowed_origins' => [rtrim(env('APP_URL', 'http://localhost'), '/')],
+        'timeout' => 60000,
     ],
 
     /*
@@ -142,6 +165,12 @@ return [
         // (roadmap TODO 69 - the application confirmed it itself before).
         Features::twoFactorAuthentication([
             'confirm' => true,
+            'confirmPassword' => true,
+        ]),
+        // Registering and deleting a passkey needs a confirmed password, as
+        // the second factor does. A passkey login does not ask for the TOTP
+        // code: the passkey is already two factors (roadmap TODO 69).
+        Features::passkeys([
             'confirmPassword' => true,
         ]),
         ],

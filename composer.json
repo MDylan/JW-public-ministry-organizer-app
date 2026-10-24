@@ -14,7 +14,7 @@
         "php": "^8.3",
         "astrotomic/laravel-translatable": "^11.9",
         "guzzlehttp/guzzle": "^7.0.1",
-        "laravel/fortify": ">=1.19.1 <1.37.0",
+        "laravel/fortify": "^1.41",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^3.0",

@@ -417,6 +417,81 @@
             "web"
         ]
     },
+    "passkey.confirm": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth:web",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
+    "passkey.confirm-options": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
+    "passkey.destroy": {
+        "methods": [
+            "DELETE"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "passkey.login": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "guest:web",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
+    "passkey.login-options": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "guest:web",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
+    "passkey.registration-options": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
+    "passkey.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "throttle:passkeys",
+            "web"
+        ]
+    },
     "password.confirm": {
         "methods": [
             "GET",

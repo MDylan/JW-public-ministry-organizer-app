@@ -236,7 +236,7 @@ into the column undetectably.
 
 | Model | Purpose | Key Relations | Notes |
 |---|---|---|---|
-| `User` | Authenticated users and profile data. | `belongsToMany(Group)` variants, `hasMany(Event)`, `hasMany(GroupPosterRead)` | Implements email verification, preferred locale, 2FA confirmation, GDPR portability/anonymization, role checks, and notification routing safeguards. |
+| `User` | Authenticated users and profile data. | `belongsToMany(Group)` variants, `hasMany(Event)`, `hasMany(GroupPosterRead)` | Implements email verification, preferred locale, 2FA confirmation, passkeys (`PasskeyUser` + `PasskeyAuthenticatable`, `hasMany(Laravel\Passkeys\Passkey)`, since TODO 69 - anonymizing deletes them, the GDPR export lists them by name), GDPR portability/anonymization, role checks, and notification routing safeguards. |
 | `GroupUser` (pivot) | Membership record between user and group. | `belongsTo(User)`, morph-many `LogHistory` | Custom pivot (`group_user`) with soft delete, encrypted `note`, JSON `signs`, membership role/flags. `created_at`/`updated_at` carry explicit `datetime` casts (TODO 29): the pivot takes its `$timestamps` value from the loaded attributes (`AsPivot`), so the casting is not implicit the way it is on a plain model. `deleted_at` is cast by `SoftDeletes` on both this model and `Group`. |
 
 ## Group & Scheduling Models

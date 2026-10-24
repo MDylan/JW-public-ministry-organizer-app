@@ -146,10 +146,12 @@
                 <!-- /.col-md-6 -->
             </div>
             <!-- /.row -->
+            @include('user.partials.passkeys-card')
             </div><!-- /.container-fluid -->
         </div>
         <!-- /.content -->
         @section('footer_scripts')
+        @include('partials.passkeys-client')
         <script>
             function copyToClipboard(element) {
                 var $temp = $("<input>");

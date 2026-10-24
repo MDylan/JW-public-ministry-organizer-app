@@ -119,6 +119,31 @@ return array (
     'help' => 'By default settings, only the group servants and group overseers of your group can see your data below. If you check it, everyone with whom you serve in the same group can see your data.',
     'title' => 'Display my personal data',
   ),
+  'passkeys' => 
+  array (
+    'title' => 'Passkeys',
+    'help' => 'A passkey lets you sign in without a password: your device confirms it is you with a fingerprint, face recognition, a PIN or a security key. A passkey is two factors on its own, so no authenticator code is asked for when you use one.',
+    'none' => 'You have no passkeys yet.',
+    'name_placeholder' => 'Name of the device, e.g. "My phone"',
+    'add' => 'Add a passkey',
+    'delete' => 'Delete',
+    'created' => 'Created',
+    'last_used' => 'Last used',
+    'never_used' => 'Not used yet',
+    'login' => 'Sign in with a passkey',
+    'confirm' => 'Confirm with a passkey',
+    'deleted' => 'The passkey has been deleted.',
+    'or' => 'or',
+    'errors' => 
+    array (
+      'cancelled' => 'You cancelled the operation.',
+      'exists' => 'This device is already registered as a passkey.',
+      'domain' => 'Passkeys cannot be used on this address (a secure https connection is required).',
+      'unsupported' => 'This browser does not support passkeys.',
+      'failed' => 'The passkey could not be used. Please try again.',
+      'name_required' => 'Please give the device a name.',
+    ),
+  ),
   'two_factor' => 
   array (
     'add_code' => 'Enter verification code',

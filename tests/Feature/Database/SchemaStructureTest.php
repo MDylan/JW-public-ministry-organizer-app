@@ -64,6 +64,8 @@ class SchemaStructureTest extends FeatureTestCase
         'jobs',
         'log_histories',
         'migrations',
+        // TODO 69: Fortify 1.41's passkeys (laravel/passkeys' own shape).
+        'passkeys',
         'password_resets',
         'pending_user_emails',
         'settings',
@@ -110,6 +112,7 @@ class SchemaStructureTest extends FeatureTestCase
         'group_surveys_group_id_foreign' => 'group_surveys.group_id -> groups.id ON DELETE NO ACTION',
         'groups_city_id_foreign' => 'groups.city_id -> weather_cities.id ON DELETE SET NULL',
         'log_histories_group_id_foreign' => 'log_histories.group_id -> groups.id ON DELETE CASCADE',
+        'passkeys_user_id_foreign' => 'passkeys.user_id -> users.id ON DELETE CASCADE',
         'static_page_translations_static_page_id_foreign' => 'static_page_translations.static_page_id -> static_pages.id ON DELETE CASCADE',
         'static_pages_user_id_foreign' => 'static_pages.user_id -> users.id ON DELETE NO ACTION',
     ];
@@ -135,6 +138,7 @@ class SchemaStructureTest extends FeatureTestCase
         // baseline has to reproduce it rather than tidy it up - renaming an
         // index inside a squash would be a schema change hiding in a refactor.
         'group_survey_statistics.group_survey_answer_id' => 'user_id',
+        'passkeys.passkeys_credential_id_unique' => 'credential_id',
         'pending_user_emails.pending_user_emails_user_unique' => 'user_type,user_id',
         'static_page_translations.static_page_translations_static_page_id_locale_unique' => 'static_page_id,locale',
         'static_pages.static_pages_slug_unique' => 'slug',

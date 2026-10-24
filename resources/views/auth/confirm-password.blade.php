@@ -35,14 +35,35 @@
                                     {{ $message }}
                                 </div>
                             @enderror
-                            
+
                           </form>
                     </div>
                 </div>
+                {{-- TODO 69: Fortify's passkey.confirm marks the session
+                     password-confirmed exactly as the form above does. --}}
+                @if (auth()->user()->hasPasskeysEnabled())
+                    <div class="row mt-3 d-none" data-passkey-scope data-passkey-block>
+                        <div class="col-12">
+                            <p class="text-muted mb-2">@lang('user.passkeys.or')</p>
+                            <button type="button" class="btn btn-outline-primary d-none"
+                                    data-passkey="confirm"
+                                    data-options="{{ route('passkey.confirm-options') }}"
+                                    data-submit="{{ route('passkey.confirm') }}">
+                                <i class="fas fa-fingerprint mr-1"></i> @lang('user.passkeys.confirm')
+                            </button>
+                            <div class="text-danger mt-2 d-none" role="alert" data-passkey-error></div>
+                        </div>
+                    </div>
+                @endif
             </div>
             <!-- /.card-body -->
           </div>
     </div>
-    
+
 </div>
+@if (auth()->user()->hasPasskeysEnabled())
+    @section('footer_scripts')
+        @include('partials.passkeys-client')
+    @endsection
+@endif
 </x-admin-layout>

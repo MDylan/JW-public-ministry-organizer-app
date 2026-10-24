@@ -20,6 +20,7 @@ From `config/fortify.php`:
 - Email verification
 - Profile update
 - Password update
+- Passkeys, with `confirmPassword` (since roadmap TODO 69, see *Passkeys* below)
 - Two-factor authentication, with `confirm` (since roadmap TODO 69: a second factor counts only once the
   user has entered a code from it, through Fortify's own `two-factor.confirm`) and `confirmPassword`
 
@@ -152,6 +153,49 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | GET | `/user/two-factor-recovery-codes` | `two-factor.recovery-codes` | Recovery code list. |
 | POST | `/user/two-factor-recovery-codes` | `two-factor.regenerate-recovery-codes` | Regenerate recovery codes. |
 
+## Passkeys (since roadmap TODO 69)
+
+Fortify 1.41's `Features::passkeys(['confirmPassword' => true])`, on top of
+`laravel/passkeys` 0.2.x (`web-auth/webauthn-lib` 5.3). Fortify configures that
+package from `config/fortify.php` and calls its `ignoreRoutes()`, so the seven
+routes below in `routes/fortify.php` are the only passkey routes.
+
+| Method | URI | Name | Middleware |
+|---|---|---|---|
+| GET | `/passkeys/login/options` | `passkey.login-options` | `guest`, `throttle:passkeys` |
+| POST | `/passkeys/login` | `passkey.login` | `guest`, `throttle:passkeys` |
+| GET | `/passkeys/confirm/options` | `passkey.confirm-options` | `auth`, `throttle:passkeys` |
+| POST | `/passkeys/confirm` | `passkey.confirm` | `auth`, `throttle:passkeys` |
+| GET | `/user/passkeys/options` | `passkey.registration-options` | `auth`, `password.confirm`, `throttle:passkeys` |
+| POST | `/user/passkeys` | `passkey.store` | `auth`, `password.confirm`, `throttle:passkeys` |
+| DELETE | `/user/passkeys/{passkey}` | `passkey.destroy` | `auth`, `password.confirm` (the controller answers 403 for another user's passkey) |
+
+- **The developer's decisions:** a passkey login does **not** ask for the TOTP
+  code - a passkey is two factors on its own; passkeys are managed on the 2FA
+  settings page (`user.partials.passkeys-card`); the password-confirmation page
+  offers "confirm with a passkey" to a user who has one (`passkey.confirm` marks
+  the session password-confirmed exactly as the form does).
+- **The `passkeys` rate limiter** is Fortify's own stub (10 a minute per credential
+  id - or session, before one exists - and IP), defined in `FortifyServiceProvider`.
+  Without `fortify.limiters.passkeys` the routes would carry no throttle at all.
+- **Relying party and origin** come from `APP_URL` (`config/fortify.php`
+  `passkeys`). WebAuthn needs a secure context, so a host reached over plain
+  http (anything but `localhost`) or under a second host name cannot use
+  passkeys; the buttons still appear and report the domain error.
+- **The user handle is derived from `APP_KEY`** (no `user_handle_secret` is set),
+  so rotating the key invalidates every passkey - next to the encrypted columns,
+  one more reason the key must survive a deploy.
+- **The browser client** is the official `@laravel/passkeys` with
+  `@simplewebauthn/browser`, vendored as ES modules under `public/vendor/passkeys`
+  (see `.docs/assets.md`), driven by `resources/views/partials/passkeys-client.blade.php`.
+- **Data:** the `passkeys` table (public key + the user's own label),
+  `App\Models\User` implements `PasskeyUser`; anonymizing a user deletes their
+  passkeys, the GDPR export lists them by name without the credential, deleting
+  a user cascades.
+- Covered by `tests/Feature/Auth/PasskeyTest.php` (routes, options, login with the
+  signature check replaced, confirmation, deletion, GDPR, the three pages) and
+  `FortifyRouteParityTest`.
+
 ## Important Notes
 
 - **`routes/fortify.php` is reconciled with Fortify's own route file** (TODO 69): same paths, controllers
@@ -183,8 +227,12 @@ left `/register` and `/forgot-password` with no bot protection at all.
 
 ## Fortify version pin
 
-`composer.json` constrains `laravel/fortify` to `>=1.19.1 <1.37.0`, not `^1`.
-Both ends are decisions, and the file states them so a reviewer does not have to
+**Lifted at TODO 69 (2026-10-24): the constraint is `^1.41` (1.41.0 installed).**
+The developer decided to take the passkey feature now, which is what the ceiling
+below existed to hold back. The rest of this section is the pin's history.
+
+`composer.json` constrained `laravel/fortify` to `>=1.19.1 <1.37.0`, not `^1`.
+Both ends were decisions, and the file stated them so a reviewer did not have to
 reconstruct either.
 
 - **1.19.1 is the floor** because it is the lowest release admitting Laravel 10

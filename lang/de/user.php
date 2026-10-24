@@ -112,6 +112,31 @@ return array (
     'help' => 'Standardmäßig kann niemand deine Angaben unten sehen, außer den Gruppenaufseher und Ältesten, wo du hinzugehörst. Wenn du dieses Kästchen ankreuzst, sind deine Angaben für alle sichtbar, mit denen du in einer Gruppe dienst.',
     'title' => 'Meine Daten anzeigen',
   ),
+  'passkeys' => 
+  array (
+    'title' => 'Passkeys',
+    'help' => 'Mit einem Passkey meldest du dich ohne Passwort an: Dein Gerät bestätigt dich per Fingerabdruck, Gesichtserkennung, PIN oder Sicherheitsschlüssel. Ein Passkey ist für sich schon zwei Faktoren, daher wird dabei kein Bestätigungscode abgefragt.',
+    'none' => 'Du hast noch keine Passkeys.',
+    'name_placeholder' => 'Name des Geräts, z. B. „Mein Handy“',
+    'add' => 'Passkey hinzufügen',
+    'delete' => 'Löschen',
+    'created' => 'Erstellt',
+    'last_used' => 'Zuletzt verwendet',
+    'never_used' => 'Noch nicht verwendet',
+    'login' => 'Mit Passkey anmelden',
+    'confirm' => 'Mit Passkey bestätigen',
+    'deleted' => 'Der Passkey wurde gelöscht.',
+    'or' => 'oder',
+    'errors' => 
+    array (
+      'cancelled' => 'Du hast den Vorgang abgebrochen.',
+      'exists' => 'Dieses Gerät ist bereits als Passkey registriert.',
+      'domain' => 'Passkeys können unter dieser Adresse nicht verwendet werden (eine sichere https-Verbindung ist nötig).',
+      'unsupported' => 'Dieser Browser unterstützt keine Passkeys.',
+      'failed' => 'Der Passkey konnte nicht verwendet werden. Bitte versuche es erneut.',
+      'name_required' => 'Bitte gib dem Gerät einen Namen.',
+    ),
+  ),
   'two_factor' => 
   array (
     'add_code' => 'Gebe den Authentifizierungscode ein',

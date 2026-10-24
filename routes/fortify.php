@@ -13,7 +13,7 @@
 | reset link; throttle:5,1 on registration and the reset link; strictEmail
 | on both password reset posts (roadmap TODO 69 decided to keep it).
 |
-| Reconciled with Fortify 1.36.2's routes/routes.php at TODO 69: the same
+| Reconciled with Fortify 1.41.0's routes/routes.php at TODO 69: the same
 | names, paths and controllers, except where noted. FortifyRouteParityTest
 | compares the two files and fails when a Fortify upgrade brings a route
 | this file neither defines nor lists as deliberately absent.
@@ -44,6 +44,9 @@ use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
 use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
 use Laravel\Fortify\Http\Controllers\VerifyEmailController;
+use Laravel\Passkeys\Http\Controllers\PasskeyConfirmationController;
+use Laravel\Passkeys\Http\Controllers\PasskeyLoginController;
+use Laravel\Passkeys\Http\Controllers\PasskeyRegistrationController;
 
 Route::group(['middleware' => config('fortify.middleware', ['web'])], function () {
     $enableViews = config('fortify.views', true);
@@ -193,5 +196,51 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         Route::post('/user/two-factor-recovery-codes', [RecoveryCodeController::class, 'store'])
             ->middleware($twoFactorMiddleware)
             ->name('two-factor.regenerate-recovery-codes');
+    }
+
+    // Passkeys... (TODO 69: Fortify 1.41's definitions, unchanged. The
+    // controllers are laravel/passkeys'; Fortify configures that package and
+    // calls its ignoreRoutes(), so these are the only passkey routes.)
+    if (Features::enabled(Features::passkeys())) {
+        $passkeyLimiter = config('fortify.limiters.passkeys');
+        $throttle = $passkeyLimiter ? ['throttle:'.$passkeyLimiter] : [];
+
+        $passkeyAuthMiddleware = [config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')];
+
+        $passkeyMiddleware = config('fortify-options.passkeys.confirmPassword', true)
+            ? [...$passkeyAuthMiddleware, 'password.confirm']
+            : $passkeyAuthMiddleware;
+
+        $passkeyGuestMiddleware = ['guest:'.config('fortify.guard'), ...$throttle];
+        $passkeyConfirmMiddleware = [...$passkeyAuthMiddleware, ...$throttle];
+        $passkeyManageMiddleware = [...$passkeyMiddleware, ...$throttle];
+
+        Route::get('/passkeys/login/options', [PasskeyLoginController::class, 'index'])
+            ->middleware($passkeyGuestMiddleware)
+            ->name('passkey.login-options');
+
+        Route::post('/passkeys/login', [PasskeyLoginController::class, 'store'])
+            ->middleware($passkeyGuestMiddleware)
+            ->name('passkey.login');
+
+        Route::get('/passkeys/confirm/options', [PasskeyConfirmationController::class, 'index'])
+            ->middleware($passkeyConfirmMiddleware)
+            ->name('passkey.confirm-options');
+
+        Route::post('/passkeys/confirm', [PasskeyConfirmationController::class, 'store'])
+            ->middleware($passkeyConfirmMiddleware)
+            ->name('passkey.confirm');
+
+        Route::get('/user/passkeys/options', [PasskeyRegistrationController::class, 'index'])
+            ->middleware($passkeyManageMiddleware)
+            ->name('passkey.registration-options');
+
+        Route::post('/user/passkeys', [PasskeyRegistrationController::class, 'store'])
+            ->middleware($passkeyManageMiddleware)
+            ->name('passkey.store');
+
+        Route::delete('/user/passkeys/{passkey}', [PasskeyRegistrationController::class, 'destroy'])
+            ->middleware($passkeyMiddleware)
+            ->name('passkey.destroy');
     }
 });

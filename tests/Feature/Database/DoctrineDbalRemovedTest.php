@@ -25,7 +25,11 @@ class DoctrineDbalRemovedTest extends TestCase
     {
         $this->assertFalse(class_exists('Doctrine\DBAL\Connection'));
         $this->assertFalse(class_exists('Doctrine\Common\EventManager'));
-        $this->assertFalse(class_exists('Doctrine\Deprecations\Deprecation'));
+        // doctrine/deprecations left with dbal at TODO 57 and came back at
+        // TODO 69 for an unrelated reason: phpdocumentor/reflection-docblock
+        // and type-resolver require it, and web-auth/webauthn-lib (the
+        // passkeys) requires those. It is not dbal's, so it is not asserted
+        // here; dbal itself and its event manager are.
     }
 
     public function test_composer_json_does_not_require_it(): void
