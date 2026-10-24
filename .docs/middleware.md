@@ -83,7 +83,7 @@ Since TODO 56 the map also holds `auth.session` and `precognitive`: Laravel 11 a
 | `Authenticate` | Laravel override | Custom unauthenticated redirect target (`route('login')` for non-JSON requests). |
 | `RedirectIfAuthenticated` | Laravel override | Prevents logged-in users from hitting guest-only pages. |
 | `EncryptCookies` | Laravel default | Encrypts cookies; no custom exclusions configured. |
-| `VerifyCsrfToken` | Laravel default | CSRF verification enabled; no excluded URIs currently configured. |
+| `VerifyCsrfToken` | Laravel default | CSRF verification enabled; no excluded URIs currently configured. Extends Laravel 13's `PreventRequestForgery` (roadmap TODO 67): a POST the browser marks `Sec-Fetch-Site: same-origin` passes without a token, every other one still needs it. The check is skipped under unit tests, so `RequestForgeryTest` measures it through a subclass. |
 | `TrimStrings` | Laravel default | Trims string inputs except password fields. |
 | `PreventRequestsDuringMaintenance` | Laravel default | Standard maintenance-mode gate; no custom allowlist. |
 | `TrustHosts` | Laravel default | Host trust helper class present but not enabled in kernel stack. |
