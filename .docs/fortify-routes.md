@@ -150,7 +150,7 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | DELETE | `/user/two-factor-authentication` | `two-factor.disable` | Same middleware profile as enable. |
 | GET | `/user/two-factor-qr-code` | `two-factor.qr-code` | Returns QR code payload. |
 | GET | `/user/two-factor-secret-key` | `two-factor.secret-key` | Returns the secret as JSON for manual entry (TODO 69). The settings page shows the same key under the QR code. |
-| GET | `/user/two-factor-recovery-codes` | `two-factor.recovery-codes` | Recovery code list. |
+| GET | `/user/two-factor-recovery-codes` | `two-factor.recovery-codes` | Recovery code list (JSON). The .txt download on the settings page is the application's own `user.recovery-codes.download` in `routes/web.php`, not this route. |
 | POST | `/user/two-factor-recovery-codes` | `two-factor.regenerate-recovery-codes` | Regenerate recovery codes. |
 
 ## Passkeys (since roadmap TODO 69)

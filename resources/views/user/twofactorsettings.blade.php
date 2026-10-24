@@ -123,6 +123,10 @@
                                             <i class="far fa-copy mr-1"></i>
                                             @lang('user.two_factor.copy_to_clipboard')
                                         </button>
+                                        <a class="btn btn-primary mt-2" href="{{ route('user.recovery-codes.download') }}" download>
+                                            <i class="fas fa-download mr-1"></i>
+                                            @lang('user.two_factor.download_codes')
+                                        </a>
                                     </div>
                                 </div>
                                 <p class="mt-2">@lang('user.two_factor.scan')</p>

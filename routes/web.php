@@ -19,6 +19,7 @@ use App\Http\Controllers\Setup\RequirementsController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Profile;
+use App\Http\Controllers\User\DownloadRecoveryCodes;
 use App\Http\Controllers\User\TwoFactorSettings;
 use App\Http\Controllers\User\VerifyNewEmailController;
 use App\Livewire\Admin\AdminNewsletters;
@@ -213,6 +214,8 @@ Route::middleware(['auth'])->group(function () {
                         ->name('user.twofactorsettings')->middleware(['password.confirm']);
             // The confirmation POST is Fortify's two-factor.confirm
             // (routes/fortify.php) since roadmap TODO 69.
+            Route::get('user/recovery-codes/download', DownloadRecoveryCodes::class)
+                        ->name('user.recovery-codes.download')->middleware(['password.confirm']);
 
             Route::get('/user/asktodelete', [deletePersonalDataController::class, 'asktodelete'])
                                     ->name('user.askToDelete')->middleware(['password.confirm']);

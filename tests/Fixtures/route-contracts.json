@@ -773,6 +773,19 @@
             "web"
         ]
     },
+    "user.recovery-codes.download": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth",
+            "password.confirm",
+            "profileFull",
+            "verified",
+            "web"
+        ]
+    },
     "user.resendNewEmailVerification": {
         "methods": [
             "GET",
