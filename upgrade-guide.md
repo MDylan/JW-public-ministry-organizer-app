@@ -985,8 +985,13 @@ State that lives on the host and is not expressible in a release archive.
   not repairable from data:** a membership someone created for themselves
   through the uninvited-accept hole looks like any accepted membership. An
   operator who suspects it can review group member lists by hand.
+- **TODO 70.1: the same fixes ship to the 1.x line as 1.2.1.** A host that
+  took 1.2.1 has the closed holes, `ezyang/htmlpurifier` and
+  `RequirePasswordBeforeAction` already, and its hook removed the old
+  middleware file; nothing above changes for it. A host still on 1.2.0 is
+  exposed until it updates - take 1.2.1 first rather than waiting for 2.0.0.
 
-*Last updated: TODO 70.*
+*Last updated: TODO 70.1.*
 
 ## 6. The upgrade procedure
 
@@ -1081,3 +1086,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 67 | **The reset mail is translated again.** Laravel 13 renamed the password reset subject's key, and the five translated locales had been sending it in English since the hop; section 3 records the five language files. CSRF now also accepts a same-origin browser request without a token - no operator action. Cache and session serialization stay as they were: the Laravel 13 skeleton's stricter defaults are not merged into this application's configuration. |
 | (no framework hop) | 69 | **Passkeys, and Fortify owns the two-factor confirmation.** `laravel/fortify` 1.41.0 with `laravel/passkeys` (16 packages in, none out; section 2 says two old paths are back). Section 3: two inert class files to delete, `public/vendor/passkeys/` new. Section 4: no key, but `APP_URL` must be the real `https://` address and `APP_KEY` now also anchors every passkey. Section 5: the `passkeys` migration and the `bootstrap/cache` rule; users can now add passkeys on the 2FA settings page and sign in or confirm their password with one, and download their recovery codes as a .txt file there (a new route, nothing for the operator to do). |
 | (no framework hop) | 70 | **Authorization behind the middleware, and stored XSS.** Livewire actions do not pass the page route's `groupMember`/`groupAdmin`, and component ids were client-writable; the fixes are code only. Section 2: `ezyang/htmlpurifier` in, nothing out. Section 3: one renamed middleware file to delete. Section 4: none. Section 5: a writable cache directory, two routes changed method (rebuild the route cache), a page left open answers 405 once; memberships created through the closed hole cannot be told apart. The v1 backport is TODO 70.1. |
+| (no framework hop) | 70.1 | **The fixes reach 1.x as 1.2.1** - built on branch `v1-authz`, released by the developer. Section 5 says hosts should take it before 2.0.0; nothing else changes for the 2.0.0 path. |

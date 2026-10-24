@@ -207,6 +207,7 @@ Inside nested `verified` -> `profileFull` middleware:
 | Admin stats / impersonation | `/admin/statistics` with `can:is-admin`; `POST /admin/users/login/{user}` additionally uses `password.confirm.action:admin.users` |
 | Group member routes | `/groups/{group}/users`, `/groups/{group}/news`, `/news_file/{group}/{file}`, `POST /groups/{group}/logout` (`password.confirm.action:groups`; a GET until TODO 70) |
 | Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit, `DELETE /groups/{group}/news/delete/{new}` (`password.confirm.action:groups.news_edit`; a GET until TODO 70), `/groups/{group}/statistics`, `/groups/{group}/history` |
+| Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
 **Livewire actions do not pass these groups (roadmap TODO 70).** An action
 posts to `livewire/update`, which re-applies only `auth` and `can:` from the
@@ -215,7 +216,6 @@ page's route. `groupMember`, `groupAdmin`, `profileFull` and
 the role itself on each request (`App\Livewire\Concerns\AuthorizesGroupAccess`,
 `hydrate()`), and keeps its group and the ids it acts on `#[Locked]`.
 `tests/Unit/LivewireLockedPropertiesTest.php` holds every component to that.
-| Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
 ### Group-scoped bindings (`v1-patch H2`)
 
