@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 
 
 class ListUsers extends AppComponent
 {
 
     public $user;
+    #[Locked]
     public $userIdBeeingRemoved = null;
     public $searchTerm = null;
     //for search with an url string

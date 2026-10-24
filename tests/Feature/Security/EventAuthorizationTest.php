@@ -179,7 +179,9 @@ class EventAuthorizationTest extends FeatureTestCase
 
         Livewire::actingAs($admin)->test(Modal::class)
             ->call('openModal', $this->date, $this->own->id)
-            ->set('bulk_ids', [$foreign->id => $foreign->id, $own->id => $own->id])
+            // bulk() takes any id from the client; bulk_ids itself is locked.
+            ->call('bulk', $foreign->id)
+            ->call('bulk', $own->id)
             ->call('acceptBulkFinal');
 
         $this->assertSame(0, (int) $foreign->fresh()->status);
@@ -193,7 +195,7 @@ class EventAuthorizationTest extends FeatureTestCase
 
         Livewire::actingAs($admin)->test(Modal::class)
             ->call('openModal', $this->date, $this->own->id)
-            ->set('bulk_ids', [$foreign->id => $foreign->id])
+            ->call('bulk', $foreign->id)
             ->call('rejectBulkFinal');
 
         $this->assertSame(0, (int) $foreign->fresh()->status);

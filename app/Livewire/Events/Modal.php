@@ -17,6 +17,7 @@ use App\Models\GroupUser;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 
 /**
  * The day modal, mounted on every page of the layout.
@@ -34,6 +35,7 @@ class Modal extends AppComponent
     private $day_data = [];
     private $day_events = [];
 
+    #[Locked]
     public $form_groupId = 0;
     protected $listeners = [
         'openModal', 
@@ -55,6 +57,7 @@ class Modal extends AppComponent
     private $editor = false;
     public $show_content = false;
     public $bulk_function = false;
+    #[Locked]
     public $bulk_ids = null;
     public $refreshUp = false;
 

@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Locked;
 
 class LastEvents extends AppComponent
 {
@@ -22,6 +23,7 @@ class LastEvents extends AppComponent
     public $last_day = null;
     public $reports = [];
     private $eventFormDisabled = false;
+    #[Locked]
     public $eventId;
 
     public function mount() {

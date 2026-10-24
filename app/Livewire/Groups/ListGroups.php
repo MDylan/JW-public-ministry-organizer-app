@@ -10,13 +10,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Locked;
 
 class ListGroups extends AppComponent
 {
 
     public $group;
+    #[Locked]
     public $groupBeeingRemoved = null;
+    #[Locked]
     public $groupBeeingRejected = null;
+    #[Locked]
     public $groupBeeingLogout = null;
 
     // No 'logoutConfirmed' listener since roadmap TODO 70: leaving a group

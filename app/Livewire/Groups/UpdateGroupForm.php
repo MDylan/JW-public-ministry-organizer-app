@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Countries;
+use Livewire\Attributes\Locked;
 
 class UpdateGroupForm extends AppComponent
 {
@@ -43,6 +44,7 @@ class UpdateGroupForm extends AppComponent
 
     public $literatures = [];
     public $editedLiteratureType = null;
+    #[Locked]
     public $editedLiteratureId = null;
     public $editedLiteratureRemove = [];
     public $default_colors = [];

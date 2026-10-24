@@ -8654,6 +8654,7 @@ return array(
     'Tests\\Unit\\ApplicationNamingConventionTest' => $baseDir . '/tests/Unit/ApplicationNamingConventionTest.php',
     'Tests\\Unit\\Domain\\DomainServiceRegressionTest' => $baseDir . '/tests/Unit/Domain/DomainServiceRegressionTest.php',
     'Tests\\Unit\\Events\\GenerateSlotsTest' => $baseDir . '/tests/Unit/Events/GenerateSlotsTest.php',
+    'Tests\\Unit\\LivewireLockedPropertiesTest' => $baseDir . '/tests/Unit/LivewireLockedPropertiesTest.php',
     'Tests\\Unit\\Models\\DateCastingTest' => $baseDir . '/tests/Unit/Models/DateCastingTest.php',
     'Tests\\Unit\\Notifications\\NotificationEnvFallbackTest' => $baseDir . '/tests/Unit/Notifications/NotificationEnvFallbackTest.php',
     'Tests\\Unit\\Notifications\\NotificationRegressionTest' => $baseDir . '/tests/Unit/Notifications/NotificationRegressionTest.php',

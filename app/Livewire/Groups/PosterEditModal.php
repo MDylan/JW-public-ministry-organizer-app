@@ -8,12 +8,15 @@ use App\Models\GroupPosters;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Locked;
 
 class PosterEditModal extends AppComponent
 {
 
+    #[Locked]
     public $groupId = 0;
     private $group = [];
+    #[Locked]
     public $posterId = 0;
     public $fromDate = null;
     public $openModal = false;

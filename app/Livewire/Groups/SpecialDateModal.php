@@ -12,10 +12,12 @@ use DateTime;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 
 class SpecialDateModal extends Component
 {
 
+    #[Locked]
     public $groupId = 0;
     private $group = [];
     public $date = null;

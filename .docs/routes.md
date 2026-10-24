@@ -214,6 +214,7 @@ page's route. `groupMember`, `groupAdmin`, `profileFull` and
 `password.confirm` guard the first render; every group component re-checks
 the role itself on each request (`App\Livewire\Concerns\AuthorizesGroupAccess`,
 `hydrate()`), and keeps its group and the ids it acts on `#[Locked]`.
+`tests/Unit/LivewireLockedPropertiesTest.php` holds every component to that.
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
 ### Group-scoped bindings (`v1-patch H2`)

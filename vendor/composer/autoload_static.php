@@ -9347,6 +9347,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Unit\\ApplicationNamingConventionTest' => __DIR__ . '/../..' . '/tests/Unit/ApplicationNamingConventionTest.php',
         'Tests\\Unit\\Domain\\DomainServiceRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Domain/DomainServiceRegressionTest.php',
         'Tests\\Unit\\Events\\GenerateSlotsTest' => __DIR__ . '/../..' . '/tests/Unit/Events/GenerateSlotsTest.php',
+        'Tests\\Unit\\LivewireLockedPropertiesTest' => __DIR__ . '/../..' . '/tests/Unit/LivewireLockedPropertiesTest.php',
         'Tests\\Unit\\Models\\DateCastingTest' => __DIR__ . '/../..' . '/tests/Unit/Models/DateCastingTest.php',
         'Tests\\Unit\\Notifications\\NotificationEnvFallbackTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationEnvFallbackTest.php',
         'Tests\\Unit\\Notifications\\NotificationRegressionTest' => __DIR__ . '/../..' . '/tests/Unit/Notifications/NotificationRegressionTest.php',
