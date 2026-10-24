@@ -247,7 +247,7 @@ Route::middleware(['auth'])->group(function () {
                 // is the admin list, not this POST-only route, so there is
                 // no broken GET replay and 405 after confirming.
                 Route::post('/admin/users/login/{user}', [LoginToUserController::class, 'login'])
-                    ->middleware('password.confirm.impersonation')
+                    ->middleware('password.confirm.action:admin.users')
                     ->name('admin.users.login');
             });
 
@@ -255,7 +255,11 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/groups/{group}/users', GroupsListUsers::class)->name('groups.users');
                 Route::get('/groups/{group}/news', NewsList::class)->name('groups.news');
                 Route::get('/news_file/{group}/{file}', [GroupNewsFileDownloadController::class, 'download'])->name('groups.news.filedownload');
-                Route::get('/groups/{group}/logout', [GroupLogout::class, 'index'])->name('groups.logout')->middleware(['password.confirm']);
+                // POST since roadmap TODO 70, like the news deletion below: a
+                // state-changing GET could be triggered by a link from another
+                // site within the password confirmation window. The
+                // confirmation returns to the page, the exit is clicked again.
+                Route::post('/groups/{group}/logout', [GroupLogout::class, 'index'])->name('groups.logout')->middleware(['password.confirm.action:groups']);
             });
 
             Route::middleware(['groupAdmin'])->group(function () {
@@ -264,7 +268,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/groups/{group}/delete', DeleteGroup::class)->name('groups.delete')->middleware(['password.confirm']);
                 Route::get('/groups/{group}/news/create', NewsEdit::class)->name('groups.news_create');
                 Route::get('/groups/{group}/news/edit/{new}', NewsEdit::class)->name('groups.news_edit');
-                Route::get('/groups/{group}/news/delete/{new}', [GroupNewsDelete::class, 'delete'])->name('groups.news_delete')->middleware(['password.confirm']);
+                Route::delete('/groups/{group}/news/delete/{new}', [GroupNewsDelete::class, 'delete'])->name('groups.news_delete')->middleware(['password.confirm.action:groups.news_edit']);
                 Route::get('/groups/{group}/statistics', Statistics::class)->name('groups.statistics');
                 Route::get('/groups/{group}/history', History::class)->name('groups.history');
             });

@@ -90,7 +90,7 @@ class MiddlewareStackContractTest extends TestCase
             'guest' => 'App\Http\Middleware\RedirectIfAuthenticated',
             'installer' => 'App\Http\Middleware\EnsureInstallerToken',
             'password.confirm' => 'Illuminate\Auth\Middleware\RequirePassword',
-            'password.confirm.impersonation' => 'App\Http\Middleware\RequirePasswordForImpersonation',
+            'password.confirm.action' => 'App\Http\Middleware\RequirePasswordBeforeAction',
             'precognitive' => 'Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests',
             'profileFull' => 'App\Http\Middleware\ProfileFull',
             'setGuestLanguage' => 'App\Http\Middleware\SetGuestLanguage',

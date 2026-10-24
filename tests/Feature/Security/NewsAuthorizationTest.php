@@ -105,12 +105,12 @@ class NewsAuthorizationTest extends FeatureTestCase
         $own = $this->createGroupNews($this->own, $this->admin);
 
         $this->actingAs($this->admin)->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.news_delete', ['group' => $this->own->id, 'new' => $foreign->id]))
+            ->delete(route('groups.news_delete', ['group' => $this->own->id, 'new' => $foreign->id]))
             ->assertNotFound();
         $this->assertNotNull(GroupNews::find($foreign->id));
 
         $this->actingAs($this->admin)->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.news_delete', ['group' => $this->own->id, 'new' => $own->id]))
+            ->delete(route('groups.news_delete', ['group' => $this->own->id, 'new' => $own->id]))
             ->assertRedirect(route('groups.news', ['group' => $this->own->id]));
         $this->assertNull(GroupNews::find($own->id));
     }

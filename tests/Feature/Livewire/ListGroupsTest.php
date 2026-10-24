@@ -61,14 +61,14 @@ class ListGroupsTest extends FeatureTestCase
 
     public function test_confirming_the_exit_detaches_the_membership(): void
     {
-        // The page's confirmation dialog navigates to groups.logout; that
-        // route, behind password.confirm, is the exit (roadmap TODO 70).
+        // The page's confirmation dialog posts to groups.logout; that
+        // route, behind a password confirmation, is the exit (roadmap TODO 70).
         $secondAdmin = $this->createUser(['email' => 'lg-admin3@example.test']);
         $this->attachUserToGroup($secondAdmin, $this->group, 'admin');
 
         $this->actingAs($this->admin)
             ->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.logout', ['group' => $this->group->id]))
+            ->post(route('groups.logout', ['group' => $this->group->id]))
             ->assertRedirect(route('groups'));
 
         $this->assertSame(
@@ -84,7 +84,7 @@ class ListGroupsTest extends FeatureTestCase
         // may have left in the meantime.
         $this->actingAs($this->admin)
             ->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.logout', ['group' => $this->group->id]))
+            ->post(route('groups.logout', ['group' => $this->group->id]))
             ->assertRedirect(route('groups'))
             ->assertSessionHas('message', __('group.logout.no_admin'));
 

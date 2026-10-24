@@ -6,6 +6,7 @@ use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\GroupAdmin;
 use App\Http\Middleware\GroupMember;
 use App\Http\Middleware\ProfileFull;
+use App\Http\Middleware\RequirePasswordBeforeAction;
 use App\Models\Group;
 use App\Models\GroupNewsFile;
 use App\Models\StaticPage;
@@ -265,7 +266,8 @@ class RouteAccessMatrixTest extends FeatureTestCase
 
     public function test_every_password_confirmed_route_asks_even_the_most_privileged_user(): void
     {
-        $routes = $this->routesGuardedBy(RequirePassword::class);
+        // RequirePasswordBeforeAction is the POST/DELETE variant (TODO 70).
+        $routes = $this->routesGuardedBy(RequirePassword::class) + $this->routesGuardedBy(RequirePasswordBeforeAction::class);
         $this->assertGreaterThan(15, count($routes));
 
         // Passes every other guard on every route: verified, a name, the

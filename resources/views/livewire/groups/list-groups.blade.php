@@ -270,6 +270,10 @@
         </form>
     @endcan
 
+    <form id="group-logout-form" method="POST" action="" class="d-none">
+        @csrf
+    </form>
+
     @section('footer_scripts')
     <script>
     $(document).ready(function() {
@@ -285,8 +289,10 @@
             cancelButtonText: '@lang('Cancel')'
             }).then((result) => {
             if (result.isConfirmed) {
-                // Livewire.dispatch('logoutConfirmed');
-                window.location.replace('{{ config('app.url') }}/groups/' + event.detail.groupId + '/logout');
+                // A POST since roadmap TODO 70 (was a GET navigation).
+                const form = document.getElementById('group-logout-form');
+                form.action = @json(route('groups.logout', ['group' => '__GROUP__'])).replace('__GROUP__', event.detail.groupId);
+                form.submit();
             }
             })
         });

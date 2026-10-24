@@ -204,9 +204,16 @@ Inside nested `verified` -> `profileFull` middleware:
 | User profile/security | `user/profile`, `user/twofactorsettings` (the 2FA confirmation POST is Fortify's `two-factor.confirm` since TODO 69), `user/recovery-codes/download` (`user.recovery-codes.download`: the recovery codes as a .txt attachment, `password.confirm`, 404 without a confirmed second factor), delete-personal-data routes, logout-other-devices |
 | Event/group basics | `lastevents`, `calendar/{year?}/{month?}`, `jtc/{group}/{year}/{month}`, `groups`, `newsletters` |
 | Admin (strict) | `/admin/users`, `/admin/settings`, `/admin/staticpages*`, `/admin/newsletter_edit/{id?}` with `can:is-admin` + `password.confirm` |
-| Admin stats / impersonation | `/admin/statistics` with `can:is-admin`; `POST /admin/users/login/{user}` additionally uses `password.confirm.impersonation` |
-| Group member routes | `/groups/{group}/users`, `/groups/{group}/news`, `/news_file/{group}/{file}`, `/groups/{group}/logout` |
-| Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit/delete, `/groups/{group}/statistics`, `/groups/{group}/history` |
+| Admin stats / impersonation | `/admin/statistics` with `can:is-admin`; `POST /admin/users/login/{user}` additionally uses `password.confirm.action:admin.users` |
+| Group member routes | `/groups/{group}/users`, `/groups/{group}/news`, `/news_file/{group}/{file}`, `POST /groups/{group}/logout` (`password.confirm.action:groups`; a GET until TODO 70) |
+| Group admin routes | `/groups/{group}/edit`, `/groups/{group}/delete`, group news create/edit, `DELETE /groups/{group}/news/delete/{new}` (`password.confirm.action:groups.news_edit`; a GET until TODO 70), `/groups/{group}/statistics`, `/groups/{group}/history` |
+
+**Livewire actions do not pass these groups (roadmap TODO 70).** An action
+posts to `livewire/update`, which re-applies only `auth` and `can:` from the
+page's route. `groupMember`, `groupAdmin`, `profileFull` and
+`password.confirm` guard the first render; every group component re-checks
+the role itself on each request (`App\Livewire\Concerns\AuthorizesGroupAccess`,
+`hydrate()`), and keeps its group and the ids it acts on `#[Locked]`.
 | Translator route | `/admin/translate` with `can:is-translator` + `password.confirm` |
 
 ### Group-scoped bindings (`v1-patch H2`)
@@ -249,7 +256,7 @@ return path was a 12-hour signed URL carrying the admin id.
 `admin.users.login` remains outside the generic `password.confirm` group because
 Laravel's `RequirePassword` stores the POST URL as the intended destination and
 would later revisit it as **GET**, producing a 405. The endpoint instead uses
-`password.confirm.impersonation`: it applies the same `auth.password_timeout`
+`password.confirm.action:admin.users`: it applies the same `auth.password_timeout`
 and `auth.password_confirmed_at` rules, but deliberately stores the
 `admin.users` GET route as the intended destination. After confirmation the
 administrator returns to the list and must explicitly start impersonation

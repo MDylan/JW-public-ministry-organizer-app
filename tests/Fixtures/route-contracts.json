@@ -126,7 +126,7 @@
         "middleware": [
             "auth",
             "can:is-admin",
-            "password.confirm.impersonation",
+            "password.confirm.action:admin.users",
             "profileFull",
             "verified",
             "web"
@@ -237,13 +237,12 @@
     },
     "groups.logout": {
         "methods": [
-            "GET",
-            "HEAD"
+            "POST"
         ],
         "middleware": [
             "auth",
             "groupMember",
-            "password.confirm",
+            "password.confirm.action:groups",
             "profileFull",
             "verified",
             "web"
@@ -290,13 +289,12 @@
     },
     "groups.news_delete": {
         "methods": [
-            "GET",
-            "HEAD"
+            "DELETE"
         ],
         "middleware": [
             "auth",
             "groupAdmin",
-            "password.confirm",
+            "password.confirm.action:groups.news_edit",
             "profileFull",
             "verified",
             "web"
