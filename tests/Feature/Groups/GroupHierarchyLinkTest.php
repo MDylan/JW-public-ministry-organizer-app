@@ -429,12 +429,21 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         // previous `!$selected_group->id` in that case called a property on
         // NULL, so a fatal came instead of a 403 - the same class of bug that
         // TODO 11.1 fixed for detachParentGroup().
+        //
+        // detachId is #[Locked] since TODO 70, so the unknown id reaches the
+        // two methods the ways that remain: as confirmChildDetach()'s
+        // argument, and as a child that was detached after the confirmation.
         $this->linkedChild();
 
         $this->listUsers(null, $this->parent)
-            ->set('detachId', 999999)
-            ->call('detachChildGroup')
+            ->call('confirmChildDetach', 999999)
             ->assertForbidden();
+
+        $component = $this->listUsers(null, $this->parent)
+            ->call('confirmChildDetach', $this->child->id);
+        $this->child->update(['parent_group_id' => null]);
+
+        $component->call('detachChildGroup')->assertForbidden();
     }
 
     public function test_a_non_admin_cannot_detach_the_parent(): void

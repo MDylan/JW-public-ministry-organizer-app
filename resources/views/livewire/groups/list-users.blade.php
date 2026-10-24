@@ -160,6 +160,9 @@
                                 @continue                                        
                             @endif
 
+                            {{-- A pending invitation to an existing account shows only the
+                                 address the editor typed in (TODO 70). --}}
+                            @php($profileVisible = $user->pivot->accepted_at !== null || $user->email_verified_at === null)
                             <div class="row py-2 mx-0 mb-1 @if(auth()->user()->id == $user->id) userEvent @endif">
                                     <div class="d-md-none col-4 text-right text-bold">
                                         @lang('user.name'):
@@ -168,7 +171,7 @@
                                     @can('is-admin')
                                         #{{ $user->id }} 
                                     @endcan
-                                    {{ $user->name }} 
+                                    @if($profileVisible){{ $user->name }}@endif  
                                     <div class="w-100"></div>
                                     @if($group_signs) 
                                         @foreach ($group_signs as $icon => $sign)
@@ -207,7 +210,7 @@
                                     @if($editor && $user->pivot->note) 
                                         <span class="badge badge-info"> {{ $user->pivot->note }} </span>
                                     @endif
-                                    @if((($user->show_fields['congregation'] ?? false) == true || $editor) && $user->congregation) 
+                                    @if((($user->show_fields['congregation'] ?? false) == true || $editor) && $profileVisible && $user->congregation)  
                                         <span class="badge badge-primary"> 
                                             <i class="fas fa-house-user mr-1"></i> 
                                             @if(($user->show_fields['congregation'] ?? false) == false)
@@ -236,7 +239,7 @@
                                         @lang('user.phone'):
                                     </div>
                                 <div class="col-8 col-md-2 text-left text-md-center my-auto align-middle">
-                                    @if(($user->show_fields['phone'] ?? false) == true || $editor) 
+                                    @if((($user->show_fields['phone'] ?? false) == true || $editor) && $profileVisible)  
                                         <a href="tel:+{{ $user->phone_number }}">
                                             @if(($user->show_fields['phone'] ?? false) == false)
                                                 <i class="fas fa-eye-slash mr-1 text-danger"></i>
@@ -323,9 +326,11 @@
                     </x-slot>
                 
                     <x-slot name="content">
+                        {{-- A pending invitee's own profile is not the group's (TODO 70). --}}
+                        @if($selected_user['profile'] ?? true)
                         <div class="row mb-2">
                             <div class="col-4 text-bold text-right">
-                                @lang('Full name'): 
+                                @lang('Full name'):
                             </div>
                             <div class="col-8">
                                 <input wire:model="state.user.name" wire:ignore
@@ -360,6 +365,7 @@
                                 </small>
                             </div>
                         </div>
+                        @endif
                         <div class="row mb-2">
                             <div class="col-4 text-bold text-right">@lang('E-Mail Address'):</div>
                             <div class="col-8">{{ $selected_user['email'] }}</div>
