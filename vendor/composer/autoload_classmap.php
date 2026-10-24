@@ -199,6 +199,7 @@ return array(
     'App\\Providers\\RouteServiceProvider' => $baseDir . '/app/Providers/RouteServiceProvider.php',
     'App\\Rules\\Throttle' => $baseDir . '/app/Rules/Throttle.php',
     'App\\Rules\\TimeCheck' => $baseDir . '/app/Rules/TimeCheck.php',
+    'App\\Support\\Auth\\ResumedAction' => $baseDir . '/app/Support/Auth/ResumedAction.php',
     'App\\Support\\Concerns\\ResolvesCauser' => $baseDir . '/app/Support/Concerns/ResolvesCauser.php',
     'App\\Support\\Gdpr\\AnonymizationPolicy' => $baseDir . '/app/Support/Gdpr/AnonymizationPolicy.php',
     'App\\Support\\Html\\SafeHtml' => $baseDir . '/app/Support/Html/SafeHtml.php',

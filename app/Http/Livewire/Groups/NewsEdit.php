@@ -15,6 +15,7 @@ use Livewire\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use App\Support\Html\SafeHtml;
 use App\Http\Livewire\Concerns\LocksProperties;
+use App\Support\Auth\ResumedAction;
 
 /**
  * Create and edit a group's news.
@@ -45,6 +46,7 @@ class NewsEdit extends AppComponent
     public $removed_files = [];
     public $attached_files = [];
     private $languages = [];
+    protected $resumeDelete = false;
 
     public $listeners = [
         'deleteConfirmed',
@@ -56,6 +58,12 @@ class NewsEdit extends AppComponent
         $this->groupId = $group;
         $this->newId = $new;
         $this->getGroup(true);
+
+        // Back from the password confirmation a deletion asked for (roadmap TODO 70.1).
+        $resumed = ResumedAction::take('groups.news_delete');
+        $this->resumeDelete = $resumed !== null && $this->newId
+            && (string) ($resumed['new'] ?? '') === (string) $this->newId
+            && (string) ($resumed['group'] ?? '') === (string) $this->groupId;
     }
 
     /**
@@ -235,6 +243,7 @@ class NewsEdit extends AppComponent
         return view('livewire.groups.news-edit', [
             'group' => $this->group,
             'new_data' => $this->new_data,
+            'resumeDelete' => $this->resumeDelete,
             'languages' => $this->languages
         ]);
     }

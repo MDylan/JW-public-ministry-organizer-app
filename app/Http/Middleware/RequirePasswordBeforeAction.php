@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use App\Support\Auth\ResumedAction;
 
 /**
  * Require a recent password confirmation before a POST/DELETE action.
@@ -39,8 +40,11 @@ class RequirePasswordBeforeAction
         }
 
         // Not the action URL: the confirmation redirects with GET. Return to
-        // the page and require an explicit retry.
+        // the page, which reopens its own confirmation for the action it is
+        // told about here (ResumedAction, roadmap TODO 70.1) - the action itself still
+        // has to be submitted again, through this middleware.
         $request->session()->put('url.intended', route($returnTo, $this->parametersFor($request, $returnTo)));
+        ResumedAction::remember($request);
 
         return redirect()->route('password.confirm');
     }

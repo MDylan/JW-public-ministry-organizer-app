@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Http\Livewire\Concerns\LocksProperties;
+use App\Support\Auth\ResumedAction;
 
 
 class ListUsers extends AppComponent
@@ -126,6 +127,16 @@ class ListUsers extends AppComponent
         $this->searchTerm = null;
     }
 
+    /** Whose impersonation a password confirmation interrupted (roadmap TODO 70.1). */
+    protected $resumeImpersonation = null;
+
+    public function mount() {
+        $resumed = ResumedAction::take('admin.users.login');
+        if($resumed !== null) {
+            $this->resumeImpersonation = User::find($resumed['user'] ?? null)?->name;
+        }
+    }
+
     public function render()
     {
         $users = User::query()
@@ -139,6 +150,7 @@ class ListUsers extends AppComponent
             ->latest()->paginate(20);
 
         return view('livewire.admin.users.list-users', [
+            'resumeImpersonation' => $this->resumeImpersonation,
             'users' => $users,
             'roles' => [
                 'registered',

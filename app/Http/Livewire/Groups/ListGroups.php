@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Livewire\Concerns\LocksProperties;
+use App\Support\Auth\ResumedAction;
 
 class ListGroups extends AppComponent
 {
@@ -216,12 +217,26 @@ class ListGroups extends AppComponent
         auth()->user()->fresh();
     }
 
+    /** The group whose exit a password confirmation interrupted (roadmap TODO 70.1). */
+    protected $resumeLogoutGroupId = null;
+
+    public function mount() {
+        $resumed = ResumedAction::take('groups.logout');
+        $groupId = $resumed['group'] ?? null;
+        if($groupId !== null
+            && Auth::user()->groupsAccepted()->where('groups.id', $groupId)->exists()
+            && pwbs_check_group_other_admins((int) $groupId, Auth::id()) !== false) {
+            $this->resumeLogoutGroupId = (int) $groupId;
+        }
+    }
+
     public function render()
-    {        
-        $user = Auth()->user(); 
+    {
+        $user = Auth()->user();  
         $groups = $user->userGroups()->paginate(20);
 
         return view('livewire.groups.list-groups', [
+            'resumeLogoutGroupId' => $this->resumeLogoutGroupId,
             'groups' => $groups
         ]);
     }
