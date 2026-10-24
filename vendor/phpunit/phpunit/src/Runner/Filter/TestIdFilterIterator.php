@@ -14,12 +14,12 @@ use PHPUnit\Event\TestData\NoDataSetFromDataProviderException;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\TestSuite;
-use PHPUnit\Runner\PhptTestCase;
+use PHPUnit\Runner\Phpt\TestCase as PhptTestCase;
 use RecursiveFilterIterator;
 use RecursiveIterator;
 
 /**
- * @template-extends RecursiveFilterIterator<int, Test, RecursiveIterator<int, Test>>
+ * @extends RecursiveFilterIterator<int, Test, RecursiveIterator<int, Test>>
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *

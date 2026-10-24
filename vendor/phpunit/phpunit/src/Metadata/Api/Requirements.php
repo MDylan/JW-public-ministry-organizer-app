@@ -14,6 +14,7 @@ use const PHP_OS_FAMILY;
 use const PHP_VERSION;
 use function addcslashes;
 use function array_column;
+use function array_key_exists;
 use function assert;
 use function extension_loaded;
 use function function_exists;
@@ -23,7 +24,10 @@ use function method_exists;
 use function phpversion;
 use function preg_match;
 use function sprintf;
+use function substr_count;
+use PHPUnit\Event\Facade;
 use PHPUnit\Metadata\Parser\Registry;
+use PHPUnit\Metadata\RequiresEnvironmentVariable;
 use PHPUnit\Metadata\RequiresFunction;
 use PHPUnit\Metadata\RequiresMethod;
 use PHPUnit\Metadata\RequiresOperatingSystem;
@@ -33,8 +37,11 @@ use PHPUnit\Metadata\RequiresPhpExtension;
 use PHPUnit\Metadata\RequiresPhpunit;
 use PHPUnit\Metadata\RequiresPhpunitExtension;
 use PHPUnit\Metadata\RequiresSetting;
+use PHPUnit\Metadata\Version\ComparisonRequirement;
+use PHPUnit\Metadata\Version\Requirement;
 use PHPUnit\Runner\Version;
 use PHPUnit\TextUI\Configuration\Registry as ConfigurationRegistry;
+use Throwable;
 
 /**
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
@@ -57,10 +64,14 @@ final readonly class Requirements
             if ($metadata->isRequiresPhp()) {
                 assert($metadata instanceof RequiresPhp);
 
-                if (!$metadata->versionRequirement()->isSatisfiedBy(PHP_VERSION)) {
+                $versionRequirement = $metadata->versionRequirement();
+
+                $this->warnAboutIncompleteVersion($metadata->versionRequirement(), $className, $methodName);
+
+                if (!$versionRequirement->isSatisfiedBy(PHP_VERSION)) {
                     $notSatisfied[] = sprintf(
                         'PHP %s is required.',
-                        $metadata->versionRequirement()->asString(),
+                        $versionRequirement->asString(),
                     );
                 }
             }
@@ -68,9 +79,19 @@ final readonly class Requirements
             if ($metadata->isRequiresPhpExtension()) {
                 assert($metadata instanceof RequiresPhpExtension);
 
+                $extensionVersion = phpversion($metadata->extension());
+
+                if ($extensionVersion === false) {
+                    $extensionVersion = '';
+                }
+
+                if ($metadata->hasVersionRequirement()) {
+                    $this->warnAboutIncompleteVersion($metadata->versionRequirement(), $className, $methodName);
+                }
+
                 if (!extension_loaded($metadata->extension()) ||
                     ($metadata->hasVersionRequirement() &&
-                        !$metadata->versionRequirement()->isSatisfiedBy(phpversion($metadata->extension())))) {
+                    !$metadata->versionRequirement()->isSatisfiedBy($extensionVersion))) {
                     $notSatisfied[] = sprintf(
                         'PHP extension %s%s is required.',
                         $metadata->extension(),
@@ -82,10 +103,14 @@ final readonly class Requirements
             if ($metadata->isRequiresPhpunit()) {
                 assert($metadata instanceof RequiresPhpunit);
 
-                if (!$metadata->versionRequirement()->isSatisfiedBy(Version::id())) {
+                $versionRequirement = $metadata->versionRequirement();
+
+                $this->warnAboutIncompleteVersion($metadata->versionRequirement(), $className, $methodName);
+
+                if (!$versionRequirement->isSatisfiedBy(Version::id())) {
                     $notSatisfied[] = sprintf(
                         'PHPUnit %s is required.',
-                        $metadata->versionRequirement()->asString(),
+                        $versionRequirement->asString(),
                     );
                 }
             }
@@ -101,6 +126,25 @@ final readonly class Requirements
                     $notSatisfied[] = sprintf(
                         'PHPUnit extension "%s" is required.',
                         $metadata->extensionClass(),
+                    );
+                }
+            }
+
+            if ($metadata->isRequiresEnvironmentVariable()) {
+                assert($metadata instanceof RequiresEnvironmentVariable);
+
+                if (!array_key_exists($metadata->environmentVariableName(), $_ENV) ||
+                    $metadata->value() === null && $_ENV[$metadata->environmentVariableName()] === '') {
+                    $notSatisfied[] = sprintf('Environment variable "%s" is required.', $metadata->environmentVariableName());
+
+                    continue;
+                }
+
+                if ($metadata->value() !== null && $_ENV[$metadata->environmentVariableName()] !== $metadata->value()) {
+                    $notSatisfied[] = sprintf(
+                        'Environment variable "%s" is required to be "%s".',
+                        $metadata->environmentVariableName(),
+                        $metadata->value(),
                     );
                 }
             }
@@ -124,7 +168,7 @@ final readonly class Requirements
                     addcslashes($metadata->operatingSystem(), '/'),
                 );
 
-                if (!preg_match($pattern, PHP_OS)) {
+                if (preg_match($pattern, PHP_OS) === 0) {
                     $notSatisfied[] = sprintf(
                         'Operating system %s is required.',
                         $metadata->operatingSystem(),
@@ -146,11 +190,21 @@ final readonly class Requirements
             if ($metadata->isRequiresMethod()) {
                 assert($metadata instanceof RequiresMethod);
 
-                if (!method_exists($metadata->className(), $metadata->methodName())) {
+                try {
+                    if (!method_exists($metadata->className(), $metadata->methodName())) {
+                        $notSatisfied[] = sprintf(
+                            'Method %s::%s() is required.',
+                            $metadata->className(),
+                            $metadata->methodName(),
+                        );
+                    }
+                } catch (Throwable $t) {
                     $notSatisfied[] = sprintf(
-                        'Method %s::%s() is required.',
+                        'Method %s::%s() is required, but class %s cannot be loaded: %s',
                         $metadata->className(),
                         $metadata->methodName(),
+                        $metadata->className(),
+                        $t->getMessage(),
                     );
                 }
             }
@@ -182,5 +236,29 @@ final readonly class Requirements
         }
 
         return false;
+    }
+
+    /**
+     * @param class-string     $className
+     * @param non-empty-string $methodName
+     */
+    private function warnAboutIncompleteVersion(Requirement $versionRequirement, string $className, string $methodName): void
+    {
+        if (!$versionRequirement instanceof ComparisonRequirement) {
+            return;
+        }
+
+        if (substr_count($versionRequirement->version(), '.') === 2) {
+            return;
+        }
+
+        Facade::emitter()->testRunnerTriggeredPhpunitWarning(
+            sprintf(
+                'Incomplete version requirement "%s" used by %s::%s()',
+                $versionRequirement->version(),
+                $className,
+                $methodName,
+            ),
+        );
     }
 }

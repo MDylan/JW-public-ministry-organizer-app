@@ -56,35 +56,51 @@ class EncryptedAttributeTest extends FeatureTestCase
      * test_every_encrypted_cast_is_covered(). Same pattern as
      * ModelFactoryTest's factory list (TODO 04).
      *
-     * PHPUnit 11 forbids non-static providers, hence static.
+     * PHPUnit 11 forbids non-static providers, hence static. The rows carry
+     * three values, because the test methods take three: PHPUnit 12 warns
+     * about every data set with more arguments than its method accepts, so
+     * the nullability flag the two filtered providers need lives in
+     * COLUMNS and is cut off here (roadmap TODO 64).
      *
-     * @return array<string, array{0: class-string, 1: string, 2: string, 3: bool}>
+     * @return array<string, array{0: class-string, 1: string, 2: string}>
      */
     public static function encryptedColumns(): array
     {
-        return [
-            'users.name'             => [User::class, 'name', 'users', true],
-            'users.phone_number'     => [User::class, 'phone_number', 'users', true],
-            'users.congregation'     => [User::class, 'congregation', 'users', true],
-            'groups.name'            => [Group::class, 'name', 'groups', false],
-            'groups.replyTo'         => [Group::class, 'replyTo', 'groups', true],
-            'events.comment'         => [Event::class, 'comment', 'events', true],
-            'group_user.note'        => [GroupUser::class, 'note', 'group_user', true],
-            'group_posters.info'     => [GroupPosters::class, 'info', 'group_posters', false],
-            'group_messages.message' => [GroupMessage::class, 'message', 'group_messages', true],
-        ];
+        return self::withoutNullability(self::COLUMNS);
     }
 
     /** Only the nullable columns. */
     public static function nullableEncryptedColumns(): array
     {
-        return array_filter(self::encryptedColumns(), static fn ($row) => $row[3] === true);
+        return self::withoutNullability(array_filter(self::COLUMNS, static fn ($row) => $row[3] === true));
     }
 
     /** Only the NOT NULL columns - there are two today. */
     public static function notNullEncryptedColumns(): array
     {
-        return array_filter(self::encryptedColumns(), static fn ($row) => $row[3] === false);
+        return self::withoutNullability(array_filter(self::COLUMNS, static fn ($row) => $row[3] === false));
+    }
+
+    /**
+     * model, column, table, nullable.
+     *
+     * @var array<string, array{0: class-string, 1: string, 2: string, 3: bool}>
+     */
+    private const COLUMNS = [
+        'users.name'             => [User::class, 'name', 'users', true],
+        'users.phone_number'     => [User::class, 'phone_number', 'users', true],
+        'users.congregation'     => [User::class, 'congregation', 'users', true],
+        'groups.name'            => [Group::class, 'name', 'groups', false],
+        'groups.replyTo'         => [Group::class, 'replyTo', 'groups', true],
+        'events.comment'         => [Event::class, 'comment', 'events', true],
+        'group_user.note'        => [GroupUser::class, 'note', 'group_user', true],
+        'group_posters.info'     => [GroupPosters::class, 'info', 'group_posters', false],
+        'group_messages.message' => [GroupMessage::class, 'message', 'group_messages', true],
+    ];
+
+    private static function withoutNullability(array $rows): array
+    {
+        return array_map(static fn (array $row): array => array_slice($row, 0, 3), $rows);
     }
 
     /** An instance of the model, with the given column set. */

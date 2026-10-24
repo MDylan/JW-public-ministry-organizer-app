@@ -11,10 +11,8 @@ namespace PHPUnit\TextUI\Output\Default\ProgressPrinter;
 
 use function floor;
 use function sprintf;
-use function str_contains;
 use function str_repeat;
 use function strlen;
-use PHPUnit\Event\EventFacadeIsSealedException;
 use PHPUnit\Event\Facade;
 use PHPUnit\Event\Test\DeprecationTriggered;
 use PHPUnit\Event\Test\Errored;
@@ -22,10 +20,12 @@ use PHPUnit\Event\Test\ErrorTriggered;
 use PHPUnit\Event\Test\NoticeTriggered;
 use PHPUnit\Event\Test\PhpDeprecationTriggered;
 use PHPUnit\Event\Test\PhpNoticeTriggered;
+use PHPUnit\Event\Test\PhpunitWarningTriggered;
 use PHPUnit\Event\Test\PhpWarningTriggered;
 use PHPUnit\Event\Test\WarningTriggered;
+use PHPUnit\Event\TestRunner\ChildProcessErrored;
 use PHPUnit\Event\TestRunner\ExecutionStarted;
-use PHPUnit\Event\UnknownSubscriberTypeException;
+use PHPUnit\Event\TestSuite\Started as TestSuiteStarted;
 use PHPUnit\Framework\TestStatus\TestStatus;
 use PHPUnit\TextUI\Configuration\Source;
 use PHPUnit\TextUI\Configuration\SourceFilter;
@@ -43,18 +43,23 @@ final class ProgressPrinter
     private readonly bool $colors;
     private readonly int $numberOfColumns;
     private readonly Source $source;
-    private int $column             = 0;
-    private int $numberOfTests      = 0;
-    private int $numberOfTestsWidth = 0;
-    private int $maxColumn          = 0;
-    private int $numberOfTestsRun   = 0;
-    private ?TestStatus $status     = null;
-    private bool $prepared          = false;
+    private int $column               = 0;
+    private int $numberOfTests        = 0;
+    private int $numberOfTestsWidth   = 0;
+    private int $maxColumn            = 0;
+    private int $numberOfTestsRun     = 0;
+    private ?TestStatus $status       = null;
+    private bool $prepared            = false;
+    private bool $childProcessErrored = false;
 
     /**
-     * @throws EventFacadeIsSealedException
-     * @throws UnknownSubscriberTypeException
+     * When a before-first-test method errors or fails, none of the tests of
+     * its test class, the test class that was started last, are run.
+     *
+     * @var non-negative-int
      */
+    private int $numberOfTestsOfTestClass = 0;
+
     public function __construct(Printer $printer, Facade $facade, bool $colors, int $numberOfColumns, Source $source)
     {
         $this->printer         = $printer;
@@ -74,10 +79,27 @@ final class ProgressPrinter
         $this->maxColumn          = $this->numberOfColumns - strlen('  /  (XXX%)') - (2 * $this->numberOfTestsWidth);
     }
 
+    public function testSuiteStarted(TestSuiteStarted $event): void
+    {
+        if (!$event->testSuite()->isForTestClass()) {
+            return;
+        }
+
+        $this->numberOfTestsOfTestClass = $event->testSuite()->count();
+    }
+
     public function beforeTestClassMethodErrored(): void
     {
-        $this->printProgressForError();
-        $this->updateTestStatus(TestStatus::error());
+        for ($i = 0; $i < $this->numberOfTestsOfTestClass; $i++) {
+            $this->printProgressForError();
+        }
+    }
+
+    public function beforeTestClassMethodFailed(): void
+    {
+        for ($i = 0; $i < $this->numberOfTestsOfTestClass; $i++) {
+            $this->printProgressForFailure();
+        }
     }
 
     public function testPrepared(): void
@@ -103,7 +125,11 @@ final class ProgressPrinter
 
     public function testMarkedIncomplete(): void
     {
-        $this->updateTestStatus(TestStatus::incomplete());
+        if (!$this->prepared) {
+            $this->printProgressForIncomplete();
+        } else {
+            $this->updateTestStatus(TestStatus::incomplete());
+        }
     }
 
     public function testTriggeredNotice(NoticeTriggered $event): void
@@ -160,11 +186,6 @@ final class ProgressPrinter
             return;
         }
 
-        if ($this->source->restrictDeprecations() &&
-            !SourceFilter::instance()->includes($event->file())) {
-            return;
-        }
-
         if (!$this->source->ignoreSuppressionOfDeprecations() && $event->wasSuppressed()) {
             return;
         }
@@ -190,11 +211,6 @@ final class ProgressPrinter
             return;
         }
 
-        if ($this->source->restrictDeprecations() &&
-            !SourceFilter::instance()->includes($event->file())) {
-            return;
-        }
-
         if (!$this->source->ignoreSuppressionOfPhpDeprecations() && $event->wasSuppressed()) {
             return;
         }
@@ -205,6 +221,11 @@ final class ProgressPrinter
     public function testTriggeredPhpunitDeprecation(): void
     {
         $this->updateTestStatus(TestStatus::deprecation());
+    }
+
+    public function testTriggeredPhpunitNotice(): void
+    {
+        $this->updateTestStatus(TestStatus::notice());
     }
 
     public function testConsideredRisky(): void
@@ -248,8 +269,12 @@ final class ProgressPrinter
         $this->updateTestStatus(TestStatus::warning());
     }
 
-    public function testTriggeredPhpunitWarning(): void
+    public function testTriggeredPhpunitWarning(PhpunitWarningTriggered $event): void
     {
+        if ($event->ignoredByTest()) {
+            return;
+        }
+
         $this->updateTestStatus(TestStatus::warning());
     }
 
@@ -269,10 +294,7 @@ final class ProgressPrinter
 
     public function testErrored(Errored $event): void
     {
-        /*
-         * @todo Eliminate this special case
-         */
-        if (str_contains($event->asString(), 'Test was run in child process and ended unexpectedly')) {
+        if ($this->childProcessErrored) {
             $this->updateTestStatus(TestStatus::error());
 
             return;
@@ -307,18 +329,21 @@ final class ProgressPrinter
             $this->printProgressForError();
         }
 
-        $this->status   = null;
-        $this->prepared = false;
+        $this->status              = null;
+        $this->prepared            = false;
+        $this->childProcessErrored = false;
     }
 
-    /**
-     * @throws EventFacadeIsSealedException
-     * @throws UnknownSubscriberTypeException
-     */
+    public function childProcessErrored(ChildProcessErrored $event): void
+    {
+        $this->childProcessErrored = true;
+    }
+
     private function registerSubscribers(Facade $facade): void
     {
         $facade->registerSubscribers(
             new BeforeTestClassMethodErroredSubscriber($this),
+            new BeforeTestClassMethodFailedSubscriber($this),
             new TestConsideredRiskySubscriber($this),
             new TestErroredSubscriber($this),
             new TestFailedSubscriber($this),
@@ -328,14 +353,17 @@ final class ProgressPrinter
             new TestRunnerExecutionStartedSubscriber($this),
             new TestSkippedSubscriber($this),
             new TestSuiteSkippedSubscriber($this),
+            new TestSuiteStartedSubscriber($this),
             new TestTriggeredDeprecationSubscriber($this),
             new TestTriggeredNoticeSubscriber($this),
             new TestTriggeredPhpDeprecationSubscriber($this),
             new TestTriggeredPhpNoticeSubscriber($this),
             new TestTriggeredPhpunitDeprecationSubscriber($this),
+            new TestTriggeredPhpunitNoticeSubscriber($this),
             new TestTriggeredPhpunitWarningSubscriber($this),
             new TestTriggeredPhpWarningSubscriber($this),
             new TestTriggeredWarningSubscriber($this),
+            new ChildProcessErroredSubscriber($this),
         );
     }
 

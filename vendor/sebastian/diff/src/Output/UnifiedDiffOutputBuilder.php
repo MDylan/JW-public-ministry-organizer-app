@@ -10,10 +10,13 @@
 namespace SebastianBergmann\Diff\Output;
 
 use function array_splice;
+use function assert;
 use function count;
 use function fclose;
 use function fopen;
 use function fwrite;
+use function is_int;
+use function is_resource;
 use function max;
 use function min;
 use function str_ends_with;
@@ -26,6 +29,7 @@ use SebastianBergmann\Diff\Differ;
  */
 final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
 {
+    /** @phpstan-ignore property.tooWideBool */
     private bool $collapseRanges     = true;
     private int $commonLineThreshold = 6;
 
@@ -45,6 +49,8 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
     public function getDiff(array $diff): string
     {
         $buffer = fopen('php://memory', 'r+b');
+
+        assert(is_resource($buffer));
 
         if ('' !== $this->header) {
             fwrite($buffer, $this->header);
@@ -71,8 +77,10 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
             : $diff;
     }
 
-    private function writeDiffHunks($output, array $diff): void
+    private function writeDiffHunks(mixed $output, array $diff): void
     {
+        assert(is_resource($output));
+
         // detect "No newline at end of file" and insert into `$diff` if needed
 
         $upperLimit = count($diff);
@@ -97,7 +105,7 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
                         array_splice($diff, $i + 1, 0, [["\n\\ No newline at end of file\n", Differ::NO_LINE_END_EOF_WARNING]]);
                     }
 
-                    if (!count($toFind)) {
+                    if ($toFind === []) {
                         break;
                     }
                 }
@@ -110,9 +118,7 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
         $hunkCapture = false;
         $sameCount   = $toRange = $fromRange = 0;
         $toStart     = $fromStart = 1;
-        $i           = 0;
 
-        /** @var int $i */
         foreach ($diff as $i => $entry) {
             if (0 === $entry[1]) { // same
                 if (false === $hunkCapture) {
@@ -200,6 +206,8 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
         $fromRange -= $sameCount;
         $toRange   -= $sameCount;
 
+        assert(isset($i) && is_int($i));
+
         $this->writeHunk(
             $diff,
             $hunkCapture - $contextStartOffset,
@@ -220,8 +228,10 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
         int $fromRange,
         int $toStart,
         int $toRange,
-        $output
+        mixed $output
     ): void {
+        assert(is_resource($output));
+
         if ($this->addLineNumbers) {
             fwrite($output, '@@ -' . $fromStart);
 

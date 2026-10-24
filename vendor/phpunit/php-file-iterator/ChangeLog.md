@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [6.0.2] - 2026-08-25
+
+### Fixed
+
+* [#162](https://github.com/sebastianbergmann/php-file-iterator/pull/162): Do not abort a traversal because of a directory that cannot be opened
+* [#163](https://github.com/sebastianbergmann/php-file-iterator/pull/163): Do not exclude paths that only share a prefix with an excluded directory
+
+## [6.0.1] - 2026-02-02
+
+### Fixed
+
+* [#84](https://github.com/sebastianbergmann/php-file-iterator/issues/84): `Factory` drops directories during wildcard resolution
+
+## [6.0.0] - 2025-02-07
+
+### Removed
+
+* This component is no longer supported on PHP 8.2
+
 ## [5.1.1] - 2026-02-02
 
 ### Fixed
@@ -174,6 +193,9 @@ No changes
 
 * [#23](https://github.com/sebastianbergmann/php-file-iterator/pull/23): Added support for wildcards (glob) in exclude
 
+[6.0.2]: https://github.com/sebastianbergmann/php-file-iterator/compare/6.0.1...6.0.2
+[6.0.1]: https://github.com/sebastianbergmann/php-file-iterator/compare/6.0.0...6.0.1
+[6.0.0]: https://github.com/sebastianbergmann/php-file-iterator/compare/5.1...6.0.0
 [5.1.1]: https://github.com/sebastianbergmann/php-file-iterator/compare/5.1.0...5.1.1
 [5.1.0]: https://github.com/sebastianbergmann/php-file-iterator/compare/5.0.1...5.1.0
 [5.0.1]: https://github.com/sebastianbergmann/php-file-iterator/compare/5.0.0...5.0.1
