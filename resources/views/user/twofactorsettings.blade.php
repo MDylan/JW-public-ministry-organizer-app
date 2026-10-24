@@ -64,10 +64,14 @@
                                         <div class="w-100 text-center py-1 mb-1">
                                             {!! auth()->user()->twoFactorQrCodeSvg(); !!}
                                         </div>
-                                    
+                                        @include('user.partials.two-factor-setup-key')
+
                                         <form action="{{route('two-factor.confirm')}}" method="post">
                                             @csrf
-                                            <input class="form-control mb-1" name="code" required placeholder="@lang('user.two_factor.add_code')"/>
+                                            @error('code', 'confirmTwoFactorAuthentication')
+                                                <div class="text-danger mb-1">@lang('user.two_factor.error')</div>
+                                            @enderror
+                                            <input class="form-control mb-1" name="code" required inputmode="numeric" autocomplete="one-time-code" placeholder="@lang('user.two_factor.add_code')"/>
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-mobile-alt mr-1"></i> @lang('user.two_factor.button_enable')
                                             </button>
@@ -134,6 +138,7 @@
                                 <div class="w-100 text-center py-1">
                                     {!! auth()->user()->twoFactorQrCodeSvg(); !!}
                                 </div>
+                                @include('user.partials.two-factor-setup-key')
                             </div>
                         </div>
                     </div>

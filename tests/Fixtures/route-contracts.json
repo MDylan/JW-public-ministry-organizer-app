@@ -385,6 +385,17 @@
             "web"
         ]
     },
+    "login.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "checkRecaptcha:login",
+            "guest:web",
+            "throttle:login",
+            "web"
+        ]
+    },
     "logout": {
         "methods": [
             "POST"
@@ -499,6 +510,17 @@
             "web"
         ]
     },
+    "register.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "checkRecaptcha:register",
+            "guest:web",
+            "throttle:5,1",
+            "web"
+        ]
+    },
     "static_page": {
         "methods": [
             "GET",
@@ -513,9 +535,8 @@
             "POST"
         ],
         "middleware": [
-            "auth",
-            "profileFull",
-            "verified",
+            "auth:web",
+            "password.confirm",
             "web"
         ]
     },
@@ -549,6 +570,16 @@
             "web"
         ]
     },
+    "two-factor.login.store": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "guest:web",
+            "throttle:two-factor",
+            "web"
+        ]
+    },
     "two-factor.qr-code": {
         "methods": [
             "GET",
@@ -561,6 +592,27 @@
         ]
     },
     "two-factor.recovery-codes": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "two-factor.regenerate-recovery-codes": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "auth:web",
+            "password.confirm",
+            "web"
+        ]
+    },
+    "two-factor.secret-key": {
         "methods": [
             "GET",
             "HEAD"

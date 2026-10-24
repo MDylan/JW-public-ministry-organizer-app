@@ -211,7 +211,8 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('user/twofactorsettings', TwoFactorSettings::class)
                         ->name('user.twofactorsettings')->middleware(['password.confirm']);
-            Route::post('/user/2fa-confirm', [TwoFactorSettings::class, 'confirm'])->name('two-factor.confirm');
+            // The confirmation POST is Fortify's two-factor.confirm
+            // (routes/fortify.php) since roadmap TODO 69.
 
             Route::get('/user/asktodelete', [deletePersonalDataController::class, 'asktodelete'])
                                     ->name('user.askToDelete')->middleware(['password.confirm']);

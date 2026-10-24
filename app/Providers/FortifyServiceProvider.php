@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
-use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
@@ -13,10 +12,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Actions\AttemptToAuthenticate;
-use Laravel\Fortify\Actions\EnsureLoginIsNotThrottled;
-use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
-use Laravel\Fortify\Features;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -87,23 +82,11 @@ class FortifyServiceProvider extends ServiceProvider
             return view('auth.two-factor-challenge');
         });
 
-        /* Based on:
-        * https://github.com/laravel/fortify/issues/201
-        * https://dev.to/nicolus/laravel-fortify-implement-2fa-in-a-way-that-won-t-let-users-lock-themselves-out-2ejk
-        */        
-        Fortify::authenticateThrough(function() {
-            return array_filter([
-                config('fortify.limiters.login') ? null : EnsureLoginIsNotThrottled::class,
-            Features::enabled(Features::twoFactorAuthentication()) ? RedirectIfTwoFactorConfirmed::class : null,
-                AttemptToAuthenticate::class,
-                PrepareAuthenticatedSession::class,
-            ]);
-        });
-        //https://dev.to/seivad/comment/1ff4e
-        $this->app->singleton(
-            \Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class,
-            \App\Actions\Fortify\DisableTwoFactorAuthentication::class
-        );
+        // No custom login pipeline and no DisableTwoFactorAuthentication
+        // override since roadmap TODO 69. Both existed so that only a
+        // CONFIRMED second factor challenges at login and disabling clears the
+        // confirmation; with `'confirm' => true` (config/fortify.php) Fortify's
+        // own pipeline and action do exactly that.
 
         // Protection against TOTP replay. Fortify 1.11.2's own fix doesn't
         // reach its target because of google2fa's `findValidOTP()` returning `true` -

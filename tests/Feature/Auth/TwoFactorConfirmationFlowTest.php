@@ -2,15 +2,18 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Fortify;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Feature\FeatureTestCase;
 
 /**
  * TODO 39.2: the two-factor confirmation flow, pinned before the Fortify
- * version ceiling is lifted.
+ * version ceiling is lifted - and kept as the gate when TODO 69 handed the
+ * flow to Fortify.
  *
  * WHY THIS FILE EXISTS
  *
@@ -18,26 +21,27 @@ use Tests\Feature\FeatureTestCase;
  * illuminate/support ^8.82|^9.0 - so it admitted no Laravel 10 release, and the
  * Phase 5 hop could not resolve while the pin stood. Lifting the ceiling
  * reaches 1.19.1, whose own confirmation flow is built around a
- * two_factor_confirmed_at column. This project confirms a second factor
- * itself, through a column of its own, so "bump", "override" and "migrate"
- * were indistinguishable in risk while the flow had no acceptance criteria at
- * all - the same reason TODO 19.1, 20.1, 21.1 and 22.1 were written.
+ * two_factor_confirmed_at column. This project confirmed a second factor
+ * itself, so "bump", "override" and "migrate" were indistinguishable in risk
+ * while the flow had no acceptance criteria at all.
  *
- * Before this file the only 2FA coverage was TwoFactorReplayTest, which
- * measures the TOTP provider. Enabling, confirming, disabling and the login
- * challenge that depends on all three had zero tests.
+ * TODO 69: FORTIFY OWNS THE FLOW NOW
+ *
+ * config/fortify.php turns `'confirm' => true` on, the confirmation POST is
+ * Fortify's ConfirmedTwoFactorAuthenticationController (two-factor.confirm,
+ * /user/confirmed-two-factor-authentication), and the application's own
+ * controller method, User::confirmTwoFactorAuth(), the custom login pipeline
+ * (RedirectIfTwoFactorConfirmed) and the DisableTwoFactorAuthentication
+ * override are gone. The behaviour cases below did not change their
+ * assertions - which is the proof that the hand-over kept the behaviour. What
+ * moved is how a test confirms (Fortify's action), and that the confirmation
+ * POST now carries password.confirm and reports into Fortify's error bag.
  *
  * WHAT IS BEHAVIOUR AND WHAT IS STORAGE
  *
- * Every test but the last asserts BEHAVIOUR, and asks the model rather than the
- * column. They were written against the boolean and they did not move by a
- * single character when the storage migrated - which is the actual proof that
- * the migration changed where the answer is kept and nothing else.
- *
- * The last test is the directional one, and it is the only one that moved. It
- * asserted the old storage on purpose so that it would fail the moment the
- * confirmation moved; that failure was the review. It now states the new
- * storage, and its comment carries what it used to say.
+ * Every behaviour test asks the model rather than the column. The column
+ * test at the end is the directional one: it states where the answer is
+ * kept, and its comment carries what it used to say.
  */
 class TwoFactorConfirmationFlowTest extends FeatureTestCase
 {
@@ -63,6 +67,16 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
         ])->save();
 
         return [$user->fresh(), $secret];
+    }
+
+    private function confirm($user, string $secret): void
+    {
+        app(ConfirmTwoFactorAuthentication::class)($user, app(Google2FA::class)->getCurrentOtp($secret));
+    }
+
+    public function test_fortify_confirms_two_factor_authentication(): void
+    {
+        $this->assertTrue(Fortify::confirmsTwoFactorAuthentication());
     }
 
     public function test_enabling_the_second_factor_leaves_it_unconfirmed(): void
@@ -109,7 +123,7 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
     {
         [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-confirmed@example.test');
 
-        $user->confirmTwoFactorAuth(app(Google2FA::class)->getCurrentOtp($secret));
+        $this->confirm($user, $secret);
 
         $this->post('/login', [
             'email' => $user->email,
@@ -124,10 +138,12 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
         [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-confirm-ok@example.test');
 
         $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
             ->post(route('two-factor.confirm'), [
                 'code' => app(Google2FA::class)->getCurrentOtp($secret),
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'two-factor-authentication-confirmed');
 
         $this->assertTrue($user->fresh()->hasConfirmedTwoFactorAuth());
     }
@@ -137,26 +153,103 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
         [$user] = $this->userWithAnUnconfirmedSecret('twofactor-confirm-bad@example.test');
 
         $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
             ->post(route('two-factor.confirm'), ['code' => '000000'])
-            ->assertSessionHasErrors();
+            ->assertSessionHasErrorsIn('confirmTwoFactorAuthentication', 'code');
 
         $this->assertFalse($user->fresh()->hasConfirmedTwoFactorAuth());
+    }
+
+    public function test_confirming_without_a_secret_is_an_error_not_a_crash(): void
+    {
+        // The application's own confirmation decrypted a null secret and
+        // answered 500 for a user who had never pressed "enable". Fortify's
+        // action checks first.
+        $user = $this->createUser([
+            'email' => 'twofactor-no-secret@example.test',
+            'role'  => 'activated',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->post(route('two-factor.confirm'), ['code' => '123456'])
+            ->assertRedirect()
+            ->assertSessionHasErrorsIn('confirmTwoFactorAuthentication', 'code');
+    }
+
+    public function test_confirming_requires_a_confirmed_password(): void
+    {
+        // The application's own POST carried no password.confirm; Fortify's
+        // carries the same middleware as enabling and disabling.
+        [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-confirm-password@example.test');
+
+        $this->actingAs($user)
+            ->post(route('two-factor.confirm'), [
+                'code' => app(Google2FA::class)->getCurrentOtp($secret),
+            ])
+            ->assertRedirect(route('password.confirm'));
+
+        $this->assertFalse($user->fresh()->hasConfirmedTwoFactorAuth());
+    }
+
+    public function test_a_wrong_code_is_reported_on_the_settings_page(): void
+    {
+        // Until TODO 69 the page rendered no error at all: a wrong code sent
+        // the user back to the same form without a word.
+        [$user] = $this->userWithAnUnconfirmedSecret('twofactor-confirm-message@example.test');
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->from(route('user.twofactorsettings'))
+            ->followingRedirects()
+            ->post(route('two-factor.confirm'), ['code' => '000000'])
+            ->assertOk()
+            ->assertSee(__('user.two_factor.error'));
+    }
+
+    public function test_the_settings_page_shows_the_setup_key_of_an_unconfirmed_secret(): void
+    {
+        [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-setup-key@example.test');
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->get(route('user.twofactorsettings'))
+            ->assertOk()
+            ->assertSee(trim(chunk_split($secret, 4, ' ')));
+    }
+
+    public function test_the_secret_key_route_returns_the_secret(): void
+    {
+        [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-secret-route@example.test');
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->getJson(route('two-factor.secret-key'))
+            ->assertOk()
+            ->assertExactJson(['secretKey' => $secret]);
+    }
+
+    public function test_the_secret_key_route_requires_a_confirmed_password(): void
+    {
+        [$user] = $this->userWithAnUnconfirmedSecret('twofactor-secret-route-guard@example.test');
+
+        $this->actingAs($user)
+            ->getJson(route('two-factor.secret-key'))
+            ->assertStatus(423);
     }
 
     public function test_disabling_clears_the_secret_the_recovery_codes_and_the_confirmation(): void
     {
         [$user, $secret] = $this->userWithAnUnconfirmedSecret('twofactor-disable@example.test');
 
-        $user->confirmTwoFactorAuth(app(Google2FA::class)->getCurrentOtp($secret));
+        $this->confirm($user, $secret);
 
         // Found by the control experiment: without this line the test stays
         // green even when the confirmation is never written, because "not
         // confirmed afterwards" is also true of a user who never got there.
         $this->assertTrue($user->fresh()->hasConfirmedTwoFactorAuth());
 
-        // Resolving Fortify's contract is what proves the project's override is
-        // still the action that runs.
-        app(\Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class)($user);
+        app(DisableTwoFactorAuthentication::class)($user);
 
         $fresh = $user->fresh();
 
@@ -165,12 +258,16 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
         $this->assertFalse($fresh->hasConfirmedTwoFactorAuth());
     }
 
-    public function test_the_override_is_the_action_the_container_hands_out(): void
+    public function test_the_container_hands_out_fortifys_own_disable_action(): void
     {
-        $this->assertInstanceOf(
+        // REVERSED by TODO 69. This case asserted that the application's
+        // override won over the package binding. Fortify 1.36.2's own action
+        // clears two_factor_confirmed_at whenever it is set - what the
+        // override existed for - and dispatches TwoFactorAuthenticationDisabled,
+        // which the override did not; so the override went.
+        $this->assertSame(
             DisableTwoFactorAuthentication::class,
-            app(\Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class),
-            'FortifyServiceProvider::boot() has to keep winning over the package register() binding.'
+            get_class(app(DisableTwoFactorAuthentication::class))
         );
     }
 
@@ -187,11 +284,11 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
 
     public function test_the_confirmation_is_stored_in_the_two_factor_confirmed_at_column(): void
     {
-        // This is the directional assertion, REVERSED by the migration commit -
-        // and the reversal is the whole review. Before it, this test read
-        // "two_factor_confirmed exists and two_factor_confirmed_at does not".
-        // The boolean is gone, and the column Fortify itself writes from 1.12.0
-        // onwards is now the only one that carries the answer.
+        // This is the directional assertion, REVERSED by the TODO 39.2
+        // migration commit - and the reversal was the whole review. Before it,
+        // this test read "two_factor_confirmed exists and
+        // two_factor_confirmed_at does not". The boolean is gone, and the
+        // column Fortify itself writes is the only one that carries the answer.
         $this->assertTrue(Schema::hasColumn('users', 'two_factor_confirmed_at'));
         $this->assertFalse(Schema::hasColumn('users', 'two_factor_confirmed'));
 
@@ -199,7 +296,7 @@ class TwoFactorConfirmationFlowTest extends FeatureTestCase
 
         $this->assertNull($user->two_factor_confirmed_at);
 
-        $user->confirmTwoFactorAuth(app(Google2FA::class)->getCurrentOtp($secret));
+        $this->confirm($user, $secret);
 
         $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
     }

@@ -34,8 +34,9 @@ $app = Application::configure(basePath: dirname(__DIR__))
             // framework's RouteServiceProvider boots after every provider,
             // so the order is now stated here, where it happens.
             // RouteContractSnapshotTest::test_routes_web_is_loaded_before_routes_fortify.
+            // No `namespace` option: the deprecated group setting went at
+            // roadmap TODO 69, the file names every controller by its class.
             Route::group([
-                'namespace' => 'Laravel\Fortify\Http\Controllers',
                 'domain' => config('fortify.domain', null),
                 'prefix' => config('fortify.prefix'),
             ], base_path('routes/fortify.php'));

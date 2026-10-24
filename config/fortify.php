@@ -137,7 +137,11 @@ return [
         Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
+        // `confirm`: a second factor counts only after the user has entered a
+        // code from it, through Fortify's own two-factor.confirm route
+        // (roadmap TODO 69 - the application confirmed it itself before).
         Features::twoFactorAuthentication([
+            'confirm' => true,
             'confirmPassword' => true,
         ]),
         ],

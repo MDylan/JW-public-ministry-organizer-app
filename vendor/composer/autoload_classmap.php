@@ -7,9 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'App\\Actions\\Fortify\\CreateNewUser' => $baseDir . '/app/Actions/Fortify/CreateNewUser.php',
-    'App\\Actions\\Fortify\\DisableTwoFactorAuthentication' => $baseDir . '/app/Actions/Fortify/DisableTwoFactorAuthentication.php',
     'App\\Actions\\Fortify\\PasswordValidationRules' => $baseDir . '/app/Actions/Fortify/PasswordValidationRules.php',
-    'App\\Actions\\Fortify\\RedirectIfTwoFactorConfirmed' => $baseDir . '/app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php',
     'App\\Actions\\Fortify\\ResetUserPassword' => $baseDir . '/app/Actions/Fortify/ResetUserPassword.php',
     'App\\Actions\\Fortify\\TwoFactorAuthenticationProvider' => $baseDir . '/app/Actions/Fortify/TwoFactorAuthenticationProvider.php',
     'App\\Actions\\Fortify\\UpdateUserPassword' => $baseDir . '/app/Actions/Fortify/UpdateUserPassword.php',
@@ -7680,6 +7678,7 @@ return array(
     'Tests\\Feature\\Assets\\LivewirePublishedAssetsTest' => $baseDir . '/tests/Feature/Assets/LivewirePublishedAssetsTest.php',
     'Tests\\Feature\\Auth\\AuthEndpointHardeningTest' => $baseDir . '/tests/Feature/Auth/AuthEndpointHardeningTest.php',
     'Tests\\Feature\\Auth\\AuthorizationGateTest' => $baseDir . '/tests/Feature/Auth/AuthorizationGateTest.php',
+    'Tests\\Feature\\Auth\\FortifyRouteParityTest' => $baseDir . '/tests/Feature/Auth/FortifyRouteParityTest.php',
     'Tests\\Feature\\Auth\\ImpersonationTest' => $baseDir . '/tests/Feature/Auth/ImpersonationTest.php',
     'Tests\\Feature\\Auth\\PasswordResetMailTranslationTest' => $baseDir . '/tests/Feature/Auth/PasswordResetMailTranslationTest.php',
     'Tests\\Feature\\Auth\\PasswordRuleTest' => $baseDir . '/tests/Feature/Auth/PasswordRuleTest.php',

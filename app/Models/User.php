@@ -16,7 +16,6 @@ use App\Support\Gdpr\Portable;
 use App\Support\Gdpr\Anonymizable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail, HasLocalePreference
@@ -394,10 +393,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
      * Whether this user has proved they can read their own authenticator.
      *
      * TODO 39.2 added this accessor so that nothing outside the model has to
-     * name the column the answer is stored in. Fortify's own
-     * hasEnabledTwoFactorAuthentication() answers a different question - it
-     * only asks whether a secret exists - and enabling without confirming is
-     * exactly the state this project keeps apart from a confirmed one.
+     * name the column the answer is stored in. Enabling without confirming is
+     * exactly the state this project keeps apart from a confirmed one. Since
+     * TODO 69 Fortify writes the column itself (`'confirm' => true`, its
+     * two-factor.confirm route), and its hasEnabledTwoFactorAuthentication()
+     * then asks the same question; this accessor stays because the views and
+     * the layout read it.
      *
      * The timestamp is only ever asked whether it is null. Its value is a
      * marker rather than a measurement for every row that predates the
@@ -406,21 +407,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasLocalePreferen
     public function hasConfirmedTwoFactorAuth(): bool
     {
         return ! is_null($this->two_factor_confirmed_at);
-    }
-
-    public function confirmTwoFactorAuth($code)
-    {
-        $codeIsValid = app(TwoFactorAuthenticationProvider::class)
-            ->verify(decrypt($this->two_factor_secret), $code);
-
-        if ($codeIsValid) {
-            $this->two_factor_confirmed_at = $this->freshTimestamp();
-            $this->save();
-
-            return true;
-        }
-
-        return false;
     }
 
     /**

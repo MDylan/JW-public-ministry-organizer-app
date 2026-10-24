@@ -624,9 +624,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
 
     public static $classMap = array (
         'App\\Actions\\Fortify\\CreateNewUser' => __DIR__ . '/../..' . '/app/Actions/Fortify/CreateNewUser.php',
-        'App\\Actions\\Fortify\\DisableTwoFactorAuthentication' => __DIR__ . '/../..' . '/app/Actions/Fortify/DisableTwoFactorAuthentication.php',
         'App\\Actions\\Fortify\\PasswordValidationRules' => __DIR__ . '/../..' . '/app/Actions/Fortify/PasswordValidationRules.php',
-        'App\\Actions\\Fortify\\RedirectIfTwoFactorConfirmed' => __DIR__ . '/../..' . '/app/Actions/Fortify/RedirectIfTwoFactorConfirmed.php',
         'App\\Actions\\Fortify\\ResetUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/ResetUserPassword.php',
         'App\\Actions\\Fortify\\TwoFactorAuthenticationProvider' => __DIR__ . '/../..' . '/app/Actions/Fortify/TwoFactorAuthenticationProvider.php',
         'App\\Actions\\Fortify\\UpdateUserPassword' => __DIR__ . '/../..' . '/app/Actions/Fortify/UpdateUserPassword.php',
@@ -8297,6 +8295,7 @@ class ComposerStaticInitf340f709f19a7301b5187bb263eef7c3
         'Tests\\Feature\\Assets\\LivewirePublishedAssetsTest' => __DIR__ . '/../..' . '/tests/Feature/Assets/LivewirePublishedAssetsTest.php',
         'Tests\\Feature\\Auth\\AuthEndpointHardeningTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthEndpointHardeningTest.php',
         'Tests\\Feature\\Auth\\AuthorizationGateTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/AuthorizationGateTest.php',
+        'Tests\\Feature\\Auth\\FortifyRouteParityTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/FortifyRouteParityTest.php',
         'Tests\\Feature\\Auth\\ImpersonationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/ImpersonationTest.php',
         'Tests\\Feature\\Auth\\PasswordResetMailTranslationTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/PasswordResetMailTranslationTest.php',
         'Tests\\Feature\\Auth\\PasswordRuleTest' => __DIR__ . '/../..' . '/tests/Feature/Auth/PasswordRuleTest.php',

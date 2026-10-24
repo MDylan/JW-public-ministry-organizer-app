@@ -24,11 +24,18 @@ use Throwable;
  * hashing the credential and the counter together, then uses an atomic cache-add to
  * ensure that even among concurrent requests only one can redeem the code.
  *
- * The binding lives in App\Providers\FortifyServiceProvider::boot(), the same way
- * DisableTwoFactorAuthentication's override does. Both verification
- * paths - the login challenge (Fortify TwoFactorLoginRequest) and the
- * application's own confirmation (App\Models\User::confirmTwoFactorAuth) - resolve
- * the provider through the contract, so it affects both.
+ * The binding lives in App\Providers\FortifyServiceProvider::boot(). Both
+ * verification paths - the login challenge (Fortify TwoFactorLoginRequest) and
+ * the confirmation (Fortify ConfirmTwoFactorAuthentication, since roadmap
+ * TODO 69) - resolve the provider through the contract, so it affects both.
+ *
+ * STILL NEEDED ON FORTIFY 1.36.2 (checked at TODO 69). The package now turns
+ * Google2FA's `true` into a timestamp itself, so the replay this class was
+ * written for is closed upstream too. Two differences remain: the package
+ * keys its cache entry by the code alone (`md5($code)`), so two users who
+ * happen to type the same six digits in the same window collide, and it
+ * reads then writes the entry, so two concurrent requests can both redeem
+ * one code. This class keys by secret and counter and claims with add().
  */
 class TwoFactorAuthenticationProvider extends FortifyTwoFactorAuthenticationProvider
 {

@@ -1,12 +1,38 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| Fortify Routes
+|--------------------------------------------------------------------------
+|
+| The application's own copy of Fortify's route file, loaded by
+| bootstrap/app.php after routes/web.php (FortifyServiceProvider::register()
+| calls Fortify::ignoreRoutes()). It is kept because Fortify's configuration
+| cannot attach middleware to single routes, and these carry their own:
+| checkRecaptcha with an expected action on login, registration and the
+| reset link; throttle:5,1 on registration and the reset link; strictEmail
+| on both password reset posts (roadmap TODO 69 decided to keep it).
+|
+| Reconciled with Fortify 1.36.2's routes/routes.php at TODO 69: the same
+| names, paths and controllers, except where noted. FortifyRouteParityTest
+| compares the two files and fails when a Fortify upgrade brings a route
+| this file neither defines nor lists as deliberately absent.
+|
+| Deliberately absent - routes/web.php defines a route of the same name:
+| - GET /email/verify (verification.notice)
+| - GET and POST /user/confirm-password (password.confirm,
+|   password.confirm.store; the application's are at /confirm-password):
+|   the application's own POST carries throttle:6,1, Fortify's carries
+|   none, and the names would collide.
+|
+*/
+
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
-use Laravel\Fortify\Http\Controllers\ConfirmablePasswordController;
 use Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController;
+use Laravel\Fortify\Http\Controllers\ConfirmedTwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\EmailVerificationNotificationController;
-use Laravel\Fortify\Http\Controllers\EmailVerificationPromptController;
 use Laravel\Fortify\Http\Controllers\NewPasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
@@ -16,6 +42,7 @@ use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
+use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
 use Laravel\Fortify\Http\Controllers\VerifyEmailController;
 
 Route::group(['middleware' => config('fortify.middleware', ['web'])], function () {
@@ -37,8 +64,10 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             'guest:'.config('fortify.guard'),
             $limiter ? 'throttle:'.$limiter : null,
             'checkRecaptcha:login'
-        ]));
+        ]))
+        ->name('login.store');
 
+    // Fortify 1.36.2 also puts `auth` on this route; not adopted (TODO 69).
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
@@ -84,18 +113,12 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         }
 
         Route::post('/register', [RegisteredUserController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'checkRecaptcha:register' ]);
+            ->middleware(['guest:'.config('fortify.guard'), 'throttle:5,1', 'checkRecaptcha:register'])
+            ->name('register.store');
     }
 
-    // Email Verification...
+    // Email Verification... (verification.notice is routes/web.php's)
     if (Features::enabled(Features::emailVerification())) {
-        // disabled, it's generate problem
-        // if ($enableViews) {        //     
-        //     Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
-        //         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
-        //         ->name('verification.notice');
-        // }
-
         Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
             ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'signed', 'throttle:'.$verificationLimiter])
             ->name('verification.verify');
@@ -119,32 +142,10 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ->name('user-password.update');
     }
 
-    // Password Confirmation...
-    // if ($enableViews) {
-    //     Route::get('/user/confirm-password', [ConfirmablePasswordController::class, 'show'])
-    //         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
-    //         ->name('password.confirm');
-    // }
-
+    // Password Confirmation... (the form and its POST are routes/web.php's)
     Route::get('/user/confirmed-password-status', [ConfirmedPasswordStatusController::class, 'show'])
         ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
         ->name('password.confirmation');
-
-    // REMOVED. This endpoint carried only `auth:web`, no rate limit -
-    // meaning a stolen session could be used to try the user's password
-    // without limit. The application uses its OWN branch, protected by
-    // `throttle:6,1` (`password.confirm.store`, routes/web.php); nothing
-    // posted here - and the GET pair above had already been commented out
-    // earlier.
-    //
-    // In the Fortify 1.11.2 vendor route file this definition also picked
-    // up the `password.confirm` NAME (moved over from the GET); adopting it
-    // would create a duplicate name with the GET branch in routes/web.php,
-    // and `route:cache` would fail with the same LogicException that
-    // TODO 26 closed.
-    //
-    // Route::post('/user/confirm-password', [ConfirmablePasswordController::class, 'store'])
-    //     ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')]);
 
     // Two Factor Authentication...
     if (Features::enabled(Features::twoFactorAuthentication())) {
@@ -158,7 +159,8 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ->middleware(array_filter([
                 'guest:'.config('fortify.guard'),
                 $twoFactorLimiter ? 'throttle:'.$twoFactorLimiter : null,
-            ]));
+            ]))
+            ->name('two-factor.login.store');
 
         $twoFactorMiddleware = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')
             ? [config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'password.confirm']
@@ -168,6 +170,10 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ->middleware($twoFactorMiddleware)
             ->name('two-factor.enable');
 
+        Route::post('/user/confirmed-two-factor-authentication', [ConfirmedTwoFactorAuthenticationController::class, 'store'])
+            ->middleware($twoFactorMiddleware)
+            ->name('two-factor.confirm');
+
         Route::delete('/user/two-factor-authentication', [TwoFactorAuthenticationController::class, 'destroy'])
             ->middleware($twoFactorMiddleware)
             ->name('two-factor.disable');
@@ -176,11 +182,16 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ->middleware($twoFactorMiddleware)
             ->name('two-factor.qr-code');
 
+        Route::get('/user/two-factor-secret-key', [TwoFactorSecretKeyController::class, 'show'])
+            ->middleware($twoFactorMiddleware)
+            ->name('two-factor.secret-key');
+
         Route::get('/user/two-factor-recovery-codes', [RecoveryCodeController::class, 'index'])
             ->middleware($twoFactorMiddleware)
             ->name('two-factor.recovery-codes');
 
         Route::post('/user/two-factor-recovery-codes', [RecoveryCodeController::class, 'store'])
-            ->middleware($twoFactorMiddleware);
+            ->middleware($twoFactorMiddleware)
+            ->name('two-factor.regenerate-recovery-codes');
     }
 });

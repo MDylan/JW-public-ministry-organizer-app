@@ -20,7 +20,8 @@ From `config/fortify.php`:
 - Email verification
 - Profile update
 - Password update
-- Two-factor authentication (with `confirmPassword` option enabled)
+- Two-factor authentication, with `confirm` (since roadmap TODO 69: a second factor counts only once the
+  user has entered a code from it, through Fortify's own `two-factor.confirm`) and `confirmPassword`
 
 ## Custom Fortify Behavior
 
@@ -34,14 +35,14 @@ Fortify view endpoints are bound to custom Blade views:
 - reset password -> `auth.reset-password`
 - 2FA challenge -> `auth.two-factor-challenge`
 
-### Authentication pipeline customization
+### Authentication pipeline
 
-Custom authenticate pipeline (`Fortify::authenticateThrough`) includes:
-
-1. `EnsureLoginIsNotThrottled` (conditional)
-2. `App\Actions\Fortify\RedirectIfTwoFactorConfirmed`
-3. `AttemptToAuthenticate`
-4. `PrepareAuthenticatedSession`
+Fortify's default login pipeline, since roadmap TODO 69. The application used to replace it
+(`Fortify::authenticateThrough` with `App\Actions\Fortify\RedirectIfTwoFactorConfirmed`) so that
+only a **confirmed** second factor challenges at login; with `confirm` on, Fortify's own
+`RedirectIfTwoFactorAuthenticatable` checks `two_factor_confirmed_at` itself, and the custom class
+is gone. `TwoFactorConfirmationFlowTest` pins both halves (an unconfirmed secret logs straight in, a
+confirmed one is challenged).
 
 ### Custom action bindings
 
@@ -49,7 +50,6 @@ Custom authenticate pipeline (`Fortify::authenticateThrough`) includes:
 - Update profile: `App\Actions\Fortify\UpdateUserProfileInformation`
 - Update password: `App\Actions\Fortify\UpdateUserPassword`
 - Reset password: `App\Actions\Fortify\ResetUserPassword`
-- Disable 2FA override: `App\Actions\Fortify\DisableTwoFactorAuthentication`
 - 2FA provider override: `App\Actions\Fortify\TwoFactorAuthenticationProvider` (v1-patch H, TOTP replay - see the version pin section below)
 
 ### Rate limiters
@@ -104,7 +104,7 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/login` | `login` | View route (when Fortify views enabled). |
-| POST | `/login` | - | Includes login limiter + `checkRecaptcha:login`. |
+| POST | `/login` | `login.store` | Includes login limiter + `checkRecaptcha:login`. |
 | POST | `/logout` | `logout` | Session logout. |
 
 ## Password Reset
@@ -121,7 +121,7 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/register` | `register` | View route. |
-| POST | `/register` | - | Includes `throttle:5,1` + `checkRecaptcha:register`. |
+| POST | `/register` | `register.store` | Includes `throttle:5,1` + `checkRecaptcha:register`. |
 
 ## Email Verification
 
@@ -143,16 +143,25 @@ left `/register` and `/forgot-password` with no bot protection at all.
 | Method | URI | Name | Notes |
 |---|---|---|---|
 | GET | `/two-factor-challenge` | `two-factor.login` | Challenge view route. |
-| POST | `/two-factor-challenge` | - | Challenge verification. |
+| POST | `/two-factor-challenge` | `two-factor.login.store` | Challenge verification. |
 | POST | `/user/two-factor-authentication` | `two-factor.enable` | Requires auth (+ password confirmation depending on feature option). |
+| POST | `/user/confirmed-two-factor-authentication` | `two-factor.confirm` | Confirms the second factor with a code (Fortify's `ConfirmedTwoFactorAuthenticationController`, since TODO 69). Errors go to the `confirmTwoFactorAuthentication` bag; the settings page shows them. |
 | DELETE | `/user/two-factor-authentication` | `two-factor.disable` | Same middleware profile as enable. |
 | GET | `/user/two-factor-qr-code` | `two-factor.qr-code` | Returns QR code payload. |
+| GET | `/user/two-factor-secret-key` | `two-factor.secret-key` | Returns the secret as JSON for manual entry (TODO 69). The settings page shows the same key under the QR code. |
 | GET | `/user/two-factor-recovery-codes` | `two-factor.recovery-codes` | Recovery code list. |
-| POST | `/user/two-factor-recovery-codes` | - | Regenerate recovery codes. |
+| POST | `/user/two-factor-recovery-codes` | `two-factor.regenerate-recovery-codes` | Regenerate recovery codes. |
 
 ## Important Notes
 
-- Fortify email verification prompt view route is intentionally commented out in `routes/fortify.php`.
+- **`routes/fortify.php` is reconciled with Fortify's own route file** (TODO 69): same paths, controllers
+  and names, plus this application's middleware. `tests/Feature/Auth/FortifyRouteParityTest.php` reads
+  `vendor/laravel/fortify/routes/routes.php` and fails when Fortify defines a route this file neither
+  registers nor lists as deliberately absent - the three absent ones are `verification.notice`,
+  `password.confirm` and `password.confirm.store`, each replaced by a `routes/web.php` route of the same
+  name. Middleware is not compared. One middleware difference is kept on purpose: Fortify puts `auth`
+  on `POST /logout`, this file does not.
+- Fortify's email verification prompt route is deliberately absent from `routes/fortify.php`; `routes/web.php` defines `verification.notice`.
 - An identical `/email/verify/{id}/{hash}` route is also defined in `routes/web.php` as an inline
   closure. Because `RouteCollection` keys routes by `method + domain + uri`, only one survives, and
   `routes/fortify.php` loads after `routes/web.php`, so **the Fortify definition above wins and the
@@ -195,6 +204,10 @@ reconstruct either.
   boolean would not resolve Laravel 10 at all, so TODO 39.2 lifted the ceiling on
   Laravel 9 and moved the confirmation onto `two_factor_confirmed_at`
   (`database/migrations/2026_09_08_120000_move_two_factor_confirmation_onto_a_timestamp.php`).
+- **Superseded at TODO 69** - Fortify owns the confirmation now (`'confirm' => true`, its
+  `two-factor.confirm` route and action), and the application's `DisableTwoFactorAuthentication`,
+  `RedirectIfTwoFactorConfirmed`, `User::confirmTwoFactorAuth()` and `/user/2fa-confirm` are gone. The
+  bullet below is the TODO 39.2 measurement as it was.
 - **What the bump does NOT change, measured on 1.19.1 rather than assumed.**
   Every package path that touches `two_factor_confirmed_at` is gated on
   `Fortify::confirmsTwoFactorAuthentication()`, and `config/fortify.php` passes
@@ -209,12 +222,13 @@ reconstruct either.
 - **All 15 controllers `routes/fortify.php` names by FQCN exist in 1.19.1**,
   checked rather than assumed. The package ships two the file does not name -
   `ConfirmedTwoFactorAuthenticationController` and `TwoFactorSecretKeyController`
-  - and neither is registered, because `Fortify::ignoreRoutes()` means the route
-  table is entirely this file's.
+  - and neither was registered, because `Fortify::ignoreRoutes()` means the route
+  table is entirely this file's. **Both are registered since TODO 69.**
 - 1.11.2 also added `POST /user/confirmed-two-factor-authentication` named
   `two-factor.confirm` to its vendor route file, and 1.19.1 still has it.
-  `routes/fortify.php` deliberately does **not** carry it - the name is already
-  taken by `routes/web.php:213`.
+  `routes/fortify.php` deliberately did **not** carry it - the name was taken by
+  the application's own `/user/2fa-confirm`. **It carries it since TODO 69**, and the
+  application's route is gone.
 
 ### Credential-scoped, atomic replay protection
 
@@ -225,7 +239,9 @@ the **first** call there is no cached value, so `$oldTimestamp` is null - and
 case. Fortify stores that `true`; the next call passes it back as `$oldTimestamp`,
 `max($timestamp - $window, true + 1)` evaluates to the unchanged starting
 timestamp, and the same code verifies again. Later Fortify 1.x releases added the
-one missing branch that normalizes `true` to `getTimestamp()`.
+one missing branch that normalizes `true` to `getTimestamp()` - checked in 1.36.2 at
+TODO 69, which keeps the override anyway: the package still keys the entry by the
+code alone (`md5($code)`), and reads before it writes.
 
 `App\Actions\Fortify\TwoFactorAuthenticationProvider` always supplies a
 non-null old timestamp (`0`), so Google2FA returns the actual matched counter.
@@ -242,7 +258,8 @@ secret or code data and rejects the authentication attempt (fail closed).
 
 `FortifyServiceProvider::boot()` rebinds the contract to this provider (Fortify
 binds its own in `register()`, so `boot()` wins). Both verification paths -
-Fortify's `TwoFactorLoginRequest::hasValidCode()` and the app's own
-`User::confirmTwoFactorAuth()` - resolve the contract, so both are covered.
+Fortify's `TwoFactorLoginRequest::hasValidCode()` and its `ConfirmTwoFactorAuthentication`
+action (the application's own `User::confirmTwoFactorAuth()` until TODO 69) - resolve the
+contract, so both are covered.
 `tests/Feature/Auth/TwoFactorReplayTest.php` pins the replay, isolation, atomic
 cache, TTL, mandatory dependency, and fail-closed behaviour.

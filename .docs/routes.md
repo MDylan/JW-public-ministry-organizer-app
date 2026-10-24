@@ -201,7 +201,7 @@ Inside nested `verified` -> `profileFull` middleware:
 
 | Area | Routes |
 |---|---|
-| User profile/security | `user/profile`, `user/twofactorsettings`, `user/2fa-confirm`, delete-personal-data routes, logout-other-devices |
+| User profile/security | `user/profile`, `user/twofactorsettings` (the 2FA confirmation POST is Fortify's `two-factor.confirm` since TODO 69), delete-personal-data routes, logout-other-devices |
 | Event/group basics | `lastevents`, `calendar/{year?}/{month?}`, `jtc/{group}/{year}/{month}`, `groups`, `newsletters` |
 | Admin (strict) | `/admin/users`, `/admin/settings`, `/admin/staticpages*`, `/admin/newsletter_edit/{id?}` with `can:is-admin` + `password.confirm` |
 | Admin stats / impersonation | `/admin/statistics` with `can:is-admin`; `POST /admin/users/login/{user}` additionally uses `password.confirm.impersonation` |

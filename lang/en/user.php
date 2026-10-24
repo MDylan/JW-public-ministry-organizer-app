@@ -141,6 +141,7 @@ The two-step verification will be available only after you have performed these 
     'recommended_apps' => 'Suggested apps to use',
     'recovery_codes' => 'Reset codes',
     'scan' => 'If you want to set also an other authentication app, you can do so by scanning the QR code below.',
+    'setup_key' => 'If your app cannot scan the QR code, enter this key manually:',
     'status_disabled' => 'Two-step verification (2FA) is currently disabled.',
     'status_enabled' => 'Two-step verification (2FA) is currently enabled.',
     'store_it' => 'Please save the following reset codes to a SAFE location. In case you cannot access your phone for some reason, you will be able to log in by using these codes.',

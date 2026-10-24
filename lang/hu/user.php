@@ -72,6 +72,7 @@ return [
         'help' => 'A kétlépcsős azonosítás (más néven kétfaktoros hitelesítés) egy plusz biztonsági szinttel látja el fiókodat annak érdekében, hogy csak te férhess hozzá a fiókodhoz. A bekapcsolás után, amikor bejelentkezel a fiókodba meg kell adnod a jelszavadat és egy ellenőrző kódot, amit a telefonodon lévő hitelesítő alkalmazás generál.',
         'enabled' => 'A kétlépcsős azonosítás engedélyezve lett!',
         'scan' => 'Ha másik hitelesítő alkalmazást is szeretnél beállítani, akkor a lenti QR kód leolvasásával megteheted.',
+        'setup_key' => 'Ha az alkalmazás nem tudja beolvasni a QR kódot, add meg kézzel ezt a kulcsot:',
         'disabled' => 'A kétlépcsős azonosítás ki lett kapcsolva.',
         'store_it' => 'Kérlek mentsd el a lenti visszaállítási kódokat BIZTONSÁGOS helyre. Ha valamiért nem férsz hozzá a telefonodhoz, akkor ezek használatával tudsz majd belépni.',
         'status_enabled' => 'A kétlépcsős azonosítás (2FA) jelenleg be van kapcsolva.',

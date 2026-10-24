@@ -4,6 +4,8 @@ namespace Tests\Feature\Auth;
 
 use App\Actions\Fortify\TwoFactorAuthenticationProvider as ReplaySafeTwoFactorAuthenticationProvider;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use PragmaRX\Google2FA\Google2FA;
 use RuntimeException;
@@ -139,11 +141,12 @@ class TwoFactorReplayTest extends FeatureTestCase
         $this->assertFalse($provider->verify('credential-secret', '123456'));
     }
 
-    public function test_the_user_model_confirmation_path_also_rejects_a_replayed_code(): void
+    public function test_the_confirmation_path_also_rejects_a_replayed_code(): void
     {
-        // The application's OWN 2FA confirmation (POST /user/2fa-confirm ->
-        // User::confirmTwoFactorAuth) uses this same provider, so the fix
-        // takes effect on this branch too.
+        // The 2FA confirmation (Fortify's ConfirmTwoFactorAuthentication
+        // since TODO 69; the application's own User::confirmTwoFactorAuth
+        // before) resolves this same provider, so the fix takes effect on
+        // this branch too.
         $engine = app(Google2FA::class);
         $secret = $engine->generateSecretKey();
 
@@ -155,10 +158,14 @@ class TwoFactorReplayTest extends FeatureTestCase
 
         $code = $engine->getCurrentOtp($secret);
 
-        $this->assertTrue($user->confirmTwoFactorAuth($code));
+        $confirm = app(ConfirmTwoFactorAuthentication::class);
+
+        $confirm($user, $code);
+        $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
 
         $user->forceFill(['two_factor_confirmed_at' => null])->save();
 
-        $this->assertFalse($user->fresh()->confirmTwoFactorAuth($code));
+        $this->expectException(ValidationException::class);
+        $confirm($user->fresh(), $code);
     }
 }

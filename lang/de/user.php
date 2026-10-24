@@ -131,6 +131,7 @@ return array (
     'recommended_apps' => 'Vorgeschlagene Apps',
     'recovery_codes' => 'Widerherstellungscodes',
     'scan' => 'Wenn du eine andere Authentifizierungs-App einrichten möchtest, kannst du dies tun, indem du den QR-Code unten scannst.',
+    'setup_key' => 'Falls deine App den QR-Code nicht scannen kann, gib diesen Schlüssel manuell ein:',
     'status_disabled' => 'Die zweistufige Identifizierung (2FA) ist derzeit deaktiviert.',
     'status_enabled' => 'Die zweistufige Identifizierung (2FA) ist derzeit aktiviert.',
     'store_it' => 'Bitte speichere die untenstehenden Wiederherstellungscodes an einem SICHEREN Ort. Solltest du aus irgendeinem Grund keinen Zugang zu deinem Handy haben, kannst du dich mit diesen Codes anmelden.',
