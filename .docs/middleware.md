@@ -16,8 +16,9 @@ The app combines Laravel defaults with custom authorization, locale/session beha
 (`TrustProxies`, `TrimStrings`, `EncryptCookies`, `VerifyCsrfToken`, `PreventRequestsDuringMaintenance`,
 `Authenticate`, `RedirectIfAuthenticated`). `tests/Feature/Middleware/MiddlewareStackContractTest.php`
 pins what the stacks **resolve** to - global, both groups, aliases, priority - including what the packages
-push at boot (Debugbar's injector into the global stack and `web`, Livewire's back-button middleware into
-the global stack). The route snapshots cannot do that: they record the names a route carries.
+push at boot (Livewire's back-button middleware into the global stack; Debugbar's injector sat in the
+global stack and `web` until Debugbar 4, which injects from a `RequestHandled` listener instead - roadmap
+TODO 66). The route snapshots cannot do that: they record the names a route carries.
 
 ## Global Middleware (`$middleware->use()`)
 

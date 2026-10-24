@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Settings;
 use App\Providers\AppServiceProvider;
+use Fruitcake\LaravelDebugbar\LaravelDebugbar;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -142,5 +143,25 @@ class DevDependencyIsolationTest extends TestCase
         // reaches it. This flag therefore measures whether the rest of the
         // boot ran - not just that the test did not blow up.
         $this->assertSame('1', config('settings_debugbar'), 'The boot must run to completion past the debugbar branch too.');
+    }
+
+    public function test_the_bar_cannot_be_switched_on_in_production(): void
+    {
+        // Roadmap TODO 66, the developer's decision: Debugbar 4 boots only
+        // with APP_DEBUG on and outside the production and testing
+        // environments, unless `debugbar.force_allow_enable` says otherwise.
+        // Debugbar 3 had no such check, so the `debugbar` setting above
+        // switched the bar on for every visitor of a production host. The
+        // setting now works on development hosts only, and this keeps it so.
+        $this->assertFalse((bool) config('debugbar.force_allow_enable', false));
+
+        config(['app.debug' => true]);
+        $this->app['env'] = 'production';
+
+        $this->assertFalse(LaravelDebugbar::canBeEnabled());
+
+        $this->app['env'] = 'local';
+
+        $this->assertTrue(LaravelDebugbar::canBeEnabled(), 'The bar must stay available on a development host.');
     }
 }
