@@ -89,7 +89,7 @@ whose PHP cannot be raised cannot take 2.0.0 at all.
 | after Phase 5 | **10.50.x** | **`^8.1`** | TODO 39 |
 | after Phase 8 | **11.57.x** | **`^8.2`** | TODO 55 |
 | after Phase 9 | **12.70.x** | `^8.2` (unchanged) | - (TODO 61) |
-| after Phase 10 | 13.x | `^8.3` (planned) | TODO 64 |
+| after Phase 10 | **13.38.x** | **`^8.3`** | TODO 64 |
 
 Rows marked *planned* come from the roadmap's *Runtime and Version Matrix* and
 have not been executed yet. Confirm each against the shipped `composer.json`
@@ -112,7 +112,11 @@ answer above - 2.0.0 needs 8.3 regardless - but from this hop on a host on PHP
 **TODO 61 (Laravel 11 -> 12) raised nothing**: Laravel 12 keeps `^8.2`, and
 `composer.json` keeps it too.
 
-*Last updated: TODO 61.*
+**TODO 64 raised it to `^8.3`**, Laravel 13's own floor - the number this
+section has been announcing since TODO 34 is now the shipped one. A host on
+PHP 8.2 cannot run the tree at all from this hop on.
+
+*Last updated: TODO 64.*
 
 ## 2. Orphaned `vendor/` paths
 
@@ -320,7 +324,24 @@ framework, `nunomaduro/collision` and the PHPUnit 11 family (`phpunit/*`,
 `sebastian/*`) are replaced in place. As at TODO 55, files inside the updated
 packages come and go, which Branch B's full `vendor/` replacement handles.
 
-*Last updated: TODO 61.*
+**TODO 64 (PHPUnit 12, then Laravel 12 -> 13): two package paths, and the
+namespace stays.**
+
+```
+vendor/sebastian/code-unit
+vendor/sebastian/code-unit-reverse-lookup
+```
+
+PHPUnit 12 no longer needs them. **`vendor/sebastian` itself must survive** -
+PHPUnit's other dependencies live there. The framework hop itself removed
+nothing (1 install, 3 updates).
+
+**TODO 66 (tinker 3, Debugbar 4): none.** Both are replaced in place; Debugbar
+4 changed its PHP namespace, not its package directory
+(`vendor/barryvdh/laravel-debugbar`), and `php-debugbar/symfony-bridge`
+arrives.
+
+*Last updated: TODO 66.*
 
 ## 3. Application files that move or disappear
 
@@ -618,7 +639,14 @@ site is down, and step 10's `optimize:clear` removes them before step 11 brings
 it back up. **Do not skip step 10**: once the old layout is removed, a stale
 compiled view that still names it answers 500.
 
-*Last updated: TODO 59.*
+**TODO 67: five language files change one key.** `lang/{de,fr,hu,ro,sk}.json`
+rename `Reset Password Notification` to `Reset your password`, the key
+Laravel 13's password reset mail asks for; the translations are unchanged.
+The files overwrite in place. A customisation of the old key made through
+the translation editor is lost with them - and had stopped showing anyway,
+because Laravel 13 no longer reads that key.
+
+*Last updated: TODO 67.*
 
 ## 4. `.env` changes
 
@@ -872,8 +900,17 @@ State that lives on the host and is not expressible in a release archive.
   `public/vendor/livewire/` did not change. The installer's "database already
   has data" check was fixed in the same item; it matters only for a fresh
   install, not for an upgraded host.
+- **TODO 66 makes the `bootstrap/cache` rule fatal again**: Debugbar 4 moved
+  to the `Fruitcake\LaravelDebugbar` namespace, so a manifest naming
+  `Barryvdh\Debugbar\ServiceProvider` names a class that no longer exists.
+  Delete both manifests before the first request. **Operator-visible:** the
+  admin "debugbar" setting no longer switches the bar on where
+  `APP_ENV=production` - Debugbar 4 refuses production and requires
+  `APP_DEBUG` - which is the intended state for a live site.
+- **TODO 64 triggers the rule as well** (the framework crossed a major). The
+  PHP floor is now `^8.3` (section 1).
 
-*Last updated: TODO 61.*
+*Last updated: TODO 66.*
 
 ## 6. The upgrade procedure
 
@@ -962,3 +999,7 @@ migrations, which is the same reason the major ceiling exists.
 | **Laravel 11 -> 12** | **61** | **The fourth framework hop, and the first that needs no exemption.** `laravel/framework` 12.70.1 and PHPUnit 11; 2 packages in, 24 updated, 0 out, so section 2 says none. The PHP floor stays `^8.2` (section 1) and section 4 says none. Section 5: the `bootstrap/cache` manifests must go. All four `laravel/framework` advisories exempted at TODO 34 and TODO 55 are fixed in 12.70.1, so the exemption block is gone and `composer audit` reports nothing. **One more advisory an operator of a 1.x host should know about:** PKSA-b41t-wbzk-9q51 (critical, reported 2026-10-23) is a `TokenGuard` bypass with no Laravel 8 fix. This application's `api` guard uses that driver, but its `users` table has no `api_token` column, and on Laravel 11 that made the bypass unreachable (measured; not measured on 1.x). The installer no longer reports an empty database as full when the MySQL server holds other databases - a fresh-install fix only. |
 | (no framework hop) | 62 | **Nothing for an operator.** The Laravel 12 upgrade guide, walked entry by entry, changes nothing else here: the local disk keeps its `storage/app` root - the framework's new `storage/app/private` default is never merged in - so `installed.txt` and the installer token stay where every host has them; no route name is shared, so the new first-registered precedence has nothing to decide. No package, file, `.env` key or per-install state moves. |
 | (no framework hop) | 63 | **Nothing for an operator.** The package matrix is re-measured on Laravel 12; no package moves. For Phase 10 it means two constraint edits (`laravel/tinker`, `barryvdh/laravel-debugbar`) and no lock bumps, and that staying on Guzzle 7 is now a choice rather than a requirement. |
+| (no framework hop) | 64 (PHPUnit 12) | **Two dev-package paths orphan.** PHPUnit 12 drops `sebastian/code-unit` and `sebastian/code-unit-reverse-lookup` (section 2, under a `vendor/sebastian` that must stay). Nothing else for an operator. |
+| (no framework hop) | 66 | **Debugbar 4 and tinker 3; one pre-first-request deletion, and one setting that stops working on live sites.** No vendor path orphans (section 2). Section 5: Debugbar's provider class moved namespace, so the `bootstrap/cache` manifests are fatal until deleted; the admin "debugbar" setting no longer turns the bar on where `APP_ENV=production`. |
+| **Laravel 12 -> 13** | **64** | **The fifth and last framework hop, and the PHP floor reaches the 2.0.0 number: `^8.3`.** `laravel/framework` 13.38.0; 1 package in, 3 updated, 0 out, so section 2 adds nothing for the hop itself. Sections 3 and 4 say none for the hop. Section 5: the `bootstrap/cache` manifests must go. `composer audit` reports nothing. |
+| (no framework hop) | 67 | **The reset mail is translated again.** Laravel 13 renamed the password reset subject's key, and the five translated locales had been sending it in English since the hop; section 3 records the five language files. CSRF now also accepts a same-origin browser request without a token - no operator action. Cache and session serialization stay as they were: the Laravel 13 skeleton's stricter defaults are not merged into this application's configuration. |
