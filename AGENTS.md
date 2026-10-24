@@ -27,6 +27,7 @@ This file is the root documentation entrypoint. Detailed technical docs are unde
 ## Project Stack Snapshot
 
 - Framework: Laravel 13 (since roadmap TODO 64), on the slim application skeleton since roadmap TODO 56: `bootstrap/app.php` configures routing, middleware and exceptions, `bootstrap/providers.php` lists the application's providers. There is no `app/Http/Kernel.php`, `app/Console/Kernel.php` or `app/Exceptions/Handler.php`. The framework's config merging stays switched off, so `config/` is complete and authoritative.
+- PHP: `^8.3`. **Policy:** the minimum is always the oldest PHP branch with at least one more year of security support on php.net/supported-versions - PHP 8.3 until 2026-12-31, **PHP 8.4 from 2027-01-01** (`upgrade-roadmap.md` TODO 68). Check the php.net table rather than these dates when you touch the floor.
 - UI architecture: **Livewire 3** + Blade views/components (migrated from Livewire 2 at roadmap TODO 43; see the warning below)
 - Auth stack: Laravel Fortify (custom route registration)
 - Background processing: Laravel queue jobs + scheduler (`routes/console.php`)

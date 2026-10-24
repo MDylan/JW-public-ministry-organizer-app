@@ -99,6 +99,13 @@ when its hop lands; do not quote a planned row to an operator.
 from this table, and it is the one to verify with the hosting provider **before**
 starting anything else.
 
+**How that number is chosen, from 2026-10-24 on:** the minimum is always the
+oldest PHP branch that still has at least one more year of security support
+(php.net/supported-versions). PHP 8.3's ends on 2027-12-31, so it qualifies
+until 2026-12-31. **From 2027-01-01 the minimum is PHP 8.4** - a release made
+after that date requires it. An operator choosing a PHP version for a host now
+should take 8.4 or newer and skip one migration.
+
 Note for Phase 4 specifically: `^8.0` -> `^8.0.2` excludes only PHP 8.0.0 and
 8.0.1. It is a real exclusion, not a formality, but no host that can run 8.0 at
 all is likely to be pinned to those two patch releases.

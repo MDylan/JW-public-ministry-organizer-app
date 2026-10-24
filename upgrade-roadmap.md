@@ -34,7 +34,7 @@ Each item is intentionally small enough to complete and mark independently.
 - **Node is listed for completeness only.** No phase before 7 uses it: the Mix pipeline is dead (zero `mix()` calls, empty entrypoints, no outputs), and the assets are served by the `pwbs_asset()` helper since TODO 33.8 removed `eusonlito/laravel-packer`. Whether Node is ever needed is the open question in the Phase 7 preamble.
 - **Both required runtimes are already installed.** `^8.2` is a caret constraint, so PHP 8.3 satisfies Laravel 11 and 12; no PHP 8.2 install is needed.
 - ~~**Note on Phase 4:** although Laravel 9 declares `^8.0.2`, its officially tested ceiling is PHP 8.2, and the current `nesbot/carbon` line already fatals on PHP 8.3. Stay on `php81` for Laravel 9 and only move to PHP 8.3 once Laravel 10 is in place.~~ **Overtaken by measurement at Phase 5.** The Carbon fatal was real when this note was written and is not any more - 2.73.0 carries the untyped `setLastErrors()`. The switch happened at the start of Phase 5, on Laravel 9 and **before** the framework hop, as its own commit, so a runtime change and a framework change are never in the same diff. "Officially tested ceiling" remained a fair caution and is why it was measured rather than assumed; the suite is green on 8.3 with its numbers unmoved.
-- PHP 8.4 is not installed. Laravel 13 accepts `^8.3`, so 8.4 is forward-looking only (TODO 68).
+- **The PHP floor policy (the developer's decision, 2026-10-24):** the minimum is always the oldest PHP branch that still has **at least one more year of security support** (php.net/supported-versions). On 2026-10-24 that is **PHP 8.3** (security support until 2027-12-31; 8.2 ends 2026-12-31, 8.4 runs to 2028-12-31, 8.5 to 2029-12-31). The rule moves with the calendar, not with a hop: **from 2027-01-01 the minimum is PHP 8.4** - see TODO 68. PHP 8.4 is not installed locally yet.
 - Do not skip intermediate majors. Each hop gets its own composer resolution, its own test run, its own `composer audit`, and its own PR. **The audit belongs to the hop and to nothing smaller**: the hop is where the lock moves, so it is the only point before Phase 12 at which the run says something about this project rather than about the upstream advisory database. See *Execution Environment* for why, and TODO 73.1 for the final run.
 
 ## Project-Specific Baseline (Current State, verified)
@@ -3059,7 +3059,14 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - Pay attention to anything touching: encrypted casts, queue serialization, the scheduler, validation rules, and Blade compilation - the areas where this app has the most custom surface.
   - Expected changes: a Laravel 13-specific findings list appended to this phase, plus the resulting fixes.
 
-- [ ] **TODO 68: Validate under PHP 8.4 (forward-looking, optional)**
+- [ ] **TODO 68: Validate under PHP 8.4 - and raise the floor to it on 2027-01-01**
+  - **No longer optional - re-scoped on 2026-10-24 by the PHP floor policy** (see the *Runtime and Version Matrix*): the minimum is the oldest branch with at least a year of security support left. PHP 8.3 qualifies until 2026-12-31 and not after it, so **on 2027-01-01 the floor becomes PHP 8.4** (security support until 2028-12-31), whether or not 2.0.0 has shipped by then.
+  - Needed, before that date:
+    - Install PHP 8.4 locally and run `composer test` on it. The deprecation guard TODO 41 added reports whatever 8.4 raises in `app/`; the implicit-nullable cases it would have caught are already gone (below).
+    - Raise `composer.json` `php` to `^8.4`, re-resolve, run `composer audit`, and update `upgrade-guide.md` section 1. Check php.net's table again at that point rather than trusting the dates written here.
+    - **Optional once the floor is 8.4:** the packages held back only by PHP become reachable - `spatie/laravel-activitylog` 5.x (`php ^8.4`), PHPUnit 13 (`php >=8.4.1`), Symfony 8. Each is its own decision; none is required.
+  - **If 2.0.0 ships before 2027-01-01** it ships on `^8.3`, and the raise is the first change after it - an operator on 8.3 is then told in advance, in the release notes, that the next release needs 8.4.
+  - **The entry as it stood before the re-scoping:**
   - Needed:
     - PHP 8.4 is not installed locally. Laravel 13 accepts `^8.3`, so this is not blocking.
     - ~~If PHP 8.4 is the eventual production target, install it and run the suite; the implicit-nullable-parameter deprecation is the most likely source of noise across 30 models and 28 components.~~ **Measured and closed by TODO 41 (2026-09-09): there were exactly two, and both are gone.** `MustVerifyNewEmail::newEmail()` and `sendPendingEmailVerificationMail()` carried `callable $withMailable = null`; every other `= null` default in first-party code is either already `?Type` or **untyped**, and an untyped parameter is unaffected by the deprecation. The "30 models and 28 components" was an estimate from the size of the tree, not a count. Still install PHP 8.4 and run the suite when the target is decided - the deprecation guard TODO 41 added reports whatever else 8.4 raises in `app/`, which is the part this entry could not predict.
@@ -3100,6 +3107,17 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - `routes/web.php:104` calls `Storage::exists('installed.txt')` **at route-file parse time** to conditionally register the `setup/*` routes. Route caching bakes the install state in, and uncached requests hit the filesystem on every load.
     - Move the check to middleware or a config value.
   - Expected changes: `routes/web.php`, verified by the TODO 12 setup tests.
+
+- [ ] **TODO 72.1: Restrict cache unserialization (`cache.serializable_classes`)**
+  - **Found by TODO 67.** Laravel 13's skeleton sets `cache.serializable_classes` to `false`, so a leaked `APP_KEY` cannot be turned into a PHP object-injection gadget chain through the cache. This application's `config/cache.php` has no such key and config merging is off, so unserialization is unrestricted - the same as on every earlier release, but now a known gap.
+  - **The blocker:** `SetLocale` caches the side menu as `StaticPage` Eloquent collections (`sidemenu_auth`, `sidemenu_guest`). With `false` they come back as incomplete objects and the menu breaks. `ApplicationSettings` caches a plain array and is fine.
+  - Needed: make the side menu cache arrays (or list exactly the classes it needs), sweep every other `Cache::` write for objects, then set `serializable_classes` to `false` in `config/cache.php`. A deployed host's existing cache entries hold objects, so `upgrade-guide.md` section 5 gains a `cache:clear`.
+  - Expected changes: `app/Http/Middleware/SetLocale.php`, `config/cache.php`, a test that the menu survives a serializing cache store, `upgrade-guide.md`.
+
+- [ ] **TODO 72.2: Decide the admin "debugbar" setting**
+  - **Found by TODO 66.** Debugbar 4 refuses to run in production or with `APP_DEBUG` off, and the developer accepted that rule. The setting in `Admin\Settings` therefore does nothing on a production host - the only kind of host most operators have - while still being offered there.
+  - Needed: either remove the setting (the `settings` row, the `AppServiceProvider` branch, the form field and its translations; `DevDependencyIsolationTest` rewritten), or keep it and show it only where `LaravelDebugbar::canBeEnabled()` is true.
+  - Expected changes: `app/Livewire/Admin/Settings.php`, its view, `app/Providers/AppServiceProvider.php`, the tests.
 
 ---
 
