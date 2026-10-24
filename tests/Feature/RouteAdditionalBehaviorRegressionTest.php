@@ -104,7 +104,7 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
 
         $logoutResponse = $this->actingAs($member)
             ->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.logout', ['group' => $group->id]));
+            ->post(route('groups.logout', ['group' => $group->id]));
 
         $logoutResponse->assertStatus(302);
         $this->assertSoftDeleted('group_user', [
@@ -116,7 +116,7 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
 
         $this->actingAs($member)
             ->withSession($this->passwordConfirmedSession())
-            ->get(route('groups.news_delete', ['group' => $group->id, 'new' => $news->id]))
+            ->delete(route('groups.news_delete', ['group' => $group->id, 'new' => $news->id]))
             ->assertForbidden();
 
         $this->flushSession();
@@ -127,7 +127,7 @@ class RouteAdditionalBehaviorRegressionTest extends FeatureTestCase
                 $this->passwordConfirmedSession(),
                 ['password_hash_web' => $admin->password]
             ))
-            ->get(route('groups.news_delete', ['group' => $group->id, 'new' => $news->id]));
+            ->delete(route('groups.news_delete', ['group' => $group->id, 'new' => $news->id]));
 
         $adminDeleteResponse->assertStatus(302);
         $this->assertStringContainsString(

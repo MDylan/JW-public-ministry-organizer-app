@@ -425,12 +425,22 @@ class GroupHierarchyLinkTest extends FeatureTestCase
         // `!$selected_group->id` ilyenkor NULL-on hívott property-t, tehát fatal
         // jött 403 helyett - ugyanaz a hibaosztály, amit a detachParentGroup()-nál
         // a TODO 11.1 javított.
+        //
+        // detachId is locked since TODO 70.1 (LocksProperties), so the unknown
+        // id reaches the two methods the ways that remain: as
+        // confirmChildDetach()'s argument, and as a child that was detached
+        // after the confirmation.
         $this->linkedChild();
 
         $this->listUsers(null, $this->parent)
-            ->set('detachId', 999999)
-            ->call('detachChildGroup')
+            ->call('confirmChildDetach', 999999)
             ->assertForbidden();
+
+        $component = $this->listUsers(null, $this->parent)
+            ->call('confirmChildDetach', $this->child->id);
+        $this->child->update(['parent_group_id' => null]);
+
+        $component->call('detachChildGroup')->assertForbidden();
     }
 
     public function test_a_non_admin_cannot_detach_the_parent(): void

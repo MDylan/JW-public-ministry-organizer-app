@@ -192,7 +192,10 @@ class WeatherRenderTest extends FeatureTestCase
         $this->calendar($group)
             ->assertSee('08.12')
             ->assertDontSee('08.13')
-            ->assertDontSee('56');
+            // Not a bare '56': the page's random wire:id and checksum can hold
+            // those two digits (ported from v2-dev with TODO 70.1).
+            ->assertDontSee('56°')
+            ->assertDontSee('hőség');
     }
 
     // =========================================================================
