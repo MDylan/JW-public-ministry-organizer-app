@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Barryvdh\Debugbar;
+namespace Fruitcake\LaravelDebugbar;
 
 use Illuminate\Contracts\View\Engine;
 
@@ -23,10 +23,6 @@ class DebugbarViewEngine implements Engine
      */
     protected $exclude_paths;
 
-    /**
-     * @param  Engine  $engine
-     * @param  LaravelDebugbar  $laravelDebugbar
-     */
     public function __construct(Engine $engine, LaravelDebugbar $laravelDebugbar)
     {
         $this->engine = $engine;
@@ -35,11 +31,9 @@ class DebugbarViewEngine implements Engine
     }
 
     /**
-     * @param  string  $path
-     * @param  array  $data
-     * @return string
+     * @param string|null $path
      */
-    public function get($path, array $data = [])
+    public function get($path, array $data = []): string
     {
         $basePath = base_path();
         $shortPath = @file_exists((string) $path) ? realpath($path) : $path;
@@ -47,7 +41,7 @@ class DebugbarViewEngine implements Engine
         if (str_starts_with($shortPath, $basePath)) {
             $shortPath = ltrim(
                 str_replace('\\', '/', substr($shortPath, strlen($basePath))),
-                '/'
+                '/',
             );
         }
 
@@ -57,18 +51,15 @@ class DebugbarViewEngine implements Engine
             }
         }
 
-        return $this->laravelDebugbar->measure($shortPath, function () use ($path, $data) {
+        return $this->laravelDebugbar->measure($shortPath, function () use ($path, $data): string {
             return $this->engine->get($path, $data);
-        }, 'views');
+        }, 'views', 'Views Rendering');
     }
 
     /**
      * NOTE: This is done to support other Engine swap (example: Livewire).
-     * @param $name
-     * @param $arguments
-     * @return mixed
      */
-    public function __call($name, $arguments)
+    public function __call($name, $arguments): mixed
     {
         return $this->engine->$name(...$arguments);
     }

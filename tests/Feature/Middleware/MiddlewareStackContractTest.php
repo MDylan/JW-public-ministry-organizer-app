@@ -19,11 +19,11 @@ use Tests\TestCase;
  * This file pins the resolved side instead, read from the running kernel
  * and router: the global stack, both groups, the whole alias map and the
  * priority list. The lists are what the application declares plus what the
- * packages push at boot (Debugbar's injector - a require-dev package this
- * repository ships, registered in every environment and inert unless enabled,
- * see DevDependencyIsolationTest - and Livewire's back-button middleware), in the order
+ * packages push at boot (Livewire's back-button middleware), in the order
  * the request sees them - a package entry moving relative to the
- * application's is a change too.
+ * application's is a change too. Debugbar's injector used to sit in both
+ * the global stack and the web group; Debugbar 4 injects from a
+ * RequestHandled listener instead and pushes no middleware (roadmap TODO 66).
  *
  * It replaces MiddlewareAliasContractTest's "the kernel's declaration is the
  * whole truth" from TODO 41, which needed an App\Http\Kernel to reflect on.
@@ -39,7 +39,6 @@ class MiddlewareStackContractTest extends TestCase
             'Illuminate\Foundation\Http\Middleware\ValidatePostSize',
             'App\Http\Middleware\TrimStrings',
             'Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull',
-            'Barryvdh\Debugbar\Middleware\InjectDebugbar',
             'Livewire\Features\SupportDisablingBackButtonCache\DisableBackButtonCacheMiddleware',
         ], $this->kernel()->getGlobalMiddleware());
     }
@@ -57,7 +56,6 @@ class MiddlewareStackContractTest extends TestCase
             'App\Http\Middleware\SetLocale',
             'App\Http\Middleware\SetUserLastActivity',
             'App\Http\Middleware\HttpsProtocol',
-            'Barryvdh\Debugbar\Middleware\InjectDebugbar',
         ], $this->app['router']->getMiddlewareGroups()['web']);
     }
 
