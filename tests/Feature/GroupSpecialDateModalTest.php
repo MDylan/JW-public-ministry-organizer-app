@@ -24,6 +24,32 @@ class GroupSpecialDateModalTest extends FeatureTestCase
             ->assertDispatched('show-modal');
     }
 
+    /**
+     * Roadmap TODO 72.3: the modal's time selects are wall-clock lists, the
+     * same on every date. They came from today's timestamps, so on the
+     * autumn clock change day the evening ended at 23:00, and on the spring
+     * one the disabled list of a 01:00-05:00 window lost 02:00.
+     */
+    public function test_the_time_lists_do_not_depend_on_the_date(): void
+    {
+        $editor = $this->createUser(['email' => 'special-lists@example.test']);
+        $group = $this->createGroup();
+        $this->attachUserToGroup($editor, $group, 'roler', true);
+
+        $component = Livewire::actingAs($editor)
+            ->test(SpecialDateModal::class, ['groupId' => $group->id])
+            ->set('state.date_min_time', 60)
+            ->set('state.date_start', '18:00')
+            ->set('state.date_end', '00:00');
+
+        $this->assertSame(['18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'], $component->viewData('ends'));
+        $this->assertCount(48, $component->viewData('starts'));
+
+        $component->set('state.date_start', '01:00')->set('state.date_end', '05:00');
+
+        $this->assertSame(['02:00', '03:00'], $component->viewData('disabled_selects'));
+    }
+
     public function test_member_cannot_open_modal(): void
     {
         $member = $this->createUser(['email' => 'special-member@example.test']);

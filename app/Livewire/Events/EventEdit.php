@@ -444,9 +444,14 @@ class EventEdit extends AppComponent
         $this->user_statistics = [];
         $this->state['user_id'] = $this->targetUserId();
         if(in_array($this->role, ['admin', 'roler'])) {
-            $date = strtotime($this->date);
-            $date_back = date("Y-m-d", $date - (30 * 24 * 60 * 60));
-            $date_future = date("Y-m-d", $date + (15 * 24 * 60 * 60));
+            // Calendar days, not 24-hour blocks (roadmap TODO 72.3): from a
+            // midnight timestamp, `30 * 24 * 60 * 60` back across the spring
+            // clock change landed on 23:00 of the day before, so the window
+            // started a day early; forward across the autumn one it ended a
+            // day early.
+            $date = Carbon::parse($this->date);
+            $date_back = $date->copy()->subDays(30)->toDateString();
+            $date_future = $date->copy()->addDays(15)->toDateString();
 
             $stats = DB::table('events')
                             ->join('groups', 'events.group_id', '=', 'groups.id')

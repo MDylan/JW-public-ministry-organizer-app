@@ -7,6 +7,7 @@ use App\Jobs\CalculateDateProcess;
 use App\Models\Group;
 use App\Models\GroupDate;
 use App\Models\GroupDayDisabledSlots;
+use App\Support\Time\WallClock;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
@@ -265,31 +266,16 @@ class SpecialDateModal extends Component
         }
     }
 
-    public function generateTimeArray($end = false, $start = false, $step = 30) {
-        $start = $start ? strtotime($start) : strtotime("00:00");
-        $max = $end ? strtotime($end) : $start + 24 * 60 * 60;
-        if($max == strtotime("00:00")) {
-            $max = $start + 24 * 60 * 60;
-        }
-        $step = $step * 60;
-        $times = [];
-        $midnight = strtotime("00:00") + (24 * 60 * 60);
-        for($current=$start; $current < $max; $current+=$step) {
-            if($current > $midnight) break;
-            $times[] = date("H:i", $current);
-        }
-        return $times;
-    }
-
     public function render()
     {
-        $starts = $this->generateTimeArray($this->state['date_end'], false);
-        $ends = $this->generateTimeArray(false, $this->state['date_start'], $this->state['date_min_time']);
+        // Wall-clock minutes, not today's timestamps (roadmap TODO 72.3).
+        $starts = WallClock::options($this->state['date_end']);
+        $ends = WallClock::options(null, $this->state['date_start'], $this->state['date_min_time']);
 
         $this->disabled_selects = [];
-        $this->disabled_selects = $this->generateTimeArray(
-            date("H:i", strtotime($this->state['date_end']) - ($this->state['date_min_time'] * 60)),
-            date("H:i", strtotime($this->state['date_start']) + ($this->state['date_min_time'] * 60)), 
+        $this->disabled_selects = WallClock::options(
+            WallClock::shift($this->state['date_end'], -(int) $this->state['date_min_time']),
+            WallClock::shift($this->state['date_start'], (int) $this->state['date_min_time']),
             $this->state['date_min_time']);
 
         return view('livewire.groups.special-date-modal', [

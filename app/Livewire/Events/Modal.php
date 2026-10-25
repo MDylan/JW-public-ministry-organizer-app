@@ -193,7 +193,10 @@ class Modal extends AppComponent
         if($this->day_data['next_date']) {
             //disable next day, if max extend days reached
             $next = Carbon::parse($this->day_data['next_date']);
-            if($next->greaterThan(date("Y-m-d", ($now + ($this->group_data['max_extend_days'] * 24 * 60 * 60))))) {
+            // Calendar days from today (roadmap TODO 72.3). `$now + N * 24h`
+            // drifted across a clock change: near midnight the limit came
+            // out a day short in autumn and a day long in spring.
+            if($next->greaterThan(Carbon::now()->addDays((int) $this->group_data['max_extend_days'])->toDateString())) {
                 $this->day_data['next_date'] = false;
             }
         }

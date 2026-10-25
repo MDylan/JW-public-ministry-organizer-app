@@ -161,6 +161,40 @@ class GroupDayTimeRangeTest extends FeatureTestCase
     }
 
     /**
+     * Roadmap TODO 72.3: the lists the form offers for a day template, which
+     * used to come from today's timestamps. On 2026-10-25 (25 hours in
+     * Europe/Budapest) the end list stopped at 23:00 and the case above
+     * saved 23:00 - that failure is what found the defect.
+     */
+    public function test_the_end_list_of_an_evening_template_reaches_midnight(): void
+    {
+        $component = $this->setDay($this->form(), '18:00', '00:00');
+
+        $selects = $component->get('day_selects')[$this->dayNumber];
+
+        $this->assertSame(['18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'], $selects['end']);
+        $this->assertCount(48, $selects['start']);
+        $this->assertSame('23:30', $selects['start'][47]);
+    }
+
+    /**
+     * The hour a clock change repeats or skips (02:00-03:00) inside a
+     * template. Measured on the old timestamp code: on 2026-10-25 the end
+     * list from 01:00 held 02:00 twice; on 2026-03-29 it had no 02:00, and
+     * the disabled-slot list (both ends shifted by min_time) was ['03:00'].
+     */
+    public function test_a_night_template_lists_each_slot_once(): void
+    {
+        $component = $this->setDay($this->form(), '01:00', '05:00');
+
+        $ends = $component->get('day_selects')[$this->dayNumber]['end'];
+        $this->assertSame(['01:00', '02:00', '03:00', '04:00', '05:00'], array_slice($ends, 0, 5));
+        $this->assertSame(array_unique($ends), $ends);
+
+        $this->assertSame(['02:00', '03:00'], $component->get('disabled_selects')[$this->dayNumber]);
+    }
+
+    /**
      * A narrower change through the same path, so the midnight case above is
      * not the only evidence that this form saves day times at all.
      */
@@ -346,10 +380,11 @@ class GroupDayTimeRangeTest extends FeatureTestCase
      * the ordinary form.
      *
      * With min_time = 120 (legal: UpdateGroupForm:239 allows in:30,60,90,120)
-     * and a start of 23:00, generateTimeArray(false,'23:00',120) returns
+     * and a start of 23:00, WallClock::options(null,'23:00',120) returns
      * ['23:00'] and nothing else: the first iteration pushes 23:00, the next
-     * $current is 01:00 the following day, which is > $midnight, and :189
-     * breaks. render() therefore clamps the end to the only option there is,
+     * is 01:00 the following day, past midnight, and the loop breaks (it was
+     * generateTimeArray() until roadmap TODO 72.3). render() therefore
+     * clamps the end to the only option there is,
      * producing the zero-length pair 23:00-23:00 - which TimeCheck rejects on
      * BOTH fields, because $time === $other and neither is midnight, so no
      * branch returns early (TimeCheck.php:109-135).

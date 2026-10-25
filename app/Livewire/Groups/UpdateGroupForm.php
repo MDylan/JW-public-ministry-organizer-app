@@ -15,6 +15,7 @@ use App\Models\GroupDayDisabledSlots;
 use App\Models\GroupFutureChange;
 use App\Models\GroupLiterature;
 use App\Rules\TimeCheck;
+use App\Support\Time\WallClock;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
@@ -186,24 +187,6 @@ class UpdateGroupForm extends AppComponent
             $this->group->futureChanges()->delete();
             $this->updateGroup(true);
         }
-    }
-
-    public function generateTimeArray($end = false, $start = false, $step = 30) {
-        $start = $start ? strtotime($start) : strtotime("00:00");
-        $max = $end ? strtotime($end) : $start + 24 * 60 * 60;
-        if($max == strtotime("00:00")) {
-            $max = $start + 24 * 60 * 60;
-        }
-        $step = $step * 60;
-        $times = [];
-        // $last = $start;
-        $midnight = strtotime("00:00") + (24 * 60 * 60);
-        for($current=$start; $current < $max; $current+=$step) {
-            if($current > $midnight) break;
-            $times[] = date("H:i", $current);
-            // $last = $current;
-        }
-        return $times;
     }
 
     /**
@@ -580,7 +563,10 @@ class UpdateGroupForm extends AppComponent
 
     public function render()
     {
-        $group_times = $this->generateTimeArray();
+        // Wall-clock minutes, not today's timestamps (roadmap TODO 72.3):
+        // see App\Support\Time\WallClock for what the old arithmetic did
+        // on the two days a year the clock changes.
+        $group_times = WallClock::options();
         // BOTH arrays are rebuilt from scratch below, and both are public, so
         // both survive a request unless they are cleared. day_selects was not,
         // which is why a day whose lists stopped being written kept rendering
@@ -600,7 +586,7 @@ class UpdateGroupForm extends AppComponent
             $end = $day['end_time'] ?? "00:00";
 
             // The end of the day bounds the start...
-            $starts = $this->generateTimeArray($end, false);
+            $starts = WallClock::options($end);
             if(!in_array($start, $starts)) {
                 $this->days[$day_key]['start_time'] = $start = $starts[0];
             }
@@ -610,15 +596,15 @@ class UpdateGroupForm extends AppComponent
             // to 00:00 (TODO 42.1): a mis-clicked start took the stored end
             // down with it, and what survived was the "no service" template,
             // with nothing telling the user the day had just been emptied.
-            $ends = $this->generateTimeArray(false, $start, $this->state['min_time']);
+            $ends = WallClock::options(null, $start, $this->state['min_time']);
             if(!in_array($end, $ends)) {
                 $this->days[$day_key]['end_time'] = $end = $ends[array_key_last($ends)];
             }
 
             // Neither list can be empty, so [0] and array_key_last() cannot
-            // fail: generateTimeArray($end,false) always starts at 00:00 and
-            // pushes at least once, and generateTimeArray(false,$start,$step)
-            // pushes $start before any break can fire (see :188-192).
+            // fail: WallClock::options($end) always starts at 00:00 and
+            // pushes at least once, and WallClock::options(null,$start,$step)
+            // pushes $start before any break can fire.
             //
             // The [0] / array_key_last() asymmetry is deliberate rather than
             // an oversight. The start list ascends from 00:00 and the end list
@@ -627,9 +613,9 @@ class UpdateGroupForm extends AppComponent
             $this->day_selects[$day_key]['start'] = $starts;
             $this->day_selects[$day_key]['end'] = $ends;
 
-            $this->disabled_selects[$day_key] = $this->generateTimeArray(
-                                                            date("H:i", strtotime($end) - ($this->state['min_time'] * 60)),
-                                                            date("H:i", strtotime($start) + ($this->state['min_time'] * 60)), 
+            $this->disabled_selects[$day_key] = WallClock::options(
+                                                            WallClock::shift($end, -(int) $this->state['min_time']),
+                                                            WallClock::shift($start, (int) $this->state['min_time']),
                                                             $this->state['min_time']);
             //remove old time slots if needed
             if(isset($this->disabled_slots[$day_key])) {
