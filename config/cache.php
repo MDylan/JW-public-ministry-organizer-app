@@ -39,7 +39,10 @@ return [
 
         'array' => [
             'driver' => 'array',
-            'serialize' => false,
+            // The test suite turns this on (phpunit.xml), so every cache
+            // write it exercises goes through serialize() and the
+            // serializable_classes rule below, as on the file store.
+            'serialize' => (bool) env('CACHE_ARRAY_SERIALIZE', false),
         ],
 
         'database' => [
@@ -102,5 +105,21 @@ return [
     */
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | The classes the cache may unserialize. `false` allows none, so a leaked
+    | APP_KEY or a writable cache store cannot be turned into a PHP object
+    | injection gadget chain through cached values. Laravel 13's skeleton
+    | ships the same value; this application took it at roadmap TODO 72.1,
+    | which made the side menu cache plain attribute arrays first. The
+    | memcached and apc stores do not apply this rule.
+    |
+    */
+
+    'serializable_classes' => false,
 
 ];

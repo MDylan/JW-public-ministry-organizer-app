@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\StaticPage;
 use App\Support\Settings\ApplicationSettings;
 use Closure;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -75,13 +76,9 @@ class SetLocale
         try {
             //share menus content to views
             if(Auth()->check()) {
-                $staticpages = Cache::rememberForever('sidemenu_auth', function () {
-                    return StaticPage::whereIn('status', [0,1,3])->get();
-                });
+                $staticpages = $this->sideMenu('sidemenu_auth', [0,1,3]);
             } else {
-                $staticpages = Cache::rememberForever('sidemenu_guest', function () {
-                    return StaticPage::whereIn('status', [1,2])->get();
-                });
+                $staticpages = $this->sideMenu('sidemenu_guest', [1,2]);
             }
             View::share('sidemenu', $staticpages);
         } catch (\Throwable $th) {
@@ -102,5 +99,31 @@ class SetLocale
 
 
         return $next($request);
+    }
+
+    /**
+     * The menu's pages, cached as plain attribute arrays (roadmap TODO 72.1).
+     *
+     * config/cache.php sets serializable_classes to false, so a cached model
+     * would come back as __PHP_Incomplete_Class - and the views' @foreach
+     * would walk its properties and fail on a string. hydrate() rebuilds the
+     * same StaticPage models the views always got; their titles still load
+     * per request, in the request's locale. An entry from before the change
+     * holds a serialized collection and is not an array, so it is rebuilt.
+     */
+    private function sideMenu(string $key, array $statuses): Collection
+    {
+        $rows = fn () => StaticPage::whereIn('status', $statuses)->get()
+            ->map(fn (StaticPage $page) => $page->getAttributes())
+            ->all();
+
+        $cached = Cache::rememberForever($key, $rows);
+
+        if (! is_array($cached)) {
+            Cache::forget($key);
+            $cached = Cache::rememberForever($key, $rows);
+        }
+
+        return StaticPage::hydrate($cached);
     }
 }

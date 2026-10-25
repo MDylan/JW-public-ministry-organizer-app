@@ -24,6 +24,7 @@
         <server name="APP_DEBUG" value="true"/>
         <server name="APP_URL" value="http://kozter.test"/>
         <server name="CACHE_DRIVER" value="array"/>
+        <server name="CACHE_ARRAY_SERIALIZE" value="true"/>
         <server name="DB_CONNECTION" value="mysql"/>
         <server name="DB_HOST" value="127.0.0.1"/>
         <server name="DB_PORT" value="3306"/>

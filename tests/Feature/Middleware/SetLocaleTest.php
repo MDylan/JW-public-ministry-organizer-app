@@ -320,6 +320,65 @@ class SetLocaleTest extends FeatureTestCase
         $this->assertTrue(Cache::has('sidemenu_auth'));
     }
 
+    // =========================================================================
+    // 3b. The menu cache holds no objects (roadmap TODO 72.1)
+    // =========================================================================
+    //
+    // config/cache.php sets serializable_classes to false, and phpunit.xml
+    // makes the suite's array store serialize, so these cases see what the
+    // file store of a deployed host sees. With StaticPage models in the
+    // cache, the second request got __PHP_Incomplete_Class back and every
+    // page with a menu answered 500.
+
+    public function test_the_cache_unserializes_no_objects(): void
+    {
+        $this->assertFalse(config('cache.serializable_classes'));
+
+        Cache::put('todo-72-1-probe', new \stdClass());
+
+        $this->assertInstanceOf(\__PHP_Incomplete_Class::class, Cache::get('todo-72-1-probe'));
+    }
+
+    public function test_the_menu_is_cached_as_plain_attribute_arrays(): void
+    {
+        $this->get($this->homeUrl())->assertStatus(200);
+
+        $cached = Cache::get('sidemenu_guest');
+        $this->assertIsArray($cached);
+        $this->assertNotEmpty($cached);
+
+        array_walk_recursive($cached, function ($value) {
+            $this->assertFalse(is_object($value), 'A menü gyorsítótára nem tárolhat objektumot.');
+        });
+    }
+
+    public function test_the_cached_menu_still_renders_its_titles_on_the_next_request(): void
+    {
+        $this->makeStaticPage(1, 'masodik');
+
+        $this->get($this->homeUrl())->assertStatus(200);
+        $this->get($this->homeUrl())->assertStatus(200);
+
+        $this->assertSame(['home', 'masodik'], $this->sharedMenuSlugs());
+        $this->assertContains(
+            'Oldal masodik',
+            collect(view()->shared('sidemenu'))->pluck('title')->all(),
+            'A cím továbbra is a kérés nyelvén töltődik be.'
+        );
+    }
+
+    public function test_a_menu_entry_cached_as_models_before_the_change_is_rebuilt(): void
+    {
+        // A deployed host's entry from before TODO 72.1: rememberForever
+        // never expires it, and it holds a serialized collection of models.
+        Cache::forever('sidemenu_guest', StaticPage::whereIn('status', [1, 2])->get());
+
+        $this->get($this->homeUrl())->assertStatus(200);
+
+        $this->assertSame(['home'], $this->sharedMenuSlugs());
+        $this->assertIsArray(Cache::get('sidemenu_guest'));
+    }
+
     public function test_a_page_created_outside_the_editor_reaches_the_cached_menu(): void
     {
         // REVERSED by the v1-patch B4 fix.
