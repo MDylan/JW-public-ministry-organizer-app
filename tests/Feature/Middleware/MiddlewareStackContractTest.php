@@ -34,7 +34,7 @@ class MiddlewareStackContractTest extends TestCase
     {
         $this->assertSame([
             'App\Http\Middleware\TrustProxies',
-            'Illuminate\Http\Middleware\HandleCors',
+            // HandleCors left at roadmap TODO 71, with config/cors.php.
             'App\Http\Middleware\PreventRequestsDuringMaintenance',
             'Illuminate\Foundation\Http\Middleware\ValidatePostSize',
             'App\Http\Middleware\TrimStrings',
@@ -61,8 +61,11 @@ class MiddlewareStackContractTest extends TestCase
 
     public function test_the_api_group(): void
     {
+        // Roadmap TODO 71: the application no longer declares this group.
+        // What remains is the framework's default, which
+        // Middleware::getMiddlewareGroups() always adds; no route carries it
+        // (ApiSurfaceTest). `throttle:api` is gone with its limiter.
         $this->assertSame([
-            'throttle:api',
             'Illuminate\Routing\Middleware\SubstituteBindings',
         ], $this->app['router']->getMiddlewareGroups()['api']);
 

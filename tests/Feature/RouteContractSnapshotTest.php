@@ -35,7 +35,6 @@ class RouteContractSnapshotTest extends TestCase
     private const ROUTE_FILES = [
         'routes/web.php',
         'routes/fortify.php',
-        'routes/api.php',
     ];
 
     /**

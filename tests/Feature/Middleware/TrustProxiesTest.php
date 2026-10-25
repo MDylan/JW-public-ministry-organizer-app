@@ -12,8 +12,8 @@ use Tests\TestCase;
  * WHY THIS EXISTS
  *
  * TODO 35 moves the parent class from `Fideloper\Proxy\TrustProxies` to the
- * framework-native `Illuminate\Http\Middleware\TrustProxies`. Like HandleCors,
- * it lives in the kernel's GLOBAL `$middleware` stack, which neither route
+ * framework-native `Illuminate\Http\Middleware\TrustProxies`. Like HandleCors
+ * (until TODO 71 removed it), it lives in the kernel's GLOBAL `$middleware` stack, which neither route
  * snapshot can see - so nothing measured it before this file, and a swap that
  * changed proxy trust would have been invisible.
  *

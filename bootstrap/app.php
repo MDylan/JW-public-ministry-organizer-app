@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
+        // No `api:` routes: the stock /api/user stub went at roadmap TODO 71.
         commands: __DIR__.'/../routes/console.php',
         // No `health:` route: /up would be a new public URL.
         then: function () {
@@ -46,7 +46,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->use([
             // \App\Http\Middleware\TrustHosts::class,
             \App\Http\Middleware\TrustProxies::class,
-            \Illuminate\Http\Middleware\HandleCors::class,
+            // No HandleCors: nothing here is meant to be called cross-origin,
+            // and config/cors.php went with the API routes (roadmap TODO 71).
             \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
             \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
             \App\Http\Middleware\TrimStrings::class,
@@ -66,10 +67,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HttpsProtocol::class,
         ]);
 
-        $middleware->group('api', [
-            'throttle:api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        ]);
+        // No `api` group of the application's own: the framework still adds
+        // its default one, and no route carries it (roadmap TODO 71).
 
         // Laravel 11 always adds its own default aliases underneath these
         // (auth.session and precognitive are the two this list lacks); the

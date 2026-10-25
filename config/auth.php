@@ -41,11 +41,8 @@ return [
             'provider' => 'users',
         ],
 
-        'api' => [
-            'driver' => 'token',
-            'provider' => 'users',
-            'hash' => false,
-        ],
+        // No `api` (token) guard since roadmap TODO 71: the users table has
+        // no api_token column, so it never authenticated anyone.
     ],
 
     /*
