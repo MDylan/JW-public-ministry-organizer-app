@@ -38,10 +38,10 @@ past it either. An install running 1.2.0 therefore answers **403** to a 2.0.0
 release and renders a "manual update required" card instead.
 
 That is the intended behaviour, and it is the reason this guide exists: the
-1.x -> 2.0.0 step is a **manual** operation by design. Whether any part of it
-can still be automated by a 2.0.0-specific `release/upgrade.php` hook is an
-open question that Phase 12 (TODO 75) closes; both branches are prepared for
-below.
+1.x -> 2.0.0 step is a **manual** operation by design - started by the
+operator, not offered by the updater. Section 6 describes the two ways
+decided on 2026-10-25: by hand with a shell (Branch B), or with a standalone
+upgrade script started from the 1.x admin panel (Branch C, being built).
 
 ## Why `release/upgrade.php` is frozen
 
@@ -1067,8 +1067,11 @@ State that lives on the host and is not expressible in a release archive.
 
 ## 6. The upgrade procedure
 
-**Not decided yet - Phase 12 (TODO 75) closes this.** Both branches are
-recorded here so that whichever is chosen, the inputs already exist.
+**Decided on 2026-10-25, not yet available: Branch B and Branch C.** Branch B
+is the manual sequence below, for an operator with a shell. Branch C, a
+standalone upgrade script started from the 1.x admin panel, is being built
+(roadmap TODO 75.1 and 75.2) for hosts without one. Branch A is kept for its
+reasoning only; it is not pursued.
 
 ### Branch A - a 2.0.0-specific `release/upgrade.php`
 
@@ -1114,7 +1117,26 @@ Rollback is step 2's backup restored wholesale. A partial rollback is not safe
 once step 8 has run: `install()`'s own `restore()` brings back files but not
 migrations, which is the same reason the major ceiling exists.
 
-*Last updated: TODO 60.*
+### Branch C - the standalone upgrade script (being built)
+
+For a host without a shell. A 1.x release, **1.2.2**, adds a card to the admin
+panel; behind the password confirmation it starts a plain PHP script that
+carries the site to 2.0.0 in the browser, step by step:
+
+- **It starts only from 1.2.1, on PHP 8.3.** 1.2.1 already runs on 8.3, so
+  switch the PHP version (and the cron job's PHP binary) first, on the old
+  release - the script checks it and stops otherwise.
+- **It makes a database backup, unless you say you already have one.** Skipping
+  it leaves no way back once the migrations have run.
+- It downloads the full 2.0.0 archive from the `v2` channel and checks its
+  checksum, puts the site into maintenance mode, sends the queued 1.x jobs,
+  swaps the application files keeping the old ones as a backup, runs the
+  migrations, and reports what it could not do for you (customised
+  translations, a differing `.htaccess`, a cron on the wrong PHP).
+
+Details land here when the script exists.
+
+*Last updated: TODO 75 (decision).*
 
 ---
 
