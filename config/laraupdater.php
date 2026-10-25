@@ -13,8 +13,13 @@
 
 		/*
 		* URL where your updates are stored ( e.g. for a folder named 'updates', under http://site.com/yourapp ).
+		*
+		* One channel per major line: the 1.x releases are served from /v1,
+		* the 2.x ones from /v2 (roadmap TODO 73). Defaulting to /v1 here
+		* would offer a 2.x install the 1.x archive, because UpdateBranch
+		* only refuses a HIGHER major. UpdateChannelTest pins the default.
 		*/
-		'update_baseurl' => env('UPDATE_CHANNEL', 'https://updates.teruletek.hu/v1'),
+		'update_baseurl' => env('UPDATE_CHANNEL', 'https://updates.teruletek.hu/v2'),
 
 		/*
 		* Set a middleware for the route: updater.update

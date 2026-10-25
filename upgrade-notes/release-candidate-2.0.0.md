@@ -39,15 +39,23 @@ so `schedule:list` says what each line does.
 `version.txt` still reads `1.2.0` on this branch. The 2.0.0 number is set
 with the release itself (TODO 75), not here.
 
-**Finding: until that happens, an install of this branch offers the 1.x
-update.** `UpdateBranch::allows()` admits any remote version whose major is
-not above the installed one, the installed one is read from `version.txt`
-(`1.2.0`, major 1), and `config/laraupdater.php` defaults the channel to
-`https://updates.teruletek.hu/v1`, where 1.2.1 is published. So the updater
-card offers 1.2.1, and accepting it overwrites a Laravel 13 install with the
-Laravel 8 archive. **On the test install, do not press Update** (E7 checks the
-card without it). For the release this means two things TODO 75 must do
-together: `version.txt` at 2.0.0, and a 2.x channel default rather than `v1`.
+**Finding, half fixed the same day: an install of this branch was offered
+the 1.x update.** `UpdateBranch::allows()` admits any remote version whose
+major is not above the installed one, the installed one is read from
+`version.txt` (`1.2.0`, major 1), and `config/laraupdater.php` defaulted the
+channel to `https://updates.teruletek.hu/v1`, where 1.2.1 is published - so the
+updater card offered 1.2.1, and accepting it would have overwritten a Laravel
+13 install with the Laravel 8 archive.
+
+- **Fixed:** the channel default is `https://updates.teruletek.hu/v2`, the
+  developer's 2.x channel (`UpdateChannelTest`). Nothing is published there
+  yet, so the card offers nothing - unless the install's `.env` sets
+  `UPDATE_CHANNEL` by hand.
+- **Still open, with rc1:** `version.txt`. Until it reads 2.x, a 2.x release on
+  `v2` is a higher major to this install and is refused as an automatic
+  update. The number moves when rc1 is cut, after the developer's local test
+  of every function; `UpdateBranchCeilingTest` assumes major 1 and moves with
+  it.
 
 ## 2. Automated results
 
@@ -161,7 +169,7 @@ Result: **PASS**, **FAIL** (with a note), or **N/A** (with the reason).
 | E4 | Newsletters: edit and send | The scheduled send goes out (H2) | | |
 | E5 | `/admin/statistics` | Renders | | |
 | E6 | Translation editor `/admin/translate` | Edit a key, page through the list | | |
-| E7 | Updater card - **look, do not press Update** (section 1) | Reads the channel. While `version.txt` is `1.2.0` it offers 1.2.1 from `v1` - expected for now, and the reason TODO 75 sets the version and the channel | | |
+| E7 | Updater card - **look, do not press Update** | Reads the `v2` channel; with nothing published there it offers nothing. If it offers 1.x, the install's `.env` sets `UPDATE_CHANNEL` - remove it (section 1) | | |
 
 ### F. Installer
 

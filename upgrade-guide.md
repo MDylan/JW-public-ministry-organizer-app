@@ -800,7 +800,15 @@ name, or over plain http, cannot use passkeys there. The passkey user handle is
 derived from `APP_KEY`: rotating it invalidates every registered passkey, on top
 of making the encrypted columns unreadable.
 
-*Last updated: TODO 69.*
+**TODO 73: `UPDATE_CHANNEL`, if the host sets it.** The 2.x line takes its
+updates from `https://updates.teruletek.hu/v2`; 1.x stays on `/v1`. The new
+default in `config/laraupdater.php` does that by itself, and neither
+`.env.example` nor the installer writes the key - but a host whose `.env` sets
+`UPDATE_CHANNEL` by hand overrides the default. Pointing at `/v1`, a 2.0.0
+install would never see a 2.x update (1.x releases are older than its own
+version, so nothing is offered). Remove the line, or set it to `/v2`.
+
+*Last updated: TODO 73.*
 
 ## 5. Per-install state to repair
 
@@ -1156,3 +1164,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 72.1 | **The cache unserializes no objects.** `cache.serializable_classes` is `false`, closing the object-injection path through cached values. The side menu, the one cache entry that held models, now holds plain arrays; an old entry is rebuilt on first use. Sections 2, 3 and 4: none. Section 5: `optimize:clear` clears the old entries; `memcached` and `apc` hosts do not get the protection. |
 | (no framework hop) | 72.2 | **The debugbar setting stays, for development hosts.** The settings page offers it only where Debugbar 4 can run (`APP_DEBUG` on, `APP_ENV` not `production`), and only there does it act - on a production host with debug on it used to boot the collectors for nothing. Sections 2, 3 and 4: none. Section 5: nothing to do. |
 | (no framework hop) | 72.3 | **Clock change days are ordinary days.** The service-day and special-day time lists are wall-clock lists, and two date windows count calendar days; on the two clock change days a year they were an hour or a day off. Sections 2, 3 and 4: none. Section 5: nothing to do, but a template saved wrongly on such a day is not repaired automatically. |
+| (no framework hop) | 73 | **The 2.x line has its own update channel.** `config/laraupdater.php` defaults to `/v2`; until now a 2.x install defaulted to `/v1` and was offered the 1.x archive. Section 4: an `UPDATE_CHANNEL` set by hand in `.env` must go or point at `/v2`. Sections 2, 3 and 5: none. |

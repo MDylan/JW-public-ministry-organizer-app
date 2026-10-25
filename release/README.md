@@ -1,8 +1,12 @@
 # Release artifacts
 
 Files here are **not part of the running application**. They are packaged into the
-update archives served from `config('laraupdater.update_baseurl')`
-(`https://updates.teruletek.hu/v1`).
+update archives served from `config('laraupdater.update_baseurl')`.
+There is one channel per major line: **1.x releases go to
+`https://updates.teruletek.hu/v1`, 2.x releases to `https://updates.teruletek.hu/v2`**
+(the default on this branch since roadmap TODO 73). Uploading a 2.x archive to `v1`
+would put it in front of every 1.x install, and the reverse would offer a 2.x
+install the Laravel 8 code.
 
 ## `build-update.php`
 
