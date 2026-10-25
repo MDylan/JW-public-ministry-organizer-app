@@ -93,8 +93,9 @@ class FilesystemDiskContractTest extends TestCase
     /**
      * The default disk is what the bare Storage:: facade calls land on, and
      * two of this application's sentinels are exactly that: the installer's
-     * installed.txt (routes/web.php:104, bootstrap/app.php withExceptions(),
-     * Setup/MetaController.php:89) and EnsureInstallerToken's token file
+     * installed.txt (App\Support\Install\InstallState since roadmap TODO 72,
+     * read by EnsureNotInstalled and bootstrap/app.php withExceptions(),
+     * written by Setup/MetaController) and EnsureInstallerToken's token file
      * (:78-89). Both therefore live under storage/app.
      */
     public function test_the_default_disk_is_local_and_roots_at_storage_app()

@@ -11,11 +11,12 @@ use Tests\TestCase;
 /**
  * TODO 12: make the installer testable.
  *
- * The setup/* route group in routes/web.php:104 sits behind a condition: it
- * only registers if Storage::exists('installed.txt') is false. This file
- * EXISTS in the development instance, so the group has never been created in
- * the tests so far - there is not a single setup. entry in
- * tests/Fixtures/route-contracts.json either.
+ * The setup/* route group is closed while installed.txt exists. Until
+ * roadmap TODO 72 that was decided while routes/web.php loaded (the group
+ * only registered without the file); since then the group always
+ * registers and the `notInstalled` middleware reads the file per request.
+ * The file EXISTS in the development instance, so a test on the real
+ * storage only ever sees a closed installer.
  *
  * We do not touch the real sentinel file. storage/app/.gitignore excludes
  * everything, so if an interrupted test left it deleted, the development
@@ -84,8 +85,8 @@ abstract class SetupTestCase extends TestCase
      * framework subdirectories are needed for the framework to run.
      *
      * installed.txt is deleted before every test: setup.complete writes it
-     * along the way, and if it stayed behind, the route group would no
-     * longer register on the next test's boot.
+     * along the way, and if it stayed behind, the next test would find the
+     * installer closed.
      */
     private function prepareTemporaryStorage(): string
     {

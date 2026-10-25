@@ -43,7 +43,6 @@ use App\Livewire\Groups\UpdateGroupForm;
 use App\Livewire\Home;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,55 +100,58 @@ Route::get('pendingEmail/verify/{token}', [VerifyNewEmailController::class, 'ver
     ->middleware(['signed', 'throttle:6,1'])
     ->name('pendingEmail.verify');
 
-//installer available only if file not exists
-if (!Storage::exists('installed.txt')) {
-    // Setup routes
-    //
-    // The group PREVIOUSLY carried no authorization check at all: no auth,
-    // no gate, no signature. During the install window, therefore, anyone
-    // who knew the URL could create a mainAdmin account - repeatedly - and
-    // anyone could lock the installer. It cannot be tied to login, because
-    // installation is exactly the phase when there is no user yet; so the
-    // `installer` middleware proves filesystem access with a token instead.
-    // See App\Http\Middleware\EnsureInstallerToken.
-    Route::prefix('setup')->group(function () {
-        // The welcome screen and the token submission are DELIBERATELY
-        // outside the gate: this is where the token has to be entered, so
-        // it cannot sit behind it. Neither one performs any real action.
-        Route::get('/start', [MetaController::class, 'welcome'])
-            ->name('setup.welcome');
-        Route::post('/start', [MetaController::class, 'unlock'])
-            ->name('setup.unlock');
+// Setup routes
+//
+// Registered on every host and closed by `notInstalled` once the
+// installation is complete (App\Http\Middleware\EnsureNotInstalled). Until
+// roadmap TODO 72 the group was registered only while installed.txt was
+// absent, checked while this file loaded - so `route:cache` froze the
+// install state, and every uncached request paid a filesystem check.
+//
+// The group PREVIOUSLY carried no authorization check at all: no auth,
+// no gate, no signature. During the install window, therefore, anyone
+// who knew the URL could create a mainAdmin account - repeatedly - and
+// anyone could lock the installer. It cannot be tied to login, because
+// installation is exactly the phase when there is no user yet; so the
+// `installer` middleware proves filesystem access with a token instead.
+// See App\Http\Middleware\EnsureInstallerToken.
+Route::prefix('setup')->middleware('notInstalled')->group(function () {
+    // The welcome screen and the token submission are DELIBERATELY
+    // outside the gate: this is where the token has to be entered, so
+    // it cannot sit behind it. Neither one performs any real action.
+    Route::get('/start', [MetaController::class, 'welcome'])
+        ->name('setup.welcome');
+    Route::post('/start', [MetaController::class, 'unlock'])
+        ->name('setup.unlock');
 
-        Route::middleware('installer')->group(function () {
-            Route::get('/requirements', [RequirementsController::class, 'index'])
-                ->name('setup.requirements');
+    Route::middleware('installer')->group(function () {
+        Route::get('/requirements', [RequirementsController::class, 'index'])
+            ->name('setup.requirements');
 
-            Route::get('/basics', [BasicsController::class, 'index'])
-                ->name('setup.basics');
-            Route::post('/basics', [BasicsController::class, 'configure'])
-                ->name('setup.save-basics');
+        Route::get('/basics', [BasicsController::class, 'index'])
+            ->name('setup.basics');
+        Route::post('/basics', [BasicsController::class, 'configure'])
+            ->name('setup.save-basics');
 
-            Route::get('/database', [DatabaseController::class, 'index'])
-                ->name('setup.database');
-            Route::post('/database', [DatabaseController::class, 'configure'])
-                ->name('setup.save-database');
+        Route::get('/database', [DatabaseController::class, 'index'])
+            ->name('setup.database');
+        Route::post('/database', [DatabaseController::class, 'configure'])
+            ->name('setup.save-database');
 
-            Route::get('/mail', [MailController::class, 'index'])
-                ->name('setup.mail');
-            Route::post('/mail', [MailController::class, 'configure'])
-                ->name('setup.save-mail');
+        Route::get('/mail', [MailController::class, 'index'])
+            ->name('setup.mail');
+        Route::post('/mail', [MailController::class, 'configure'])
+            ->name('setup.save-mail');
 
-            Route::get('/account', [AccountController::class, 'index'])
-                ->name('setup.account');
-            Route::post('/account', [AccountController::class, 'register'])
-                ->name('setup.save-account');
+        Route::get('/account', [AccountController::class, 'index'])
+            ->name('setup.account');
+        Route::post('/account', [AccountController::class, 'register'])
+            ->name('setup.save-account');
 
-            Route::get('/complete', [MetaController::class, 'complete'])
-                ->name('setup.complete');
-        });
+        Route::get('/complete', [MetaController::class, 'complete'])
+            ->name('setup.complete');
     });
-}
+});
 
 //Logged in users
 Route::middleware(['auth'])->group(function () {

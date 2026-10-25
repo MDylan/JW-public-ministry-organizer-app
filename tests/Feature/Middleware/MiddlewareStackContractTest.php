@@ -92,6 +92,7 @@ class MiddlewareStackContractTest extends TestCase
             'groupMember' => 'App\Http\Middleware\GroupMember',
             'guest' => 'App\Http\Middleware\RedirectIfAuthenticated',
             'installer' => 'App\Http\Middleware\EnsureInstallerToken',
+            'notInstalled' => 'App\Http\Middleware\EnsureNotInstalled',
             'password.confirm' => 'Illuminate\Auth\Middleware\RequirePassword',
             'password.confirm.action' => 'App\Http\Middleware\RequirePasswordBeforeAction',
             'precognitive' => 'Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests',

@@ -34,10 +34,12 @@ trait CreatesApplication
      * gets the APPLICATION's own settings - including the `kozter_live`
      * database, the real mail driver, and the real cache.
      *
-     * The route cache lies in the same way: the `setup/*` group is registered
-     * behind `Storage::exists('installed.txt')`, and the cache freezes that
-     * decision. A forgotten `bootstrap/cache/routes-v7.php` once caused 110
-     * false failures in this suite because of exactly this.
+     * The route cache lies in the same way: until roadmap TODO 72 the
+     * `setup/*` group was registered behind `Storage::exists('installed.txt')`,
+     * and the cache froze that decision. A forgotten
+     * `bootstrap/cache/routes-v7.php` once caused 110 false failures in this
+     * suite because of exactly this. The group no longer depends on it, but
+     * a cached table still hides every route-file change from the suite.
      *
      * `composer test` clears both before starting; this guard is for when
      * someone bypasses that.

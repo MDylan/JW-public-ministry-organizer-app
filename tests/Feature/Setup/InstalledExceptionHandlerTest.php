@@ -63,8 +63,9 @@ class InstalledExceptionHandlerTest extends FeatureTestCase
 
     public function test_it_does_not_redirect_to_the_installer(): void
     {
-        // The installer's routes do not even exist in the installed state, so
-        // a redirect to there would lead nowhere.
+        // The installer is closed in the installed state (404 since roadmap
+        // TODO 72; before it the routes did not exist), so a redirect to
+        // there would lead nowhere.
         $response = $this->get('/__test/query-exception');
 
         $this->assertNull($response->headers->get('Location'));

@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Install\InstallState;
 use Illuminate\Database\QueryException;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Foundation\Application;
@@ -7,7 +8,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 /*
 | The Laravel 11 application skeleton (roadmap TODO 56). What used to live in
@@ -85,6 +85,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             // impersonation guard, password.confirm.impersonation).
             'password.confirm.action' => \App\Http\Middleware\RequirePasswordBeforeAction::class,
             'installer' => \App\Http\Middleware\EnsureInstallerToken::class,
+            'notInstalled' => \App\Http\Middleware\EnsureNotInstalled::class,
             'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
@@ -117,7 +118,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (QueryException $e) {
-            if (!Storage::exists('installed.txt')) {
+            if (!InstallState::isInstalled()) {
                 return redirect()->route('setup.welcome');
             }
 

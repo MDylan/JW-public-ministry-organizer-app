@@ -332,12 +332,11 @@ class RouteContractSnapshotTest extends TestCase
         // pairs live on, just under separate names now - see
         // test_the_two_confirm_password_definitions_carry_different_names.
         //
-        // WARNING: never compare the source scanner's COUNT against
-        // route-contracts.json. The setup.* routes sit behind
-        // `if (!Storage::exists('installed.txt'))` in routes/web.php:104, so
-        // they are absent from the runtime snapshot but present in the
-        // source. It can still be used for duplicate filtering regardless:
-        // the setup names are unique.
+        // The setup.* routes used to sit behind
+        // `if (!Storage::exists('installed.txt'))` in routes/web.php, so they
+        // were in the source but not in the runtime snapshot. Since roadmap
+        // TODO 72 they always register (closed by `notInstalled` instead) and
+        // route-contracts.json carries them.
         $duplicates = array_filter(
             $this->sourceRouteNameCounts(),
             fn (int $count): bool => $count > 1

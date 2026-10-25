@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Setup;
 
+use App\Http\Middleware\EnsureInstallerToken;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\FeatureTestCase;
@@ -22,52 +23,92 @@ class SentinelGuardsTheInstallerTest extends FeatureTestCase
         $this->assertTrue(Storage::exists('installed.txt'));
     }
 
-    public function test_not_a_single_setup_route_is_registered(): void
+    public function test_the_setup_routes_are_registered_whatever_the_install_state(): void
     {
-        foreach ([
-            'setup.welcome',
-            'setup.requirements',
-            'setup.basics',
-            'setup.save-basics',
-            'setup.database',
-            'setup.save-database',
-            'setup.mail',
-            'setup.save-mail',
-            'setup.account',
-            'setup.save-account',
-            'setup.complete',
-        ] as $name) {
-            $this->assertFalse(Route::has($name), "A(z) {$name} nem létezhet telepített állapotban.");
+        // REVERSED by roadmap TODO 72. The group used to be registered only
+        // while the sentinel was absent, decided once while routes/web.php
+        // loaded - so `route:cache` froze the install state into the route
+        // table. The routes now always exist and `notInstalled` refuses them
+        // at request time.
+        foreach ($this->setupRoutes() as $name => $route) {
+            $this->assertContains('notInstalled', $route->gatherMiddleware(), "A(z) {$name} nincs a notInstalled mögött.");
         }
+
+        $this->assertArrayHasKey('setup.welcome', $this->setupRoutes());
+        $this->assertArrayHasKey('setup.complete', $this->setupRoutes());
     }
 
     public function test_the_installer_urls_are_404(): void
     {
-        // Not 403, not a redirect: the route simply does not exist.
+        // Not 403, not a redirect: an installed host has no installer. This
+        // used to be the router's 404 for a missing route; it is now the
+        // middleware's, for every route and method in the group. (A POST
+        // without a CSRF token now meets VerifyCsrfToken first and gets 419;
+        // the suite skips that check, so this measures the guard.)
+        $this->assertNotEmpty($this->setupRoutes());
+
+        foreach ($this->setupRoutes() as $route) {
+            $method = $route->methods()[0];
+
+            $this->call($method, '/'.$route->uri())->assertNotFound();
+        }
+    }
+
+    public function test_an_installed_host_does_not_generate_an_installer_token(): void
+    {
+        // The welcome screen creates the token file lazily
+        // (EnsureInstallerToken::currentToken()). The guard runs before the
+        // controller, so an installed host never writes one. A fake disk,
+        // because the real storage of a development host may hold a token
+        // left from an earlier install.
+        Storage::fake(config('filesystems.default'));
+        Storage::put('installed.txt', 'test');
+
         $this->get('/setup/start')->assertNotFound();
-        $this->get('/setup/account')->assertNotFound();
+
+        $this->assertFalse(Storage::exists(EnsureInstallerToken::TOKEN_FILE));
     }
 
     public function test_the_route_contract_fixture_agrees(): void
     {
-        // The TODO 01 route contract also contains no setup entry - this test
-        // ties the two together, so that if someone captures the snapshot in
-        // an uninstalled state, it surfaces when the fixture is updated.
+        // REVERSED by roadmap TODO 72: the TODO 01 route contract now carries
+        // every setup route, each behind `notInstalled`, on any host.
         $fixture = json_decode(
             file_get_contents(base_path('tests/Fixtures/route-contracts.json')),
             true
         );
 
-        foreach (array_keys($fixture) as $name) {
-            $this->assertStringStartsNotWith('setup.', $name);
+        $setup = array_filter($fixture, fn (string $name) => str_starts_with($name, 'setup.'), ARRAY_FILTER_USE_KEY);
+
+        $this->assertNotEmpty($setup);
+        $this->assertSame(array_keys($this->setupRoutes()), array_keys($setup));
+
+        foreach ($setup as $name => $contract) {
+            $this->assertContains('notInstalled', $contract['middleware'], $name);
         }
+    }
+
+    /**
+     * @return array<string, \Illuminate\Routing\Route>
+     */
+    private function setupRoutes(): array
+    {
+        $routes = array_filter(
+            Route::getRoutes()->getRoutesByName(),
+            fn (string $name) => str_starts_with($name, 'setup.'),
+            ARRAY_FILTER_USE_KEY
+        );
+        ksort($routes);
+
+        return $routes;
     }
 
     /**
      * TODO 37: where the bare Storage:: call actually lands.
      *
      * The sentinel is read with no disk argument at all - routes/web.php:104
-     * and Handler.php:60 - and written the same way (Setup/MetaController:89).
+     * and Handler.php:60 then, App\Support\Install\InstallState since roadmap
+     * TODO 72 - and written the same way.
      * That resolves through filesystems.default, so the file's location is a
      * consequence of a configuration key rather than of anything written at
      * the call sites. Nothing said so before this test.

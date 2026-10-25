@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Setup;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureInstallerToken;
 use App\Models\User;
+use App\Support\Install\InstallState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 
 class MetaController extends Controller
 {
@@ -80,8 +80,8 @@ class MetaController extends Controller
     {
         // Writing the sentinel used to run unconditionally on a GET, so
         // anyone could close off the installer before the first administrator
-        // was created - and from that point the `setup/*` group would no longer
-        // register, meaning the installation could never be completed.
+        // was created - and from that point the `setup/*` group would be
+        // closed, meaning the installation could never be completed.
         //
         // The sentinel's meaning is "the installation is complete", and that's exactly
         // what having an administrator account means. That's what we check here.
@@ -91,7 +91,7 @@ class MetaController extends Controller
                 ->with('status', __('setup.token.account_required'));
         }
 
-        Storage::put('installed.txt', "The program installed successfully at ".date("Y-m-d H:i:s").".\n\nPlease DO NOT DELETE this file, unless you want to reinstall this program.");
+        InstallState::markInstalled();
 
         // The token loses its meaning; it shouldn't remain on disk.
         EnsureInstallerToken::forget();

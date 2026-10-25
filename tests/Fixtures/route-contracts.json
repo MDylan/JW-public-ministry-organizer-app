@@ -594,6 +594,131 @@
             "web"
         ]
     },
+    "setup.account": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.basics": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.complete": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.database": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.mail": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.requirements": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.save-account": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.save-basics": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.save-database": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.save-mail": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "installer",
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.unlock": {
+        "methods": [
+            "POST"
+        ],
+        "middleware": [
+            "notInstalled",
+            "web"
+        ]
+    },
+    "setup.welcome": {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "middleware": [
+            "notInstalled",
+            "web"
+        ]
+    },
     "static_page": {
         "methods": [
             "GET",

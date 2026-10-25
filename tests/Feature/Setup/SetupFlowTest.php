@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Storage;
 /**
  * TODO 12: the installer's routes and the sentinel.
  *
- * The group's existence hinges on a single file's presence. This test
+ * Whether the group is open hinges on a single file's presence (until
+ * roadmap TODO 72 its very registration did). This test
  * measures that SetupTestCase's infrastructure really produces what it
  * promises - without it, all the other setup tests would only prove that
  * they themselves run.
@@ -37,6 +38,20 @@ class SetupFlowTest extends SetupTestCase
         ] as $name) {
             $this->assertTrue(Route::has($name), "Hiányzik a(z) {$name} útvonal.");
         }
+    }
+
+    public function test_finishing_the_install_closes_the_installer_on_the_next_request(): void
+    {
+        // Roadmap TODO 72: the install state is read per request, not when
+        // the route file loads. Before, the routes registered at boot stayed
+        // in this process's table - and in a cached route table on a host -
+        // after the sentinel appeared.
+        $this->get(route('setup.welcome'))->assertOk();
+
+        Storage::put('installed.txt', 'test');
+
+        $this->get(route('setup.welcome'))->assertNotFound();
+        $this->get(route('setup.requirements'))->assertNotFound();
     }
 
     public function test_the_temporary_storage_is_not_the_real_one(): void
