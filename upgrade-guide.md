@@ -708,7 +708,13 @@ rm routes/api.php
 rm config/cors.php
 ```
 
-*Last updated: TODO 71.*
+**TODO 72: nothing moves.** `routes/web.php`, `bootstrap/app.php` and the
+installer's `MetaController` change content and overwrite in place; two new
+classes ship (`app/Http/Middleware/EnsureNotInstalled.php`,
+`app/Support/Install/InstallState.php`). `storage/app/installed.txt` keeps its
+name, place and meaning - do not delete it.
+
+*Last updated: TODO 72.*
 
 ## 4. `.env` changes
 
@@ -1014,8 +1020,17 @@ State that lives on the host and is not expressible in a release archive.
   change: nothing in the application called the API. **Not changed on 1.x:**
   the `api` guard and route stay on the 1.x line, where the TokenGuard
   advisory has no fixed release and was not measured (see the TODO 61 row).
+- **TODO 72: no migration; `route:cache` becomes safe.** The installer's
+  routes are now always registered and closed per request while
+  `storage/app/installed.txt` exists, instead of being left out of the route
+  table. A route table cached before the deploy lacks them and names no
+  `notInstalled` middleware, so step 10's `optimize:clear` is what brings the
+  new table in; on an installed host the installer answers 404 either way.
+  From here on `php artisan optimize` may run at any time, before the
+  installer as well - it used to freeze the install state. No user-visible
+  change.
 
-*Last updated: TODO 71.*
+*Last updated: TODO 72.*
 
 ## 6. The upgrade procedure
 
@@ -1112,3 +1127,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 70 | **Authorization behind the middleware, and stored XSS.** Livewire actions do not pass the page route's `groupMember`/`groupAdmin`, and component ids were client-writable; the fixes are code only. Section 2: `ezyang/htmlpurifier` in, nothing out. Section 3: one renamed middleware file to delete. Section 4: none. Section 5: a writable cache directory, two routes changed method (rebuild the route cache), a page left open answers 405 once; memberships created through the closed hole cannot be told apart. The v1 backport is TODO 70.1. |
 | (no framework hop) | 70.1 | **The fixes reach 1.x as 1.2.1** - built on branch `v1-authz`, released by the developer. Section 5 says hosts should take it before 2.0.0; nothing else changes for the 2.0.0 path. |
 | (no framework hop) | 71 | **The API surface and the CORS layer are gone.** The stock `/api/user` stub never authenticated anyone (no `api_token` column) and only kept a TokenGuard reachable; the route file, the `api` guard, the `throttle:api` limiter, `config/cors.php` and `HandleCors` are removed. Section 2: none. Section 3: two inert files to delete. Section 4: none. Section 5: a stale route cache answers 500 on the old path until `optimize:clear`. The 1.x line keeps the guard, unmeasured. |
+| (no framework hop) | 72 | **The install state is read per request.** The `setup/*` routes are always registered and closed (404) by a new `notInstalled` middleware while `installed.txt` exists, so `route:cache` no longer freezes the install state. Sections 2 and 4: none. Section 3: nothing moves, two new classes ship. Section 5: the route cache must be rebuilt once (step 10); afterwards `optimize` is safe at any time. |

@@ -120,7 +120,7 @@ and `isAnonymized`, which the normal model output hides. Encrypted columns
 `groups_accepted` key is renamed to `groups` only when the user has groups, so
 the export's shape is data-dependent.
 
-### Conditional Setup Routes (only when `storage/installed.txt` does not exist)
+### Setup Routes (open only while `storage/app/installed.txt` does not exist)
 
 | Method | URI | Name | Action |
 |---|---|---|---|
@@ -135,10 +135,17 @@ the export's shape is data-dependent.
 
 Behaviour of the group, covered by `tests/Feature/Setup/`:
 
-- **The condition is evaluated once, at route-registration time.** With
-  `storage/app/installed.txt` present the routes do not exist at all - the URLs
-  are 404, not 403, and `Route::has('setup.welcome')` is false. This is also why
-  the route-contract fixture contains no `setup.` entry.
+- **The install state is read per request** (roadmap TODO 72). The group is
+  always registered, behind `notInstalled` (`App\Http\Middleware\EnsureNotInstalled`),
+  which answers 404 once `storage/app/installed.txt` exists - not 403, as when the
+  routes did not exist. `App\Support\Install\InstallState` owns the sentinel's name,
+  read and write. `notInstalled` runs before `installer`, so an installed host never
+  generates an installer token. Until TODO 72 the group was registered only while
+  the file was absent, checked once while `routes/web.php` loaded, so `route:cache`
+  froze the install state and the route-contract fixture had no `setup.` entry; it
+  carries all twelve now. Two observable differences on an installed host, both
+  still refusals: the request passes the `web` group first (`HttpsProtocol` sends an
+  http request to https before the 404), and a POST without a CSRF token gets 419.
 - **Everything except `setup.welcome` and `setup.unlock` sits behind the
   `installer` middleware** (`App\Http\Middleware\EnsureInstallerToken`), added in
   v1-patch D2. Before that no route in the group carried `auth`, a gate or a
@@ -155,7 +162,7 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   closes.
 - **`setup.complete` only writes the sentinel once a `mainAdmin` exists.** It
   used to write it unconditionally on a GET, so anyone could end the install
-  window early - and since the route group then stops registering, the real
+  window early - and since the route group then closes, the real
   installation became impossible to finish. The sentinel means "installation
   complete", which is exactly "an administrator account exists".
 - `Setup\MailController::configure` is the only place where the `languages` and
@@ -173,7 +180,7 @@ Behaviour of the group, covered by `tests/Feature/Setup/`:
   database connection itself: Laravel 11's `migrate:fresh` makes `setup` the
   default around its table wipe and does not switch back when the wipe throws
   (roadmap TODO 55).
-- `Exceptions\Handler` redirects any `QueryException` to `setup.welcome` while
+- `bootstrap/app.php` `withExceptions()` (`Exceptions\Handler` until TODO 56) redirects any `QueryException` to `setup.welcome` while
   the sentinel is missing - this is what routes a freshly unpacked copy into the
   installer. With the sentinel present it returns `null`, so the exception falls
   through to the framework's own handling: it is reported through the normal log
@@ -382,7 +389,7 @@ Behaviour is pinned by `tests/Feature/NewEmail/` (53 tests, roadmap TODO 19.1 an
 
 ## Route Observations
 
-- Setup routes are runtime-conditional based on `Storage::exists('installed.txt')`.
+- Setup routes are always registered and closed per request by `notInstalled` once `installed.txt` exists (roadmap TODO 72).
 - Role and membership checks are strongly middleware-driven (`can:*`, `groupMember`, `groupAdmin`).
 - **Two route names are defined twice, and the precedence of both is measured and pinned by
   `tests/Feature/RouteContractSnapshotTest.php`.**
@@ -412,15 +419,14 @@ Behaviour is pinned by `tests/Feature/NewEmail/` (53 tests, roadmap TODO 19.1 an
     definitions still answer on `/confirm-password` with unchanged middleware.
     `RouteContractSnapshotTest::test_the_route_table_survives_route_cache` is the guard.
 
-    **One consequence of route caching now being possible.** The `setup/*` group is registered
-    behind `if (!Storage::exists('installed.txt'))`, which is evaluated once, at
-    route-registration time. `route:cache` therefore freezes that decision: an operator who
-    runs `optimize` *before* installing bakes the setup routes into the cache, and they stay
-    registered after installation until the cache is rebuilt. They are not reachable without
-    the installer token (v1-patch D2), and `setup.complete` only writes the sentinel once a
-    `mainAdmin` exists, so this is an operational wrinkle rather than an exposure — but the
-    install instructions should say to run `optimize` *after* the installer finishes, not
-    before.
+    **One consequence of route caching becoming possible, resolved at roadmap TODO 72.** The
+    `setup/*` group used to be registered behind `if (!Storage::exists('installed.txt'))`,
+    evaluated once at route-registration time, so `route:cache` froze that decision: an
+    operator who ran `optimize` *before* installing kept the setup routes after installation
+    until the cache was rebuilt (not reachable without the installer token, so an operational
+    wrinkle rather than an exposure). The group is now always registered and `notInstalled`
+    reads the sentinel per request, so `optimize` is safe before, during and after the
+    installation.
 - The named Livewire 3 routes are snapshotted separately in
   `tests/Fixtures/vendor-route-contracts.json`:
   - `default.livewire.update` - `POST /livewire/update`, `web`. The single component endpoint,
