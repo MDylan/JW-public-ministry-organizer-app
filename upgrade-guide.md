@@ -1029,8 +1029,17 @@ State that lives on the host and is not expressible in a release archive.
   From here on `php artisan optimize` may run at any time, before the
   installer as well - it used to freeze the install state. No user-visible
   change.
+- **TODO 72.1: no migration; the cache stops unserializing objects.**
+  `config/cache.php` now sets `serializable_classes` to `false`. A host's
+  existing cache can hold side-menu entries written by the old code - a
+  serialized collection of models, stored forever - and those would come
+  back as unusable objects. The new code recognises such an entry and
+  rebuilds it, and step 10's `optimize:clear` (which includes `cache:clear`)
+  removes it anyway; nothing else the application caches is an object. **A
+  host on the `memcached` or `apc` store is not covered:** those stores
+  unserialize natively and ignore the setting. No user-visible change.
 
-*Last updated: TODO 72.*
+*Last updated: TODO 72.1.*
 
 ## 6. The upgrade procedure
 
@@ -1128,3 +1137,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 70.1 | **The fixes reach 1.x as 1.2.1** - built on branch `v1-authz`, released by the developer. Section 5 says hosts should take it before 2.0.0; nothing else changes for the 2.0.0 path. |
 | (no framework hop) | 71 | **The API surface and the CORS layer are gone.** The stock `/api/user` stub never authenticated anyone (no `api_token` column) and only kept a TokenGuard reachable; the route file, the `api` guard, the `throttle:api` limiter, `config/cors.php` and `HandleCors` are removed. Section 2: none. Section 3: two inert files to delete. Section 4: none. Section 5: a stale route cache answers 500 on the old path until `optimize:clear`. The 1.x line keeps the guard, unmeasured. |
 | (no framework hop) | 72 | **The install state is read per request.** The `setup/*` routes are always registered and closed (404) by a new `notInstalled` middleware while `installed.txt` exists, so `route:cache` no longer freezes the install state. Sections 2 and 4: none. Section 3: nothing moves, two new classes ship. Section 5: the route cache must be rebuilt once (step 10); afterwards `optimize` is safe at any time. |
+| (no framework hop) | 72.1 | **The cache unserializes no objects.** `cache.serializable_classes` is `false`, closing the object-injection path through cached values. The side menu, the one cache entry that held models, now holds plain arrays; an old entry is rebuilt on first use. Sections 2, 3 and 4: none. Section 5: `optimize:clear` clears the old entries; `memcached` and `apc` hosts do not get the protection. |
