@@ -363,7 +363,12 @@ no longer orphaned. Delete neither from now on.
 **TODO 70 (authorization fixes, HTMLPurifier): none.** 1 install
 (`ezyang/htmlpurifier`), 0 updates, 0 removals.
 
-*Last updated: TODO 70.*
+**TODO 71 (API surface and CORS removed): none.** The lock does not move.
+`vendor/fruitcake/php-cors` is no longer load-bearing - `HandleCors` left the
+middleware stack - but it is still a hard requirement of `laravel/framework`,
+so the TODO 35 rule above stands: keep it.
+
+*Last updated: TODO 71.*
 
 ## 3. Application files that move or disappear
 
@@ -691,7 +696,19 @@ on a host it stays inert. Remove it by hand:
 rm app/Http/Middleware/RequirePasswordForImpersonation.php
 ```
 
-*Last updated: TODO 70.*
+**TODO 71: two files are left behind.** `routes/api.php` (the unused
+`/api/user` stub) and `config/cors.php` are deleted. On a host both stay
+inert: `bootstrap/app.php` no longer loads the route file, and with
+`HandleCors` out of the middleware stack nothing reads the CORS
+configuration. `config/auth.php` loses its `api` guard and overwrites in
+place. Remove the two files by hand:
+
+```
+rm routes/api.php
+rm config/cors.php
+```
+
+*Last updated: TODO 71.*
 
 ## 4. `.env` changes
 
@@ -990,8 +1007,15 @@ State that lives on the host and is not expressible in a release archive.
   `RequirePasswordBeforeAction` already, and its hook removed the old
   middleware file; nothing above changes for it. A host still on 1.2.0 is
   exposed until it updates - take 1.2.1 first rather than waiting for 2.0.0.
+- **TODO 71: no migration; the caches matter once more.** A route table cached
+  before the deploy still lists `/api/user` with `auth:api`, and the new
+  `config/auth.php` has no `api` guard, so that path would answer 500 instead
+  of 404 until step 10's `optimize:clear` rebuilds the caches. No user-visible
+  change: nothing in the application called the API. **Not changed on 1.x:**
+  the `api` guard and route stay on the 1.x line, where the TokenGuard
+  advisory has no fixed release and was not measured (see the TODO 61 row).
 
-*Last updated: TODO 70.1.*
+*Last updated: TODO 71.*
 
 ## 6. The upgrade procedure
 
@@ -1087,3 +1111,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 69 | **Passkeys, and Fortify owns the two-factor confirmation.** `laravel/fortify` 1.41.0 with `laravel/passkeys` (16 packages in, none out; section 2 says two old paths are back). Section 3: two inert class files to delete, `public/vendor/passkeys/` new. Section 4: no key, but `APP_URL` must be the real `https://` address and `APP_KEY` now also anchors every passkey. Section 5: the `passkeys` migration and the `bootstrap/cache` rule; users can now add passkeys on the 2FA settings page and sign in or confirm their password with one, and download their recovery codes as a .txt file there (a new route, nothing for the operator to do). |
 | (no framework hop) | 70 | **Authorization behind the middleware, and stored XSS.** Livewire actions do not pass the page route's `groupMember`/`groupAdmin`, and component ids were client-writable; the fixes are code only. Section 2: `ezyang/htmlpurifier` in, nothing out. Section 3: one renamed middleware file to delete. Section 4: none. Section 5: a writable cache directory, two routes changed method (rebuild the route cache), a page left open answers 405 once; memberships created through the closed hole cannot be told apart. The v1 backport is TODO 70.1. |
 | (no framework hop) | 70.1 | **The fixes reach 1.x as 1.2.1** - built on branch `v1-authz`, released by the developer. Section 5 says hosts should take it before 2.0.0; nothing else changes for the 2.0.0 path. |
+| (no framework hop) | 71 | **The API surface and the CORS layer are gone.** The stock `/api/user` stub never authenticated anyone (no `api_token` column) and only kept a TokenGuard reachable; the route file, the `api` guard, the `throttle:api` limiter, `config/cors.php` and `HandleCors` are removed. Section 2: none. Section 3: two inert files to delete. Section 4: none. Section 5: a stale route cache answers 500 on the old path until `optimize:clear`. The 1.x line keeps the guard, unmeasured. |

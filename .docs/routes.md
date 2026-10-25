@@ -5,13 +5,12 @@
 Route loading is split across providers/files:
 
 - `bootstrap/app.php` `withRouting()` (since TODO 56; `app/Providers/RouteServiceProvider.php` before)
-  - Loads `routes/api.php` under `api` prefix + `api` middleware
+  - No `api:` entry: `routes/api.php` was removed at roadmap TODO 71 (see *API Routes* below)
   - Loads `routes/web.php` under `web` middleware
   - Then (`then:`) loads `routes/fortify.php` under Fortify's controller namespace and domain/prefix config - after `routes/web.php`, see `RouteContractSnapshotTest::test_routes_web_is_loaded_before_routes_fortify`
   - Loads `routes/console.php` (`commands:`); there is no `/up` health route
 - `app/Providers/FortifyServiceProvider.php`
   - Calls `Fortify::ignoreRoutes()` (until TODO 56 it also loaded `routes/fortify.php` from `boot()`)
-- The `api` rate limiter (`throttle:api`) is defined in `AppServiceProvider::boot()`
 - `routes/channels.php`
   - Broadcast channel authorization callbacks
 
@@ -332,11 +331,13 @@ Notes that matter:
   happens on every admin page render through `layouts/partials/footer.blade.php:32` and
   `livewire/admin/settings.blade.php:40`.
 
-## API Routes (`routes/api.php`)
+## API Routes
 
-| Method | URI | Middleware | Action |
-|---|---|---|---|
-| GET | `/api/user` | `auth:api` | Returns authenticated API user |
+**None since roadmap TODO 71.** `routes/api.php` held the framework's stock stub, `GET /api/user`
+behind `auth:api`. No client called it, and the `users` table has never had the `api_token` column
+the `token` guard looks users up by, so it never authenticated anyone; it only kept a TokenGuard
+reachable. The route file, the `api` guard (`config/auth.php`), the `throttle:api` limiter,
+`config/cors.php` and `HandleCors` went together. `ApiSurfaceTest` pins the absence.
 
 ## Broadcast Channels (`routes/channels.php`)
 

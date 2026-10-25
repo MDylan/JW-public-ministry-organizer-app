@@ -25,7 +25,6 @@ TODO 66). The route snapshots cannot do that: they record the names a route carr
 Executed on every HTTP request:
 
 - `TrustProxies`
-- `HandleCors`
 - `PreventRequestsDuringMaintenance`
 - `ValidatePostSize`
 - `TrimStrings`
@@ -33,11 +32,15 @@ Executed on every HTTP request:
 
 > `TrustHosts` exists but is currently commented out in global stack.
 
+> `HandleCors` left the stack at roadmap TODO 71, together with `config/cors.php`:
+> the application has no cross-origin surface (see *API Group* below).
+
 **This stack is not visible to either route snapshot.** `RouteContractSnapshotTest`
 and `RouteMiddlewareRegressionTest` read `$route->gatherMiddleware()`, which returns
 route and group middleware only - so until TODO 35 nothing in the suite would have
-noticed a class disappearing from here. `CorsHeadersTest` and `TrustProxiesTest`
-close that gap for the two entries TODO 35 replaced; the other four are still
+noticed a class disappearing from here. `TrustProxiesTest` closes that gap for
+the entry TODO 35 replaced (its sibling `CorsHeadersTest` went with `HandleCors`
+at TODO 71, replaced by `ApiSurfaceTest`); the other four are still
 unmeasured as behaviour - `MiddlewareStackContractTest` now notices the line going, but not what that costs.
 
 ## Web Group (`$middleware->group('web', ...)`)
@@ -53,10 +56,13 @@ unmeasured as behaviour - `MiddlewareStackContractTest` now notices the line goi
 - `SetUserLastActivity` (custom)
 - `HttpsProtocol` (custom)
 
-## API Group (`$middleware->group('api', ...)`)
+## API Group (framework default, unused)
 
-- `throttle:api`
-- `SubstituteBindings`
+The application declares no `api` group since roadmap TODO 71. The framework's
+`Middleware::getMiddlewareGroups()` still adds its default one - `SubstituteBindings`
+only, as no API limiter is configured - and no route carries it: `routes/api.php`,
+the `throttle:api` limiter and the `api` token guard are gone. Pinned by
+`MiddlewareStackContractTest::test_the_api_group` and `ApiSurfaceTest`.
 
 ## Route Middleware Aliases (`$middleware->alias()`)
 
@@ -89,7 +95,6 @@ Since TODO 56 the map also holds `auth.session` and `precognitive`: Laravel 11 a
 | `PreventRequestsDuringMaintenance` | Laravel default | Standard maintenance-mode gate; no custom allowlist. |
 | `TrustHosts` | Laravel default | Host trust helper class present but not enabled in kernel stack. |
 | `TrustProxies` | Laravel override | Extends `Illuminate\Http\Middleware\TrustProxies` since TODO 35; before that `Fideloper\Proxy\TrustProxies`, from a package the framework absorbed in Laravel 9. **`$proxies` is `null` and the application ships no `config/trustedproxy.php`, so no proxy is trusted and every `X-Forwarded-*` header is discarded** - which is correct for a host reached directly, and is what makes the swap a no-op here. The parent still reads `config('trustedproxy.proxies')`, so an operator genuinely behind a reverse proxy can publish that file without editing this class. The `$headers` override was **deleted** rather than ported: both the old and the new parent match `$headers` against *single* `Request::HEADER_*` constants and fall through to a default for anything else, and the value here was a combined bitmask - so it never selected anything under either parent. The two defaults differ only in that the framework's also trusts `X-Forwarded-Prefix`, which cannot surface while nothing is trusted. Pinned by `TrustProxiesTest`. |
-| `HandleCors` | Laravel default | `Illuminate\Http\Middleware\HandleCors` since TODO 35, replacing the abandoned `fruitcake/laravel-cors`; both read the same `config/cors.php`. Its `paths` is `['api/*', 'sanctum/csrf-cookie']`, so the **only** covered application path is `routes/api.php`'s `auth:api`-guarded `/api/user` - Sanctum is not installed. With `allowed_origins => ['*']` and `supports_credentials => false` the response header is a static `Access-Control-Allow-Origin: *`, emitted whether or not the request carries an `Origin`; the request's own origin is only consulted when the allowed list is a real list or holds patterns. What decides whether the header appears at all is therefore the path match, nothing else. Pinned by `CorsHeadersTest`. |
 | `CheckRecaptcha` | Custom | Optional anti-bot check using Google reCAPTCHA score, gated on `config('security.use_recaptcha')`. **Takes the expected reCAPTCHA action as a middleware parameter** (`checkRecaptcha:login`, `:register`, `:password_reset`) and rejects a response whose `action` does not match - v1-patch H; every form used to request the hardcoded `register` action and the server never read the field back. The client IP is now sent as `remoteip`, the field name the siteverify endpoint expects; it was `ip`, which Google silently discarded, so the address was never checked. **Fails open** on a connection error and uses an explicit 5s timeout (v1-patch D3): the call previously had neither, so a Google outage returned 500 on `POST /login`, `/register` and `/forgot-password`, and a hung endpoint held the PHP worker. Availability was chosen over bot protection; the failure is logged. The flag used to be read straight from `env('USE_RECAPTCHA')`, which `config:cache` would have silently turned off — along with the six Blade views that render the captcha field, so nothing would have looked wrong (TODO 28). |
 | `EnsureInstallerToken` | Custom | Guards the `setup/*` group during installation, when no user exists to authenticate. Requires a token the operator reads from `storage/app/installer-token.txt` on the server; deleted once the installer closes. |
 | `GroupAdmin` | Custom | Authorizes by membership in `userGroupsEditable` (accepted `admin` or `roler`). Accepts `{group}` as a bound `Group` model or a raw id - see *Group-scoped bindings* in `.docs/routes.md`. |
@@ -108,5 +113,5 @@ Since TODO 56 the map also holds `auth.session` and `precognitive`: Laravel 11 a
 - **Maintenance mode is now switchable at runtime.** `config('settings_maintenance')` is filled by `AppServiceProvider::boot()`, i.e. before the middleware stack, so writing the settings row could never affect the request that wrote it. The middleware therefore asks `ApplicationSettings` directly; the value is cached and invalidated by `SettingsObserver`. `nav-bar.blade.php` and `public.blade.php` still read the config key, which is fine — they render after the boot that filled it.
 - `checkRecaptcha` is used by custom Fortify routes (`POST /login`, `POST /register`, `POST /forgot-password`), each with the expected reCAPTCHA action as a parameter.
 - `strictEmail` is used by `POST /forgot-password` and `POST /reset-password`. Both controllers live in `vendor/laravel/fortify` and validate `required|email`, and the framework's default `email` rule (RFCValidation) **accepts CR/LF inside the address** (GHSA-5vg9-5847-vvmq, high). From there the address reaches a mail header, where a line break opens a new one. The fix exists only in 12.60.0, so **Laravel 10 is affected exactly as 9 and 8 were** - re-measured at TODO 39, where `composer audit` still reports it against 10.50.3 and it is still on the resolution's ignore list - and the rule cannot be edited in `vendor/` without the next `composer update` reverting it - hence a middleware. It runs **before** `checkRecaptcha` so an obviously malformed address does not cost a round trip to Google. The application's own validations all use `email:filter` already and need no such layer.
-- **The CORS configuration carries two open questions, and neither belongs to the middleware.** `config/cors.php` still lists `sanctum/csrf-cookie` in `paths` although `laravel/sanctum` is not in `composer.json`, and `allowed_origins` is a wildcard on an authenticated API path. TODO 35 deliberately changed neither - a package replacement that also alters policy cannot be shown to preserve behaviour - and recorded both under TODO 71, which owns the API surface itself and is where dropping `routes/api.php` would make `api/*` dead configuration anyway. `CorsHeadersTest` asserts the current values, so a change there reports itself as a configuration change rather than as several unexplained middleware failures.
+- **There is no CORS layer since roadmap TODO 71.** `config/cors.php` covered `api/*` and `sanctum/csrf-cookie` (Sanctum was never installed) with a static `Access-Control-Allow-Origin: *`; TODO 35 kept it unchanged across the `fruitcake/laravel-cors` swap and left the policy question to TODO 71, which removed the only route it covered, the file itself and `HandleCors`. A future cross-origin endpoint has to bring both back deliberately. `ApiSurfaceTest` pins the absence: no `api/` route, no CORS header on a former API path or on a page, no preflight answer.
 - Naming is now consistent: the former lower-case `setUserLastActivity` class was renamed to `SetUserLastActivity` (v1-patch, TODO 33). The old name was valid under PSR-4 on a case-insensitive filesystem but would not autoload on a case-sensitive deploy target.
