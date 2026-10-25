@@ -3229,7 +3229,14 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
 
 ## Phase 12 - Release Readiness
 
-- [ ] **TODO 73: Execute the full regression suite plus manual smoke checks**
+- [ ] **TODO 73: Execute the full regression suite plus manual smoke checks** - AUTOMATED HALF DONE, the manual walk is open
+  - **The report is `upgrade-notes/release-candidate-2.0.0.md`** (opened 2026-10-25): the stack, the snapshots (`rc-2.0.0-about.txt`, `-routes.json`, `-schedule.txt`, `-composer-direct.txt`), the automated results and a pass/fail matrix for the browser walk. The item closes when every row of the matrix carries a result.
+  - **Automated, all PASS:** the suite on `5d0aa1e6` (1747 tests, 5286 assertions); `artisan optimize` builds every cache; `migrate:status` has nothing pending; `schedule:run` dispatches the due entries and its `queue:work` drains a queued job with `failed_jobs` empty; each of the other eleven scheduled commands boots and exits 0. Those runs used `kozter_testing`, an array cache and the log mailer, set in the shell - several commands delete, anonymise or send mail, and the local `.env` points at `kozter_live`, which stayed untouched (its heartbeat unchanged). On an empty database they show that the commands run on Laravel 13; their logic is the suite's.
+  - **Found: no scheduler has run on the development machine since 2026-08-08** (`last_schedule_run`), so the matrix's group H watches a real host's cron instead.
+  - **Found: an install of `v2-dev` offers the 1.x update.** `version.txt` is still `1.2.0`, `UpdateBranch::allows()` admits a remote major not above the installed one, and `config/laraupdater.php` defaults the channel to `.../v1`, where 1.2.1 is published - accepting it would overwrite a Laravel 13 install with the Laravel 8 archive. The walk's instructions say not to press Update; the fix belongs to TODO 75 (see there).
+  - **Found: `APP_ENV=production` in the local `.env`**, so since TODO 72.2 the admin debugbar switch is hidden locally as well; `APP_ENV=local` brings it back.
+  - Checked on the way and not a defect: `GET /groups/{group}/delete` renders a Livewire confirmation page (the deletion is a Livewire action, POST with CSRF); the old `GroupDelete` controller it replaced is unrouted. `GET /user/deletepersonaldata/{id}` is the signed link mailed to the user.
+  - **Everything below is the entry as it stood before the automated half.**
   - Needed:
     - Full test run on the Laravel 13 stack, plus manual smoke checks for: login/logout, registration and email verification, profile update, group membership flows, event create/update/delete, all admin pages, the translation UI, the GDPR export, and the setup flow.
     - Verify scheduled commands and queue workers on the upgraded stack.
@@ -3258,6 +3265,7 @@ PHP 8.3.16 is already installed locally, so no new runtime is required for this 
     - Backup procedure, with **explicit emphasis on `APP_KEY` and the 9 encrypted columns** - a key mismatch after deployment is unrecoverable without a restore.
     - Maintenance mode, migration execution order (the squashed baseline in TODO 32 changes how a fresh install behaves versus an existing production database), queue restart, cache/config/view/route cache rebuild, post-deploy verification.
     - Rollback path per phase, given that each phase is a separate PR.
+  - **Added by TODO 73: the version number and the update channel move together, before any 2.x install exists.** While `version.txt` reads `1.2.0` and `config/laraupdater.php` defaults `update_baseurl` to `https://updates.teruletek.hu/v1`, a `v2-dev` install is offered the 1.x release by its own updater (`UpdateBranch` only refuses a *higher* major). Set `version.txt` to 2.0.0 and the channel default to a 2.x path in the same change, and check the updater card on a test install afterwards. The release tooling (`release/build-update.php`, the manifests' `previous_version`) has to agree with both.
   - Expected changes: a deployment runbook with an explicit recovery path.
 
 ---

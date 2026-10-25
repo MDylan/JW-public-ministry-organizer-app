@@ -1,0 +1,18 @@
+
+  *   *   * * *  php artisan queue:work --name=kozteruletek-job-1 --queue=default --max-time=25 --max-jobs=100 --sleep=3 --tries=3 --backoff=20  Next Due: 55 másodperc múlva
+  50  *   * * *  php artisan users:purge-unverified .......................................... Next Due: 32 perc múlva
+  */5 *   * * *  php artisan events:expire-pending ............................................ Next Due: 2 perc múlva
+  0   7   * * *  php artisan gdpr:anonymize-inactive .......................................... Next Due: 11 óra múlva
+  10  7   * * *  php artisan gdpr:notify-anonymization ........................................ Next Due: 11 óra múlva
+  20  3   * * *  php artisan activitylog:clean --force ......................................... Next Due: 8 óra múlva
+  30  3   * * *  php artisan gdpr:purge-old-events ............................................. Next Due: 8 óra múlva
+  40  3   * * *  php artisan maintenance:purge-old-group-data .................................. Next Due: 8 óra múlva
+  0   0   * * *  php artisan maintenance:purge-log-history ..................................... Next Due: 4 óra múlva
+  0   0   * * *  php artisan maintenance:daily-cleanup ......................................... Next Due: 4 óra múlva
+  0   0   * * *  php artisan statistics:record-daily-users ..................................... Next Due: 4 óra múlva
+  *   *   * * *  php artisan groups:apply-future-changes ................................ Next Due: 55 másodperc múlva
+  *   *   * * *  php artisan newsletters:send-due ....................................... Next Due: 55 másodperc múlva
+  0   *   * * *  php artisan statistics:record-active-users .................................. Next Due: 42 perc múlva
+  *   *   * * *  php artisan scheduler:heartbeat ........................................ Next Due: 55 másodperc múlva
+  0   */3 * * *  php artisan weather:refresh ................................................... Next Due: 1 óra múlva
+

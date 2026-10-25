@@ -1,0 +1,19 @@
+astrotomic/laravel-translatable      11.17.1 A Laravel package for multilingual models
+barryvdh/laravel-debugbar            4.4.4   PHP Debugbar integration for Laravel
+ezyang/htmlpurifier                  4.19.1  Standards compliant HTML filter written in PHP
+fakerphp/faker                       1.24.1  Faker is a PHP library that generates fake data for you.
+guzzlehttp/guzzle                    7.16.0  Guzzle is a PHP HTTP client library
+laravel/fortify                      1.41.0  Backend controllers and scaffolding for Laravel authentication.
+laravel/framework                    13.38.0 The Laravel Framework.
+laravel/sail                         1.69.0  Docker files for running a basic Laravel application.
+laravel/tinker                       3.0.2   Powerful REPL for the Laravel framework.
+livewire/livewire                    3.8.11  A front-end framework for Laravel.
+mdylan/laraupdater                   2.0.0   LaraUpdater allows your Laravel Application to auto-update itself. Ma...
+mockery/mockery                      1.6.15  Mockery is a simple yet flexible PHP mock object framework
+nunomaduro/collision                 8.9.5   Cli error handling for console/command-line PHP applications.
+petercoles/multilingual-country-list 1.2.14  Lookup Objects for ISO 3166 Country Names and Codes
+phpunit/phpunit                      12.5.40 The PHP Unit Testing framework.
+spatie/calendar-links                1.11.1  Generate add to calendar links for Google, iCal and other calendar sy...
+spatie/laravel-activitylog           4.12.3  A very simple activity logger to monitor the users of your website or...
+spatie/laravel-cookie-consent        3.5.0   Make your Laravel app comply with the crazy EU cookie law
+spatie/laravel-failed-job-monitor    4.5.0   Get notified when a queued job fails
