@@ -1044,8 +1044,18 @@ State that lives on the host and is not expressible in a release archive.
   from the settings page even if `APP_DEBUG` is on; the stored value is kept,
   and it no longer starts Debugbar's data collection on every request there,
   which it did without ever showing the bar. Nothing to do.
+- **TODO 72.3: the clock change days stop misbehaving.** No migration. On the
+  two days a year the clock changes, the group edit form and the special-day
+  dialog offered time lists an hour off - in autumn a service day ending at
+  midnight was saved as ending at 23:00, in spring the lists ran past
+  midnight and skipped 02:00 - and two date limits (the servant's statistics
+  window, the day view's "next day" limit) could be a calendar day off. All
+  are fixed in code. **Not repaired, and not detectable from data:** a day
+  template saved on such a day with a wrong end time looks like any other
+  template; a group that keeps a midnight end and shows 23:00 needs that day
+  re-saved by hand.
 
-*Last updated: TODO 72.2.*
+*Last updated: TODO 72.3.*
 
 ## 6. The upgrade procedure
 
@@ -1145,3 +1155,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 72 | **The install state is read per request.** The `setup/*` routes are always registered and closed (404) by a new `notInstalled` middleware while `installed.txt` exists, so `route:cache` no longer freezes the install state. Sections 2 and 4: none. Section 3: nothing moves, two new classes ship. Section 5: the route cache must be rebuilt once (step 10); afterwards `optimize` is safe at any time. |
 | (no framework hop) | 72.1 | **The cache unserializes no objects.** `cache.serializable_classes` is `false`, closing the object-injection path through cached values. The side menu, the one cache entry that held models, now holds plain arrays; an old entry is rebuilt on first use. Sections 2, 3 and 4: none. Section 5: `optimize:clear` clears the old entries; `memcached` and `apc` hosts do not get the protection. |
 | (no framework hop) | 72.2 | **The debugbar setting stays, for development hosts.** The settings page offers it only where Debugbar 4 can run (`APP_DEBUG` on, `APP_ENV` not `production`), and only there does it act - on a production host with debug on it used to boot the collectors for nothing. Sections 2, 3 and 4: none. Section 5: nothing to do. |
+| (no framework hop) | 72.3 | **Clock change days are ordinary days.** The service-day and special-day time lists are wall-clock lists, and two date windows count calendar days; on the two clock change days a year they were an hour or a day off. Sections 2, 3 and 4: none. Section 5: nothing to do, but a template saved wrongly on such a day is not repaired automatically. |

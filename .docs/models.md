@@ -172,6 +172,13 @@ written in the form that returns the same value in both versions (roadmap TODO 5
 
 `tests/Feature/Dates/CarbonThreeReadinessTest` fails on any call written the Carbon-2 way.
 
+**A day is not 24 hours** (roadmap TODO 72.3). The application runs in Europe/Budapest, where the
+clock change days have 23 and 25 hours, so `$timestamp ± N * 24 * 60 * 60` lands on the wrong
+calendar date near midnight. Date windows use Carbon's calendar days instead - `EventEdit`'s
+statistics window (`subDays(30)` / `addDays(15)`) and the day modal's `max_extend_days` limit
+(`Carbon::now()->addDays()`) - and day-template times use `App\Support\Time\WallClock` minutes,
+never a date. `tests/Feature/Dates/ClockChangeTest` measures the windows on the change days.
+
 ### Encrypted columns
 
 Nine columns across six models use the `encrypted` cast. Behaviour is covered by

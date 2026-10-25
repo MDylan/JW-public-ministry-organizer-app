@@ -96,6 +96,14 @@ keystrokes, before anything is submitted.
   zero-length pair `23:00 - 23:00`, which `App\Rules\TimeCheck` then rejects on
   both fields. A group in that configuration cannot be saved at all - an open
   defect, not a fixed one.
+- **The option lists are wall-clock lists, the same on every date** (roadmap
+  TODO 72.3). `App\Support\Time\WallClock` counts minutes since midnight;
+  `SpecialDateModal` uses it too. Both components used to build the lists
+  from today's timestamps, which on the two clock change days a year in
+  Europe/Budapest was an hour off - the autumn day clamped a template ending
+  at midnight to 23:00 and listed 02:00 twice, the spring day ran past
+  midnight and skipped 02:00. `WallClockTest`, `GroupDayTimeRangeTest` and
+  `GroupSpecialDateModalTest` pin the lists.
 - **The option lists are keyed by the day**, not by `day_number`, which is
   `false` for an unchecked day and therefore the array key `0`. Both
   `day_selects` and `disabled_selects` are reset at the top of `render()`;
