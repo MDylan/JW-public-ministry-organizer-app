@@ -22,6 +22,7 @@ use App\Observers\SettingsObserver;
 use App\Observers\StaticPageObserver;
 use App\Observers\UserObserver;
 use App\Support\Settings\ApplicationSettings;
+use App\Support\Settings\DebugbarSwitch;
 use Illuminate\Support\ServiceProvider;
 
 
@@ -66,7 +67,10 @@ class AppServiceProvider extends ServiceProvider
         // ApplicationSettings. The repository reads, the provider applies - and
         // this way the line sits outside the repository's \Throwable catch, so
         // a missing class still fails loudly rather than silently.
-        if ($settings->get('debugbar') == 1 && $this->app->bound('debugbar')) {
+        //
+        // TODO 72.2: DebugbarSwitch asks the container (bound('debugbar'))
+        // and Debugbar 4's own canBeEnabled() rule, which enable() skips.
+        if ($settings->get('debugbar') == 1 && DebugbarSwitch::isAvailable()) {
             $this->app['debugbar']->enable();
         }
 

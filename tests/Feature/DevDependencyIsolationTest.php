@@ -103,9 +103,15 @@ class DevDependencyIsolationTest extends TestCase
             'Calling the `\Debugbar` facade unconditionally fatals where the dev package is not installed.'
         );
 
+        // Since roadmap TODO 72.2 the check lives in DebugbarSwitch, which the
+        // branch calls; the provider's own source only names it in a comment.
+        $this->assertStringContainsString('DebugbarSwitch::isAvailable()', $source);
+
+        $switch = file_get_contents(app_path('Support/Settings/DebugbarSwitch.php'));
+
         $this->assertStringContainsString(
-            "bound('debugbar')",
-            $source,
+            "app()->bound('debugbar') &&",
+            $switch,
             'The debugbar branch needs a container check in front of it: a missing class throws an `Error`, which the boot\'s `catch (\Exception)` branch does not catch.'
         );
     }
@@ -113,6 +119,12 @@ class DevDependencyIsolationTest extends TestCase
     public function test_the_debugbar_setting_still_enables_the_bar_when_the_package_is_present(): void
     {
         Settings::updateOrCreate(['name' => 'debugbar'], ['value' => '1']);
+
+        // A development host (roadmap TODO 72.2): the setting only acts where
+        // LaravelDebugbar::canBeEnabled() is true. This case used to pass in
+        // the testing environment because enable() skipped that check.
+        config(['app.debug' => true]);
+        $this->app['env'] = 'local';
 
         $this->assertTrue($this->app->bound('debugbar'), 'In the dev environment, auto-discovery must register the Debugbar.');
         $this->app['debugbar']->disable();
@@ -124,6 +136,24 @@ class DevDependencyIsolationTest extends TestCase
             $this->app['debugbar']->isEnabled(),
             'The `debugbar` setting, when on, must still enable the bar - the guard must not restrict more than necessary.'
         );
+    }
+
+    public function test_the_setting_does_not_switch_the_bar_on_where_debugbar_refuses(): void
+    {
+        // Roadmap TODO 72.2. Debugbar 4's own boot stops early in
+        // production, but LaravelDebugbar::enable() does not ask
+        // canBeEnabled(): it set the flag and booted the collectors on
+        // every request - with nothing to show for it, since the
+        // response listener was never registered.
+        Settings::updateOrCreate(['name' => 'debugbar'], ['value' => '1']);
+        config(['app.debug' => true]);
+        $this->app['env'] = 'production';
+
+        $this->app['debugbar']->disable();
+
+        (new AppServiceProvider($this->app))->boot();
+
+        $this->assertFalse($this->app['debugbar']->isEnabled());
     }
 
     public function test_the_boot_completes_past_the_debugbar_branch(): void

@@ -7,6 +7,7 @@ use App\Livewire\AppComponent;
 use App\Models\Group;
 use App\Models\Settings as ModelsSettings;
 use App\Models\User;
+use App\Support\Settings\DebugbarSwitch;
 use App\Support\Translation\LangFiles;
 use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Artisan;
@@ -68,7 +69,11 @@ class Settings extends AppComponent
     public function mount() {
         $this->load();
 
-        if(!config('app.debug')) {
+        // Offered only where Debugbar 4 can run (roadmap TODO 72.2); it
+        // used to follow APP_DEBUG alone, which a production host with
+        // debug on passed. The stored row is kept either way: saveOthers()
+        // only writes the keys the form shows.
+        if(!DebugbarSwitch::isAvailable()) {
             unset($this->others['debugbar']);
         }
 

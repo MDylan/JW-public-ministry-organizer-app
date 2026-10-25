@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\FeatureTestCase;
 
 /**
@@ -87,6 +88,33 @@ class AdminSettingsTest extends FeatureTestCase
 
         // The default for weather is false in the $others array.
         $this->assertFalse($component->get('state')['others']['weather']);
+    }
+
+    /**
+     * Roadmap TODO 72.2: the debugbar switch is offered only where Debugbar 4
+     * can run - APP_DEBUG on, and an environment other than production and
+     * testing. It used to follow APP_DEBUG alone, so a production host with
+     * debug on showed a switch that did nothing visible.
+     */
+    #[DataProvider('debugbarHosts')]
+    public function test_the_debugbar_switch_is_offered_only_where_the_bar_can_run(string $environment, bool $debug, bool $offered): void
+    {
+        config(['app.debug' => $debug]);
+        $this->app['env'] = $environment;
+
+        $component = Livewire::actingAs($this->admin)->test(Settings::class);
+
+        $this->assertSame($offered, array_key_exists('debugbar', $component->get('others')));
+        $this->assertSame($offered, array_key_exists('debugbar', $component->get('state')['others']));
+    }
+
+    public static function debugbarHosts(): array
+    {
+        return [
+            'development host' => ['local', true, true],
+            'production with debug on' => ['production', true, false],
+            'development host with debug off' => ['local', false, false],
+        ];
     }
 
     public function test_render_exposes_the_dashboard_counters(): void
