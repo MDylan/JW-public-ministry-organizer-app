@@ -61,7 +61,7 @@ These are mounted directly from `routes/web.php`.
 | `Groups\ListGroups` | `/groups` | Membership list, invitations, group creation, role request flow, group leave/remove flows. |
 | `Admin\AdminNewsletters` | `/newsletters` | Newsletter list and read tracking for users/group servants/admin. |
 | `Admin\Users\ListUsers` | `/admin/users` | Admin user management (create/edit/delete/search). |
-| `Admin\Settings` | `/admin/settings` | Application settings UI, language setup, maintenance/system operations. |
+| `Admin\Settings` | `/admin/settings` | Application settings UI, language setup, maintenance/system operations. The "debugbar" switch is offered only where `App\Support\Settings\DebugbarSwitch::isAvailable()` - the package is installed and Debugbar 4's `canBeEnabled()` holds (`APP_DEBUG` on, not production or testing); `AppServiceProvider` applies the stored value under the same condition (roadmap TODO 72.2). |
 | `Admin\StaticPages` | `/admin/staticpages` | Static page listing UI for admin. |
 | `Admin\StaticPageEdit` | `/admin/staticpages/create`, `/admin/staticpages/edit/{staticPage}` | Static page create/edit/delete workflow with translation content. |
 | `Admin\NewsletterEdit` | `/admin/newsletter_edit/{id?}` | Newsletter create/edit/delete and send-target configuration. |

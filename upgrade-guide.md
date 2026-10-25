@@ -1038,8 +1038,14 @@ State that lives on the host and is not expressible in a release archive.
   removes it anyway; nothing else the application caches is an object. **A
   host on the `memcached` or `apc` store is not covered:** those stores
   unserialize natively and ignore the setting. No user-visible change.
+- **TODO 72.2: the admin "debugbar" switch is shown only where it works.**
+  That is a host with `APP_DEBUG` on and an `APP_ENV` other than `production`
+  (and `testing`) - a development host. On a live site the switch disappears
+  from the settings page even if `APP_DEBUG` is on; the stored value is kept,
+  and it no longer starts Debugbar's data collection on every request there,
+  which it did without ever showing the bar. Nothing to do.
 
-*Last updated: TODO 72.1.*
+*Last updated: TODO 72.2.*
 
 ## 6. The upgrade procedure
 
@@ -1138,3 +1144,4 @@ migrations, which is the same reason the major ceiling exists.
 | (no framework hop) | 71 | **The API surface and the CORS layer are gone.** The stock `/api/user` stub never authenticated anyone (no `api_token` column) and only kept a TokenGuard reachable; the route file, the `api` guard, the `throttle:api` limiter, `config/cors.php` and `HandleCors` are removed. Section 2: none. Section 3: two inert files to delete. Section 4: none. Section 5: a stale route cache answers 500 on the old path until `optimize:clear`. The 1.x line keeps the guard, unmeasured. |
 | (no framework hop) | 72 | **The install state is read per request.** The `setup/*` routes are always registered and closed (404) by a new `notInstalled` middleware while `installed.txt` exists, so `route:cache` no longer freezes the install state. Sections 2 and 4: none. Section 3: nothing moves, two new classes ship. Section 5: the route cache must be rebuilt once (step 10); afterwards `optimize` is safe at any time. |
 | (no framework hop) | 72.1 | **The cache unserializes no objects.** `cache.serializable_classes` is `false`, closing the object-injection path through cached values. The side menu, the one cache entry that held models, now holds plain arrays; an old entry is rebuilt on first use. Sections 2, 3 and 4: none. Section 5: `optimize:clear` clears the old entries; `memcached` and `apc` hosts do not get the protection. |
+| (no framework hop) | 72.2 | **The debugbar setting stays, for development hosts.** The settings page offers it only where Debugbar 4 can run (`APP_DEBUG` on, `APP_ENV` not `production`), and only there does it act - on a production host with debug on it used to boot the collectors for nothing. Sections 2, 3 and 4: none. Section 5: nothing to do. |
